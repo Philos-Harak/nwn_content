@@ -1,2 +1,2 @@
 # nwn_content
-Artificial Intelligence for Neverwinter Nights
+This is my repository for Neverwinter Nights content.
