@@ -1,0 +1,105 @@
+Philos AI Combat version 0.1
+
+********** Description **********
+These scripts will replace the original neverwinter nights ai for monsters and henchman.
+This folder holds a compiled and uncompiled version of the files with the dialogs and 2da files needed to use.
+
+********** Features **********
+Philos AI Combat features for Monsters and Henchman:
+* Creatures will make a moral check once at half health (Can be turned off).
+* Creatures using a ranged weapon will attempt to keep a resonable distance between them and the enemy.
+* Creatures using a ranged weapon in melee will evaluate if it is save to continue using a ranges weapon.
+* Creatures with sneak attack using a ranged weapon will attempt to get withing sneak attack range if safe.
+* Creatures with sneak attack will attempt to use sneak attack as much as possible.
+* Creatures with Mobility and Spring attack will tend to move more in combat.
+* Melee attackers will evaluate feats to see if they are worth using based on Attack bonus and enemies AC.
+* Weak melee classes will attempt to stay out of melee if the opponents are too strong.
+* Rangers will prioritize favored enemies if they are in battle.
+* Paladins will fight the stongest opponents on the battle field.
+* Casters using area of effect spells will look for groups of enemies to hit as many as possible.
+* Casters will evaluate when in melee if it is safe to cast spells against its melee opponents.
+* Casters will target the weakest opponents based on the spell they are casting (low Will saves vs will based spells).
+* Casters and Healers will evaluate the battlefield when casting spells (They will not run through enemies to cast a spell on someone).
+* Healers evaluate which healing spell is best to use (They will only use a spell suited for the damage).
+* Clerics will use spontaneous healing spells once they run out of memorized healing spells.
+* Creatures will use all castable items in combat (Scrolls, Potions, Wands, Staves, Misc items, Rings, etc).
+* Creatures will prebuff before combat using Protections, Enhancements, and Summons. They will select the best target from allies near them.
+* Any creature with Use Magic Device can use items in combat per the skill (Can be turned off).
+* Creatures will use Familiars and Animal Companions (Can be turned off).
+* Associates will not disappear when the master dies (Can be turned off).
+
+Fully functional AI for Associates with conversation to customize the behavior:
+* Has all the basic customization from the base game conversations plus...
+* Conversation node to pass the AI conversation to the modules conversation so you can talk to the henchman for that module.
+* Henchman can buff the party after resting with long duration spells (They select the best targets).
+* Associates can buff the party from conversation selecting the best targets (long duration and/or short duration spells).
+* Associates can cast healing spells on the whole party based on the spells needed to heal the damage they have.
+* Associates can be instructed to prioritize non associates in battle.
+* Associates can be instructed to scout the area (Can be turned off).
+* Associates can be instructed to taunt or counter spell (Can be turned off).
+* Associates can be instructed to attack everything or only attack creatures they can handle.
+* Associates can be instructed to not engage in combat.
+* Associates can be instructed to pickup loot (Can be turned off).
+* Associates can be instructed to not use castable items (i.e. Scrolls, Potions, Wands, Staves, Misc items, Rings, etc).
+* Associates can be instructed to only buff you.
+* Associates can be instructed to not speak unless spoken to.
+* Saves all conversation changes to the player so each summons will use the ones the last summons did etc.
+
+********** Installation **********
+These files are for builders looking to add a better AI to their server/module.
+Add these files to your module making sure to place the ai_spells.2da in your servers override or haks.
+If you do not want to use the PC AI then you need to remove the x3_s3_horse.ncs and x3_s3_horse.nss files.
+
+There are also constants that can be adjusted to make the AI more customized for your module.
+These are found in 0i_constants.nss file at the top if you change any of them you must recompile it all.
+
+// The following constants are designed to be changed to allow the AI to work
+// differently based on what a developer wants.
+//***************************  ADJUSTABLE CONSTANTS  ***************************
+// The number of classes allowed for a character to take in the server/module.
+const int AI_MAX_CLASSES_PER_CHARACTER = 3;
+// Should moral checks be used.
+const int AI_USE_MORAL = TRUE;
+// Change the Custom token number if it conflicts with your server.
+const int AI_BASE_CUSTOM_TOKEN = 1000;
+// The DC monsters make to decide if they cast the best talent vs random talent.
+const int AI_INTELLIGENCE_DC = 12;
+// Arcane Spell failure% or less that a caster must have to still try to cast a spell.
+const int AI_ASF_WILL_USE = 15;
+// Should summon familiars be used?
+const int AI_SUMMON_FAMILIARS = FALSE;
+// Should animal companions be used?
+const int AI_SUMMON_COMPANIONS = FALSE;
+// Summons, familiars, and companions are permanent and don't disappear when the caster dies.
+const int AI_PERMANENT_ASSOCIATES = FALSE;
+// Should all monsters prebuff before combat?
+const int AI_BUFF_MONSTER_CASTERS = TRUE;
+// Should monsters cast summons spells when prebuffing?
+const int AI_PREBUFF_SUMMONS = TRUE;
+// Should monsters use potions to prebuff before combat?
+const int AI_BUFF_MONSTER_POTIONS = TRUE;
+// Should the AI allow the use of Use Magic Device?
+const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
+// After combat the combat heartbeat script will run for AI_AFTER_COMBAT_WRAP_IN_ROUNDS.
+// Allows monsters to heal and use cure spells after combat.
+const int AI_AFTER_COMBAT_WRAP_IN_ROUNDS = 5;
+// Delay between Henchman casting Buff spells.
+const float AI_HENCHMAN_BUFF_DELAY = 0.0;
+
+********** How it works **********
+For now this will be a basic understanding of how it works and I will hopefully flesh it out more as time goes on.
+
+Once a creatures OnPerception script fires and they "see" an enemy then it will do the following. 
+1) It sets up a combat state for each creature giving them information about each enemy and ally in the battle.
+   such as distance, health, combat rating, if they are disabled, and if they can see them.
+2) It sets up a talent array with any spells, special abilities, and items that it can use in combat.
+3) With the combat state and talent array it goes through a script set on the creature based on its class to determine its action.
+4) Once an action has been set it will check the creature based on events that fire throughout the combat seeing
+   if it should do another round.
+
+********** Versions **********
+***** 0.1 (4/30/24) *****
+First version.
+
+
+
