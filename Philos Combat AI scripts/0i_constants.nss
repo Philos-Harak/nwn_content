@@ -25,7 +25,7 @@ const int AI_SUMMON_FAMILIARS = FALSE;
 // Should animal companions be used?
 const int AI_SUMMON_COMPANIONS = FALSE;
 // Summons, familiars, and companions are permanent and don't disappear when the caster dies.
-const int AI_PERMANENT_ASSOCIATES = TRUE;
+const int AI_PERMANENT_ASSOCIATES = FALSE;
 // Should all monsters prebuff before combat?
 const int AI_BUFF_MONSTER_CASTERS = TRUE;
 // Should monsters cast summons spells when prebuffing?
