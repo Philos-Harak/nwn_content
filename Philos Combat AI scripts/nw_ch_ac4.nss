@@ -8,11 +8,12 @@
   If SetListening is FALSE then oCreature will not "hear" anything.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_associates"
+#include "nw_inc_gff"
 void main()
 {
     object oCreature = OBJECT_SELF;
     int nMatch = GetListenPatternNumber();
-    //ai_Debug("nw_ch_ac4", "15", GetName(oCreature) + " listens " +
+    //ai_Debug("nw_ch_ac4", "16", GetName(oCreature) + " listens " +
     //         IntToString(GetListenPatternNumber()) + " to " + GetName(GetLastSpeaker()) + "." +
     //         " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     // Skip ASSOCIATE_COMMAND_MASTERUNDERATTACK(11) since it fires for
@@ -26,7 +27,14 @@ void main()
         if (!ai_GetIsBusy(oCreature))
         {
             ai_ClearCreatureActions(oCreature);
-            BeginConversation("oc_ai_henchmen", GetPCSpeaker());
+            if(GetAssociateType(oCreature) == ASSOCIATE_TYPE_HENCHMAN) BeginConversation("oc_ai_henchmen", GetPCSpeaker());
+            else
+            {
+                json jHenchman = ObjectToJson(oCreature);
+                string sConversation = JsonGetString(GffGetResRef(jHenchman, "Conversation"));
+                if(sConversation == "") BeginConversation("oc_ai_henchmen", GetPCSpeaker());
+                BeginConversation();
+            }
         }
     }
     // Some commands override being busy so we check in ai_SelectAssociateCommand.

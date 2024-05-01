@@ -1,13 +1,13 @@
 /*////////////////////////////////////////////////////////////////////////////////////////////////////
-// Script Name: ai_a_wizard
+// Script Name: ai_a_cleric
 //////////////////////////////////////////////////////////////////////////////////////////////////////
- ai script for associates using the Wizard class.
+ ai script for associates using the Cleric class.
  OBJECT_SELF is the creature running the ai.
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -32,14 +32,15 @@ void main()
     // Skill, Class, Offensive AOE's, and Defensive talents.
     if(nDifficulty >= AI_COMBAT_DIFFICULT)
     {
-        // ************************** CLASS FEATURES ***************************
-        if(ai_TrySummonFamiliarTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-       if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
+        if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
     }
-    // Offensive single target talents.
+    // SIMPLE+ - Offensive talents.
     if(nDifficulty >= AI_COMBAT_SIMPLE)
     {
+        // ************************** CLASS FEATURES ***************************
+        if(ai_TryTurningTalent(oCreature)) return;
+        // *************************** SPELL TALENTS ***************************
         if(bUseMagic && !ai_GetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING))
         {
             if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
@@ -47,7 +48,7 @@ void main()
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    object oTarget;
+    object oTarget = OBJECT_INVALID;
     // ************************** Ranged feat attacks **************************
     if(!ai_GetAssociateMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
@@ -59,12 +60,19 @@ void main()
             if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
             else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
         }
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
+        if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
         return;
     }
     // ************************** Melee feat attacks *************************
     if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
     if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK));
-    ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+    if(oTarget != OBJECT_INVALID)
+    {
+        if(ai_TryHarmfulMeleeTalents(oCreature, oTarget)) return;
+        if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
+        if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+    }
 }

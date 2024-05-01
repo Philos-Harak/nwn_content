@@ -38,7 +38,7 @@ void main()
         if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
         oTarget = ai_GetNearestTarget (oCreature);
         if (ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
         return;
     }
     // *************************  MELEE ATTACKS  *******************************

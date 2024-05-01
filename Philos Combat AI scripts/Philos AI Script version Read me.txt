@@ -100,6 +100,7 @@ Once a creatures OnPerception script fires and they "see" an enemy then it will 
 ********** Versions **********
 ***** 0.1 (4/30/24) *****
 First version.
-
+* Dialog fix so henchman can be talked to before they join the player.
+* Not equiping ranged weapon and then standing motionless - Fixed to make them still attack.
 
 

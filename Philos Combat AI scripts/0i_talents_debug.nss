@@ -5,7 +5,7 @@
     Fuctions to use a category of skills, feats, spells, or items.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_states_cond"
-#include "0i_combat"
+#include "0i_combat_debug"
 // *****************************************************************************
 // ************************* Try * Defensive Talents ***************************
 // *****************************************************************************
@@ -1246,7 +1246,7 @@ int ai_TryRangedSneakAttack(object oCreature, int nInMelee)
     if(oTarget == OBJECT_INVALID) return FALSE;
     // If we have a target and are not within 30' then move within 30'.
     if(GetDistanceToObject(oTarget) > AI_RANGE_CLOSE) ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE);
-    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
     return TRUE;
 }
 int ai_TryHarmfulMeleeTalents(object oCreature, object oTarget)
@@ -1292,7 +1292,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
         }
         if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
         ai_Debug("0i_talents", "1294", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
         return;
     }
     ai_Debug("0i_talents", "1298", "Check for melee attack on nearest enemy!");
@@ -1336,7 +1336,7 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
         }
         if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
         ai_Debug("0i_talents", "1338", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
         return;
     }
     ai_Debug("0i_talents", "1342", "Check for melee attack on weakest enemy!");

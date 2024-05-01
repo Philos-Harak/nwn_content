@@ -2482,10 +2482,12 @@ int ai_GetDifficulty(object oCreature)
     // We randomize a bell curve of +10 to +20
     int nRoll = d6(2) + 8;
     int nDifficulty = GetLocalInt(oCreature, AI_ENEMY_POWER) - GetLocalInt(oCreature, AI_ALLY_POWER) + nRoll;
-    ai_Debug("0i_combat", "2485", "(Difficulty: Enemy Power: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_POWER)) +
-             " - Ally Power: " + IntToString(GetLocalInt(oCreature, AI_ALLY_POWER)) +
-             ") + nRoll: " + IntToString(nRoll) + " = " + IntToString(nDifficulty));
-    return nDifficulty;
+    int nAdjustment = GetLocalInt(oCreature, AI_DIFFICULTY_ADJUSTMENT);
+    //ai_Debug("0i_combat", "2486", "(Difficulty: Enemy Power: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_POWER)) +
+    //         " - Ally Power: " + IntToString(GetLocalInt(oCreature, AI_ALLY_POWER)) +
+    //         ") + nRoll: " + IntToString(nRoll) + " + nAdj: " + IntToString(nAdjustment) +
+    //         " = " + IntToString(nDifficulty));
+    return nDifficulty + nAdjustment;
 }
 int ai_GetMyCombatRating(object oCreature)
 {

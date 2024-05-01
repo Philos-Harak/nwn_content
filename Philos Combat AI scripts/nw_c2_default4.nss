@@ -28,7 +28,7 @@ void main()
     else if(nMatch == -1)
     {
         ai_ClearCreatureActions(oCreature);
-        BeginConversation("", oCreature);
+        BeginConversation();
     }
 }
 void ai_ReactToAlly(object oCreature, object oSpeaker)

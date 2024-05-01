@@ -50,7 +50,10 @@ Fully functional AI for Associates with conversations to customize the behavior:
 ********** Versions **********
 ***** 0.1 (4/30/24) *****
 First version.
-* This may not work with the Core campaigns as they have added some special code to the AI that I don't have in.
+* This may not work with the Core campaigns as they have added some special code to the AI that I don't have in, I'd like to test and get it working.
 
+* Dialog fix so henchman can be talked to before they join the player.
+* Not equiping ranged weapon and then standing motionless - Fixed to make them still attack.
+* Added the ability to adjust spell usage during combat.
 
 

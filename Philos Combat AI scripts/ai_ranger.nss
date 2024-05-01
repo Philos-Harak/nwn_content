@@ -51,7 +51,7 @@ void main()
             if(oTarget != OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
         }
         if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
         return;
     }
     // *************************  MELEE ATTACKS  *******************************

@@ -101,7 +101,7 @@ void main()
             // Lets pick off the nearest targets.
             if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
             else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
-            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
             return;
         }
         // *************************  MELEE ATTACKS  *******************************

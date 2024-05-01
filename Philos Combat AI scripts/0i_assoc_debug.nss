@@ -5,7 +5,7 @@
  Scripts used for Associates.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_states_cond"
-#include "0i_actions"
+#include "0i_actions_debug"
 //#include "0i_actions_debug"
 
 // Chooses an action while in combat and executes it for oCreature.

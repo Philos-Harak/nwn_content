@@ -41,7 +41,7 @@ void main()
         // Paladins face the biggest challenges first!
         if(!nInMelee) oTarget = ai_GetHighestCRTarget(oCreature);
         else oTarget = ai_GetHighestCRTarget(oCreature, AI_RANGE_MELEE);
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
         return;
     }
     // *************************  MELEE ATTACKS  *******************************
