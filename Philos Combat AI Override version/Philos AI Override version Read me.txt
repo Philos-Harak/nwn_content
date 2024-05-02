@@ -5,6 +5,7 @@ These scripts will replace the original neverwinter nights ai for monsters and h
 This folder holds a compiled version of the files with the dialogs and a 2da files needed to use.
 
 ********** Installation **********
+Must be running version v89.8193.37-1 of the game or better.
 To use the AI place these files into the Override folder.
 If you do not want to use the PC AI then you can remove the x3_s3_horse.ncs and x3_s3_horse.nss files.
 
@@ -50,10 +51,15 @@ Fully functional AI for Associates with conversations to customize the behavior:
 ********** Versions **********
 ***** 0.1 (4/30/24) *****
 First version.
-* This may not work with the Core campaigns as they have added some special code to the AI that I don't have in, I'd like to test and get it working.
-
+* This may not work with the Core campaigns as they have added some special code to the AI that I don't have in, but would like to make it work.
 * Dialog fix so henchman can be talked to before they join the player.
 * Not equiping ranged weapon and then standing motionless - Fixed to make them still attack.
-* Added the ability to adjust spell usage during combat.
+* Location spells now actually work from the talent list. 
+* Fixed issue with some combat feats not firing all the time (Knock down, Expertise feats).
+* Fixed some special abilities being added as a talent list that should not be (rage, etc).
+* Fixed some spells being added as a talent list that should not be (light).
+* Fixed a check for Master so the AI could be used on a Player.
+* Fixed picking up loot, many errors and master checks blocking the player from using.
+
 
 

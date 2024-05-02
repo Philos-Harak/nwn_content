@@ -50,9 +50,7 @@ void main()
     oTarget = ai_GetHighestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
-        if(ai_TryHarmfulMeleeTalents(oCreature, oTarget)) return;
-        if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-        if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
+        if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
 }

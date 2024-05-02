@@ -46,8 +46,6 @@ void main()
     if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
     oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget == OBJECT_INVALID) return;
-    if(ai_TryHarmfulMeleeTalents(oCreature, oTarget)) return;
-    if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-    if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
+    if(ai_TryMeleeTalents(oCreature, oTarget)) return;
     ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
 }

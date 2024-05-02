@@ -72,7 +72,7 @@ int ai_TrySneakAttack(object oCreature, int nInMelee, int bAlwaysAtk = TRUE);
 // Returns TRUE if oCreature finds a good ranged target and uses Sneak Attack.
 int ai_TryRangedSneakAttack(object oCreature, int nInMelee);
 // Returns TRUE if oCreature uses a harmful melee talent.
-int ai_TryHarmfulMeleeTalents(object oCreature, object oTarget);
+int ai_TryMeleeTalents(object oCreature, object oTarget);
 // Targets the nearest creature oCreature it can see.
 // This checks all physcal attack talents starting with ranged attacks then melee.
 // Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
@@ -126,14 +126,14 @@ int ai_TryDisarmFeat(object oCreature, object oTarget);
 // Returns TRUE if oCreature uses Expertise.
 // This checks if they have the feat and if its viable.
 // Also checks to see if the Improved Expertise feat would be better.
-int ai_TryExpertiseFeat(object oCreature, object oTarget);
+int ai_TryExpertiseFeat(object oCreature);
 // Returns TRUE if oCreature uses Flurry of Blows.
 // This checks if they have the feat and if its viable.
 int ai_TryFlurryOfBlowsFeat(object oCreature, object oTarget);
 // Returns TRUE if oCreature uses Improved Expertise.
 // This checks if they have the feat and if its viable.
 // Also checks to see if the Expertise feat would be better.
-int ai_TryImprovedExpertiseFeat(object oCreature, object oTarget);
+int ai_TryImprovedExpertiseFeat(object oCreature);
 // Returns TRUE if oCreature uses Improved Power Attack.
 // This checks if they have the feat and if its viable.
 // Also checks to see if the Power Attack feat would be better.
@@ -624,7 +624,7 @@ void ai_UseFeat(object oCreature, int nFeat, object oTarget)
 }
 void ai_UseFeatAttackMode(object oCreature, int nActionMode, int nAction, object oTarget, int nInMelee = 0, int bPassive = FALSE)
 {
-    //ai_Debug("0i_talents", "627", "Action mode (" + IntToString(nActionMode) + ") set" +
+    //ai_Debug("0i_talents", "627", "Action mode (" + IntToString(nActionMode) + ") Is it set?: " +
     //         IntToString(GetActionMode(oCreature, nActionMode)));
     if(!GetActionMode(oCreature, nActionMode))
     {
@@ -682,12 +682,11 @@ int ai_TryDisarmFeat(object oCreature, object oTarget)
     ai_UseFeat(oCreature, FEAT_DISARM, oTarget);
     return TRUE;
 }
-int ai_TryExpertiseFeat(object oCreature, object oTarget)
+int ai_TryExpertiseFeat(object oCreature)
 {
     if(!GetHasFeat(FEAT_EXPERTISE, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
-    oTarget = ai_GetEnemyAttackingMe(oCreature);
+    object oTarget = ai_GetEnemyAttackingMe(oCreature);
+    if(oTarget == OBJECT_INVALID) return FALSE;
     // Expertise has a -5 atk and a +5 AC adjustment.
     if(!ai_EnemyCanHitMe(oCreature, oTarget)) return FALSE;
     //ai_Debug("0i_talents", "693", "USING EXPERTISE on " + GetName(oTarget) + ".");
@@ -697,20 +696,17 @@ int ai_TryExpertiseFeat(object oCreature, object oTarget)
 int ai_TryFlurryOfBlowsFeat(object oCreature, object oTarget)
 {
     if(!GetHasFeat(FEAT_FLURRY_OF_BLOWS, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
     // Flurry of Blows has a -2 atk adjustment.
     if(!ai_CanHitOpponent(oCreature, oTarget, 2)) return FALSE;
     //ai_Debug("0i_talents", "704", "USING FLURRY OF BLOWS on " + GetName(oTarget) + ".");
     ai_UseFeatAttackMode(oCreature, ACTION_MODE_FLURRY_OF_BLOWS, AI_LAST_ACTION_MELEE_ATK, oTarget, TRUE);
     return TRUE;
 }
-int ai_TryImprovedExpertiseFeat(object oCreature, object oTarget)
+int ai_TryImprovedExpertiseFeat(object oCreature)
 {
     if(!GetHasFeat(FEAT_IMPROVED_EXPERTISE, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
-    oTarget = ai_GetEnemyAttackingMe(oCreature);
+    object oTarget = ai_GetEnemyAttackingMe(oCreature);
+    if(oTarget == OBJECT_INVALID) return FALSE;
     // Improved expertise has a -10 atk +10 AC adjustment.
     if(ai_EnemyCanHitMe(oCreature, oTarget)) return FALSE;
     //ai_Debug("0i_talents", "716", "USING IMPROVED EXPERTISE on " + GetName(oTarget) + ".");
@@ -720,8 +716,6 @@ int ai_TryImprovedExpertiseFeat(object oCreature, object oTarget)
 int ai_TryImprovedPowerAttackFeat(object oCreature, object oTarget)
 {
     if(!GetHasFeat(FEAT_IMPROVED_POWER_ATTACK, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
     // Improved Power Attack has a -10 atk adjustment.
     if(!ai_CanHitOpponent(oCreature, oTarget, 10)) return ai_TryPowerAttackFeat(oCreature, oTarget);
     ai_UseFeatAttackMode(oCreature, ACTION_MODE_IMPROVED_POWER_ATTACK, AI_LAST_ACTION_MELEE_ATK, oTarget);
@@ -763,8 +757,6 @@ int ai_TryKnockdownFeat(object oCreature, object oTarget)
 int ai_TryPowerAttackFeat(object oCreature, object oTarget)
 {
     if(!GetHasFeat(FEAT_POWER_ATTACK, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
     // Power Attack has a -5 atk adjustment.
     // If we have Improved Power attack and can hit with power attack maybe check it.
     if(!ai_CanHitOpponent(oCreature, oTarget, 5)) return ai_TryImprovedPowerAttackFeat(oCreature, oTarget);
@@ -783,8 +775,6 @@ int ai_TryQuiveringPalmFeat(object oCreature, object oTarget)
 int ai_TryRapidShotFeat(object oCreature, object oTarget, int nInMelee)
 {
     if(!GetHasFeat(FEAT_RAPID_SHOT, oCreature)) return FALSE;
-    if(GetActionMode(oCreature, ACTION_MODE_EXPERTISE) &&
-       GetCurrentAction(oCreature) == ACTION_ATTACKOBJECT) return TRUE;
     // Rapidshot has a -4 atk adjustment.
     if(!ai_CanHitOpponent(oCreature, oTarget, 4)) return FALSE;
     ai_UseFeatAttackMode(oCreature, ACTION_MODE_RAPID_SHOT, AI_LAST_ACTION_RANGED_ATK, oTarget, TRUE);
@@ -917,13 +907,12 @@ int ai_TryWholenessOfBodyFeat(object oCreature)
 
 void ai_ActionAttack(object oCreature, int nAction, object oTarget, int nInMelee = 0, int bPassive = FALSE)
 {
-    //ai_Debug("0i_talents", "920", GetName(oCreature) + " is attacking(" + IntToString(nAction) +
-    //         ") " + GetName(oTarget) + " Current Action: " + IntToString(GetCurrentAction(oCreature)) +
-    //         " Attacked Target: " + GetName(ai_GetAttackedTarget(oCreature)));
     ai_SetLastAction(oCreature, nAction);
     // If we are doing a ranged attack then check our position on the battlefield.
     if(nAction == AI_LAST_ACTION_RANGED_ATK) ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nAction);
-    //ai_Debug("0i_talents", "926", GetName(oCreature) + " is attacking " + GetName(oTarget));
+    //ai_Debug("0i_talents", "913", GetName(oCreature) + " is attacking(" + IntToString(nAction) +
+    //         ") " + GetName(oTarget) + " Current Action: " + IntToString(GetCurrentAction(oCreature)) +
+    //         " Attacked Target: " + GetName(ai_GetAttackedTarget(oCreature)));
     ActionAttack(oTarget, bPassive);
 }
 void ai_FlyToAttacks(object oCreature, object oTarget)
@@ -1249,18 +1238,20 @@ int ai_TryRangedSneakAttack(object oCreature, int nInMelee)
     ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
     return TRUE;
 }
-int ai_TryHarmfulMeleeTalents(object oCreature, object oTarget)
+int ai_TryMeleeTalents(object oCreature, object oTarget)
 {
-    //ai_Debug("0i_talents", "1254", "Check Harmful melee!");
+    //ai_Debug("0i_talents", "1254", "Check category melee talents!");
     talent tUse = GetCreatureTalentBest(TALENT_CATEGORY_HARMFUL_MELEE, 20, oCreature);
     if(!GetIsTalentValid(tUse)) return FALSE;
     int nId = GetIdFromTalent(tUse);
-    //ai_Debug("0i_talents", "1258", "TALENT_HARMFUL_MELEE nId: " + IntToString(nId));
+    //ai_Debug("0i_talents", "1258", "TALENT_CATEGORY_MELEE_TALENTS nId: " + IntToString(nId));
     if(nId == FEAT_POWER_ATTACK) { if(ai_TryPowerAttackFeat(oCreature, oTarget)) return TRUE; }
-    else if(nId == FEAT_IMPROVED_POWER_ATTACK) { if(ai_TryImprovedPowerAttackFeat(oCreature, oTarget)) return TRUE; }
+    else if(nId == FEAT_EXPERTISE) { if(ai_TryExpertiseFeat(oCreature)) return TRUE; }
     else if(nId == FEAT_KNOCKDOWN) { if(ai_TryKnockdownFeat(oCreature, oTarget)) return TRUE; }
     else if(nId == FEAT_SMITE_EVIL) { if(ai_TrySmiteEvilFeat(oCreature, oTarget)) return TRUE; }
     else if(nId == FEAT_SMITE_GOOD) { if(ai_TrySmiteGoodFeat(oCreature, oTarget)) return TRUE; }
+    else if(nId == FEAT_IMPROVED_POWER_ATTACK) { if(ai_TryImprovedPowerAttackFeat(oCreature, oTarget)) return TRUE; }
+    else if(nId == FEAT_IMPROVED_EXPERTISE) { if(ai_TryImprovedExpertiseFeat(oCreature)) return TRUE; }
     else if(nId == FEAT_FLURRY_OF_BLOWS) { if(ai_TryFlurryOfBlowsFeat(oCreature, oTarget)) return TRUE; }
     else if(nId == FEAT_STUNNING_FIST) { if(ai_TryStunningFistFeat(oCreature, oTarget)) return TRUE; }
     else if(nId == FEAT_SAP) { if(ai_TrySapFeat(oCreature, oTarget)) return TRUE; }
@@ -1305,9 +1296,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);
     // If we don't find a target then we don't want to fight anyone!
     if(oTarget == OBJECT_INVALID) return;
-    if(ai_TryHarmfulMeleeTalents(oCreature, oTarget)) return;
-    if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-    if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
+    if(ai_TryMeleeTalents(oCreature, oTarget)) return;
     //ai_Debug("0i_talents", "1311", "Do melee attack against nearest: " + GetName(oTarget) + "!");
     ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
 }
@@ -1347,10 +1336,8 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
     if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);
-    if(ai_TryHarmfulMeleeTalents(oCreature, oTarget)) return;
+    if(ai_TryMeleeTalents(oCreature, oTarget)) return;
     //ai_Debug("0i_talents", "1351", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
-    if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-    if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
     ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
 }
 // *****************************************************************************
@@ -1452,6 +1439,7 @@ void ai_SaveTalent(object oCreature, int nClass, int nLevel, int nSlot, int nSpe
 {
     // Get the talent category, we organize all talents by categories.
     string sCategory = Get2DAString("ai_spells", "Category", nSpell);
+    if(sCategory == "") return;
     // Check to see if we should be prebuffing.
     if(bBuff)
     {
@@ -1972,7 +1960,7 @@ int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nIn
     //         " nDomain: " + IntToString(nDomain) + " nClass: " + IntToString(nClass));
     ai_SetLastAction(oCreature, nSpell);
     ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, FALSE, nClass, FALSE);
-    string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+    //string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
     //ai_Debug("0i_talents", "1976", GetName(oCreature) + " is casting " + sSpellName + " on " + GetName(oTarget));
     return TRUE;
 }
@@ -2046,8 +2034,8 @@ int ai_UseTalentAtLocation(object oCreature, json jTalent, location lTarget, int
         return TRUE;
     }
     ai_SetLastAction(oCreature, nSpell);
-    ActionCastSpellAtLocation(nSpell, lTarget, nMetaMagic, FALSE, nDomain, 0, FALSE, nClass, FALSE);
-    string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+    ActionCastSpellAtLocation(nSpell, lTarget, nMetaMagic, FALSE, 0, FALSE, nClass, FALSE, nDomain);
+    //string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
     //ai_Debug("0i_talents", "2051", GetName(oCreature) + " is casting " + sSpellName + " at a location!");
     return TRUE;
 }

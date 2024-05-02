@@ -82,7 +82,8 @@ void main()
         }
         if(nSpell == SPELL_HORSE_PARTY_MOUNT) // Spells
         {
-            if(!GetLocalInt(oTarget, "AI_SPELL_CONTROL"))
+            int nSpellControl = GetLocalInt(oTarget, "AI_SPELL_CONTROL");
+            if(!nSpellControl)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with no Adjustment.");
                 SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 0);
@@ -91,7 +92,7 @@ void main()
                 ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 1);
             }
-            else if(GetLocalInt(oTarget, "AI_SPELL_CONTROL") == 1)
+            else if(nSpellControl == 1)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +5 Adjustment.");
                 SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 5);
@@ -100,7 +101,7 @@ void main()
                 ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 2);
             }
-            else if(GetLocalInt(oTarget, "AI_SPELL_CONTROL") == 2)
+            else if(nSpellControl == 2)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +10 Adjustment.");
                 SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 10);
@@ -109,7 +110,7 @@ void main()
                 ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 3);
             }
-            else if(GetLocalInt(oTarget, "AI_SPELL_CONTROL") == 3)
+            else if(nSpellControl == 3)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +15 Adjustment.");
                 SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 15);
@@ -118,7 +119,7 @@ void main()
                 ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 4);
             }
-            else if(GetLocalInt(oTarget, "AI_SPELL_CONTROL") == 4)
+            else if(nSpellControl == 4)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is not casting spells.");
                 ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, TRUE);
@@ -143,19 +144,46 @@ void main()
         }
         if(nSpell == SPELL_HORSE_ASSIGN_MOUNT) // Loot
         {
-            if(ai_GetAssociateMode(oTarget, AI_MODE_PICKUP_ITEMS))
+            int nLootControl = GetLocalInt(oTarget, "AI_LOOT_CONTROL");
+            if(!nLootControl)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is turning looting off.");
+                SendMessageToPC(oPC, GetName(oTarget) + " will not pickup loot.");
                 ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_ITEMS, FALSE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_GEMS_ITEMS, FALSE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_MAGIC_ITEMS, FALSE);
                 ai_SetAssociateMode(oTarget, AI_MODE_OPEN_LOCKS, FALSE);
                 ai_SetAssociateMode(oTarget, AI_MODE_DISARM_TRAPS, FALSE);
+                SetLocalInt(oTarget, "AI_LOOT_CONTROL", 1);
             }
-            else
+            else if(nLootControl == 1)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is turning looting on.");
+                SendMessageToPC(oPC, GetName(oTarget) + " will pickup all loot.");
                 ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_ITEMS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_GEMS_ITEMS, FALSE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_MAGIC_ITEMS, FALSE);
                 ai_SetAssociateMode(oTarget, AI_MODE_OPEN_LOCKS, TRUE);
                 ai_SetAssociateMode(oTarget, AI_MODE_DISARM_TRAPS, TRUE);
+                SetLocalInt(oTarget, "AI_LOOT_CONTROL", 2);
+            }
+            else if(nLootControl == 2)
+            {
+                SendMessageToPC(oPC, GetName(oTarget) + " will pickup gems, gold, and magic items.");
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_ITEMS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_GEMS_ITEMS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_MAGIC_ITEMS, FALSE);
+                ai_SetAssociateMode(oTarget, AI_MODE_OPEN_LOCKS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_DISARM_TRAPS, TRUE);
+                SetLocalInt(oTarget, "AI_LOOT_CONTROL", 3);
+            }
+            else if(nLootControl == 3)
+            {
+                SendMessageToPC(oPC, GetName(oTarget) + " will pickup gold and magic items only.");
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_ITEMS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_GEMS_ITEMS, FALSE);
+                ai_SetAssociateMode(oTarget, AI_MODE_PICKUP_MAGIC_ITEMS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_OPEN_LOCKS, TRUE);
+                ai_SetAssociateMode(oTarget, AI_MODE_DISARM_TRAPS, TRUE);
+                SetLocalInt(oTarget, "AI_LOOT_CONTROL", 0);
             }
         }
     }

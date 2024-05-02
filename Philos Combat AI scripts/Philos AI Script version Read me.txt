@@ -1,8 +1,15 @@
 Philos AI Combat version 0.1
 
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
 ********** Description **********
+Must be running version v89.8193.37-1 of the game or better.
 These scripts will replace the original neverwinter nights ai for monsters and henchman.
-This folder holds a compiled and uncompiled version of the files with the dialogs and 2da files needed to use.
+This folder holds a compiled and uncompiled version of the files with the dialogs and 2da files needed to use on a server or in a single player module.
 
 ********** Features **********
 Philos AI Combat features for Monsters and Henchman:
@@ -85,6 +92,27 @@ const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
 const int AI_AFTER_COMBAT_WRAP_IN_ROUNDS = 5;
 // Delay between Henchman casting Buff spells.
 const float AI_HENCHMAN_BUFF_DELAY = 0.0;
+//**************************  CONVERSATION CONSTANTS  **************************
+// Player's can tell their associates to ignore enemy associates.
+const int AI_IGNORE_ASSOCIATES_ON = TRUE;
+// Associates with a Taunt skill higher than their level can be told to taunt.
+const int AI_TAUNTING_ON = TRUE;
+// Associates that cast spells can be told to use counterspell.
+const int AI_COUNTERSPELLING_ON = TRUE;
+// Associates with lore skill higher than the master can identify items.
+const int AI_IDENTIFY_ON = TRUE;
+// Associates can be called upon to scout ahead for monsters.
+const int AI_SCOUT_AHEAD_ON = TRUE;
+// A player can open a henchmen's inventory.
+const int AI_OPEN_INVENTORY = TRUE;
+// Allows players to have associates pickup loot.
+const int AI_PICKUP_LOOT = TRUE;
+// Allows players to remove a henchman.
+const int AI_REMOVE_HENCHMAN_ON = TRUE;
+// The distances associates will stay away from the player.
+const float AI_DISTANCE_CLOSE = 0.5;
+const float AI_DISTANCE_MEDIUM = 2.5;
+const float AI_DISTANCE_LONG = 4.5;
 
 ********** How it works **********
 For now this will be a basic understanding of how it works and I will hopefully flesh it out more as time goes on.
@@ -102,5 +130,9 @@ Once a creatures OnPerception script fires and they "see" an enemy then it will 
 First version.
 * Dialog fix so henchman can be talked to before they join the player.
 * Not equiping ranged weapon and then standing motionless - Fixed to make them still attack.
-
-
+* Location spells now actually work from the talent list. 
+* Fixed issue with some combat feats not firing all the time (Knock down, Expertise feats).
+* Fixed some special abilities being added as a talent list that should not be (rage, etc).
+* Fixed some spells being added as a talent list that should not be (light).
+* Fixed a check for Master so the AI could be used on a Player.
+* Fixed picking up loot, many errors and master checks blocking the player from using.

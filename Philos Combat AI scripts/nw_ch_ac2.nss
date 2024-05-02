@@ -10,8 +10,8 @@
   These states can be set at the same time thus a heard event can see the creature.
   Fires when ever one of these states changes from TRUE to FALSE or FALSE to TRUE.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;

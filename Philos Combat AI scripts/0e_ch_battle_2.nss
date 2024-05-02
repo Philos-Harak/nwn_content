@@ -4,8 +4,8 @@
 ////////////////////////////////////////////////////////////////////////////////
   Associate(Summons, Familiars, Companions) on perception script when in combat.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;

@@ -596,7 +596,7 @@ object ai_SetCombatState(object oCreature)
                          " nAllyPower: " + IntToString(nAllyPower / 2));
             }
         }
-        //sDebugText = "";
+        sDebugText = "";
         oObject = GetNextObjectInShape(SHAPE_SPHERE, AI_RANGE_BATTLEFIELD, lLocation, TRUE);
     }
     ai_Debug("0i_combat", "602", "Nearest Enemy: " + GetName(oNearestEnemy));

@@ -59,11 +59,11 @@ void main()
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     if(nInMelee > 0)
     {
+        if(ai_TryImprovedExpertiseFeat(oCreature)) return;
+        if(ai_TryExpertiseFeat(oCreature)) return;
         // Lets get the strongest melee opponent in melee with us.
         oTarget = ai_GetHighestCRTarget(oCreature, AI_RANGE_MELEE);
         if(oTarget == OBJECT_INVALID) oTarget = oNearestEnemy;
-        if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-        if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
         // Use knockdown when appropriate and the target is not immune.
         if(ai_TryKnockdownFeat(oCreature, oTarget)) return;
         if (ai_TryParry (oCreature)) return;

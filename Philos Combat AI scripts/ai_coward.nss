@@ -26,11 +26,11 @@ void main()
     // In Melee combat!
     if(nInMelee > 0)
     {
+        if(ai_TryImprovedExpertiseFeat(oCreature)) return;
+        if(ai_TryExpertiseFeat(oCreature)) return;
         // Lets get the strongest melee opponent in melee with us.
         object oTarget = ai_GetHighestCRTargetForMeleeCombat(oCreature, nInMelee);
         if(oTarget == OBJECT_INVALID) oTarget = oNearestEnemy;
-        if(ai_TryImprovedExpertiseFeat(oCreature, oTarget)) return;
-        if(ai_TryExpertiseFeat(oCreature, oTarget)) return;
         // Use knockdown when appropriate and the target is not immune.
         if(ai_TryKnockdownFeat(oCreature, oTarget)) return;
         if (ai_TryParry(oCreature)) return;
