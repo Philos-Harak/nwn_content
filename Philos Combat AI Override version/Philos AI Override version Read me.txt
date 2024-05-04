@@ -1,5 +1,11 @@
 Philos AI Combat version 0.1
 
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
 ********** Description **********
 These scripts will replace the original neverwinter nights ai for monsters and henchman.
 This folder holds a compiled version of the files with the dialogs and a 2da files needed to use.
@@ -7,7 +13,7 @@ This folder holds a compiled version of the files with the dialogs and a 2da fil
 ********** Installation **********
 Must be running version v89.8193.37-1 of the game or better.
 To use the AI place these files into the Override folder.
-If you do not want to use the PC AI then you can remove the x3_s3_horse.ncs and x3_s3_horse.nss files.
+If you do not want to use the PC AI then you can remove the x3_s3_horse.* and xx_pc_* files.
 
 ********** Features **********
 Philos AI Combat features for Monsters and Henchman:

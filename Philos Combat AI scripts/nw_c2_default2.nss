@@ -33,7 +33,7 @@ void main()
     // No need to look or hear things if we are busy or disabled.
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     object oLastPerceived = GetLastPerceived();
-    if(GetIsFriend(oLastPerceived) || GetIsDead(oLastPerceived)) return;
+    if(!GetIsEnemy(oLastPerceived) || GetIsDead(oLastPerceived)) return;
     // All code below assumes the perceived creature is an enemy and is alive!
     // **************************** ENEMY SEEN *********************************
     if(GetLastPerceptionSeen())

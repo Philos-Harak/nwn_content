@@ -55,7 +55,7 @@ void ai_Debug(string sScriptName, string sLineNumber, string sMessage)
     sMessage = ai_StripColorCodes(sMessage);
     WriteTimestampedLogEntry(sMessage);
     //if(GetLocalInt(OBJECT_SELF, "AI_DEBUG")) WriteTimestampedLogEntry(sMessage);
-    //if(GetName(OBJECT_SELF) == "") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Boddyknock Glinckle") WriteTimestampedLogEntry(sMessage);
 }
 void ai_Counter_Start()
 {

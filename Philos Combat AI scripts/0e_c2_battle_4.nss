@@ -41,7 +41,7 @@ void ai_ReactToAlly(object oSpeaker, object oCreature)
 }
 void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch)
 {
-    if(ai_GetIsCharacter(oSpeaker) || !GetIsFriend(oSpeaker, oCreature)) return;
+    if(ai_GetIsCharacter(oSpeaker) || GetIsEnemy(oSpeaker, oCreature)) return;
     if(nMatch == AI_ALLY_IS_WOUNDED)
     {
         //ai_Debug("nw_c2_default4", "47", GetName(oCreature) + " heard " +

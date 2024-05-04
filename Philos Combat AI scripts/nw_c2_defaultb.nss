@@ -6,8 +6,8 @@
   Fires when oCreature becomes the target of a spell via SignalEvent.
   Fires when a healing kit is used on a creature.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;

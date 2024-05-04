@@ -40,8 +40,6 @@ void main()
     {
         AdjustAlignment(oKiller, ALIGNMENT_EVIL, 5);
     }
-    // Call to allies to let them know we're dead
-    SpeakString("AI_I_AM_DEAD", TALKVOLUME_SILENT_TALK);
     // NOTE: the OnDeath user-defined event does not
     // trigger reliably and should probably be removed
     if(GetSpawnInCondition(NW_FLAG_DEATH_EVENT))

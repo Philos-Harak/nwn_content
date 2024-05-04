@@ -31,7 +31,7 @@ const int AI_BUFF_MONSTER_CASTERS = TRUE;
 // Should monsters cast summons spells when prebuffing?
 const int AI_PREBUFF_SUMMONS = TRUE;
 // Should monsters use potions to prebuff before combat?
-const int AI_BUFF_MONSTER_POTIONS = TRUE;
+const int AI_BUFF_MONSTER_POTIONS = FALSE;
 // Should the AI allow the use of Use Magic Device?
 const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
 // After combat the combat heartbeat script will run for AI_AFTER_COMBAT_WRAP_IN_ROUNDS.
@@ -42,7 +42,7 @@ const float AI_HENCHMAN_BUFF_DELAY = 0.0;
 // Variable to change the difficulty so a player can adjust spell usage.
 const string AI_DIFFICULTY_ADJUSTMENT = "AI_DIFFICULTY_ADJUSTMENT";
 // Variable that can be change the distance for looting checks.
-const float AI_LOOT_DISTANCE = 20.0f;
+const float AI_LOOT_DISTANCE = 35.0f;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;

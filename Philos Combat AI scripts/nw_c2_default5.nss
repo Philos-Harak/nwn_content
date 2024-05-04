@@ -22,6 +22,7 @@ void main()
         return;
     }
     // We only inform others if attacked when not busy, not disabled & not in combat.
+    //ai_Debug("nw_c2_default5", "25", "Tell my allies I've been attacked!");
     SetLocalObject (oCreature, AI_MY_TARGET, oAttacker);
     SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
     // The only way to get here is to not be in combat thus we have not

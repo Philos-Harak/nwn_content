@@ -360,19 +360,25 @@ void ai_ScoutAhead(object oCreature)
         ActionMoveToObject(oSpawnPoint, TRUE, AI_RANGE_CLOSE);
     }
 }
-void ai_FindTheEnemy(object oCreature, object oTarget)
+void ai_FindTheEnemy(object oCreature, object oCommander, object oTarget)
 {
-    float fDistance = GetDistanceBetween(oCreature, oTarget);
-    if(fDistance < AI_RANGE_PERCEPTION && LineOfSightObject(oCreature, oTarget))
+    ai_Debug("0i_associates", "368", " Distance: " + FloatToString(GetDistanceBetween(oCreature, oTarget), 0, 2));
+    if(LineOfSightObject(oCreature, oCommander))
     {
-        ai_Debug("0i_associate", "368", "Searching for " + GetName(oTarget));
-        SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
-        if(fDistance > AI_RANGE_MELEE)
+        float fDistance = GetDistanceBetween(oCreature, oTarget);
+        if(fDistance > AI_RANGE_CLOSE)
         {
-           ai_Debug("0i_associate", "372", "Moving towards " + GetName(oTarget));
-           ActionMoveToObject(oTarget, TRUE, AI_RANGE_MELEE);
+            ai_Debug("0i_associates", "374", "Moving towards " + GetName(oTarget));
+            ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE - 0.5f);
+            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
         }
-        SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        else
+        {
+            ai_Debug("0i_associates", "379", "Searching for " + GetName(oTarget));
+            SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
+            ActionMoveToObject(oTarget, TRUE, AI_RANGE_MELEE);
+            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        }
     }
 }
 void ai_ReactToAssociate(object oCreature, object oCommander)
@@ -388,7 +394,7 @@ void ai_ReactToAssociate(object oCreature, object oCommander)
         else ai_DoAssociateCombatRound(oCreature);
         return;
     }
-    ai_FindTheEnemy(oCreature, oTarget);
+    ai_FindTheEnemy(oCreature, oCommander, oTarget);
 }
 void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand)
 {
@@ -486,7 +492,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             {
                 object oLastAttacker = GetLastHostileActor(oMaster);
                 if(oLastAttacker != OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature, oLastAttacker);
-                else ai_FindTheEnemy(oCreature, oCommander);
+                else ai_FindTheEnemy(oCreature, oCommander, oCommander);
             }
             ai_SaveAssociateConversationData(oMaster, oCreature);
             return;
@@ -559,7 +565,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
     if(!ai_GetIsBusy(oCreature))
     {
         // Respond to shouts from friendly non-PCs only.
-        if (!ai_GetIsCharacter(oCommander) && GetIsFriend(oCommander, oCreature))
+        if (!ai_GetIsCharacter(oCommander) && !GetIsEnemy(oCommander, oCreature))
         {
             //if(nCommand == AI_ALLY_IS_WOUNDED) ai_TryHealingTalentsOutOfCombat(oCreature, oCommander);
             // A friend sees an enemy. If we are not in combat lets seek them out too!
@@ -595,7 +601,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                 if(ai_CanIAttack(oCreature))
                 {
                     if(ai_GetIsInCombat(oCreature)) ai_DoAssociateCombatRound(oCreature);
-                    else ai_FindTheEnemy(oCreature, oCommander);
+                    else ai_FindTheEnemy(oCreature, oCommander, oCommander);
                 }
                 return;
             }

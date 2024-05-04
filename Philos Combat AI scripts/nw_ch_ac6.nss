@@ -10,7 +10,6 @@
   Fires when a weapon damages a oCreature, but not if resisted.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_associates"
-
 void main()
 {
     object oCreature = OBJECT_SELF;

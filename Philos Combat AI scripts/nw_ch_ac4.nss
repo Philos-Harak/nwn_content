@@ -7,7 +7,8 @@
   Fires when oCreature hears a shout from another creature.
   If SetListening is FALSE then oCreature will not "hear" anything.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 #include "nw_inc_gff"
 void main()
 {
@@ -21,6 +22,7 @@ void main()
     if(nMatch == ASSOCIATE_COMMAND_MASTERUNDERATTACK) return;
     // If we are disabled then we can't listen or talk, Busy is checked in ai_SelectAssociateCommand().
     if(ai_Disabled(oCreature) || GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
+    // Some commands override being busy so we check in ai_SelectAssociateCommand.
     if(nMatch != -1) ai_SelectAssociateCommand(oCreature, GetLastSpeaker(), nMatch);
     else
     {
@@ -37,7 +39,5 @@ void main()
             }
         }
     }
-    // Some commands override being busy so we check in ai_SelectAssociateCommand.
-
 }
 

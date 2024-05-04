@@ -7,9 +7,14 @@ clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, 
 Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
 
 ********** Description **********
+These scripts will replace the original neverwinter nights ai for monsters and henchman.
+This folder holds a compiled version of the files with the dialogs and a 2da files needed to use.
+
+********** Installation **********
 Must be running version v89.8193.37-1 of the game or better.
 These scripts will replace the original neverwinter nights ai for monsters and henchman.
 This folder holds a compiled and uncompiled version of the files with the dialogs and 2da files needed to use on a server or in a single player module.
+Place all the files in your module, except the 2da file. Place it in your hak.
 
 ********** Features **********
 Philos AI Combat features for Monsters and Henchman:
@@ -136,3 +141,4 @@ First version.
 * Fixed some spells being added as a talent list that should not be (light).
 * Fixed a check for Master so the AI could be used on a Player.
 * Fixed picking up loot, many errors and master checks blocking the player from using.
+* Improved enemy detection when attacked for monsters and henchman.

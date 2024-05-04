@@ -35,20 +35,27 @@ void ai_ReactToAlly(object oCreature, object oSpeaker)
 {
     // Check our allies target.
     object oTarget = GetLocalObject(oSpeaker, AI_MY_TARGET);
-    if(GetDistanceBetween(oCreature, oTarget) < AI_RANGE_PERCEPTION && LineOfSightObject(oCreature, oTarget))
+    //ai_Debug("nw_c2_default4", "38", " Distance: " + FloatToString(GetDistanceBetween(oCreature, oTarget), 0, 2));
+    if(LineOfSightObject(oCreature, oSpeaker))
     {
-        //ai_Debug("nw_c2_default4", "40", "Searching for " + GetName(oTarget));
-        SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
-    }
-    else
-    {
-        //ai_Debug("nw_c2_default4", "45", "Moving towards " + GetName(oTarget));
-        ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE);
+        float fDistance = GetDistanceBetween(oCreature, oTarget);
+        if(fDistance > AI_RANGE_CLOSE)
+        {
+            //ai_Debug("nw_c2_default4", "44", "Moving towards " + GetName(oTarget));
+            ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE - 0.5f);
+            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        }
+        else
+        {
+            //ai_Debug("nw_c2_default4", "49", "Searching for " + GetName(oTarget));
+            SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
+            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        }
     }
 }
 void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch)
 {
-    if(ai_GetIsCharacter(oSpeaker) || !GetIsFriend(oSpeaker, oCreature)) return;
+    if(ai_GetIsCharacter(oSpeaker) || GetIsEnemy(oSpeaker, oCreature)) return;
     if(nMatch == AI_ALLY_IS_WOUNDED)
     {
         //ai_Debug("nw_c2_default4", "54", GetName(oCreature) + " heard " +
@@ -57,14 +64,14 @@ void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch)
     }
     else if(nMatch == AI_ALLY_SEES_AN_ENEMY || nMatch == AI_ALLY_HEARD_AN_ENEMY)
     {
-        //ai_Debug("nw_c2_default4", "60", GetName(oCreature) + " heard " +
+        //ai_Debug("nw_c2_default4", "62", GetName(oCreature) + " heard " +
         //         GetName(oSpeaker) + " has seen an enemy!");
         ai_ReactToAlly(oCreature, oSpeaker);
     }
     else if(nMatch == AI_ALLY_ATKED_BY_WEAPON ||
             nMatch == AI_ALLY_ATKED_BY_SPELL)
     {
-        //ai_Debug("nw_c2_default4", "67", GetName(oCreature) + " heard " +
+        //ai_Debug("nw_c2_default4", "69", GetName(oCreature) + " heard " +
         //         GetName(oSpeaker) + " has been attacked by " +
         //         GetName(GetLocalObject(oSpeaker, AI_MY_TARGET)) + "!");
         ai_ReactToAlly(oCreature, oSpeaker);

@@ -79,13 +79,13 @@ int ai_CompareLastAction(object oCreature, int nAction)
 }
 void ai_SetMonsterListeningPatterns(object oCreature)
 {
-    SetListening(oCreature, TRUE);
     SetListenPattern(oCreature, AI_I_SEE_AN_ENEMY, AI_ALLY_SEES_AN_ENEMY);
     SetListenPattern(oCreature, AI_I_HEARD_AN_ENEMY, AI_ALLY_HEARD_AN_ENEMY);
     SetListenPattern(oCreature, AI_ATKED_BY_WEAPON, AI_ALLY_ATKED_BY_WEAPON);
     SetListenPattern(oCreature, AI_ATKED_BY_SPELL, AI_ALLY_ATKED_BY_SPELL);
     SetListenPattern(oCreature, AI_I_AM_WOUNDED, AI_ALLY_IS_WOUNDED);
     SetListenPattern(oCreature, AI_I_AM_DEAD, AI_ALLY_IS_DEAD);
+    SetListening(oCreature, TRUE);
 }
 int ai_IsNonliving(int nRacialType)
 {

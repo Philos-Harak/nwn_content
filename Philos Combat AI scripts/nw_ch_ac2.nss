@@ -10,8 +10,8 @@
   These states can be set at the same time thus a heard event can see the creature.
   Fires when ever one of these states changes from TRUE to FALSE or FALSE to TRUE.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
+//#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -40,7 +40,7 @@ void main()
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
         //ai_Debug("nw_c2_default2", "40", GetName(oCreature) + " is starting combat!");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
-        SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
+        SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_SHOUT);
         DeleteLocalInt(oCreature, AI_AM_I_SEARCHING);
         if(ai_CanIAttack(oCreature))
         {
@@ -57,7 +57,7 @@ void main()
         if(!GetObjectSeen(oLastPerceived))
         {
             SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
-            SpeakString(AI_I_HEARD_AN_ENEMY, TALKVOLUME_SILENT_TALK);
+            SpeakString(AI_I_HEARD_AN_ENEMY, TALKVOLUME_SILENT_SHOUT);
             ai_SearchForInvisibleCreature(oCreature);
         }
     }

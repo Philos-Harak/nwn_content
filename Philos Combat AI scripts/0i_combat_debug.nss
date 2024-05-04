@@ -385,7 +385,7 @@ int ai_GetNumOfAlliesInGroup(object oCreature, float fDistance = AI_RANGE_MELEE)
     object oAlly = GetFirstObjectInShape(SHAPE_SPHERE, fDistance, lLocation);
     while(oAlly != OBJECT_INVALID)
     {
-        if(GetIsFriend(oAlly) && oAlly != oCreature && !GetIsDead(oAlly))
+        if(!GetIsEnemy(oAlly) && oAlly != oCreature && !GetIsDead(oAlly))
         {
             nCnt++;
         }

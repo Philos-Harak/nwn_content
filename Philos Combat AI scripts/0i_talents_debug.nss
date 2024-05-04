@@ -1240,7 +1240,7 @@ int ai_TryRangedSneakAttack(object oCreature, int nInMelee)
 }
 int ai_TryMeleeTalents(object oCreature, object oTarget)
 {
-    ai_Debug("0i_talents", "1254", "Check category mele talents!");
+    ai_Debug("0i_talents", "1254", "Check category melee talents!");
     talent tUse = GetCreatureTalentBest(TALENT_CATEGORY_HARMFUL_MELEE, 20, oCreature);
     if(!GetIsTalentValid(tUse)) return FALSE;
     int nId = GetIdFromTalent(tUse);
