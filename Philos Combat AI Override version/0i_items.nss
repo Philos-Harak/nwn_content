@@ -6,7 +6,6 @@ Programmer: Philos
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_main"
 #include "0i_messages"
-#include "0i_states_cond"
 // Returns TRUE if oItem is a weapon.
 int ai_GetIsWeapon(object oItem);
 // Returns TRUE if oItem is a melee weapon.

@@ -99,7 +99,9 @@ int ai_IsNonliving(int nRacialType)
 }
 int ai_GetIsInCombat(object oCreature)
 {
-    return GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
+    if(GetLocalInt(oCreature, AI_ENEMY_NUMBERS) &&
+       ai_IsInCombatRound(oCreature, 12)) return TRUE;
+    return FALSE;
 }
 void ai_SetCombatRound(object oCreature)
 {
@@ -160,7 +162,7 @@ int ai_GetIsBusy(object oCreature)
         case ACTION_SETTRAP : return TRUE;
         case ACTION_MOVETOPOINT :
         {
-            if(ai_GetIsInCombat(oCreature)) return TRUE;
+            return ai_GetIsInCombat(oCreature);
         }
     }
     return FALSE;

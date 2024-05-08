@@ -27,9 +27,9 @@ const int AI_SUMMON_COMPANIONS = FALSE;
 // Summons, familiars, and companions are permanent and don't disappear when the caster dies.
 const int AI_PERMANENT_ASSOCIATES = FALSE;
 // Should all monsters prebuff before combat?
-const int AI_BUFF_MONSTER_CASTERS = TRUE;
+const int AI_BUFF_MONSTER_CASTERS = FALSE;
 // Should monsters cast summons spells when prebuffing?
-const int AI_PREBUFF_SUMMONS = TRUE;
+const int AI_PREBUFF_SUMMONS = FALSE;
 // Should monsters use potions to prebuff before combat?
 const int AI_BUFF_MONSTER_POTIONS = FALSE;
 // Should the AI allow the use of Use Magic Device?
@@ -42,7 +42,14 @@ const float AI_HENCHMAN_BUFF_DELAY = 0.0;
 // Variable to change the difficulty so a player can adjust spell usage.
 const string AI_DIFFICULTY_ADJUSTMENT = "AI_DIFFICULTY_ADJUSTMENT";
 // Variable that can be change the distance for looting checks.
-const float AI_LOOT_DISTANCE = 35.0f;
+const float AI_LOOT_DISTANCE = 15.0f;
+// Variable that can be change the distance enemies will come and attack after
+// hearing an ally see/hear an enemy. Reduce for a more original experience.
+const float AI_MAX_LISTENING_DISTANCE = 35.0f;
+// Taunts cool down time before the AI attemps another Taunt.
+const int AI_TAUNT_COOLDOWN = 3;
+// Animal Empathy cool down time before the AI attemps another check.
+const int AI_EMPATHY_COOLDOWN = 3;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;

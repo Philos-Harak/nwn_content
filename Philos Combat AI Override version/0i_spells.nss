@@ -62,6 +62,9 @@ int ai_IsNotSilenced(object oCreature, int nSpell);
 // This will only cast the spell if oTarget DOES NOT already have the spell
 // effect, and the caster has the spell ready.
 int ai_TryToCastSpell(object oCaster, int nSpell, object oTarget);
+// In "Buff_Target" column the value of 0 in the "ai_spells.2da" references the Caster.
+// In "Buff_Target" column this is value 1-6(STR, DEX, CON, INT, WIS, CHA) in the "ai_spells.2da".
+object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbilityScore, string sBuffGroup, string sTargetType = "AI_BUFF_TARGET_");
 // Returns TRUE if the spell is cast.
 void ai_CastMemorizedSpell(object oCaster, int nClass, int nSpellLevel, int nSpellSlot, object oTarget, float fDelay, object oPC = OBJECT_INVALID);
 // Returns TRUE if the spell is cast.
@@ -520,19 +523,23 @@ void ai_ClearSpellsCastGroups(object oCreature)
 }
 // In "Buff_Target" column the value of 0 in the "ai_spells.2da" references the Caster.
 // In "Buff_Target" column this is value 1-6(STR, DEX, CON, INT, WIS, CHA) in the "ai_spells.2da".
-object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbilityScore, string sBuffGroup)
+object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbilityScore, string sBuffGroup, string sTargetType = "AI_BUFF_TARGET_")
 {
     int nCntr = 1, nAB, nHighAB, nTarget;
-    object oTarget = GetLocalObject(oCaster, "AI_BUFF_TARGET_" + IntToString(nCntr));
+    object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
+    //ai_Debug("0i_spells", "527", "oTarget: " + GetName(oTarget));
     while (nCntr < 9)
     {
         if(oTarget != OBJECT_INVALID && !GetHasSpellEffect(nSpell, oTarget))
         {
             nAB = GetAbilityScore(oTarget, nAbilityScore);
-            if(nAB > nHighAB) {nHighAB = nAB; nTarget = nCntr; }
+            if(nAB > nHighAB &&
+              // We don't want to buff the strength for someone using weapon finesse!
+              (nAbilityScore != ABILITY_STRENGTH || !GetHasFeat(FEAT_WEAPON_FINESSE, oTarget)))
+            {nHighAB = nAB; nTarget = nCntr; }
         }
         nCntr++;
-        oTarget = GetLocalObject(oCaster, "AI_BUFF_TARGET_" + IntToString(nCntr));
+        oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     }
     if(nTarget == 0) return OBJECT_INVALID;
     else return GetLocalObject(oCaster, "AI_BUFF_TARGET_" + IntToString(nTarget));
@@ -1104,7 +1111,10 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
     // Search the spell range + the distance to the closest enemy - 7.5 meters).
     // This will keep the caster from running up on an enemy to cast.
     // But allow them to move up some if needed.
-    float fRange = ai_GetSpellRange(nSpell) + GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 7.5;
+    float fRange = ai_GetSpellRange(nSpell);
+    float fEnemyDistance = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST));
+    if(fRange > fEnemyDistance) fRange = fRange + fEnemyDistance - 7.5;
+    else fRange = fEnemyDistance + (fRange - 7.5);
     if(fRange > AI_RANGE_BATTLEFIELD) return AI_RANGE_BATTLEFIELD;
     return fRange;
 }

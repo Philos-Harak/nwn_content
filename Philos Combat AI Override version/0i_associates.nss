@@ -8,8 +8,6 @@
 #include "0i_actions"
 //#include "0i_actions_debug"
 
-// Chooses an action while in combat and executes it for oCreature.
-void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID);
 // Return TRUE if the associate can attack based on current modes and actions.
 int ai_CanIAttack(object oAssociate);
 // Returns the nearest locked object from oMaster.
@@ -26,10 +24,6 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked);
 int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bShout = FALSE);
 // Returns TRUE if the caller casts Knock on oLocked object.
 int ai_AttempToCastKnockSpell(object oCreature, object oLocked);
-// Returns TRUE if the caller's distance is greater than fDistance from their
-// master. Unless they are cowardly or in stand ground mode.
-// This will also force the caller to move towards their master.
-int ai_StayCloseToMaster(object oCreature, float fDistance = AI_RANGE_PERCEPTION);
 // Returns TRUE if oCreature can hear or see oEnemy. Uses skills to check.
 int ai_PerceiveEnemy(object oCreature, object oEnemy);
 // oCreature will move into the area looking for creatures.
@@ -37,8 +31,6 @@ void ai_ScoutAhead(object oCreature);
 // Selects the correct response base on nCommand from oCommander.
 // These are given from either a radial menu option or voice command.
 void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand);
-// Return the distance that is set for how close we should follow our master.
-float ai_GetFollowDistance(object oCreature);
 // Set nAction for the caller to pass to their associates. i.e. For henchmans summons.
 void ai_PassActionToAssociates(object oCreature, int nAction, int bStatus = TRUE);
 // Set oCreature's ai scripts based on its first class or the variable "AI_DEFAULT_SCRIPT".
@@ -66,34 +58,6 @@ void ai_OnAssociateSpawn(object oCreature);
 // Add to nw_ch_aca OnRested event script of henchman.
 void ai_OnRested(object oCreature);
 
-void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID)
-{
-    if(ai_StayCloseToMaster(oCreature)) return;
-    object oNearestEnemy = ai_SetCombatState (oCreature);
-    if (oNearestEnemy != OBJECT_INVALID || oTarget != OBJECT_INVALID)
-    {
-        if(GetActionMode(oCreature, ACTION_MODE_DETECT) && !GetHasFeat(FEAT_KEEN_SENSE))
-            SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
-        ai_SetCombatRound(oCreature);
-        string sAI = GetLocalString(oCreature, AI_COMBAT_SCRIPT);
-        if(sAI == "") sAI = "ai_a_default";
-        //ai_Debug("0i_actions", "80", "********** " + GetName (oCreature) + " **********");
-        //ai_Debug("0i_actions", "81", "********** " + sAI + " **********");
-        if(oTarget != OBJECT_INVALID) SetLocalObject(oCreature, "AI_TARGET", oTarget);
-        // We clear actions here and setup multiple actions to the queue for oCreature.
-        ai_ClearCreatureActions(oCreature);
-        //ai_Counter_Start();
-        ExecuteScript(sAI, oCreature);
-        //ai_Counter_End(GetName(oCreature) + " is ending round.");
-        return;
-    }
-    // Check to see if we just didn't see the enemies.
-    if (GetLocalInt(oCreature, AI_ENEMY_NUMBERS) &&
-        ai_SearchForInvisibleCreature(oCreature)) return;
-    // We have exhausted our check for an enemy. Combat is over.
-    ai_ClearCombatState(oCreature);
-    //ai_Debug("0i_actions", "95", GetName (OBJECT_SELF) + "'s combat has ended!");
-}
 int ai_CanIAttack(object oAssociate)
 {
     int nAction = GetCurrentAction(oAssociate);
@@ -282,17 +246,6 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
         return TRUE;
     }
     return FALSE;
-}
-int ai_StayCloseToMaster(object oCreature, float fDistance = AI_RANGE_PERCEPTION)
-{
-    if(ai_GetAssociateMode(oCreature, AI_MODE_STAND_GROUND) ||
-        GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward") return FALSE;
-    object oMaster = GetMaster(oCreature);
-    if(GetDistanceBetween(oMaster, oCreature) < fDistance) return FALSE;
-    ai_ClearCreatureActions(oCreature);
-    //ai_Debug("0i_associates", "293", "We are too far away! Move to our master.");
-    ActionMoveToObject(oMaster, TRUE, ai_GetFollowDistance(oCreature));
-    return TRUE;
 }
 int ai_PerceiveEnemy(object oCreature, object oEnemy)
 {
@@ -717,15 +670,6 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             }
         }
     }
-}
-float ai_GetFollowDistance(object oCreature)
-{
-    // Also check for size of creature and adjust based on that.
-    float fDistance = StringToFloat(Get2DAString("appearance", "PREFATCKDIST", GetAppearanceType(oCreature)));
-    if(ai_GetAssociateMode(oCreature, AI_MODE_DISTANCE_CLOSE)) return fDistance + AI_DISTANCE_CLOSE;
-    else if(ai_GetAssociateMode(oCreature, AI_MODE_DISTANCE_MEDIUM)) return fDistance + AI_DISTANCE_MEDIUM;
-    else if(ai_GetAssociateMode(oCreature, AI_MODE_DISTANCE_LONG)) return fDistance + AI_DISTANCE_LONG;
-    return fDistance + 0.5f;
 }
 void ai_PassActionToAssociates(object oCreature, int nAction, int bStatus = TRUE)
 {

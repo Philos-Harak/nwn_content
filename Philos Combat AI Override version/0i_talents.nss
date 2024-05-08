@@ -4,7 +4,6 @@
 ////////////////////////////////////////////////////////////////////////////////
     Fuctions to use a category of skills, feats, spells, or items.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_states_cond"
 #include "0i_combat"
 // *****************************************************************************
 // ************************* Try * Defensive Talents ***************************
@@ -73,16 +72,6 @@ int ai_TrySneakAttack(object oCreature, int nInMelee, int bAlwaysAtk = TRUE);
 int ai_TryRangedSneakAttack(object oCreature, int nInMelee);
 // Returns TRUE if oCreature uses a harmful melee talent.
 int ai_TryMeleeTalents(object oCreature, object oTarget);
-// Targets the nearest creature oCreature it can see.
-// This checks all physcal attack talents starting with ranged attacks then melee.
-// Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
-// If no talents are used it will do either a ranged attack or a melee attack.
-void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE);
-// Targets the weakest creature oCreature can see.
-// This checks all physcal attack talents starting with ranged attacks then melee.
-// Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
-// If no talents are used it will do either a ranged attack or a melee attack.
-void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAtk = TRUE);
 // *****************************************************************************
 // ******************************* Try * Skills ********************************
 // *****************************************************************************
@@ -571,9 +560,17 @@ int ai_TryParry(object oCreature)
 }
 int ai_TryTaunt(object oCreature, object oTarget)
 {
-    // Is this target already taunted?
-    //ai_Debug("0i_talents", "575", "Has Taunt Effect? " + IntToString(ai_GetHasEffectType(oTarget, EFFECT_TYPE_TAUNT)));
+    int nCoolDown = GetLocalInt(oCreature, "AI_TAUNT_COOLDOWN");
+    //ai_Debug("0i_talents", "575", "Has Taunt Effect? " +
+    //           IntToString(ai_GetHasEffectType(oTarget, EFFECT_TYPE_TAUNT)) +
+    //           " Cooldown: " + IntToString(nCoolDown));
+    if(nCoolDown > 0)
+    {
+        SetLocalInt(oCreature, "AI_TAUNT_COOLDOWN", --nCoolDown);
+        return FALSE;
+    }
     if(!ai_GetHasEffectType(oTarget, EFFECT_TYPE_TAUNT)) return FALSE;
+    SetLocalInt(oCreature, "AI_TAUNT_COOLDOWN", AI_TAUNT_COOLDOWN);
     // Check to see if we have a good chance for it to work.
     int nTauntRnk = GetSkillRank(SKILL_TAUNT, oCreature);
     //ai_Debug("0i_talents", "579", "Check Taunt: TauntRnk: " + IntToString(nTauntRnk) +
@@ -588,9 +585,20 @@ int ai_TryTaunt(object oCreature, object oTarget)
 }
 int ai_TryAnimalEmpathy(object oCreature, object oTarget)
 {
-    // Is this target already taunted?
-    //ai_Debug("0i_talents", "592", "Has Taunt Effect? " + IntToString(ai_GetHasEffectType(oTarget, EFFECT_TYPE_TAUNT)));
-    if(ai_GetHasEffectType(oTarget, EFFECT_TYPE_DOMINATED)) return FALSE;
+    int nCoolDown = GetLocalInt(oCreature, "AI_EMPATHY_COOLDOWN");
+    //ai_Debug("0i_talents", "575", "Has Dominate Effect? " +
+    //           IntToString(ai_GetHasEffectType(oTarget, EFFECT_TYPE_DOMINATED)) +
+    //           " Cooldown: " + IntToString(nCoolDown));
+    if(nCoolDown > 0)
+    {
+        SetLocalInt(oCreature, "AI_EMPATHY_COOLDOWN", --nCoolDown);
+        return FALSE;
+    }
+    SetLocalInt(oCreature, "AI_EMPATHY_COOLDOWN", AI_EMPATHY_COOLDOWN);
+    if(ai_GetHasEffectType(oTarget, EFFECT_TYPE_DOMINATED) ||
+       GetIsImmune(oTarget, IMMUNITY_TYPE_MIND_SPELLS) ||
+       GetIsImmune(oTarget, IMMUNITY_TYPE_DOMINATE) ||
+       GetAssociateType(oTarget) != ASSOCIATE_TYPE_NONE) return FALSE;
     // Get the race of the target, it only works on Animals, Beasts, and Magical Beasts.
     int nRace = GetRacialType(oTarget);
     int nDC;
@@ -777,7 +785,7 @@ int ai_TryRapidShotFeat(object oCreature, object oTarget, int nInMelee)
     if(!GetHasFeat(FEAT_RAPID_SHOT, oCreature)) return FALSE;
     // Rapidshot has a -4 atk adjustment.
     if(!ai_CanHitOpponent(oCreature, oTarget, 4)) return FALSE;
-    ai_UseFeatAttackMode(oCreature, ACTION_MODE_RAPID_SHOT, AI_LAST_ACTION_RANGED_ATK, oTarget, TRUE);
+    ai_UseFeatAttackMode(oCreature, ACTION_MODE_RAPID_SHOT, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
     return TRUE;
 }
 int ai_TrySapFeat(object oCreature, object oTarget)
@@ -910,7 +918,7 @@ void ai_ActionAttack(object oCreature, int nAction, object oTarget, int nInMelee
     ai_SetLastAction(oCreature, nAction);
     // If we are doing a ranged attack then check our position on the battlefield.
     if(nAction == AI_LAST_ACTION_RANGED_ATK) ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nAction);
-    //ai_Debug("0i_talents", "913", GetName(oCreature) + " is attacking(" + IntToString(nAction) +
+    //ai_Debug("0i_talents", "926", GetName(oCreature) + " is attacking(" + IntToString(nAction) +
     //         ") " + GetName(oTarget) + " Current Action: " + IntToString(GetCurrentAction(oCreature)) +
     //         " Attacked Target: " + GetName(ai_GetAttackedTarget(oCreature)));
     ActionAttack(oTarget, bPassive);
@@ -1235,7 +1243,7 @@ int ai_TryRangedSneakAttack(object oCreature, int nInMelee)
     if(oTarget == OBJECT_INVALID) return FALSE;
     // If we have a target and are not within 30' then move within 30'.
     if(GetDistanceToObject(oTarget) > AI_RANGE_CLOSE) ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE);
-    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
+    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
     return TRUE;
 }
 int ai_TryMeleeTalents(object oCreature, object oTarget)
@@ -1258,87 +1266,6 @@ int ai_TryMeleeTalents(object oCreature, object oTarget)
     else if(nId == FEAT_DISARM) { if(ai_TryDisarmFeat(oCreature, oTarget)) return TRUE; }
     else if(nId == FEAT_KI_DAMAGE) { if(ai_TryKiDamageFeat(oCreature, oTarget)) return TRUE; }
     return FALSE;
-}
-void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
-{
-    talent tUse;
-    object oTarget;
-    //ai_Debug("0i_talents", "1275", "Check for ranged attack on nearest enemy!");
-    // ************************** Ranged feat attacks **************************
-    if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
-    {
-        if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-        // Lets pick off the nearest targets first.
-        if(!nInMelee)
-        {
-            if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature);
-        }
-        else
-        {
-            if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
-        }
-        if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-        //ai_Debug("0i_talents", "1294", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
-    }
-    //ai_Debug("0i_talents", "1298", "Check for melee attack on nearest enemy!");
-    // ************************** Melee feat attacks *************************
-    if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature);
-    if(ai_TryWhirlwindFeat(oCreature)) return;
-    if(ai_TrySneakAttack(oCreature, nInMelee, bAlwaysAtk)) return;
-    if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);
-    // If we don't find a target then we don't want to fight anyone!
-    if(oTarget == OBJECT_INVALID) return;
-    if(ai_TryMeleeTalents(oCreature, oTarget)) return;
-    //ai_Debug("0i_talents", "1311", "Do melee attack against nearest: " + GetName(oTarget) + "!");
-    ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
-}
-void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
-{
-   //ai_Debug("0i_talents", "1316", "Check for ranged attack on weakest enemy!");
-    object oTarget;
-    // ************************** Ranged feat attacks **************************
-    if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
-       !ai_GetAssociateMode(oCreature, AI_MODE_STOP_RANGED) &&
-       ai_CanIUseRangedWeapon(oCreature, nInMelee))
-    {
-        if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-        // Lets pick off the weaker targets.
-        if(!nInMelee)
-        {
-            if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
-        }
-        else
-        {
-            if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
-        }
-        if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-        //ai_Debug("0i_talents", "1338", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
-    }
-    //ai_Debug("0i_talents", "1342", "Check for melee attack on weakest enemy!");
-    // ************************** Melee feat attacks *************************
-    if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature);
-    if(ai_TrySneakAttack(oCreature, nInMelee, bAlwaysAtk)) return;
-    if(ai_TryWhirlwindFeat(oCreature)) return;
-    if(ai_GetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);
-    if(ai_TryMeleeTalents(oCreature, oTarget)) return;
-    //ai_Debug("0i_talents", "1351", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
-    ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
 }
 // *****************************************************************************
 // *****************************  TALENT SCRIPTS  ******************************
@@ -1688,6 +1615,24 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEqui
         //ai_Debug("0i_talents", "1700", "ItempropertyType(15): " + IntToString(GetItemPropertyType(ipProp)));
         if(GetItemPropertyType(ipProp) == ITEM_PROPERTY_CAST_SPELL)
         {
+            // Get how they use the item (charges or uses per day).
+            int nUses = GetItemPropertyCostTableValue(ipProp);
+            if(nUses > 1 && nUses < 7)
+            {
+                int nCharges = GetItemCharges(oItem);
+                //ai_Debug("0i_talents", "1715", "Item charges: " + IntToString(nCharges));
+                if(nUses == 6 && nCharges < 1 || nUses == 5 && nCharges < 3 ||
+                   nUses == 4 && nCharges < 5 || nUses == 3 && nCharges < 7 ||
+                   nUses == 2 && nCharges < 9) return;
+            }
+            else if(nUses > 7 && nUses < 13)
+            {
+                int nPerDay = GetItemPropertyUsesPerDayRemaining(oItem, ipProp);
+                //ai_Debug("0i_talents", "1723", "Item uses: " + IntToString(nPerDay));
+                if(nUses == 8 && nPerDay < 1 || nUses == 9 && nPerDay < 3 ||
+                   nUses == 10 && nPerDay < 5 || nUses == 11 && nPerDay < 7 ||
+                   nUses == 12 && nPerDay < 9) return;
+            }
             // SubType is the ip spell index for iprp_spells.2da
             nIprpSubType = GetItemPropertySubType(ipProp);
             nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
@@ -2278,6 +2223,30 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             SetLocalInt(oCreature, AI_NORMAL_FORM, GetAppearanceType(oCreature) + 1);
             SetLocalString(oCreature, AI_COMBAT_SCRIPT, "ai_polymorphed");
         }
+        else if(nSpell == SPELL_BULLS_STRENGTH)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_STRENGTH, "", AI_ALLY);
+        }
+        else if(nSpell == SPELL_CATS_GRACE)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_DEXTERITY, "", AI_ALLY);
+        }
+        else if(nSpell == SPELL_ENDURANCE)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CONSTITUTION, "", AI_ALLY);
+        }
+        else if(nSpell == SPELL_FOXS_CUNNING)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_INTELLIGENCE, "", AI_ALLY);
+        }
+        else if(nSpell == SPELL_OWLS_WISDOM || nSpell == SPELL_OWLS_INSIGHT)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_WISDOM, "", AI_ALLY);
+        }
+        else if(nSpell == SPELL_EAGLE_SPLEDOR)
+        {
+            oTarget = ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CHARISMA, "", AI_ALLY);
+        }
         // Get a target for enhancement spells if one is not already set.
         if(oTarget == OBJECT_INVALID)
         {
@@ -2328,6 +2297,11 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
                 oTarget = ai_GetNearestRacialTarget(oCreature, RACIAL_TYPE_UNDEAD, fRange);
                 if(oTarget == OBJECT_INVALID) return FALSE;
             }
+        }
+        else if(nSpell == SPELL_MAGIC_FANG)
+        {
+            oTarget = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oCreature);
+            if(oTarget == OBJECT_INVALID) return FALSE;
         }
         // Get a target for protection spells if one is not already set.
         if(oTarget == OBJECT_INVALID)

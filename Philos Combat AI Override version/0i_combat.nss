@@ -642,13 +642,13 @@ object ai_SetCombatState(object oCreature)
     SetLocalInt(oCreature, AI_ENEMY_NUMBERS, nEnemyNum);
     // Total enemy power is half the levels of all enemies + the total levels
     // of the highest level enemy.
-    nEnemyPower =(nEnemyPower / 2) + (nEnemyHighestPower / 2);
+    nEnemyPower = (nEnemyPower / 2) + nEnemyHighestPower;
     SetLocalInt(oCreature, AI_ENEMY_POWER, nEnemyPower);
     SetLocalObject(oCreature, AI_ENEMY_NEAREST, oNearestEnemy);
     SetLocalInt(oCreature, AI_ALLY_NUMBERS, nAllyNum);
     // Total ally power is half the levels of all allies + the total levels
     // of the highest level ally, only used by associates.
-    nAllyPower =(nAllyPower / 2) + (nAllyHighestPower / 2);
+    nAllyPower = (nAllyPower / 2) + nAllyHighestPower;
     SetLocalInt(oCreature, AI_ALLY_POWER, nAllyPower);
     //ai_Counter_End(GetName(oCreature) + " has created the Combat State");
     return oNearestEnemy;
@@ -2479,8 +2479,8 @@ int ai_GetCurrentRound(object oCreature)
 }
 int ai_GetDifficulty(object oCreature)
 {
-    // We randomize a bell curve of +10 to +20
-    int nRoll = d6(2) + 8;
+    // We randomize a bell curve of +10 to +20. Testing it without the randomness?!!!
+    int nRoll = 15; //d6(2) + 8;
     int nDifficulty = GetLocalInt(oCreature, AI_ENEMY_POWER) - GetLocalInt(oCreature, AI_ALLY_POWER) + nRoll;
     int nAdjustment= GetLocalInt(oCreature, AI_DIFFICULTY_ADJUSTMENT);
     //ai_Debug("0i_combat", "2486", "(Difficulty: Enemy Power: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_POWER)) +
@@ -3260,8 +3260,7 @@ int ai_CanIMoveInCombat(object oCreature)
 }
 int ai_CanIUseRangedWeapon(object oCreature, int nInMelee)
 {
-    return ((!nInMelee || (nInMelee == 1 && GetHasFeat(FEAT_POINT_BLANK_SHOT, oCreature))) &&
-           (ai_HasRangedWeaponWithAmmo(oCreature) || ai_EquipBestRangedWeapon(oCreature)));
+    return (!nInMelee || (nInMelee == 1 && GetHasFeat(FEAT_POINT_BLANK_SHOT, oCreature)));
 }
 void ai_SetAssociateCombatEventScripts(object oCreature)
 {
