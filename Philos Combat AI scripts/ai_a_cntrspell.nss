@@ -15,7 +15,7 @@ void main()
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC);
+    int bUseMagic = !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
     if(bUseMagic)
     {
@@ -75,8 +75,7 @@ void main()
         if(nDifficulty >= AI_COMBAT_DIFFICULT)
         {
             //**************************  SKILL FEATURES  **************************
-            oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
-            if(oTarget != OBJECT_INVALID && ai_TryAnimalEmpathy(oCreature, oTarget)) return;
+            if(ai_TryAnimalEmpathy(oCreature)) return;
             // ************************** CLASS FEATURES ***************************
             if(ai_TryBarbarianRageFeat(oCreature)) return;
             if(ai_TryBardSongFeat(oCreature)) return;
@@ -88,7 +87,7 @@ void main()
         {
             // ************************** CLASS FEATURES ***************************
             if(ai_TryTurningTalent(oCreature)) return;
-            if(bUseMagic && !ai_GetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING))
+            if(bUseMagic && !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
             {
                 if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
                 if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
@@ -98,14 +97,18 @@ void main()
         // ************************  RANGED ATTACKS  *******************************
         if(!ai_GetAssociateMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
         {
-            // Lets pick off the nearest targets.
-            if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
-            else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
-            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-            return;
+            if(ai_HasRangedWeaponWithAmmo(oCreature))
+            {
+                // Lets pick off the nearest targets.
+                if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
+                else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                return;
+            }
+            if(ai_InCombatEquipBestRangedWeapon(oCreature, TRUE)) return;
         }
         // *************************  MELEE ATTACKS  *******************************
-        if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
+        if(ai_InCombatEquipBestMeleeWeapon(oCreature, TRUE)) return;
         oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, FALSE);
         // If we have a target so lets see what our options are.
         if(oTarget != OBJECT_INVALID)

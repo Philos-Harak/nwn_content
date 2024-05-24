@@ -1,3 +1,10 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script: x3_s3_horse
+ Programmer: Philos
+////////////////////////////////////////////////////////////////////////////////
+    We have hijacked this script so a player can add the AI to the player!
+    If the module uses horses this must be removed for it to work properly!
+*///////////////////////////////////////////////////////////////////////////////
 #include "0i_associates"
 void main()
 {
@@ -25,28 +32,30 @@ void main()
         //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
         SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
         SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+        //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
         DeleteLocalString(oTarget, "AIScript");
     }
     // AI scripts on
     else
     {
         SendMessageToPC(oPC, "AI turned on for " + GetName(oTarget) + ".");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_ac1");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_ac2");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_ac3");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_ac4");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_ac5");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_ac6");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_ac8");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_acb");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_ace");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_4_convers");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_5_phyatked");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_6_damaged");
+        //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_8_disturb");
+        //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+        //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_b_castat");
+        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_e_blocked");
+        //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
         // This sets the script for the PC to run AI based on class.
         ai_SetAssociateAIScript(oTarget, FALSE);
+        // Set so PC can hear associates talking in combat.
+        ai_SetListeningPatterns(oTarget);
 
         //**************** Special modes that can be turned on *****************
         // Must recompile this script for them to work if you change them.
@@ -56,9 +65,12 @@ void main()
         ai_SetAssociateMode(oTarget, AI_MODE_IGNORE_ASSOCIATES, FALSE);
         // One of these three must be TRUE, the others must be FALSE.
         // Sets when the target will heal an ally. 25 is when an ally has only 25% health left.
-        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_AT_25, FALSE);
-        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_AT_50, TRUE);
-        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_AT_75, FALSE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_IN_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_IN_COMBAT_50, TRUE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_IN_COMBAT_75, FALSE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_OUT_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_OUT_COMBAT_50, FALSE);
+        ai_SetAssociateMode(oTarget, AI_MODE_HEAL_OUT_COMBAT_75, TRUE);
 
         // Targeting adjustment code.
         if(nSpell == SPELL_HORSE_DISMOUNT) // Melee_Ranged
@@ -90,46 +102,46 @@ void main()
             int nSpellControl = GetLocalInt(oTarget, "AI_SPELL_CONTROL");
             if(!nSpellControl)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with no Adjustment.");
-                SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 0);
-                ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is sparingly casting spells (-10).");
+                SetLocalInt(oTarget, AI_MAGIC_ADJUSTMENT, -10);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 1);
             }
             else if(nSpellControl == 1)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +10 Adjustment.");
-                SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 10);
-                ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is casting spells (+0).");
+                SetLocalInt(oTarget, AI_MAGIC_ADJUSTMENT, 0);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 2);
             }
             else if(nSpellControl == 2)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +15 Adjustment.");
-                SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 15);
-                ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is heavily casting spells (+10).");
+                SetLocalInt(oTarget, AI_MAGIC_ADJUSTMENT, 10);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 3);
             }
             else if(nSpellControl == 3)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " is casting spells with +30 Adjustment.");
-                SetLocalInt(oTarget, AI_DIFFICULTY_ADJUSTMENT, 30);
-                ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is always casting spells (+40).");
+                SetLocalInt(oTarget, AI_MAGIC_ADJUSTMENT, 40);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 4);
             }
             else if(nSpellControl == 4)
             {
                 SendMessageToPC(oPC, GetName(oTarget) + " is not casting spells.");
-                ai_SetAssociateMode(oTarget, AI_MODE_NO_MAGIC, TRUE);
-                ai_SetAssociateMode(oTarget, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oTarget, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_NO_MAGIC, TRUE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oTarget, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 SetLocalInt(oTarget, "AI_SPELL_CONTROL", 0);
             }
         }

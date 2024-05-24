@@ -14,7 +14,7 @@ void ai_DoActions(object oCreature, int nForm)
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC);
+    int bUseMagic = !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     // ALWAYS - Check for healing, if we are wounded transform back so we can heal!
     if(GetPercentageHPLoss(oCreature) <= AI_HEALTH_WOUNDED)
@@ -326,6 +326,7 @@ void ai_DoActions(object oCreature, int nForm)
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature, TRUE)) return;
     oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     // If we don't find a target then we don't want to fight anyone!
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);

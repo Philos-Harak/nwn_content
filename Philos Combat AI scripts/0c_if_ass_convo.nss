@@ -49,10 +49,14 @@ int StartingConditional()
     }
     else if(sParam == "Healing")
     {
-        string sHealing = "50%";
-        if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_AT_75)) sHealing = "75%";
-        else if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_AT_25)) sHealing = "25%";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 2, "I'm healing our allies if they go below " + sHealing + " health.");
+        string sHealingIn = "50%";
+        if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_75)) sHealingIn = "75%";
+        else if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_25)) sHealingIn = "25%";
+        string sHealingOut = "50%";
+        if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_75)) sHealingOut = "75%";
+        else if(ai_GetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_25)) sHealingOut = "25%";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 2, "I'm healing our allies if they go below " +
+                 sHealingIn + " health in combat and " + sHealingOut + " out of combat.");
     }
     else if(sParam == "Distance")
     {
@@ -72,29 +76,32 @@ int StartingConditional()
     else if(sParam == "Spells")
     {
         string sCasting = "I'm casting";
-        string sType = " any spell I choose.";
+        string sType = " spells I choose.";
         string sBuff = " I'll also targeting anyone that needs it.";
         string sDispel = " Finally I may use Dispel spells.";
-        if(ai_GetAssociateMode(oHenchman, AI_MODE_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first.";
-        if(ai_GetAssociateMode(oHenchman, AI_MODE_STOP_DISPEL)) sDispel = " Finally I will not use Dispel spells.";
-        if(ai_GetAssociateMode(oHenchman, AI_MODE_COUNTERSPELL))
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first.";
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_STOP_DISPEL)) sDispel = " Finally I will not use Dispel spells.";
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE)) sCasting = "I'm sparingly casting";
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE)) sCasting = "I'm heavily casting";
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE)) sCasting = "I'm always casting";
+        if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_a_cntrspell")
         {
             sCasting = "I'm ready to counter spell our enemies.";
             sType = "";
             sBuff = "";
             sDispel = "";
         }
-        if(ai_GetAssociateMode(oHenchman, AI_MODE_NO_MAGIC))
+        if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC))
         {
-            sCasting = "I'm will not use any magic.";
+            sCasting = "I'm not use any magic.";
             sType = "";
             sBuff = "";
             sDispel = "";
         }
-        else if(ai_GetAssociateMode(oHenchman, AI_MODE_DEFENSIVE_CASTING)) sType = " only defensive spells.";
-        else if(ai_GetAssociateMode(oHenchman, AI_MODE_OFFENSIVE_CASTING))
+        else if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING)) sType = " defensive spells only.";
+        else if(ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING))
         {
-            sType = " only offensive spells.";
+            sType = " offensive spells only.";
             sBuff = "";
         }
         SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, sCasting + sType + sBuff + sDispel);
@@ -114,7 +121,7 @@ int StartingConditional()
     else if(sParam == "RestBuffing")
     {
         string sRestBuffing = "";
-        if(!ai_GetAssociateMode(oHenchman, AI_MODE_BUFF_AFTER_REST)) sRestBuffing = "not ";
+        if(!ai_GetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_AFTER_REST)) sRestBuffing = "not ";
         SetCustomToken(AI_BASE_CUSTOM_TOKEN + 10, "After we rest I am " + sRestBuffing + "casting my long buff spells on us.");
     }
     return TRUE;

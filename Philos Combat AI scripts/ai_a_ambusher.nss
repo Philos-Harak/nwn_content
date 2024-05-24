@@ -58,7 +58,7 @@ void main()
         return;
     }
     // We are hidden or have givin up on stealth either way do our normal actions.
-    int bUseMagic = !ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC);
+    int bUseMagic = !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
     if(bUseMagic)
     {
@@ -88,12 +88,12 @@ void main()
         // ************************** CLASS FEATURES ***************************
         if(ai_TryTurningTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && !ai_GetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING))
+        if(bUseMagic && !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
             if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK));
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
 }

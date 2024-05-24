@@ -26,7 +26,7 @@ void main()
     //ai_Debug("ai_a_defensive", "27", "oNearest Enemy: " + GetName(oNearestEnemy) +
     //       " Distance to Nearest Enemy: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
     // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC);
+    int bUseMagic = !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     // ALWAYS - Check for healing and cure talents.
     if(bUseMagic)
     {
@@ -46,12 +46,12 @@ void main()
     {
         // ************************** CLASS FEATURES ***************************
         if(ai_TryBardSongFeat(oCreature)) return;
-        if(bUseMagic && !ai_GetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING))
+        if(bUseMagic && !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
         {
             // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ****************
             // Does our master want to be buffed first?
             object oTarget = OBJECT_INVALID;
-            if (ai_GetAssociateMode(oCreature, AI_MODE_BUFF_MASTER)) oTarget = GetMaster(oCreature);
+            if (ai_GetAssociateMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
             ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, oTarget);
         }
     }
@@ -74,5 +74,5 @@ void main()
     }
     //**********************  PHYSICAL ATTACKS  ********************************
     // Even in defensive mode we want to be in battle so go find someone!
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK));
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
 }

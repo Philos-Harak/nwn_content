@@ -297,6 +297,7 @@ void ai_DoActions(object oCreature, int nForm)
         ActionCastSpellAtObject(nSpell, oTarget, 0, TRUE);
     }
     //**********************  PHYSICAL ATTACKS  ********************************
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
     // If we don't find a target then we don't want to fight anyone!
     if(oTarget == OBJECT_INVALID) return;

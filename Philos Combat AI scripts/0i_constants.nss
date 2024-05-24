@@ -10,39 +10,48 @@
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 //***************************  ADJUSTABLE CONSTANTS  ***************************
-// The number of classes allowed for a character to take in the server/module.
-const int AI_MAX_CLASSES_PER_CHARACTER = 3;
 // Should moral checks be used.
 const int AI_USE_MORAL = FALSE;
-// Change the Custom token number if it conflicts with your server.
-const int AI_BASE_CUSTOM_TOKEN = 1000;
-// The DC monsters make to decide if they cast the best talent vs random talent.
-const int AI_INTELLIGENCE_DC = 12;
-// Arcane Spell failure% or less that a caster must have to still try to cast a spell.
-const int AI_ASF_WILL_USE = 15;
+// Summons, familiars, and companions are permanent and don't disappear when the caster dies.
+const int AI_PERMANENT_ASSOCIATES = FALSE;
 // Should summon familiars be used?
 const int AI_SUMMON_FAMILIARS = FALSE;
 // Should animal companions be used?
 const int AI_SUMMON_COMPANIONS = FALSE;
-// Summons, familiars, and companions are permanent and don't disappear when the caster dies.
-const int AI_PERMANENT_ASSOCIATES = FALSE;
 // Should all monsters prebuff before combat?
-const int AI_BUFF_MONSTER_CASTERS = TRUE;
+const int AI_BUFF_MONSTER_CASTERS = FALSE;
 // Should monsters cast summons spells when prebuffing?
-const int AI_PREBUFF_SUMMONS = TRUE;
+const int AI_PREBUFF_SUMMONS = FALSE;
 // Should monsters use potions to prebuff before combat?
 const int AI_BUFF_MONSTER_POTIONS = FALSE;
 // Should the AI allow the use of Use Magic Device?
 const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
-// After combat the combat heartbeat script will run for AI_AFTER_COMBAT_WRAP_IN_ROUNDS.
-// Allows monsters to heal and use cure spells after combat.
-const int AI_AFTER_COMBAT_WRAP_IN_ROUNDS = 5;
+// Should the AI move during combat base on the situation.
+const int AI_ADVANCED_COMBAT_MOVEMENT = TRUE;
+// The threshold needed to use a healing it. i.e. Health > AI_MIN_HP_TO_USE_HEALINGKIT.
+// Should the AI use healing kits in combat. They will still use them outside of combat.
+const int AI_USE_HEALERSKITS_IN_COMBAT = TRUE;
+// Set to 9999 if you don't want to use kits.
+const int AI_MIN_HP_TO_USE_HEALINGKIT = 12;
+// Variable that can be change the distance for looting checks.
+const float AI_LOOT_DISTANCE = 25.0f;
+// The DC monsters make to decide if they cast the best talent vs random talent.
+const int AI_INTELLIGENCE_DC = 12;
+// Arcane Spell failure% or less that a caster must have to still try to cast a spell.
+const int AI_ASF_WILL_USE = 15;
 // Delay between Henchman casting Buff spells.
 const float AI_HENCHMAN_BUFF_DELAY = 0.0;
-// Variable to change the difficulty so a player can adjust spell usage.
-const string AI_DIFFICULTY_ADJUSTMENT = "AI_DIFFICULTY_ADJUSTMENT";
-// Variable that can be change the distance for looting checks.
-const float AI_LOOT_DISTANCE = 35.0f;
+// Variable that can be change the distance enemies will come and attack after
+// hearing an ally see/hear an enemy. Reduce for a more original experience.
+const float AI_MAX_LISTENING_DISTANCE = 35.0f;
+// The number of classes allowed for a character to take in the server/module.
+const int AI_MAX_CLASSES_PER_CHARACTER = 3;
+// Taunts cool down time before the AI attemps another Taunt.
+const int AI_TAUNT_COOLDOWN = 3;
+// Animal Empathy cool down time before the AI attemps another check.
+const int AI_EMPATHY_COOLDOWN = 3;
+// Change the Custom token number if it conflicts with your server.
+const int AI_BASE_CUSTOM_TOKEN = 1000;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -125,16 +134,16 @@ const string AI_COMBAT_SCRIPT = "AI_COMBAT_SCRIPT";
 // over the original scripts are swapped back.
 // Heartbeat scripts (1).
 const string AI_EVENT_SCRIPT_1 = "AI_EVENT_SCRIPT_1";
-const string AI_MONSTER_BATTLE_SCRIPT_1 = "0e_c2_battle_1";
-const string AI_ASSOCIATE_BATTLE_SCRIPT_1 = "0e_ch_battle_1";
+const string AI_MONSTER_BATTLE_SCRIPT_1 = "0e_c2_1_battle";
+const string AI_ASSOCIATE_BATTLE_SCRIPT_1 = "0e_ch_1_battle";
 // Perception[NOTICE] scripts (2).
 const string AI_EVENT_SCRIPT_2 = "AI_EVENT_SCRIPT_2";
-const string AI_MONSTER_BATTLE_SCRIPT_2 = "0e_c2_battle_2";
-const string AI_ASSOCIATE_BATTLE_SCRIPT_2 = "0e_ch_battle_2";
+const string AI_MONSTER_BATTLE_SCRIPT_2 = "0e_c2_2_battle";
+const string AI_ASSOCIATE_BATTLE_SCRIPT_2 = "0e_ch_2_battle";
 // Dialogue scripts (4).
 const string AI_EVENT_SCRIPT_4 = "AI_EVENT_SCRIPT_4";
-const string AI_MONSTER_BATTLE_SCRIPT_4 = "0e_c2_battle_4";
-const string AI_ASSOCIATE_BATTLE_SCRIPT_4 = "0e_ch_battle_4";
+const string AI_MONSTER_BATTLE_SCRIPT_4 = "0e_c2_4_battle";
+const string AI_ASSOCIATE_BATTLE_SCRIPT_4 = "0e_ch_4_battle";
 // Constants used in a creatures listening patterns.
 const string AI_I_SEE_AN_ENEMY = "AI_I_SEE_AN_ENEMY";
 const string AI_I_HEARD_AN_ENEMY = "AI_I_HEARD_AN_ENEMY";
@@ -160,6 +169,7 @@ const int AI_LAST_ACTION_RANGED_ATK = -3;
 const int AI_LAST_ACTION_USED_FEAT = -4;
 const int AI_LAST_ACTION_USED_ITEM = -5;
 const int AI_LAST_ACTION_USED_SKILL = -6;
+const int AI_LAST_ACTION_MOVE = -7;
 // Variable name used to keep track of Action Modes.
 const string AI_CURRENT_ACTION_MODE = "AI_CURRENT_ACTION_MODE";
 // Variable name used to keep a creatures attacked targets.
@@ -232,42 +242,80 @@ const int AI_CONDITION_CONFUSED       = 0x00020000;
 const int AI_CONDITION_CURSE          = 0x00040000;
 const int AI_CONDITION_PARALYZE       = 0x00080000;
 const int AI_CONDITION_DOMINATED      = 0x00100000;
-// Database constants.
-const string AI_DATABASE_TABLE = "AI_DATABASE_TABLE";
+// Database constants for Associate modes.
+const string AI_MODE_DB_TABLE = "AI_MODE_DB_TABLE";
 // Bitwise constants for Associate modes that are used with Get/SetAssociateMode().
 const string sAssociateModeVarname = "ASSOCIATE_MODES";
 const int AI_MODE_DISTANCE_CLOSE =      0x00000001; // Stays within AI_DISTANCE_CLOSE of master.
 const int AI_MODE_DISTANCE_MEDIUM =     0x00000002; // Stays within AI_DISTANCE_MEDIUM of master.
 const int AI_MODE_DISTANCE_LONG =       0x00000004; // Stays within AI_DISTANCE_LONG of master.
-const int AI_MODE_HEAL_AT_75 =          0x00000008; // Heals master when at 75% hitpoints
-const int AI_MODE_HEAL_AT_50 =          0x00000010; // Heals master when at 50% hitpoints
-const int AI_MODE_HEAL_AT_25 =          0x00000020; // Heals master when at 25% hitpoints
-const int AI_MODE_BUFF_MASTER =         0x00000040; // Buffs master before other allies.
-const int AI_MODE_AGGRESSIVE_SEARCH =   0x00000080; // Sets associate to continuous search mode.
-const int AI_MODE_AGGRESSIVE_STEALTH =  0x00000100; // Sets associate to continuous stealth mode (Not using).
-const int AI_MODE_OPEN_LOCKS =          0x00000200; // Will pick locks, or bash them.
-const int AI_MODE_DISARM_TRAPS =        0x00000400; // Will disarm traps.
-const int AI_MODE_SCOUT_AHEAD =         0x00000800; // Will move ahead of master and scout.
-const int AI_MODE_DEFEND_MASTER =       0x00001000; // Will attack enemies attacking our master.
-const int AI_MODE_STAND_GROUND =        0x00002000; // Will stay in one place until new command.
-const int AI_MODE_STOP_RANGED =         0x00004000; // Will not use ranged weapons.
-const int AI_MODE_FOLLOW =              0x00008000; // Keeps associate following master ignoring combat.
-const int AI_MODE_PICKUP_ITEMS =        0x00010000; // Will pickup up all items for master.
-const int AI_MODE_PICKUP_GEMS_ITEMS =   0x00020000; // Will pickup gold, gems, and magic items for master.
-const int AI_MODE_PICKUP_MAGIC_ITEMS =  0x00040000; // Will pickup only gold and magic items for master.
-const int AI_MODE_NO_STEALTH =          0x00080000; // Will not cast invisibilty or use stealth.
-const int AI_MODE_NO_MAGIC =            0x00100000; // Will not use any magic (Spells, items, abilities).
-const int AI_MODE_DEFENSIVE_CASTING =   0x00200000; // Will only cast defensive spells.
-const int AI_MODE_OFFENSIVE_CASTING =   0x00400000; // Will only cast offensive spells.
-const int AI_MODE_STOP_DISPEL =         0x00800000; // Will not cast dispel type spells.
-const int AI_MODE_DO_NOT_SPEAK =        0x01000000; // Tells the henchmen to be silent and not talk.
-const int AI_MODE_CHECK_ATTACK =        0x02000000; // Will only engage in combats they think they can win.
-const int AI_MODE_BUFF_AFTER_REST =     0x04000000; // Will buff the party after resting.
-const int AI_MODE_TAUNTING =            0x08000000; // Will use the Taunt skill.
-const int AI_MODE_COUNTERSPELL =        0x10000000; // Will attempt to counter spell.
-const int AI_MODE_IGNORE_ASSOCIATES =   0x20000000; // Will ignore associates in combat.
-const int AI_MODE_NO_MAGIC_ITEMS =      0x40000000; // Will not use magic items in combat.
+const int AI_MODE_HEAL_IN_COMBAT_75 =   0x00000008; // Heals allies when at 75% hitpoints in combat.
+const int AI_MODE_HEAL_IN_COMBAT_50 =   0x00000010; // Heals allies when at 50% hitpoints in combat.
+const int AI_MODE_HEAL_IN_COMBAT_25 =   0x00000020; // Heals allies when at 25% hitpoints in combat.
+const int AI_MODE_HEAL_OUT_COMBAT_75 =  0x00000040; // Heals allies when at 75% hitpoints out of combat.
+const int AI_MODE_HEAL_OUT_COMBAT_50 =  0x00000080; // Heals allies when at 50% hitpoints out of combat.
+const int AI_MODE_HEAL_OUT_COMBAT_25 =  0x00000100; // Heals allies when at 25% hitpoints out of combat.
+const int AI_MODE_AGGRESSIVE_SEARCH =   0x00000200; // Sets associate to continuous search mode.
+const int AI_MODE_AGGRESSIVE_STEALTH =  0x00000400; // Sets associate to continuous stealth mode.
+const int AI_MODE_OPEN_LOCKS =          0x00000800; // Will pick locks, or bash them.
+const int AI_MODE_DISARM_TRAPS =        0x00001000; // Will disarm traps.
+const int AI_MODE_SCOUT_AHEAD =         0x00002000; // Will move ahead of master and scout.
+const int AI_MODE_DEFEND_MASTER =       0x00004000; // Will attack enemies attacking our master.
+const int AI_MODE_STAND_GROUND =        0x00008000; // Will stay in one place until new command.
+const int AI_MODE_STOP_RANGED =         0x00010000; // Will not use ranged weapons.
+const int AI_MODE_FOLLOW =              0x00020000; // Keeps associate following master ignoring combat.
+const int AI_MODE_PICKUP_ITEMS =        0x00040000; // Will pickup up all items for master.
+const int AI_MODE_PICKUP_GEMS_ITEMS =   0x00080000; // Will pickup gold, gems, and magic items for master.
+const int AI_MODE_PICKUP_MAGIC_ITEMS =  0x00100000; // Will pickup only gold and magic items for master.
+const int AI_MODE_NO_STEALTH =          0x00200000; // Will not cast invisibilty or use stealth.
+const int AI_MODE_DO_NOT_SPEAK =        0x00400000; // Tells the henchmen to be silent and not talk.
+const int AI_MODE_CHECK_ATTACK =        0x00800000; // Will only engage in combats they think they can win.
+const int AI_MODE_IGNORE_ASSOCIATES =   0x01000000; // Will ignore associates in combat.
+//const int AI_MODE_ =                  0x02000000; // Not used.
+//const int AI_MODE_ =                  0x04000000; // Not used.
+//const int AI_MODE_ =                  0x08000000; // Not used.
+//const int AI_MODE_ =                  0x10000000; // Not used.
+//const int AI_MODE_ =                  0x20000000; // Not used.
+//const int AI_MODE_ =                  0x40000000; // Not used.
 //const int AI_MODE_ =                  0x80000000; // Not used.
+// Database constants for Associate magic modes.
+const string AI_MAGIC_DB_TABLE = "AI_MAGIC_DB_TABLE";
+// Bitwise constants for Associate magic modes that are used with Get/SetAssociateMagicMode().
+const string sAssociateMagicModeVarname = "ASSOCIATE_MAGIC_MODES";
+const int AI_MAGIC_BUFF_MASTER =         0x00000001; // Buffs master before other allies.
+const int AI_MAGIC_NO_MAGIC =            0x00000002; // Will not use any magic (Spells, items, abilities).
+const int AI_MAGIC_DEFENSIVE_CASTING =   0x00000004; // Will only cast defensive spells.
+const int AI_MAGIC_OFFENSIVE_CASTING =   0x00000008; // Will only cast offensive spells.
+const int AI_MAGIC_STOP_DISPEL =         0x00000010; // Will not cast dispel type spells.
+const int AI_MAGIC_BUFF_AFTER_REST =     0x00000020; // Will buff the party after resting.
+const int AI_MAGIC_NO_MAGIC_ITEMS =      0x00000040; // Will not use magic items in combat.
+const int AI_MAGIC_LOW_MAGIC_USE =       0x00000080; // Will use spells sparingly in combat.
+const int AI_MAGIC_NORMAL_MAGIC_USE =    0x00000100; // Will use spells more in combat.
+const int AI_MAGIC_HEAVY_MAGIC_USE =     0x00000200; // Will use spells a lot in combat.
+const int AI_MAGIC_CONSTANT_MAGIC_USE =  0x00000400; // Will use spells all the time until out in combat.
+//const int AI_MAGIC_ =                  0x00000800; // Not used.
+//const int AI_MAGIC_ =                  0x00001000; // Not used.
+//const int AI_MAGIC_ =                  0x00002000; // Not used.
+//const int AI_MAGIC_ =                  0x00004000; // Not used.
+//const int AI_MAGIC_ =                  0x00008000; // Not used.
+//const int AI_MAGIC_ =                  0x00010000; // Not used.
+//const int AI_MAGIC_ =                  0x00020000; // Not used.
+//const int AI_MAGIC_ =                  0x00040000; // Not used.
+//const int AI_MAGIC_ =                  0x00080000; // Not used.
+//const int AI_MAGIC_ =                  0x00100000; // Not used.
+//const int AI_MAGIC_ =                  0x00200000; // Not used.
+//const int AI_MAGIC_ =                  0x00400000; // Not used.
+//const int AI_MAGIC_ =                  0x00800000; // Not used.
+//const int AI_MAGIC_ =                  0x01000000; // Not used.
+//const int AI_MAGIC_ =                  0x02000000; // Not used.
+//const int AI_MAGIC_ =                  0x04000000; // Not used.
+//const int AI_MAGIC_ =                  0x08000000; // Not used.
+//const int AI_MAGIC_ =                  0x10000000; // Not used.
+//const int AI_MAGIC_ =                  0x20000000; // Not used.
+//const int AI_MAGIC_ =                  0x40000000; // Not used.
+//const int AI_MAGIC_ =                  0x80000000; // Not used.
+// Variable to change the difficulty so a player can adjust spell usage.
+const string AI_MAGIC_ADJUSTMENT = "AI_MAGIC_ADJUSTMENT";
 // The number of Buff Groups
 const int AI_BUFF_GROUPS = 17;
 // Variable name used to keep track if we have set our talents.
@@ -292,4 +340,12 @@ const int AI_TALENT_TYPE_ITEM = 4;
 const string AI_NO_TALENTS = "AI_NO_TALENTS_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
+// Special behavior
+const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
+//Will always attack regardless of faction
+const int NW_FLAG_BEHAVIOR_CARNIVORE     = 0x00000002;
+//Will only attack if approached
+const int NW_FLAG_BEHAVIOR_OMNIVORE      = 0x00000004;
+//Will never attack.  Will alway flee.
+const int NW_FLAG_BEHAVIOR_HERBIVORE     = 0x00000008;
 

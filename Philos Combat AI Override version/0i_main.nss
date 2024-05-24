@@ -42,6 +42,10 @@ int ai_GetNumberOfProperties(object oItem);
 void ai_SetAssociateConversationData(object oMaster, object oAssociate);
 // Saves Associate conversation data from oAssociate to the database on oMaster.
 void ai_SaveAssociateConversationData(object oMaster, object oAssociate);
+// Checks a monsters scripts and replaces the ones needed to run our AI.
+void ai_SetMonsterEventScripts(object oCreature);
+// Checks a associate scripts and replaces the ones needed to run our AI.
+void ai_SetAssociateEventScripts(object oCreature);
 
 int ai_GetIsCharacter(object oCreature)
 {
@@ -250,10 +254,10 @@ int ai_GetNumberOfProperties(object oItem)
     if(GetBaseItemType(oItem) == BASE_ITEM_WHIP) nNumOfProperties --;
    return nNumOfProperties;
 }
-void ai_CreateAssociateDataTable(object oCharacter)
+void ai_CreateAssociateDataTable(object oCharacter, string sTable)
 {
     sqlquery sql = SqlPrepareQueryObject(oCharacter,
-        "CREATE TABLE IF NOT EXISTS " + AI_DATABASE_TABLE + "(" +
+        "CREATE TABLE IF NOT EXISTS " + sTable + "(" +
         "name           TEXT, " +
         "playername     TEXT, " +
         "companion      int, " +
@@ -266,16 +270,16 @@ void ai_CreateAssociateDataTable(object oCharacter)
         "PRIMARY KEY(name, playername));");
     SqlStep(sql);
 }
-void CheckDataTableAndCreateTable(object oMaster)
+void CheckDataTableAndCreateTable(object oMaster, string sTable)
 {
     string sQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name=@tableName;";
     sqlquery sql = SqlPrepareQueryObject(oMaster, sQuery);
-    SqlBindString (sql, "@tableName", AI_DATABASE_TABLE);
-    if (!SqlStep (sql)) ai_CreateAssociateDataTable (oMaster);
+    SqlBindString (sql, "@tableName", sTable);
+    if (!SqlStep (sql)) ai_CreateAssociateDataTable (oMaster, sTable);
 }
-void ai_InitializeAssociateData(object oMaster, string sName, string sPlayerName)
+void ai_InitializeAssociateData(object oMaster, string sName, string sPlayerName, string sTable)
 {
-    string sQuery = "INSERT INTO " + AI_DATABASE_TABLE + "(name, playername, " +
+    string sQuery = "INSERT INTO " + sTable + "(name, playername, " +
         "companion, familiar, summons, henchman1, henchman2, henchman3, " +
         "henchman4) VALUES(@name, @playername, @companion, @familiar, " +
         "@summons, @henchman1, @henchman2, @henchman3, @henchman4);";
@@ -292,16 +296,16 @@ void ai_InitializeAssociateData(object oMaster, string sName, string sPlayerName
     //ai_Debug("0i_main", "292", GetName(oMaster) + " sName: " + sName + " sPlayerName: " + sPlayerName);
     SqlStep(sql);
 }
-void ai_CheckDataAndInitialize(object oMaster, string sName, string sPlayerName)
+void ai_CheckDataAndInitialize(object oMaster, string sName, string sPlayerName, string sTable)
 {
-    CheckDataTableAndCreateTable(oMaster);
-    string sQuery = "SELECT name FROM " + AI_DATABASE_TABLE + " WHERE name = @name AND " +
+    CheckDataTableAndCreateTable(oMaster, sTable);
+    string sQuery = "SELECT name FROM " + sTable + " WHERE name = @name AND " +
                     "playername = @playername;";
     sqlquery sql = SqlPrepareQueryObject (oMaster, sQuery);
     SqlBindString (sql, "@playername", sPlayerName);
     SqlBindString (sql, "@name", sName);
     //ai_Debug("0i_main", "303", GetName(oMaster) + " sName: " + sName + " sPlayerName: " + sPlayerName);
-    if (!SqlStep (sql)) ai_InitializeAssociateData(oMaster, sName, sPlayerName);
+    if (!SqlStep (sql)) ai_InitializeAssociateData(oMaster, sName, sPlayerName, sTable);
 }
 string ai_GetAssociateDataField(object oMaster, object oAssociate)
 {
@@ -322,9 +326,9 @@ string ai_GetAssociateDataField(object oMaster, object oAssociate)
     }
     return "";
 }
-void ai_SetAssociateDbInt(object oMaster, string sPlayerName, string sCharName, string sDataField, int nData)
+void ai_SetAssociateDbInt(object oMaster, string sPlayerName, string sCharName, string sTable, string sDataField, int nData)
 {
-    string sQuery = "UPDATE " + AI_DATABASE_TABLE + " SET " + sDataField +
+    string sQuery = "UPDATE " + sTable + " SET " + sDataField +
                     " = @data WHERE name = @name AND playername = @playername;";
     sqlquery sql = SqlPrepareQueryObject(oMaster, sQuery);
     SqlBindString(sql, "@playername", sPlayerName);
@@ -334,9 +338,9 @@ void ai_SetAssociateDbInt(object oMaster, string sPlayerName, string sCharName, 
     //         " nData: " + IntToString(nData));
     SqlStep(sql);
 }
-int ai_GetAssociateDbInt(object oMaster, string sPlayerName, string sCharName, string sDataField)
+int ai_GetAssociateDbInt(object oMaster, string sPlayerName, string sCharName, string sTable, string sDataField)
 {
-    string sQuery = "SELECT " + sDataField + " FROM " + AI_DATABASE_TABLE +
+    string sQuery = "SELECT " + sDataField + " FROM " + sTable +
                     " WHERE name = @name AND playername = @playername;";
     sqlquery sql = SqlPrepareQueryObject(oMaster, sQuery);
     SqlBindString(sql, "@playername", sPlayerName);
@@ -349,20 +353,33 @@ void ai_SetAssociateConversationData(object oMaster, object oAssociate)
 {
     string sPlayerName = ai_RemoveIllegalCharacters(GetPCPlayerName(oMaster));
     string sCharName = ai_RemoveIllegalCharacters(GetName(oMaster, TRUE));
-    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName);
     string sDataField = ai_GetAssociateDataField(oMaster, oAssociate);
-    int nAssociateModes = ai_GetAssociateDbInt(oMaster, sPlayerName, sCharName, sDataField);
+    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName, AI_MODE_DB_TABLE);
+    int nAssociateModes = ai_GetAssociateDbInt(oMaster, sPlayerName, AI_MODE_DB_TABLE, sCharName, sDataField);
     //ai_Debug("0i_main", "355", "Set - nAssociateModes: " + IntToString(nAssociateModes));
     // if there is no saved modes then set the defaults.
     if(!nAssociateModes)
     {
         // Initialize Associate modes.
-        SetLocalInt(oAssociate, sAssociateModeVarname, AI_MODE_DISTANCE_CLOSE | AI_MODE_HEAL_AT_50);
+        SetLocalInt(oAssociate, sAssociateModeVarname, AI_MODE_DISTANCE_CLOSE | AI_MODE_HEAL_IN_COMBAT_50 | AI_MODE_HEAL_OUT_COMBAT_75);
         // Default behavior for associates at start
         ai_SaveAssociateConversationData(oMaster, oAssociate);
     }
     // Save the players modes to the associate.
     SetLocalInt(oAssociate, sAssociateModeVarname, nAssociateModes);
+    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName, AI_MAGIC_DB_TABLE);
+    nAssociateModes = ai_GetAssociateDbInt(oMaster, sPlayerName, AI_MAGIC_DB_TABLE, sCharName, sDataField);
+    //ai_Debug("0i_main", "355", "Set - nAssociateMagicModes: " + IntToString(nAssociateModes));
+    // if there is no saved modes then set the defaults.
+    if(!nAssociateModes)
+    {
+        // Initialize Associate modes.
+        SetLocalInt(oAssociate, sAssociateMagicModeVarname, AI_MAGIC_NORMAL_MAGIC_USE);
+        // Default behavior for associates at start
+        ai_SaveAssociateConversationData(oMaster, oAssociate);
+    }
+    // Save the players magic modes to the associate.
+    SetLocalInt(oAssociate, sAssociateMagicModeVarname, nAssociateModes);
 }
 void ai_SaveAssociateConversationData(object oMaster, object oAssociate)
 {
@@ -371,6 +388,88 @@ void ai_SaveAssociateConversationData(object oMaster, object oAssociate)
     string sDataField = ai_GetAssociateDataField(oMaster, oAssociate);
     int nAssociateModes = GetLocalInt(oAssociate, sAssociateModeVarname);
     //ai_Debug("0i_main", "373", "Save - nAssociateModes: " + IntToString(nAssociateModes));
-    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName);
-    ai_SetAssociateDbInt(oMaster, sPlayerName, sCharName, sDataField, nAssociateModes);
+    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName, AI_MODE_DB_TABLE);
+    ai_SetAssociateDbInt(oMaster, sPlayerName, sCharName, AI_MODE_DB_TABLE, sDataField, nAssociateModes);
+    nAssociateModes = GetLocalInt(oAssociate, sAssociateMagicModeVarname);
+    //ai_Debug("0i_main", "377", "Save - nAssociateMagicModes: " + IntToString(nAssociateModes));
+    ai_CheckDataAndInitialize(oMaster, sPlayerName, sCharName, AI_MAGIC_DB_TABLE);
+    ai_SetAssociateDbInt(oMaster, sPlayerName, sCharName, AI_MAGIC_DB_TABLE, sDataField, nAssociateModes);
+}
+void ai_SetMonsterEventScripts(object oCreature)
+{
+    ai_Debug("0i_main", "400", "Changing " + GetName(oCreature) + "'s event scripts.");
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
+    if(sScript == "" || sScript == "nw_c2_default1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_c2_1_hb");
+    else WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
+    if(sScript == "" || sScript == "nw_c2_default2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_c2_2_percept");
+    else if(sScript == "m1q5e01zombie2" || sScript == "m1q5dcultist_2") {/*Let the base script run*/}
+    else if(sScript == "m0q0_mystmage_2") {/*Let the base script run*/}
+    else if(sScript == "m1q0cboss2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_c2_2_percept");
+    else WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
+    if(sScript == "" || sScript == "nw_c2_default3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_c2_3_endround");
+    else if (sScript == "m1_combanter_3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_m1_3_endround");
+    else if (sScript == "m1q0dboss") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_3_m1q0dboss");
+    else WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
+    if(sScript == "" || sScript == "nw_c2_default4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_c2_4_convers");
+    else if(sScript == "m1q2daelp_4") {/*Let the base script run*/}
+    else if(sScript == "m1q3adryad4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_4_m1q3adryad4");
+    else if(sScript == "m1q1apyre_4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_4_m1q1apyre_4");
+    else WriteTimestampedLogEntry("ON_DIALOGUE_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
+    if(sScript == "" || sScript == "nw_c2_default5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_c2_5_phyatked");
+    else WriteTimestampedLogEntry("ON_MELEE_ATTACKED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
+    if(sScript == "" || sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_c2_6_damaged");
+    else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
+    if(sScript == "" || sScript == "nw_c2_default8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_c2_8_disturb");
+    else WriteTimestampedLogEntry("ON_DISTURBED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
+    if(sScript == "" || sScript == "nw_c2_defaultb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_c2_b_castat");
+    else WriteTimestampedLogEntry("ON_SPELLCASTAT_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
+    if(sScript == "" || sScript == "nw_c2_defaulte") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_c2_e_blocked");
+    else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+}
+void ai_SetAssociateEventScripts(object oCreature)
+{
+    ai_Debug("0i_main", "449", "Changing " + GetName(oCreature) + "'s event scripts.");
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
+    if(sScript == "" || sScript == "nw_ch_ac1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_ch_1_hb");
+    else WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
+    if(sScript == "" || sScript == "nw_ch_ac2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_ch_2_percept");
+    else WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
+    if(sScript == "" || sScript == "nw_ch_ac3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_ch_3_endround");
+    else WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
+    if(sScript == "" || sScript == "nw_ch_ac4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_ch_4_convers");
+    else WriteTimestampedLogEntry("ON_DIALOGUE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
+    if(sScript == "" || sScript == "nw_ch_ac5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_ch_5_phyatked");
+    else WriteTimestampedLogEntry("ON_MELEE_ATTACKED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
+    if(sScript == "" || sScript == "nw_ch_ac6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_ch_6_damaged");
+    else WriteTimestampedLogEntry("ON_DAMAGED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    // SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
+    if(sScript == "" || sScript == "nw_ch_ac8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_ch_8_disturb");
+    else WriteTimestampedLogEntry("ON_DISTURBED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
+    if(sScript == "" || sScript == "nw_ch_acb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_ch_b_castat");
+    else WriteTimestampedLogEntry("ON_SPELLCASTAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
+    if(sScript == "" || sScript == "nw_ch_ace") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_ch_e_blocked");
+    else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }

@@ -24,17 +24,13 @@
 //:: Created On: 12/11/2002
 //:://////////////////////////////////////////////////
 //:: Updated 2003-08-20 Georg Zoeller: Added check for variables to active spawn in conditions without changing the spawnscript
-
-
 #include "x0_i0_anims"
-// #include "x0_i0_walkway" - in x0_i0_anims
 #include "x0_i0_treasure"
-
 #include "x2_inc_switches"
 //******************************  ADDED AI CODE  *******************************
 #include "0i_associates"
+//#include "0i_assoc_debug"
 //******************************  ADDED AI CODE  *******************************
-
 void main()
 {
     // ***** Spawn-In Conditions ***** //
@@ -325,7 +321,6 @@ void main()
         }
         SetName(OBJECT_SELF,sName);
     }
-    SetIsDestroyable(FALSE, FALSE, TRUE);
     //****************************  ADDED AI CODE  *****************************
     ai_OnMonsterSpawn(OBJECT_SELF, GetCreatureFlag(OBJECT_SELF, CREATURE_VAR_IS_INCORPOREAL));
     //****************************  ADDED AI CODE  *****************************

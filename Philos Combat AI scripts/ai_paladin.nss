@@ -38,14 +38,18 @@ void main()
     object oTarget;
     if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
-        // Paladins face the biggest challenges first!
-        if(!nInMelee) oTarget = ai_GetHighestCRTarget(oCreature);
-        else oTarget = ai_GetHighestCRTarget(oCreature, AI_RANGE_MELEE);
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            // Paladins face the biggest challenges first!
+            if(!nInMelee) oTarget = ai_GetHighestCRTarget(oCreature);
+            else oTarget = ai_GetHighestCRTarget(oCreature, AI_RANGE_MELEE);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            return;
+        }
+        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
-    if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     // Paladins face the biggest challenges first!
     oTarget = ai_GetHighestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)

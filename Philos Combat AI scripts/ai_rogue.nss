@@ -35,14 +35,18 @@ void main()
     object oTarget;
     if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
-        if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
-        oTarget = ai_GetNearestTarget (oCreature);
-        if (ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
+            oTarget = ai_GetNearestTarget (oCreature);
+            if (ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            return;
+        }
+        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
-    if (!ai_GetIsMeleeWeapon (GetItemInSlot (INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon (oCreature, oTarget);
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if (ai_TrySneakAttack (oCreature, nInMelee)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat (oCreature, nInMelee);
     if (oTarget != OBJECT_INVALID)

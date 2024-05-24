@@ -37,13 +37,17 @@ void main()
     object oTarget;
     if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
-        if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-        else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            return;
+        }
+        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // ****************************  MELEE ATTACKS  ****************************
-    if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee, FALSE);
     // I have a target now lets see if we want to move in!
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);

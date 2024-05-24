@@ -51,11 +51,14 @@ void ai_SendMessages(string sMessage, string sTextColor = COLOR_YELLOW, object o
 }
 void ai_Debug(string sScriptName, string sLineNumber, string sMessage)
 {
+    return;
     sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
     sMessage = ai_StripColorCodes(sMessage);
     WriteTimestampedLogEntry(sMessage);
     //if(GetLocalInt(OBJECT_SELF, "AI_DEBUG")) WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Escaped Prisoner") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Boddyknock Glinckle") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Pathart Reyer") WriteTimestampedLogEntry(sMessage);
 }
 void ai_Counter_Start()
 {

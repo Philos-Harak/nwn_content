@@ -4,30 +4,11 @@
 ////////////////////////////////////////////////////////////////////////////////
  Scripts used for Associates.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_states_cond"
 #include "0i_actions"
-//#include "0i_actions_debug"
-
 // Return TRUE if the associate can attack based on current modes and actions.
 int ai_CanIAttack(object oAssociate);
 // Returns the nearest locked object from oMaster.
 object ai_GetNearestLockedObject(object oCreature);
-// Returns TRUE if the caller can open oObject.
-// Checks to see if oObject is locked and/or if a key is needed to open oObject
-// by oCreature.
-int ai_CanIOpenObject(object oCreature, object oObject);
-// Returns TRUE if oCreature opens oLocked object.
-// This will make oCreature open oLocked either by picking or casting a spell.
-int ai_AttemptToByPassLock(object oCreature, object oLocked);
-// Returns TRUE if oCreature disarms oTrap.
-// bShout if TRUE oCreature will shout out what happens.
-int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bShout = FALSE);
-// Returns TRUE if the caller casts Knock on oLocked object.
-int ai_AttempToCastKnockSpell(object oCreature, object oLocked);
-// Returns TRUE if oCreature can hear or see oEnemy. Uses skills to check.
-int ai_PerceiveEnemy(object oCreature, object oEnemy);
-// oCreature will move into the area looking for creatures.
-void ai_ScoutAhead(object oCreature);
 // Selects the correct response base on nCommand from oCommander.
 // These are given from either a radial menu option or voice command.
 void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand);
@@ -48,9 +29,6 @@ void ai_HenchmanCastDefensiveSpells(object oCreature, object oPC);
 // These scripts are one line inserts for the creature event they go at the end.
 // example ai_OnDeath goes at the end of the OnDeath event (nw_c2_default7).
 
-// Add to nw_c2_default7 OnDeath script of monsters and
-// add to nw_ch_ac7 OnDeath event script of henchman.
-void ai_OnDeath(object oCreature, object oKiller);
 // Add to nw_c2_default9 OnSpawn event script of monsters and
 void ai_OnMonsterSpawn(object oCreature, int bIncorporeal);
 // Add to nw_ch_ac9 OnSpawn event script of henchman.
@@ -79,261 +57,33 @@ object ai_GetNearestLockedObject(object oCreature)
     }
     return OBJECT_INVALID;
 }
-int ai_CanIOpenObject(object oCreature, object oObject)
-{
-    string sLockKeyTag = GetLockKeyTag(oObject);
-    if(sLockKeyTag == "") return TRUE;
-    return (ai_GetCreatureHasItem(oCreature, sLockKeyTag, FALSE) != OBJECT_INVALID);
-}
-int ai_AttemptToByPassLock(object oCreature, object oLocked)
-{
-    //ai_Debug("0i_associates", "126", "oCreature: " + GetName(oCreature) + " oLocked:" + GetName(oLocked));
-    //ai_Debug("0i_associates", "127", "Trapped?: " + IntToString(GetIsTrapped(oLocked)) +
-    //       " Trap detected?:" + IntToString(GetTrapDetectedBy(oLocked, oCreature)));
-    // Attempt to cast knock because its always safe to cast it, even on a trapped object.
-    if(ai_AttempToCastKnockSpell(oLocked, oCreature)) return TRUE;
-    // First, let's see if we notice that it's trapped
-    if(GetIsTrapped(oLocked) && GetTrapDetectedBy(oCreature, oLocked))
-    {
-        // Ick! Try and disarm the trap first
-        PlayVoiceChat(VOICE_CHAT_LOOKHERE, oCreature);
-        if(!ai_AttemptToDisarmTrap(oCreature, oLocked, TRUE))
-        {
-            PlayVoiceChat(VOICE_CHAT_NO, oCreature);
-            return FALSE;
-        }
-    }
-    // We might be able to open this.
-    int bCanDo = FALSE;
-    string sKeyTag = GetLockKeyTag(oLocked);
-    //ai_Debug("0i_associates", "145", "sKeyTag: " + sKeyTag);
-    if(sKeyTag != "")
-    {
-        // Do we have the key?
-        object oItem = ai_GetCreatureHasItem(oCreature, sKeyTag, FALSE);
-        if(oItem != OBJECT_INVALID)
-        {
-            ActionOpenDoor(oLocked);
-            bCanDo = TRUE;
-        }
-    }
-    int bNeedKey = GetLockKeyRequired(oLocked);
-    // We don't have the key and a key is required. So we are done!
-    //ai_Debug("0i_associates", "158", "bCanDo: " + IntToString(bCanDo) +
-    //       " bNeedKey:" + IntToString(bNeedKey));
-    if(!bCanDo && bNeedKey)
-    {
-        // Can't open this, so skip the checks
-        if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK)) PlayVoiceChat(VOICE_CHAT_CANTDO, oCreature);
-        return FALSE;
-    }
-    // Now, let's try and pick the lock first
-    int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
-    string sName = ai_RemoveIllegalCharacters(GetName(oCreature));
-    //ai_Debug("0i_associates", "169", "bCanDo: " + IntToString(bCanDo) +
-    //       " nSkill:" + IntToString(nSkill) + " CanWeUsePlaceable?: " + IntToString(CanWeUsePlaceable(oLocked)) +
-    //       " Attemp Pick: " + IntToString(GetLocalInt(oLocked, "0_ATTEMPT_PICK_" + sName)));
-    if(!bCanDo && nSkill > 0 && ai_CanIOpenObject(oCreature, oLocked) && !GetLocalInt(oLocked, "0_ATTEMPT_PICK_" + sName))
-    {
-        object oItem = ai_GetCreatureHasItem (oCreature, "0_thief_tools", FALSE);
-        ai_ClearCreatureActions(oCreature);
-        if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK)) PlayVoiceChat(VOICE_CHAT_CANDO, oCreature);
-        ActionWait(1.0);
-        ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oItem);
-        ActionWait(1.0);
-        bCanDo = TRUE;
-        // Set that we have tried to pick this... only do once. Keeps us from
-        // trying over and over!
-        SetLocalInt(oLocked, "0_ATTEMPT_PICK_" + sName, TRUE);
-    }
-    if(!bCanDo) bCanDo = ai_AttempToCastKnockSpell(oCreature, oLocked);
-    //ai_Debug("0i_associates", "186", "bCanDo: " + IntToString(bCanDo) +
-    //       " CanWeOpenObject?: " + IntToString(CanWeOpenObject(oLocked)));
-    if(!bCanDo && ai_CanIOpenObject(oCreature, oLocked))
-    {
-        ai_ClearCreatureActions(oCreature);
-        // Check to make sure we are using a melee weapon.
-        if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND)) ||
-           ai_EquipBestMeleeWeapon(oCreature))
-        {
-            ActionWait(1.0);
-            ActionAttack(oLocked);
-            bCanDo = TRUE;
-        }
-    }
-    // If we didn't, let the player know
-    if(!bCanDo && !ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK)) PlayVoiceChat(VOICE_CHAT_CANTDO, oCreature);
-    return bCanDo;
-}
-int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bShout = FALSE)
-{
-    if(!GetIsTrapped(oTrap)) return FALSE;
-    int bValid = GetIsObjectValid(oTrap);
-    int bISawTrap = GetTrapDetectedBy(oTrap, oCreature);
-    int bCloseEnough = GetDistanceBetween(oTrap, oCreature) <= 15.0;
-    int bInLineOfSight = ai_GetIsInLineOfSight(oCreature, oTrap);
-    if(!bValid || !bISawTrap || !bCloseEnough || !bInLineOfSight)
-    {
-        if(bShout) PlayVoiceChat(VOICE_CHAT_CANTDO, oCreature);
-        return FALSE;
-    }
-    string sID = ObjectToString(oTrap);
-    int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
-    int nTrapDC = GetTrapDisarmDC(oTrap);
-    if(nSkill > 0 && GetTrapDisarmable(oTrap))
-    {
-        object oItem = ai_GetCreatureHasItem (oCreature, "0_thief_tools", FALSE);
-        ai_ClearCreatureActions(oCreature);
-        ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0, oItem);
-        ActionDoCommand(PlayVoiceChat(VOICE_CHAT_TASKCOMPLETE, oCreature));
-        return TRUE;
-    }
-    if(GetHasSpell(SPELL_FIND_TRAPS, oCreature) && GetTrapDisarmable(oTrap) && !GetLocalInt(oTrap, "AI_USE_FIND_TRAPS"))
-    {
-        ai_ClearCreatureActions(oCreature);
-        ActionCastSpellAtObject(SPELL_FIND_TRAPS, oTrap);
-        SetLocalInt(oTrap, "AI_USE_FIND_TRAPS", 10);
-        return TRUE;
-    }
-    // MODIFIED February 7 2003. Merged the 'attack object' inside of the bshout
-    // this is not really something you want the henchmen just to go and do
-    // spontaneously
-    else if(bShout)
-    {
-        ai_ClearCreatureActions(oCreature);
-        if(GetLocalInt(oCreature, "X0_L_SAWTHISTRAPALREADY" + sID) != 10)
-        {
-           //StrRef(40551) "This trap can never be disarmed!"
-            string sSpeak = GetStringByStrRef(40551);
-            SendMessageToPC(GetMaster(oCreature), sSpeak);
-            SetLocalInt(oCreature, "X0_L_SAWTHISTRAPALREADY" + sID, 10);
-        }
-        if(GetObjectType(oTrap) != OBJECT_TYPE_TRIGGER)
-        {
-            ActionAttack(oTrap);
-            return TRUE;
-        }
-        // Throw ourselves on it nobly! :-)
-        ActionMoveToLocation(GetLocation(oTrap));
-        SetFacingPoint(GetPositionFromLocation(GetLocation(oTrap)));
-        ActionRandomWalk();
-        return TRUE;
-    }
-    if(nSkill < 1) return FALSE;
-    // * Put a check in so that when a henchmen who cannot disarm a trap
-    // * sees a trap they do not repeat their voiceover forever
-    if (GetLocalInt(oCreature, "X0_L_SAWTHISTRAPALREADY" + sID) != 10)
-    {
-        PlayVoiceChat(VOICE_CHAT_CANTDO, oCreature);
-        SetLocalInt(oCreature, "X0_L_SAWTHISTRAPALREADY" + sID, 10);
-        string sSpeak = GetStringByStrRef(40551);
-        SendMessageToPC(GetMaster(oCreature), sSpeak);
-    }
-    return FALSE;
-}
-int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
-{
-    // If that didn't work, let's try using a knock spell
-    if(GetHasSpell(SPELL_KNOCK, oCreature) &&
-      (GetIsDoorActionPossible(oLocked, DOOR_ACTION_KNOCK) ||
-       GetIsPlaceableObjectActionPossible(oLocked, PLACEABLE_ACTION_KNOCK)) &&
-       ai_GetIsInLineOfSight(oCreature, oLocked))
-    {
-        ai_ClearCreatureActions(oCreature);
-        ActionWait(1.0);
-        ActionCastSpellAtObject(SPELL_KNOCK, oLocked);
-        ActionWait(1.0);
-        return TRUE;
-    }
-    return FALSE;
-}
-int ai_PerceiveEnemy(object oCreature, object oEnemy)
-{
-    float fDistance = GetDistanceBetween(oCreature, oEnemy);
-    if(fDistance < 50.0)
-    {
-        // Game is in meters, so 1 foot = 3.333 meter
-        // penalty is -1 per 10' so divide it by 10 to use 0.3333f
-        int nDC = 10 + FloatToInt(fDistance * 0.3333f);
-        // Check to see if the creature is hiding and add the creatures checks.
-        int nEnemyMoveSilent, nEnemyHide;
-        if(GetStealthMode(oEnemy))
-        {
-            nEnemyMoveSilent =(d20() + GetSkillRank(SKILL_MOVE_SILENTLY, oEnemy));
-            nEnemyHide =(d20() + GetSkillRank(SKILL_HIDE, oEnemy));
-        }
-        if(GetIsSkillSuccessful (oCreature, SKILL_SPOT, nDC + nEnemyHide)) return TRUE;
-        if(GetIsSkillSuccessful (oCreature, SKILL_LISTEN, nDC + nEnemyMoveSilent)) return TRUE;
-    }
-    return FALSE;
-}
-void ai_ScoutAhead(object oCreature)
-{
-    object oPerceived;
-    object oEnemy = GetNearestEnemy(oCreature);
-    // We see them so fight!
-    if(oEnemy != OBJECT_INVALID)
-    {
-        if(ai_PerceiveEnemy(oCreature, oEnemy))
-        {
-            if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK))
-            {
-                int nRoll = d10();
-                if(nRoll == 1) PlayVoiceChat(VOICE_CHAT_ENEMIES, oCreature);
-                else if(nRoll == 2) PlayVoiceChat(VOICE_CHAT_FOLLOWME, oCreature);
-                else if(nRoll == 3) PlayVoiceChat(VOICE_CHAT_LOOKHERE, oCreature);
-            }
-            ActionMoveToObject(oEnemy, TRUE, AI_RANGE_LONG);
-            return;
-        }
-        // There are enemies here so lets go to them.
-        else
-        {
-            if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK))
-            {
-                int nRoll = d3();
-                if(nRoll == 1) PlayVoiceChat(VOICE_CHAT_BADIDEA, oCreature);
-                else if(nRoll == 2) PlayVoiceChat(VOICE_CHAT_SEARCH, oCreature);
-                else if(nRoll == 3) PlayVoiceChat(VOICE_CHAT_FOLLOWME, oCreature);
-            }
-            ActionMoveToObject(oEnemy, TRUE, AI_RANGE_CLOSE);
-        }
-    }
-    // There are no more enemies, but we must look like we are patroling so
-    // go to encounter points.
-    else
-    {
-        if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK))
-        {
-            int nRoll = d10();
-            if(nRoll == 1) PlayVoiceChat(VOICE_CHAT_BADIDEA, oCreature);
-            else if(nRoll == 2) PlayVoiceChat(VOICE_CHAT_SEARCH, oCreature);
-            else if(nRoll == 3) PlayVoiceChat(VOICE_CHAT_FOLLOWME, oCreature);
-        }
-        // No enemy so lets get a spawn point!
-        object oSpawnPoint = GetNearestObjectByTag("ip_encounter", oCreature, d6());
-        ActionMoveToObject(oSpawnPoint, TRUE, AI_RANGE_CLOSE);
-    }
-}
 void ai_FindTheEnemy(object oCreature, object oCommander, object oTarget)
 {
-    //ai_Debug("0i_associates", "368", " Distance: " + FloatToString(GetDistanceBetween(oCreature, oTarget), 0, 2));
-    if(LineOfSightObject(oCreature, oCommander))
+    float fDistance = GetDistanceBetween(oCreature, oTarget);
+    //ai_Debug("0i_associates", "63", " Distance: " + FloatToString(fDistance, 0, 2));
+    if(fDistance <= AI_MAX_LISTENING_DISTANCE)
     {
-        float fDistance = GetDistanceBetween(oCreature, oTarget);
-        if(fDistance > AI_RANGE_CLOSE)
+        if(LineOfSightObject(oCreature, oCommander))
         {
-            //ai_Debug("0i_associates", "374", "Moving towards " + GetName(oTarget));
-            ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE - 0.5f);
-            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
-        }
-        else
-        {
-            //ai_Debug("0i_associates", "379", "Searching for " + GetName(oTarget));
+            if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_CLOSE)
+            {
+                //ai_Debug("0i_associates", "70", "Moving towards " + GetName(oTarget));
+                ActionMoveToObject(oCommander, TRUE);
+                SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+                ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+                return;
+            }
+            //ai_Debug("0i_associates", "76", "Searching for " + GetName(oTarget));
             SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
-            ActionMoveToObject(oTarget, TRUE, AI_RANGE_MELEE);
+            ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
             SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+            ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+            return;
         }
+        //ai_Debug("0i_associates", "83", "Looking for " + GetName(oCommander));
+        ActionMoveToObject(oCommander, TRUE, AI_RANGE_MELEE);
+        SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
     }
 }
 void ai_ReactToAssociate(object oCreature, object oCommander)
@@ -361,7 +111,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         case ASSOCIATE_COMMAND_MASTERGOINGTOBEATTACKED:
         {
             object oAttacker = GetGoingToBeAttackedBy(oMaster);
-            //ai_Debug("0i_associate", "405", GetName(oMaster) + " has been attack by " +
+            //ai_Debug("0i_associate", "114", GetName(oMaster) + " has been attack by " +
             //         GetName(GetGoingToBeAttackedBy(oMaster)) + "!");
             // Used to set who monsters are attacking.
             int nAction = GetCurrentAction(oAttacker);
@@ -370,17 +120,17 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             {
                 SetLocalObject(oAttacker, AI_ATTACKED_SPELL, oMaster);
             }
-            if(ai_GetIsInCombat(oCreature))
+            if(!ai_GetIsBusy(oCreature) && ai_CanIAttack(oCreature))
             {
-                if(!ai_GetIsBusy(oCreature) && ai_CanIAttack(oCreature)) ai_DoAssociateCombatRound(oCreature);
+                if(ai_GetIsInCombat(oCreature)) ai_DoAssociateCombatRound(oCreature);
+                else ai_FindTheEnemy(oCreature, oCommander, oAttacker);
             }
-            else ai_SearchForInvisibleCreature(oCreature);
             return;
         }
         // Menu used by a player to have the henchman follow them.
         case ASSOCIATE_COMMAND_FOLLOWMASTER:
         {
-            //ai_Debug("0i_associate", "424", GetName(oMaster) + " has commanded " +
+            //ai_Debug("0i_associate", "133", GetName(oMaster) + " has commanded " +
             //       GetName(oCreature) + " to FOLLOW.");
             ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
             ai_SetAssociateMode(oCreature, AI_MODE_STAND_GROUND, FALSE);
@@ -389,9 +139,13 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             if(GetDetectMode(oCreature) && !GetHasFeat(FEAT_KEEN_SENSE, oCreature)) SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
             if(GetStealthMode(oCreature)) SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
             ai_PassActionToAssociates(oCreature, ACTION_FOLLOW);
-            if(ai_IsInCombatRound(oCreature)) ai_EndCombatRound(oCreature);
-            DeleteLocalObject(oCreature, AI_ATTACKED_PHYSICAL);
-            DeleteLocalObject(oCreature, AI_ATTACKED_SPELL);
+            if(ai_IsInCombatRound(oCreature))
+            {
+                ai_EndCombatRound(oCreature);
+                ai_ClearCombatState(oCreature);
+                DeleteLocalObject(oCreature, AI_ATTACKED_PHYSICAL);
+                DeleteLocalObject(oCreature, AI_ATTACKED_SPELL);
+            }
             ai_ClearCreatureActions(oCreature, TRUE);
             ActionMoveToObject(oMaster, TRUE, ai_GetFollowDistance(oCreature));
             ai_SaveAssociateConversationData(oMaster, oCreature);
@@ -401,7 +155,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         // We also attack the nearest, this keeps henchman going into combat quickly.
         case ASSOCIATE_COMMAND_ATTACKNEAREST:
         {
-            //ai_Debug("0i_associates", "445", GetName(oMaster) + " has commanded " +
+            //ai_Debug("0i_associates", "158", GetName(oMaster) + " has commanded " +
             //       GetName(oCreature) + " to attack nearest(NORMAL MODE).");
             ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
             ai_SetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER, FALSE);
@@ -409,13 +163,22 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             ai_SetAssociateMode(oCreature, AI_MODE_FOLLOW, FALSE);
             // This resets a henchmens failed Moral save in combat.
             ai_SetAssociateAIScript(oCreature);
-            if(!ai_GetIsBusy(oCreature) && ai_GetNearestEnemy(oCreature, 1, 7, 7) != OBJECT_INVALID)
+            if(!ai_GetIsBusy(oCreature))
             {
-                ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
-                // If master is attacking a target we will attack them too!
-                object oTarget = ai_GetAttackedTarget(oMaster);
-                if(oTarget != OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
-                else ai_DoAssociateCombatRound(oCreature, oTarget);
+                object oEnemy = ai_GetNearestEnemy(oCreature, 1, 7, 7);
+                if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oCreature, oEnemy) < AI_RANGE_BATTLEFIELD)
+                {
+                    ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+                    // If master is attacking a target we will attack them too!
+                    if(!ai_GetIsInCombat(oCreature))
+                    {
+                        ai_SetAssociateCombatEventScripts(oCreature);
+                        ai_SetCreatureTalents(oCreature, FALSE);
+                    }
+                    object oTarget = ai_GetAttackedTarget(oMaster);
+                    if(oTarget != OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
+                    else ai_DoAssociateCombatRound(oCreature, oTarget);
+                }
             }
             ai_SaveAssociateConversationData(oMaster, oCreature);
             return;
@@ -423,13 +186,20 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         // Menu used by a player to have the henchman stay where they are standing.
         case ASSOCIATE_COMMAND_STANDGROUND:
         {
-            //ai_Debug("0i_associate", "467", GetName(oMaster) + " has commanded " +
+            //ai_Debug("0i_associate", "189", GetName(oMaster) + " has commanded " +
             //       GetName(OBJECT_SELF) + " to STANDGROUND.");
             ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
             ai_SetAssociateMode(oCreature, AI_MODE_STAND_GROUND, TRUE);
             ai_SetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER, FALSE);
             ai_SetAssociateMode(oCreature, AI_MODE_FOLLOW, FALSE);
             ai_PassActionToAssociates(oCreature, ACTION_FOLLOW, FALSE);
+            if(ai_IsInCombatRound(oCreature))
+            {
+                ai_EndCombatRound(oCreature);
+                ai_ClearCombatState(oCreature);
+                DeleteLocalObject(oCreature, AI_ATTACKED_PHYSICAL);
+                DeleteLocalObject(oCreature, AI_ATTACKED_SPELL);
+            }
             ai_ClearCreatureActions(oCreature, TRUE);
             ai_SaveAssociateConversationData(oMaster, oCreature);
             return;
@@ -437,7 +207,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         // Menu used by a player to have the henchman attack anyone who attacks them.
         case ASSOCIATE_COMMAND_GUARDMASTER:
         {
-            //ai_Debug("0i_associate", "481", GetName(oMaster) + " has commanded " +
+            //ai_Debug("0i_associate", "210", GetName(oMaster) + " has commanded " +
             //       GetName(oCreature) + " to GAURDMASTER.");
             ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
             ai_SetAssociateMode(oCreature, AI_MODE_DEFEND_MASTER, TRUE);
@@ -455,61 +225,38 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         // Menu used by a player to have the henchman heal them as soon as possible.
         case ASSOCIATE_COMMAND_HEALMASTER:
         {
-            int nSpell, bCast = FALSE;
-            if(GetHasSpell(SPELL_HEAL, oCreature) || ai_GetKnownSpell(oCreature, SPELL_HEAL))
-                { nSpell = SPELL_HEAL; bCast = TRUE; }
-            else if(GetHasSpell(SPELL_CURE_CRITICAL_WOUNDS, oCreature) ||
-                    ai_GetKnownSpell(oCreature, SPELL_CURE_CRITICAL_WOUNDS))
-                     { nSpell = SPELL_CURE_CRITICAL_WOUNDS; bCast = TRUE; }
-            else if(GetHasSpell(SPELL_CURE_SERIOUS_WOUNDS, oCreature) ||
-                    ai_GetKnownSpell(oCreature, SPELL_CURE_SERIOUS_WOUNDS))
-                     { nSpell = SPELL_CURE_SERIOUS_WOUNDS; bCast = TRUE; }
-            else if(GetHasSpell(SPELL_CURE_MODERATE_WOUNDS, oCreature) ||
-                    ai_GetKnownSpell(oCreature, SPELL_CURE_MODERATE_WOUNDS))
-                     { nSpell = SPELL_CURE_MODERATE_WOUNDS; bCast = TRUE; }
-            else if(GetHasSpell(SPELL_CURE_LIGHT_WOUNDS, oCreature) ||
-                    ai_GetKnownSpell(oCreature, SPELL_CURE_LIGHT_WOUNDS))
-                     { nSpell = SPELL_CURE_LIGHT_WOUNDS; bCast = TRUE; }
-            else if(!ai_GetAssociateMode(oCreature, AI_MODE_DO_NOT_SPEAK)) PlayVoiceChat(VOICE_CHAT_CANTDO, oCreature);
-            if(bCast)
-            {
-                ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_STAND_GROUND, FALSE);
-                ai_SaveAssociateConversationData(oMaster, oCreature);
-                ai_ClearCreatureActions(oCreature);
-                ActionCastSpellAtObject(nSpell, oMaster);
-            }
+            ai_UseHealing(oCreature, oMaster, oMaster, 0.0);
             return;
         }
         // Menu used by a player to toggle a henchmans casting options.
         case ASSOCIATE_COMMAND_TOGGLECASTING:
         {
-            if(ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC))
+            if(ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
             {
-                ai_SetAssociateMode(oCreature, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING, TRUE);
-                ai_SetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING, TRUE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 ai_SendMessages(GetName(oCreature) + " will now cast defensive spells only.", COLOR_GRAY, oCommander);
             }
-            else if(ai_GetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING))
+            else if(ai_GetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
             {
-                ai_SetAssociateMode(oCreature, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING, TRUE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING, TRUE);
                 ai_SendMessages(GetName(oCreature) + " will now cast offensive spells only.", COLOR_GRAY, oCommander);
             }
-            else if(ai_GetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING))
+            else if(ai_GetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
             {
-                ai_SetAssociateMode(oCreature, AI_MODE_NO_MAGIC, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 ai_SendMessages(GetName(oCreature) + " will now cast any spell.", COLOR_GRAY, oCommander);
             }
             else
             {
-                ai_SetAssociateMode(oCreature, AI_MODE_NO_MAGIC, TRUE);
-                ai_SetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING, FALSE);
-                ai_SetAssociateMode(oCreature, AI_MODE_OFFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC, TRUE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+                ai_SetAssociateMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
                 ai_SendMessages(GetName(oCreature) + " will not use any magic.", COLOR_GRAY, oCommander);
             }
             ai_SaveAssociateConversationData(oMaster, oCreature);
@@ -520,14 +267,16 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
     if(!ai_GetIsBusy(oCreature))
     {
         // Respond to shouts from friendly non-PCs only.
-        if (!ai_GetIsCharacter(oCommander) && !GetIsEnemy(oCommander, oCreature))
+        if (ai_CanIAttack(oCreature) &&
+            !GetLocalInt(oCreature, AI_AM_I_SEARCHING) &&
+            !GetIsEnemy(oCommander, oCreature))
         {
             //if(nCommand == AI_ALLY_IS_WOUNDED) ai_TryHealingTalentsOutOfCombat(oCreature, oCommander);
             // A friend sees an enemy. If we are not in combat lets seek them out too!
             if(nCommand == AI_ALLY_SEES_AN_ENEMY ||
                nCommand == AI_ALLY_HEARD_AN_ENEMY)
             {
-                //ai_Debug("0i_associates", "571", GetName(oCreature) + " receives notice that " +
+                //ai_Debug("0i_associates", "279", GetName(oCreature) + " receives notice that " +
                 //         GetName(oCommander) + " has seen/heard an enemy!");
                 ai_ReactToAssociate(oCreature, oCommander);
                 return;
@@ -536,14 +285,14 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             else if(nCommand == AI_ALLY_ATKED_BY_WEAPON ||
                     nCommand == AI_ALLY_ATKED_BY_SPELL)
             {
-                //ai_Debug("0i_associates", "580", GetName(oCreature) + " receives notice that " +
+                //ai_Debug("0i_associates", "288", GetName(oCreature) + " receives notice that " +
                 //         GetName(oCommander) + " was attacked by an enemy!");
                 ai_ReactToAssociate(oCreature, oCommander);
                 return;
             }
             else if(nCommand == AI_ALLY_IS_DEAD)
             { // Nothing at the moment.
-                //ai_Debug("0i_associates", "587", GetName(oCreature) + " receives notice that " +
+                //ai_Debug("0i_associates", "295", GetName(oCreature) + " receives notice that " +
                 //         GetName(oCommander) + " has died!");
                 return;
             }
@@ -552,11 +301,11 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
         {
             case ASSOCIATE_COMMAND_MASTERATTACKEDOTHER:
             {
-                //ai_Debug("0i_associate", "596", GetName(oMaster) + " has attacked!");
+                //ai_Debug("0i_associate", "304", GetName(oMaster) + " has attacked!");
                 if(ai_CanIAttack(oCreature))
                 {
                     if(ai_GetIsInCombat(oCreature)) ai_DoAssociateCombatRound(oCreature);
-                    else ai_FindTheEnemy(oCreature, oCommander, oCommander);
+                    else ai_FindTheEnemy(oCreature, oCommander, ai_GetAttackedTarget(oCommander, TRUE, TRUE));
                 }
                 return;
             }
@@ -628,6 +377,9 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                 ai_SetAssociateMode(oCreature, AI_MODE_STAND_GROUND, FALSE);
                 ai_SetAssociateMode(oCreature, AI_MODE_FOLLOW, FALSE);
                 object oLock = ai_GetNearestLockedObject(oMaster);
+                // Clear locked variable incase we tried already.
+                string sID = ObjectToString(oCreature);
+                SetLocalInt(oLock, "AI_LOCKED_" + sID, TRUE);
                 ai_AttemptToByPassLock(oCreature, oLock);
                 ai_SaveAssociateConversationData(oMaster, oCreature);
                 return;
@@ -639,7 +391,11 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                 ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
                 ai_SetAssociateMode(oCreature, AI_MODE_STAND_GROUND, FALSE);
                 ai_SetAssociateMode(oCreature, AI_MODE_FOLLOW, FALSE);
-                ai_AttemptToDisarmTrap(oCreature, GetNearestTrapToObject(oMaster), TRUE);
+                object oTrap = GetNearestTrapToObject(oMaster);
+                // Clear trapped variable incase we tried already.
+                string sID = ObjectToString(oCreature);
+                SetLocalInt(oTrap, "AI_TRAPPED_" + sID, TRUE);
+                ai_AttemptToDisarmTrap(oCreature, oTrap, TRUE);
                 ai_SaveAssociateConversationData(oMaster, oCreature);
                 return;
             }
@@ -797,25 +553,6 @@ void ai_HenchmanCastDefensiveSpells (object oCreature, object oPC)
 //******************************************************************************
 //********************* Creature event scripts *********************************
 //******************************************************************************
-void ai_OnDeath(object oCreature, object oKiller)
-{
-    DeleteLocalObject(oKiller, AI_ATTACKED_PHYSICAL);
-    DeleteLocalObject(oKiller, AI_ATTACKED_SPELL);
-    ai_SetIdentifyAllItems(oCreature, FALSE);
-    SpeakString(AI_I_AM_DEAD, TALKVOLUME_SILENT_TALK);
-    // Added code to allow for permanent associates in the battle!
-    if(AI_PERMANENT_ASSOCIATES)
-    {
-        int nCntr = 1;
-        object oAssociate = GetAssociate(nCntr, oCreature, 1);
-        while (nCntr < 6)
-        {
-            //ai_Debug("0i_associates", "862", GetName(oAssociate) + " nCntr: " + IntToString(nCntr));
-            if(oAssociate != OBJECT_INVALID) DelayCommand(0.0, ChangeToStandardFaction(oAssociate, STANDARD_FACTION_HOSTILE));
-            oAssociate = GetAssociate(++nCntr, oCreature, 1);
-        }
-    }
-}
 void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
 {
     if(bIncorporeal)
@@ -823,30 +560,18 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
         string sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
         if (sCombatAI == "") SetLocalString(oCreature, AI_DEFAULT_SCRIPT, "ai_incorporeal");
     }
-    if(GetAssociateType(oCreature) != ASSOCIATE_TYPE_NONE)
-    {
-        // This allows for permanent associates.
-        if(AI_PERMANENT_ASSOCIATES) SetIsDestroyable (FALSE, FALSE, TRUE);
-        else SetIsDestroyable (TRUE, FALSE, FALSE);
-    }
-    ai_SetMonsterListeningPatterns (oCreature);
-    ai_SetCreatureAIScript (oCreature);
+    ai_SetListeningPatterns(oCreature);
+    ai_SetCreatureAIScript(oCreature);
     ai_SetAura(oCreature);
-    ai_SetIdentifyAllItems(oCreature);
+    ai_SetMonsterEventScripts(oCreature);
+    SetIsDestroyable (TRUE, FALSE, FALSE);
     SetLootable(oCreature, TRUE);
 }
 void ai_OnAssociateSpawn(object oCreature)
 {
-    if(GetAssociateType(oCreature) != ASSOCIATE_TYPE_NONE)
-    {
-        // This allows for permanent associates.
-        if(AI_PERMANENT_ASSOCIATES) SetIsDestroyable (FALSE, FALSE, TRUE);
-        else SetIsDestroyable (TRUE, FALSE, FALSE);
-    }
-    ai_SetMonsterListeningPatterns(oCreature);
+    ai_SetListeningPatterns(oCreature);
     ai_SetAssociateAIScript(oCreature, TRUE);
     ai_SetAura(oCreature);
-    ai_SetIdentifyAllItems(oCreature);
     SetLootable (oCreature, TRUE);
     object oMaster = GetMaster(oCreature);
     if(ai_GetIsCharacter(oMaster))
@@ -855,10 +580,24 @@ void ai_OnAssociateSpawn(object oCreature)
         // Lets make sure they don't start patrolling. That should be selected each time.
         ai_SetAssociateMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
     }
+    // Added code to allow for permanent associates in the battle!
+    if(!ai_GetIsCharacter(oMaster) && AI_PERMANENT_ASSOCIATES)
+    {
+        ChangeFaction(oCreature, oMaster);
+        SetIsDestroyable (FALSE, FALSE, TRUE);
+    }
+    else SetIsDestroyable (TRUE, FALSE, FALSE);
+    ai_SetAssociateEventScripts(oCreature);
+    // Bioware summoned shadows are not incorporeal, also set the ai code.
+    if (GetTag(OBJECT_SELF) == "NW_S_SHADOW")
+    {
+        SetLocalInt(OBJECT_SELF, "X2_L_IS_INCORPOREAL", TRUE);
+        SetLocalString(OBJECT_SELF, AI_DEFAULT_SCRIPT, "ai_shadow");
+    }
 }
 void ai_OnRested(object oCreature)
 {
-    if(ai_GetAssociateMode(oCreature, AI_MODE_BUFF_AFTER_REST))
+    if(ai_GetAssociateMagicMode(oCreature, AI_MAGIC_BUFF_AFTER_REST))
     {
         int nLevel = ai_GetCharacterLevels(oCreature);
         float fDelay = StringToFloat(Get2DAString("restduration", "DURATION", nLevel));

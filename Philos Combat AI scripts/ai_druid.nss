@@ -24,8 +24,7 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     //****************************  SKILL FEATURES  ****************************
-    object oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
-    if(oTarget != OBJECT_INVALID && ai_TryAnimalEmpathy(oCreature, oTarget)) return;
+    if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
     if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
@@ -37,16 +36,21 @@ void main()
     // All else fails lets see if we have any good potions.
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     // ************************  RANGED ATTACKS  *******************************
+    object oTarget;
     if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
-        // Lets pick off the nearest targets.
-        if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-        else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            // Lets pick off the nearest targets.
+            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            return;
+        }
+        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
-    if(!ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon(oCreature, oTarget);
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {

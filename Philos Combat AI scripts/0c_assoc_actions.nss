@@ -99,23 +99,41 @@ void main()
         ai_SetAssociateMode(oHenchman, AI_MODE_PICKUP_GEMS_ITEMS, FALSE);
         ai_SetAssociateMode(oHenchman, AI_MODE_PICKUP_MAGIC_ITEMS, TRUE);
     }
-    else if(sAction == "Heal25")
+    else if(sAction == "HealIn25")
     {
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_25, TRUE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_50, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_75, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_25, TRUE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_50, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_75, FALSE);
     }
-    else if(sAction == "Heal50")
+    else if(sAction == "HealIn50")
     {
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_25, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_50, TRUE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_75, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_50, TRUE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_75, FALSE);
     }
-    else if(sAction == "Heal75")
+    else if(sAction == "HealIn75")
     {
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_25, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_50, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_AT_75, TRUE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_50, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_IN_COMBAT_75, TRUE);
+    }
+    else if(sAction == "HealOut25")
+    {
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_25, TRUE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_50, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_75, FALSE);
+    }
+    else if(sAction == "HealOut50")
+    {
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_50, TRUE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_75, FALSE);
+    }
+    else if(sAction == "HealOut75")
+    {
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_25, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_50, FALSE);
+        ai_SetAssociateMode(oHenchman, AI_MODE_HEAL_OUT_COMBAT_75, TRUE);
     }
     else if(sAction == "UseRanged")
     {
@@ -133,46 +151,6 @@ void main()
     {
         ai_SetAssociateMode(oHenchman, AI_MODE_IGNORE_ASSOCIATES, TRUE);
     }
-    else if(sAction == "BuffMaster")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_BUFF_MASTER, TRUE);
-    }
-    else if(sAction == "BuffAnyone")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_BUFF_MASTER, FALSE);
-    }
-    else if(sAction == "RestBuffing")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_BUFF_AFTER_REST, TRUE);
-    }
-    else if(sAction == "DoNotRestBuffing")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_BUFF_AFTER_REST, FALSE);
-    }
-    else if(sAction == "NoMagic")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC, TRUE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_DEFENSIVE_CASTING, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_OFFENSIVE_CASTING, FALSE);
-    }
-    else if(sAction == "UseMagic")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_DEFENSIVE_CASTING, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_OFFENSIVE_CASTING, FALSE);
-    }
-    else if(sAction == "DefensiveCasting")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_DEFENSIVE_CASTING, TRUE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_OFFENSIVE_CASTING, FALSE);
-    }
-    else if(sAction == "OffensiveCasting")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_DEFENSIVE_CASTING, FALSE);
-        ai_SetAssociateMode(oHenchman, AI_MODE_OFFENSIVE_CASTING, TRUE);
-    }
     else if(sAction == "Invisibility")
     {
         ai_SetAssociateMode(oHenchman, AI_MODE_NO_STEALTH, FALSE);
@@ -181,22 +159,6 @@ void main()
     {
         ai_SetAssociateMode(oHenchman, AI_MODE_NO_STEALTH, TRUE);
         ai_SetAssociateMode(oHenchman, AI_MODE_AGGRESSIVE_STEALTH, FALSE);
-    }
-    else if(sAction == "Dispel")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_STOP_DISPEL, FALSE);
-    }
-    else if(sAction == "DoNotDispel")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_STOP_DISPEL, TRUE);
-    }
-    else if(sAction == "NoMagicItems")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC_ITEMS, TRUE);
-    }
-    else if(sAction == "UseMagicItems")
-    {
-        ai_SetAssociateMode(oHenchman, AI_MODE_NO_MAGIC_ITEMS, FALSE);
     }
     else if(sAction == "TrapsOn")
     {
@@ -239,6 +201,94 @@ void main()
         ai_HaveCreatureSpeak(oHenchman, 6, ":29:46:28:42:31:35:");
         DelayCommand(0.5, SetActionMode(oHenchman, ACTION_MODE_STEALTH, TRUE));
         ai_SetAssociateMode(oHenchman, AI_MODE_NO_STEALTH, FALSE);
+    }
+    else if(sAction == "BuffMaster")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_MASTER, TRUE);
+    }
+    else if(sAction == "BuffAnyone")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_MASTER, FALSE);
+    }
+    else if(sAction == "RestBuffing")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_AFTER_REST, TRUE);
+    }
+    else if(sAction == "DoNotRestBuffing")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_BUFF_AFTER_REST, FALSE);
+    }
+    else if(sAction == "NoMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC, TRUE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
+    }
+    else if(sAction == "UseMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
+    }
+    else if(sAction == "DefensiveCasting")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING, TRUE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
+    }
+    else if(sAction == "OffensiveCasting")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING, TRUE);
+    }
+    else if(sAction == "Dispel")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_STOP_DISPEL, FALSE);
+    }
+    else if(sAction == "DoNotDispel")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_STOP_DISPEL, TRUE);
+    }
+    else if(sAction == "NoMagicItems")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC_ITEMS, TRUE);
+    }
+    else if(sAction == "UseMagicItems")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NO_MAGIC_ITEMS, FALSE);
+    }
+    else if(sAction == "LowMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE, TRUE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NORMAL_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE, FALSE);
+        SetLocalInt(oHenchman, AI_MAGIC_ADJUSTMENT, -10);
+    }
+    else if(sAction == "NormalMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NORMAL_MAGIC_USE, TRUE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE, FALSE);
+        SetLocalInt(oHenchman, AI_MAGIC_ADJUSTMENT, 0);
+    }
+    else if(sAction == "HeavyMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NORMAL_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE, TRUE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE, FALSE);
+        SetLocalInt(oHenchman, AI_MAGIC_ADJUSTMENT, 10);
+    }
+    else if(sAction == "ConstantMagic")
+    {
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_NORMAL_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE, FALSE);
+        ai_SetAssociateMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE, TRUE);
+        SetLocalInt(oHenchman, AI_MAGIC_ADJUSTMENT, 40);
     }
     else if(sAction == "Identify")
     {

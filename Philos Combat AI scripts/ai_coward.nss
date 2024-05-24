@@ -26,6 +26,7 @@ void main()
     // In Melee combat!
     if(nInMelee > 0)
     {
+        if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
         if(ai_TryImprovedExpertiseFeat(oCreature)) return;
         if(ai_TryExpertiseFeat(oCreature)) return;
         // Lets get the strongest melee opponent in melee with us.

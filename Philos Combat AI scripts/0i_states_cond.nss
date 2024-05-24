@@ -16,7 +16,7 @@ void ai_SetLastAction(object oCreature, int nAction = AI_LAST_ACTION_NONE);
 // 0+ is the spell that was cast, other actions use AI_LAST_ACTION_* constants.
 int ai_CompareLastAction(object oCreature, int nAction);
 // Sets the correct listen checks on oCreature.
-void ai_SetMonsterListeningPatterns(object oCreature);
+void ai_SetListeningPatterns(object oCreature);
 // Returns TRUE if oCreature is an elemental, undead, or golem i.e. non-living.
 int ai_IsNonliving(int nRacialType);
 // Returns TRUE if oCreature is in combat.
@@ -48,6 +48,10 @@ int ai_Disabled(object oCreature);
 void ai_SetAssociateMode(object oAssociate, int nMode, int bValid = TRUE);
 // Return if nMode is set on oAssociate. Uses the MODE_* bitwise constants.
 int ai_GetAssociateMode(object oAssociate, int nMode);
+// Set one of the MAGIC_* bitwise constants on oAssociate to bValid.
+void ai_SetAssociateMagicMode(object oAssociate, int nMode, int bValid = TRUE);
+// Return if nMode is set on oAssociate. Uses the MAGIC_* bitwise constants.
+int ai_GetAssociateMagicMode(object oAssociate, int nMode);
 // Returns TRUE if nCondition is within nCurrentConditions.
 // nCurrentConditions is setup in ai_GetNegativeConditions.
 int ai_GetHasNegativeCondition(int nCondition, int nCurrentConditions);
@@ -57,10 +61,14 @@ int ai_GetNegativeConditions(object oCreature);
 // Returns TRUE if oObject is in the line of sight of oCreature.
 // If the creature is close LineOfSight doesn't work well.
 int ai_GetIsInLineOfSight(object oCreature, object oObject);
+// Add the specified condition flag to the behavior state of the caller
+void ai_SetBehaviorState(int nCondition, int bValid = TRUE);
+// Returns TRUE if the specified behavior flag is set on the caller
+int ai_GetBehaviorState(int nCondition);
 
 void ai_ClearCreatureActions(object oCreature, int bClearCombatState = FALSE)
 {
-    //ai_Debug("0i_states_cond", "63", GetName(oCreature) + " is clearing actions (" +
+    //ai_Debug("0i_states_cond", "71", GetName(oCreature) + " is clearing actions (" +
     //         IntToString(bClearCombatState) + ")!");
     DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
     ClearAllActions(bClearCombatState);
@@ -77,7 +85,7 @@ int ai_CompareLastAction(object oCreature, int nAction)
     // Check other last actions.
     return (nAction == GetLocalInt(oCreature, sLastActionVarname));
 }
-void ai_SetMonsterListeningPatterns(object oCreature)
+void ai_SetListeningPatterns(object oCreature)
 {
     SetListenPattern(oCreature, AI_I_SEE_AN_ENEMY, AI_ALLY_SEES_AN_ENEMY);
     SetListenPattern(oCreature, AI_I_HEARD_AN_ENEMY, AI_ALLY_HEARD_AN_ENEMY);
@@ -99,43 +107,50 @@ int ai_IsNonliving(int nRacialType)
 }
 int ai_GetIsInCombat(object oCreature)
 {
+    //ai_Debug("0i_states_cond", "110", "Enemy Numbers: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_NUMBERS)));
     return GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
 }
 void ai_SetCombatRound(object oCreature)
 {
     SetLocalInt(oCreature, "AI_COMBAT_ROUND_START", SQLite_GetTimeStamp());
-    //ai_Debug("0i_states_cond", "107", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+    //ai_Debug("0i_states_cond", "116", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
 }
 void ai_EndCombatRound(object oCreature)
 {
-    //ai_Debug("0i_states_cond", "111", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+    //ai_Debug("0i_states_cond", "120", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
     DeleteLocalInt(oCreature, "AI_COMBAT_ROUND_START");
 }
 int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_SECONDS)
 {
     int nCombatRoundStart = GetLocalInt(oCreature, "AI_COMBAT_ROUND_START");
+    //ai_Debug("0i_states_cond", "126", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
     if(!nCombatRoundStart) return FALSE;
-    //ai_Debug("0i_states_cond", "118", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
     // New combat round calculator. If 6 seconds has passed then we are on a new round!
     int nSQLTime = SQLite_GetTimeStamp();
     int nCombatRoundTime = nSQLTime - nCombatRoundStart;
-    //ai_Debug("0i_states_cond", "122", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
+    //ai_Debug("0i_states_cond", "131", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
     //         "(" + IntToString(nSQLTime - nCombatRoundStart) + ")");
-    if(nCombatRoundTime >= nCombatRound) ai_EndCombatRound(oCreature);
-    else return TRUE;
+    if(nCombatRoundTime < nCombatRound) return TRUE;
+    ai_EndCombatRound(oCreature);
     return FALSE;
 }
 int ai_GetIsBusy(object oCreature)
 {
     int nAction = GetCurrentAction(oCreature);
-    //ai_Debug("0i_states_cond", "131", GetName(oCreature) + " Get is Busy, action: " +
-    //         IntToString(nAction) + " IsInCombat: " + IntToString(ai_GetIsInCombat(oCreature)));
+    //ai_Debug("0i_states_cond", "140", GetName(oCreature) + " Get is Busy, action: " +
+    //         IntToString(nAction));
     switch(nAction)
     {
+        case ACTION_CASTSPELL :
+        case ACTION_ITEMCASTSPELL :
+        case ACTION_OPENLOCK :
+        case ACTION_REST :
+        case ACTION_DISABLETRAP :
+        case ACTION_SETTRAP : return TRUE;
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            //ai_Debug("0i_states_cond", "138", "nCombatWait: " + IntToString(nCombatWait));
+            //ai_Debug("0i_states_cond", "153", "nCombatWait: " + IntToString(nCombatWait));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return TRUE;
@@ -149,25 +164,18 @@ int ai_GetIsBusy(object oCreature)
         {
             // If we are attacking/counterspelling and there is time left
             // in this round then we are busy.
-            if(ai_IsInCombatRound(oCreature)) return TRUE;
-            return FALSE;
+            return ai_IsInCombatRound(oCreature);
         }
-        case ACTION_CASTSPELL :
-        case ACTION_DISABLETRAP :
-        case ACTION_ITEMCASTSPELL :
-        case ACTION_OPENLOCK :
-        case ACTION_REST :
-        case ACTION_SETTRAP : return TRUE;
         case ACTION_MOVETOPOINT :
         {
-            if(ai_GetIsInCombat(oCreature)) return TRUE;
+            return ai_GetIsInCombat(oCreature);
         }
     }
     return FALSE;
 }
 int ai_Disabled(object oCreature)
 {
-    //ai_Debug("0i_states_cond", "170", GetName(oCreature) + " Checking if disabled.");
+    //ai_Debug("0i_states_cond", "178", GetName(oCreature) + " Checking if disabled.");
     if(GetIsDead(oCreature)) return 1;
     // Check for effects.
     effect eEffect = GetFirstEffect(oCreature);
@@ -186,14 +194,14 @@ int ai_Disabled(object oCreature)
             case EFFECT_TYPE_PETRIFY :
             case EFFECT_TYPE_TIMESTOP :
             {
-                //ai_Debug("0i_stats_cond", "189", GetName(oCreature) + " is disabled(" +
+                //ai_Debug("0i_stats_cond", "197", GetName(oCreature) + " is disabled(" +
                 //         IntToString(GetEffectType(eEffect)) + ")");
                 return GetEffectType(eEffect);
             }
         }
         eEffect = GetNextEffect(oCreature);
     }
-    //ai_Debug("0i_states_cond", "196", GetName(oCreature) + " is not disabled.");
+    //ai_Debug("0i_states_cond", "204", GetName(oCreature) + " is not disabled.");
     return FALSE;
 }
 void ai_SetAssociateMode(object oAssociate, int nMode, int bOn = TRUE)
@@ -206,6 +214,17 @@ void ai_SetAssociateMode(object oAssociate, int nMode, int bOn = TRUE)
 int ai_GetAssociateMode(object oAssociate, int nMode)
 {
     return (GetLocalInt(oAssociate, sAssociateModeVarname) & nMode);
+}
+void ai_SetAssociateMagicMode(object oAssociate, int nMode, int bOn = TRUE)
+{
+    int nAssociateModes = GetLocalInt(oAssociate, sAssociateMagicModeVarname);
+    if(bOn) nAssociateModes = nAssociateModes | nMode;
+    else nAssociateModes = nAssociateModes & ~nMode;
+    SetLocalInt(oAssociate, sAssociateMagicModeVarname, nAssociateModes);
+}
+int ai_GetAssociateMagicMode(object oAssociate, int nMode)
+{
+    return (GetLocalInt(oAssociate, sAssociateMagicModeVarname) & nMode);
 }
 int ai_GetHasNegativeCondition(int nCondition, int nCurrentConditions)
 {
@@ -256,5 +275,25 @@ int ai_GetIsInLineOfSight(object oCreature, object oObject)
     // Creatures can block the line of sight so when close we shouldn't check.
     if(GetDistanceBetween(oObject, oCreature) <= AI_RANGE_MELEE) return TRUE;
     return LineOfSightObject(oCreature, oObject);
+}
+void ai_SetBehaviorState(int nCondition, int bValid = TRUE)
+{
+    int nPlot = GetLocalInt(OBJECT_SELF, "NW_BEHAVIOR_MASTER");
+    if(bValid)
+    {
+        nPlot = nPlot | nCondition;
+        SetLocalInt(OBJECT_SELF, "NW_BEHAVIOR_MASTER", nPlot);
+    }
+    else
+    {
+        nPlot = nPlot & ~nCondition;
+        SetLocalInt(OBJECT_SELF, "NW_BEHAVIOR_MASTER", nPlot);
+    }
+}
+int ai_GetBehaviorState(int nCondition)
+{
+    int nPlot = GetLocalInt(OBJECT_SELF, "NW_BEHAVIOR_MASTER");
+    if(nPlot & nCondition) return TRUE;
+    return FALSE;
 }
 

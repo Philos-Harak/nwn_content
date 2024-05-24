@@ -22,8 +22,7 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     //****************************  SKILL FEATURES  ****************************
-    object oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
-    if(oTarget != OBJECT_INVALID && ai_TryAnimalEmpathy(oCreature, oTarget)) return;
+    if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
@@ -38,18 +37,23 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     // ************************  RANGED ATTACKS  *******************************
+    object oTarget;
     if (!GetHasFeatEffect (FEAT_BARBARIAN_RAGE, oCreature) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
     {
-        if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
-        string sIndex;
-        if (!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-        else oTarget = ai_GetNearestTarget (oCreature, AI_RANGE_MELEE);
-        if(ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, FALSE);
-        return;
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
+            string sIndex;
+            if (!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+            else oTarget = ai_GetNearestTarget (oCreature, AI_RANGE_MELEE);
+            if(ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+            return;
+        }
+        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
-    if (!ai_GetIsMeleeWeapon (GetItemInSlot (INVENTORY_SLOT_RIGHTHAND))) ai_EquipBestMeleeWeapon (oCreature, oTarget);
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat (oCreature, nInMelee);
     if (oTarget != OBJECT_INVALID)
     {

@@ -58,6 +58,9 @@ int ai_GetArmorBonus(object oArmor);
 int ai_GetMaxItemValueThatCanBeEquiped(int nLevel);
 // Returns oCreatures total attack bonus with melee weapon (Mostly).
 int ai_GetCreatureAttackBonus(object oCreature);
+// Returns TRUE if oCreature can use oItem based on Class, Race, and Alignment
+// restrictions. Also checks UseMagicDevice of oCreature.
+int ai_CheckIfCanUseItem(object oCreature, object oItem);
 
 int ai_GetIsWeapon(object oItem)
 {
@@ -461,4 +464,97 @@ int ai_GetCreatureAttackBonus(object oCreature)
     if(ai_GetIsMeleeWeapon(oWeapon)) nAtkBonus += ai_GetWeaponAtkBonus(oWeapon);
     return nAtkBonus;
  }
+int ai_CheckUseMagicDevice(object oCreature, string sColumn, object oItem)
+{
+    if(!AI_ALLOW_USE_MAGIC_DEVICE) return FALSE;
+    int nUMD = GetSkillRank(SKILL_USE_MAGIC_DEVICE, oCreature);
+    //ai_Debug("0i_talents", "1600", GetName(oCreature) + " is check UMD: " + IntToString(nUMD));
+    if(nUMD < 1) return FALSE;
+    int nDC, nIndex, nItemValue = GetGoldPieceValue(oItem);
+    while(nIndex < 55)
+    {
+        //ai_Debug("0i_talents", "1605", GetName(oItem) + " has a value of " +
+        //         Get2DAString("skillvsitemcost", "DeviceCostMax", nIndex) +
+        //         " nIndex: " + IntToString(nIndex));
+        if(nItemValue < StringToInt(Get2DAString("skillvsitemcost", "DeviceCostMax", nIndex)))
+        {
+            //ai_Debug("0i_talents", "1610", "nUMD >= " + Get2DAString("skillvsitemcost", sColumn, nIndex));
+            if(nUMD >= StringToInt(Get2DAString("skillvsitemcost", sColumn, nIndex))) return TRUE;
+            return FALSE;
+        }
+        nIndex++;
+    }
+    return FALSE;
+}
+int ai_CheckIfCanUseItem(object oCreature, object oItem)
+{
+    int bAlign, bClass, bRace, bAlignLimit, bClassLimit, bRaceLimit;
+    int nIprpSubType, nItemPropertyType;
+    // Check to see if this item is limited to a specific alignment, class, or race.
+    int nAlign1 = GetAlignmentLawChaos(oCreature);
+    int nAlign2 = GetAlignmentGoodEvil(oCreature);
+    int nRace = GetRacialType(oCreature);
+    itemproperty ipProp;
+    ai_Debug("0i_actions", "615", "nAlign1: " + IntToString(nAlign1) +
+             " nAlign2: " + IntToString(nAlign2) + " nRace: " + IntToString(nRace));
+    while(GetIsItemPropertyValid(ipProp))
+    {
+        nItemPropertyType = GetItemPropertyType(ipProp);
+        ai_Debug("0i_actions", "620", "ItempropertyType(62/63/64/65): " + IntToString(nItemPropertyType));
+        if(nItemPropertyType == ITEM_PROPERTY_USE_LIMITATION_ALIGNMENT_GROUP)
+        {
+            bAlignLimit = TRUE;
+            // SubType is the group index for iprp_aligngrp.2da
+            nIprpSubType = GetItemPropertySubType(ipProp);
+            ai_Debug("0i_actions", "626", "nIprpSubType: " + IntToString(nIprpSubType));
+            if(nIprpSubType == nAlign1 || nIprpSubType == nAlign2) bAlign = TRUE;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_USE_LIMITATION_SPECIFIC_ALIGNMENT)
+        {
+            bAlignLimit = TRUE;
+            // SubType is the alignment index for iprp_alignment.2da
+            nIprpSubType = GetItemPropertySubType(ipProp);
+            ai_Debug("0i_actions", "634", "nIprpSubType: " + IntToString(nIprpSubType));
+            if(nIprpSubType == 0 && nAlign1 == 2 && nAlign2 == 4) bAlign = TRUE;
+            else if(nIprpSubType == 1 && nAlign1 == 2 && nAlign2 == 1) bAlign = TRUE;
+            else if(nIprpSubType == 2 && nAlign1 == 2 && nAlign2 == 5) bAlign = TRUE;
+            else if(nIprpSubType == 3 && nAlign1 == 1 && nAlign2 == 4) bAlign = TRUE;
+            else if(nIprpSubType == 4 && nAlign1 == 1 && nAlign2 == 1) bAlign = TRUE;
+            else if(nIprpSubType == 5 && nAlign1 == 1 && nAlign2 == 5) bAlign = TRUE;
+            else if(nIprpSubType == 6 && nAlign1 == 3 && nAlign2 == 4) bAlign = TRUE;
+            else if(nIprpSubType == 7 && nAlign1 == 3 && nAlign2 == 1) bAlign = TRUE;
+            else if(nIprpSubType == 8 && nAlign1 == 3 && nAlign2 == 5) bAlign = TRUE;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_USE_LIMITATION_CLASS)
+        {
+            bClassLimit = TRUE;
+            // SubType is the class index for classes.2da
+            nIprpSubType = GetItemPropertySubType(ipProp);
+            ai_Debug("0i_actions", "650", "nIprpSubType: " + IntToString(nIprpSubType));
+            int nClassPosition = 1;
+            int nClass = GetClassByPosition(nClassPosition, oCreature);
+            while(nClassPosition <= AI_MAX_CLASSES_PER_CHARACTER)
+            {
+                if(nIprpSubType == nClass) bClass = TRUE;
+                nClass = GetClassByPosition(++nClassPosition, oCreature);
+            }
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_USE_LIMITATION_RACIAL_TYPE)
+        {
+            bRaceLimit = TRUE;
+            // SubType is the race index for racialtypes.2da
+            nIprpSubType = GetItemPropertySubType(ipProp);
+            ai_Debug("0i_actions", "664", "nIprpSubType: " + IntToString(nIprpSubType));
+            if(nIprpSubType == nRace) bRace = TRUE;
+        }
+        ipProp = GetNextItemProperty(oItem);
+    }
+    ai_Debug("0i_actions", "669", "bAlignLimit: " + IntToString(bAlignLimit) + " bAlign: " + IntToString(bAlign) +
+             " bClassLimit: " + IntToString(bClassLimit) + " bClass: " + IntToString(bClass) +
+             " bRaceLimit: " + IntToString(bRaceLimit) + " bRace: " + IntToString(bRace));
+    if(bClassLimit && !bClass && !ai_CheckUseMagicDevice(oCreature, "SkillReq_Class", oItem)) return FALSE;
+    if(bRaceLimit && !bRace && !ai_CheckUseMagicDevice(oCreature, "SkillReq_Race", oItem)) return FALSE;
+    if(bAlignLimit && !bAlign && !ai_CheckUseMagicDevice(oCreature, "SkillReq_Align", oItem)) return FALSE;
+    return TRUE;
+}
 

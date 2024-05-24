@@ -300,8 +300,8 @@
 296 Pulse_Ability_Drain_Wisdom        T     6      Ability_Drain  Fortitude 0           D        1              ****          ****        ****       
 297 Pulse_Poison                      T     5      Poison         Fortitude 0           D        1              ****          ****        ****       
 298 Pulse_Disease                     T     5      Disease        Fortitude 0           D        1              ****          ****        ****       
-299 Rage_3                            P     3      ****           ****      ****        ****     0              ****          ****        ****       
-300 Rage_4                            P     4      ****           ****      ****        ****     0              ****          ****        ****       
+299 Rage_3                            P     3      ****           ****      ****        ***      0              ****          ****        ****       
+300 Rage_4                            P     4      ****           ****      ****        ***      0              ****          ****        ****       
 301 Rage_5                            P     5      ****           ****      ****        ****     0              ****          ****        ****       
 302 Smoke_Claw                        T     3      ****           Fortitude 0           T        1              ****          ****        ****       
 303 Summon_Slaad                      L     5      ****           ****      ****        S        1              ****          ****        ****       
@@ -420,7 +420,7 @@
 416 Flare                             M     0      ****           Fortitude 1           R        1              ****          ****        ****       
 417 Shield                            P     1      ****           ****      ****        P        0              3             7           ****       
 418 Entropic_Shield                   P     1      ****           ****      ****        P        0              3             0           ****       
-419 Continual_Flame                   T     2      ****           ****      ****        ****     0              3             ****        15         
+419 Continual_Flame                   T     2      ****           ****      ****        ****     0              3             0           15         
 420 One_With_The_Land                 P     2      ****           ****      ****        ****     0              3             0           ****       
 421 Camoflage                         P     1      ****           ****      ****        ****     0              3             0           ****       
 422 Blood_Frenzy                      P     2      ****           ****      ****        ****     0              2             0           ****       

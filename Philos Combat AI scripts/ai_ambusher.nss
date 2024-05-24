@@ -67,8 +67,7 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     //****************************  SKILL FEATURES  ****************************
-    object oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
-    if(oTarget != OBJECT_INVALID && ai_TryAnimalEmpathy(oCreature, oTarget)) return;
+    if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;

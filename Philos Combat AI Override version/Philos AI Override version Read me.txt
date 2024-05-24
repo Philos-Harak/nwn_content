@@ -87,3 +87,7 @@ First version.
 * Another pass at SearchForInvisibleCreature, removed LineOfSight check to be more responsive.
 * Added IsInCombat checks as we were starting combat without setting up our talents which is very bad!
 * Reworked weapon swaping during combat now works consistantly.
+5-
+* Original Campaign: NPC's will now follow you for quests.
+* Origianl Campaign: NPC's speak one liners now.
+* The Follow command now makes them follow you no matter the situation.

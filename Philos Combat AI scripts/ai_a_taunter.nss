@@ -14,7 +14,7 @@ void main()
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetAssociateMode(oCreature, AI_MODE_NO_MAGIC);
+    int bUseMagic = !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
     if(bUseMagic)
     {
@@ -33,8 +33,7 @@ void main()
     if(nDifficulty >= AI_COMBAT_DIFFICULT)
     {
         //**************************  SKILL FEATURES  **************************
-        object oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
-        if(oTarget != OBJECT_INVALID && ai_TryAnimalEmpathy(oCreature, oTarget)) return;
+        if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
         if(ai_TryBarbarianRageFeat(oCreature)) return;
         if(ai_TryBardSongFeat(oCreature)) return;
@@ -47,7 +46,7 @@ void main()
         // ************************** CLASS FEATURES ***************************
         if(ai_TryTurningTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && !ai_GetAssociateMode(oCreature, AI_MODE_DEFENSIVE_CASTING))
+        if(bUseMagic && !ai_GetAssociateMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
             if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
@@ -56,5 +55,5 @@ void main()
     // Taunt the nearest target!
     if (ai_TryTaunt (oCreature, ai_GetNearestTargetForMeleeCombat (oCreature, nInMelee))) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK));
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAssociateMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
 }
