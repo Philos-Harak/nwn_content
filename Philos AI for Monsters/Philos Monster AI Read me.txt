@@ -1,0 +1,212 @@
+Philos' AI for Monsters version 0.1
+
+This is the read me document for Philos' AI for Monsters. It goes over how to install and use the AI for builders making a module or persistant world that want to add a new AI for monsters.
+
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
+Finally thank you to those who have added to this project.
+Demoix - For testing and putting up with the issues and giving detailed feedback! 
+********** Description **********
+These scripts will replace the original neverwinter nights AI for monsters.
+This folder holds a compiled (ncs) and text (nss) version of the files with the 2da files needed to use.
+
+********** Installation **********
+* Must be running version v89.8193.37-3 of the game and toolset 1.89.
+* These scripts will replace the original neverwinter nights ai for monsters by changing the event scripts 
+  from the defaults to the new AI.
+* Monsters should be using the nw_c2_default* event scripts for this version to work. The OnSpawn and OnDeath scripts can be anything you want.
+* The only overlapping scripts should be nw_c2_default1.
+* If you have not changed any of these scripts and are using the defaults you can just add them to the module.
+* If you have these scripts in your module just rename them (for safe keeping) and then replace with the above scripts.
+* Place all the other files in your module and they should NOT overwrite any scripts.
+* The files all start with 0e_ execution scripts, 0i_ include scripts, ai_ ai scripts used by monsters.
+* ai_spells.2da should be in a hak or the override folder. If the scripts cannot find this 2da THEY WILL NOT WORK. 
+     ai_spells.2da allows the talent system to categorize a creatures spells so it can cast effectively. 
+     It is also used to decide which creatures should be targeted based on immunities, saves, and resistances. 
+     It also defines how a monster can prebuff. VERY IMPORTANT for the AI!
+     If you have new spells or abilities these can be added to the ai_spells.2da just like any spell is added to the spells.2da
+
+********** Using and testing in Override **********
+* If you just want to use or test the AI out you can put the precompiled scripts into the override folder with ai_spells.2da.
+  If you have unique ai scripts in your module the monsters heartbeat script must be nw_ch_ac1 the others will be overwritten. 
+  This allows my scripts to run and setup your monsters for the new AI.
+
+********** Fully integrating the AI into a server **********
+If you decide to use the Philos AI you can fully integrate it by changing the script names of the creature events;
+    For example most monsters use 0e_c2_default1 as the heartbeat script.
+    Then you would want to change 0e_c2_1_hb to 0e_c2_default1 if your heartbeat script is the default.
+    I have also written OnSpawn and OnDeath event scripts for monsters and associates that can be used as well or checked as an example.
+    
+
+********** Features **********
+Philos AI Combat features for Monsters:
+* Creatures will make a moral check once at half health (Has been turned off).
+* Creatures using a ranged weapon will attempt to keep a resonable distance between them and the enemy.
+* Creatures using a ranged weapon in melee will evaluate if it is save to continue using a ranges weapon (Has been turned off).
+* Creatures with sneak attack using a ranged weapon will attempt to get withing sneak attack range if safe to do so.
+* Creatures with sneak attack will attempt to use sneak attack as much as possible in melee.
+* Creatures with Mobility and Spring attack will tend to move around in combat more.
+* Melee attackers will evaluate feats to see if they are worth using based on attack bonus and armor class for themselves and the enemy.
+* Weak melee classes will attempt to stay out of melee if the opponents are too strong.
+* Rangers will prioritize favored enemies if they are in battle.
+* Paladins will fight the stongest opponents on the battle field first.
+* Casters using area of effect spells will look for groups of enemies to hit as many enemies as possible with minimal ally damage.
+* Casters will evaluate when in melee if it is safe to cast spells against its melee opponents.
+* Casters will target the weakest opponents based on the spell they are casting (low Will saves vs will based spells).
+* Casters and Healers will evaluate the battlefield when casting spells (They will not run through enemies to cast a spell on someone).
+* Healers evaluate which healing spell is best to use (They will only use a spell suited for the amount of damage taken).
+* Healers can now use healing kits on themselves or others, in or out of combat (Has been turned off).
+* Clerics will use spontaneous healing spells once they run out of memorized healing spells and healing items.
+* Creatures will use all castable items in combat (Scrolls, Potions, Wands, Staves, Misc items, Rings, etc).
+* Creatures will prebuff before combat using Protections, Enhancements, and Summons (Has been turned off). 
+* They will also select the best targets from allies near them when prebuffing.
+* Any creature with Use Magic Device can use items in combat per the skill (Can be turned off/ Default is on).
+* Creatures will use Familiars and Animal Companions (Has been turned off).
+* Associates will not disappear when the master dies (Has been turned off).
+* Can easily change or create AI scripts to change behavior, targets selected, and round by round actions.
+
+There are also constants that can be adjusted to make the AI more customized for your module.
+These are found in 0i_constants.nss file at the top if you change any of them you must recompile every script.
+
+// The following constants are designed to be changed to allow the AI to work
+// differently based on what a developer wants.
+// Should moral checks be used.
+const int AI_USE_MORAL = FALSE;
+// Summons, familiars, and companions are permanent and don't disappear when the caster dies.
+// This mode will only work on a server that adds Philos AI code to the OnDeath
+// script event for Permanent associates. See 0e_ch_9_onspawn and 0e_ch_7_ondeath event scripts.
+const int AI_PERMANENT_ASSOCIATES = FALSE;
+// Should creatures summon familiars be used?
+// These don't work very well unless you can change the familiar via NWNX.
+const int AI_SUMMON_FAMILIARS = FALSE;
+// Should creatures summon animal companions be used?
+// These don't work very well unless you can change the companion via NWNX.
+const int AI_SUMMON_COMPANIONS = FALSE;
+// Should all monsters prebuff before combat?
+const int AI_BUFF_MONSTERS = TRUE;
+// Should monsters cast summons spells when prebuffing?
+const int AI_PREBUFF_SUMMONS = TRUE;
+// Should monsters use potions to prebuff before combat?
+const int AI_BUFF_MONSTER_POTIONS = FALSE;
+// Should the AI allow a creature with Point Blank Shot to fire in melee against one opponent?
+const int AI_FIRE_IN_MELEE = FALSE;
+// Should the AI move during combat base on the situation.
+const int AI_ADVANCED_COMBAT_MOVEMENT = TRUE;
+// Should the game follow Item Level Restrictions. Usually off in Single player
+// and on in Multi player.
+const int AI_USE_ITEM_LEVEL_RESTRICTIONS = FALSE;
+// Should the AI allow the use of Use Magic Device?
+const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
+// The threshold needed to use a healing it. i.e. Health > AI_MIN_HP_TO_USE_HEALINGKIT.
+// Should the AI use healing kits in combat. They will still use them outside of combat.
+const int AI_USE_HEALERSKITS_IN_COMBAT = TRUE;
+// Turns spontaneous casting on/off.
+const int AI_USE_SPONTANEOUS_CASTING = FALSE;
+// Set to 9999 if you don't want to use kits. A good base number is 12.
+const int AI_MIN_HP_TO_USE_HEALINGKIT = 12;
+// Variable that can be change the distance for looting checks.
+const float AI_LOOT_DISTANCE = 25.0f;
+// The DC monsters make to decide if they cast the best talent vs random talent.
+const int AI_INTELLIGENCE_DC = 12;
+// Arcane Spell failure% or less that a caster must have to still try to cast a spell.
+const int AI_ASF_WILL_USE = 15;
+// Delay between Henchman casting Buff spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_BUFF_DELAY = 0.2;
+// Delay between Henchman casting Healing spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_HEALING_DELAY = 6.0;
+// Variable that can be change the distance enemies will come and attack after
+// hearing a shout from an ally that sees or hears an enemy.
+// Or when searching for an invisible, heard enemy.
+// 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
+const float AI_MAX_PERCEPTION_DISTANCE = 10.0f;
+// The number of classes allowed for a character to take in the server/module.
+const int AI_MAX_CLASSES_PER_CHARACTER = 3;
+// Taunts cool down time before the AI attemps another Taunt.
+const int AI_TAUNT_COOLDOWN = 3;
+// Animal Empathy cool down time before the AI attemps another check.
+const int AI_EMPATHY_COOLDOWN = 3;
+// Change the Custom token number if it conflicts with your server.
+const int AI_BASE_CUSTOM_TOKEN = 1000;
+//**************************  CONVERSATION CONSTANTS  **************************
+// Player's can tell their associates to ignore enemy associates.
+const int AI_IGNORE_ASSOCIATES_ON = TRUE;
+// Associates with a Taunt skill higher than their level can be told to taunt.
+const int AI_TAUNTING_ON = TRUE;
+// Associates that cast spells can be told to use counterspell.
+const int AI_COUNTERSPELLING_ON = TRUE;
+// Associates with lore skill higher than the master can identify items.
+const int AI_IDENTIFY_ON = TRUE;
+// Associates can be called upon to scout ahead for monsters.
+const int AI_SCOUT_AHEAD_ON = TRUE;
+// A player can open a henchmen's inventory.
+const int AI_OPEN_INVENTORY = TRUE;
+// Allows players to have associates pickup loot.
+const int AI_PICKUP_LOOT = TRUE;
+// Allows players to remove a henchman.
+const int AI_REMOVE_HENCHMAN_ON = FALSE;
+// The distances associates will stay away from the player.
+const float AI_DISTANCE_CLOSE = 0.5;
+const float AI_DISTANCE_MEDIUM = 2.5;
+const float AI_DISTANCE_LONG = 4.5;
+
+********** How it works **********
+For now this will be a basic understanding of how it works and I will hopefully flesh it out more as time goes on.
+
+A) Setting up a creature just requires the heartbeat script to be defined as nw_c2_default1 for monsters 
+   This script cannot be saved to the module, rename it if it is.
+B) The AI will "hijack" the heartbeat script and setup the creatures event scripts for the AI so it can detect and attack.
+   These creatures event scripts should be the original scripts.
+C) Once a creatures OnPerception script fires and they "hear" an enemy it will enter combat mode and begin searching for the enemy.
+D) Once a creatures OnPerception script fires and they "see" an enemy then it will do the following;
+   1) It sets up a talent array with any spells, special abilities, and items that it can use in combat.
+   2) It sets up a combat state for each creature giving them information about each enemy and ally in the battle.
+      such as distance, health, combat rating, if they are disabled, and if they can see them for each combat round.
+   3) With the combat state and talent array it goes through a script set on the creature based on its class to determine its action.
+   4) Once the action has finished it will start at #2 doing each turn until all enemies are dead.
+
+********** Versions **********
+***** 0.1 (4/30/24) *****
+First version.
+* Dialog fix so henchman can be talked to before they join the player.
+* Not equiping ranged weapon and then standing motionless - Fixed to make them still attack.
+* Location spells now actually work from the talent list. 
+5-1-24
+* Fixed issue with some combat feats not firing all the time (Knock down, Expertise feats).
+* Fixed some special abilities being added as a talent list that should not be (rage, etc).
+* Fixed some spells being added as a talent list that should not be (light).
+* Separated PC AI from the henchman AI. Allows for PC AI only to be used.
+5-2-24
+* Reworked spotting enemies.
+* Reworked the auto loot system.
+* Fixed issue with allies thinking you might be an enemy.
+* Fixed issue with items at 0 Charges/Uses per day being added to the talent list and freezing character.
+* Fixed issue with combat state not being cleared is some cases.
+* Added check for henchman so they don't hide and do other actions when they don't have a master.
+5-6-24
+* Randomness in the difficulty checks for combat have been removed to see how that works.
+* Fixed issue with Bull Strength buffing Weapon Finesse targets instead of someone better.
+* Fixed issue with Magic Fang not selecting an animal companion.
+5-8-24
+* Found error in Rapid Shot feat not setting if we were in melee correctly.
+* Adjusted invisiblity search to only check for creatures heard but not seen.
+* Fixed error when removing randomness it should have been +15 instead of 0.
+* Another pass at SearchForInvisibleCreature, removed LineOfSight check to be more responsive.
+* Added IsInCombat checks as we were starting combat without setting up our talents which is very bad!
+* Reworked weapon swaping during combat now works consistantly.
+5/26/24
+* Redesigned how the AI is injected into each creature, now we hijack the heartbeat scripts and 
+  then change the other creature event scripts to the new AI. We do not change OnSpawn or Ondeath.
+* Added heartbeat scripts to set the creature event scripts to the original values. Used in a single player game to remove Philos' AI.
+* Reworked how changing weapons works, should be more fluid.
+* Reworked how movement is calculated and is executed, should be more fluid.
+* Added the ability to use Healing kits in and out of combat.
+6/6/24
+* Reworked how the AI works in modules and servers for testing.
+* Cleaned up some include files by seperating single player module integration from unique server integration.
+8/9/24
+* Complete rework of the invisibility detection system.
+* Added round counter making defensive spells cast less as the round goes on.

@@ -1,0 +1,60 @@
+Philos' Enhancing Player System (PEPS) version 0.1
+
+This is the read me document for Philos' Enhancing Player System (PEPS). It goes over how to install and use the enhancing player system in your games. It will also include how to add a new plugin to the system if you want one.
+
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
+Finally thank you to those who have added to this project.
+Demoix - For testing and putting up with the issues and giving detailed feedback! 
+********** Description **********
+This is an enhancing system for players to "enhance" the game as they play through modules. It will give advance features and the ability to add plugins to allow for an unlimted amount of customization for any playthrough. 
+When you run a game after installing the files a widget will appear in the top 
+
+********** Features **********
+The core system has two base enhancements. 
+* Ability to command all your associates (henchman, summons, familiars, and animal companions) to follow basic commands with one click. 
+* Automatically buff you and your associates with prepaired defensive spells in an instant.
+    You may autobuff your long duration spells, short duration spells or all defensive spells. 
+    Each spell will cast in less than one second per spell, and if you have any companions it will buff them if the spell would be better on them.
+* Add additional functionallity via plugins. A plugin is a stand alone compiled script that can be run via the widget.
+
+********** Installation **********
+* Must be running at least version v89.8193.37-3 of the game.
+* Option 1) User Patch:
+	    * Add the peps.hak file to your patch folder.
+            * Add the following line to the userpatch file: PatchFileXXX=peps where XXX is the next number in the sequence.
+	    * Note you cannot use the horse file with this method.
+* Option 2) Add the following files to your override folder, they will not override any original game files.
+  ai_spells.2da - defines the spells to be cast when you autobuff.
+  0e_nui.ncs - needed to run the NUI menus.
+  default.ncs - not used by most modules and is not an original file. 
+  NOTE! Some custom content may use this file and will not work with the Enhancing player system.
+  PEPS_x3_s3_horse.ncs - If you cannot use the default.ncs file due to content conflicts and you are not using the horse system you may rename
+                         this file to x3_s3_horse.ncs and use the horse feats to open the widget. 
+  NOTE! renaming this file does override the horse feats within the game! 
+
+********** Integrated Plugins **********
+There are three plugins that will automatically set themselves up once added to the override folder.
+
+1) Player enhanced AI - Allows you to let your character fight and pickup loot automatically.
+2) Henchman enhanced AI - Enhances the henchmans combat AI as well as allowing them to pickup loot automatically plus other commands.
+3) Monster enhanced AI - Enhances the enemies AI making them harder to defeat.
+
+********** External Plugins **********
+There will also be additional plug ins that can be added via the options menu.
+Right now I just have one, but more will be available. Please see the readme for the plugins on how to install.
+
+1) Player instant buffing - Allows the player to save buff spells and then automatically cast them within seconds.
+
+********** Making Plugins **********
+The plugin system allows anyone to make stand alone scripts that execute on the player.
+Once a script is made to execute on the player you can add the script to the override folder.
+Then go to the options menu and type the name of the executable script and add it to the widget.
+Finally anytime you want to run the script just press the widget button for that script.
+
+Adding new and usefull NUI menus to work in the game world are as simple as pushing a button in game!
+

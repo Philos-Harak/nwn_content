@@ -1,0 +1,86 @@
+Player AI Plugin for Philos' Enhancing Player System (PEPS) version 0.1
+
+This is the read me document for the Player AI Plugin that works in Philos' Enhancing Player System (PEPS). 
+It goes over how to install and use the Player AI plugin with Philos' Enhancing Player System. 
+
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
+Finally thank you to those who have added to this project.
+Demoix - For testing and putting up with the issues and giving detailed feedback! 
+
+********** Description **********
+This plugin adds enhanced AI for the player reducing the number of tasks the player must do themselves.
+
+********** Features **********
+* Allows the player to assign an enhanced AI to your player character. 
+* You can automatically loot items on the ground, nearby chests, and corpses.
+* The associate can automatically pick locks.
+* Your character will fight any battles using spells, feats, and tactics to win.
+* You can control many of the options (see below) and how they work in battle via the player widget.
+
+********** Installation **********
+* Must be running at least version v89.8193.37-3 of the game.
+* Philos' Enhancing Player System (PEPS) must be in the override folder or patch folder.
+* Option 1) User Patch:
+	    * Add the pi_player_ai.hak file to your patch folder.
+            * Add the following line to the userpatch file: PatchFileXXX=pi_player_ai where XXX is the next number in the sequence.
+* Option 2) Add the following files to your override folder, they will not override any original game files.
+  xx_pc_1_hb.ncs - On Heartbeat script for the player AI.
+  xx_pc_2_percept.ncs - On Perception script for the player AI.
+  xx_pc_3_endround.ncs - On End of round script for the player AI.
+  xx_pc_4_convers.ncs - On Conversation script for the player AI.
+  xx_pc_5_phyatked.ncs - On Physically attacked script for the player AI.
+  xx_pc_6_damaged_ncs - On Damaged script for the player AI.
+  xx_pc_8_disturb.ncs - On Disturbed script for the player AI.
+  xx_pc_b_castat.ncs - On Cast At script for the player AI.
+  xx_pc_e_blocked.ncs - On Blocked script for the player AI.
+  0e_do_combat_rnd.ncs - Used during combat to initiate new round. This file overlaps with the other AI files.
+  ai_a_*.ncs - AI script for the different classes and combat modes. These do overlap with the Henchman Plugin.
+
+* Add the following files to your override folder, THESE DO OVERRIDE THE ORIGINAL GAME FILES.
+  ***** These are only required for the player to loot *****
+  ***** These do overlap with the Henchman AI Plugin *****
+  nw_o2_bookshelf.ncs - Original loot scripts, used in original campaigns. 
+  nw_o2_boss.ncs - Original loot scrips, used in original campaigns. 
+  nw_o2_classhig.ncs - Original loot script, used in original campaigns. 
+  nw_o2_classlow.ncs - Original loot script, used in original campaigns. 
+  nw_o2_classmed.ncs - Original loot script, used in original campaigns. 
+  nw_o2_classweap.ncs - Original loot script, used in original campaigns. 
+  nw_o2_feat.ncs - Original loot script, used in original campaigns. 
+  nw_o2_generalhig - Original loot script, used in original campaigns.
+  nw_o2_generallow - Original loot script, used in original campaigns.
+  nw_o2_generalmed - Original loot script, used in original campaigns.
+  nw_o2_generalmid - Original loot script, used in original campaigns.
+
+* Once in the game open the players menu via the widget.
+  This Plugin automatically works once the files are in the override folder.
+  You should see a new list of options you can add to the Players widget bar.
+
+********* How to use **********
+* The new buttons do a variety of things that are linked to the new AI.
+  To use these options the AI must be turned on.
+* "AI On/Off" button turns the players AI on/off.
+* "Randed" button turns ranged attacks on/off for the player AI.
+* "Search" button turns the searching mode on/off for the player AI.
+* "Stealth" button turns the stealth mode on/off for the player AI.
+* "Disarm Traps" button turns on/off if the player AI will attempt to disarm traps.
+* "Bypass Locks" button turns on/off if the player AI will attempt to bypass locks.
+* "Magic use -" button decreases the chance the player AI will use magic in combat.
+* "Magic use +" button increases the chance the player AI will use magic in combat.
+* "No Magic" button turns off all magic use for the player AI.
+* "All Magic" button allows the player AI to use any magic you have.
+* "Def Magic" button allows the player AI to only use Defensive magic.
+* "Off Magic" button allows the player AI to only use Offensive magic.
+* "No Looting" button stops the player AI from looting nearby items, placeables, and corpses.
+* "Loot All" button allows the player AI to take all items on the ground, in placeables, and corpses.
+* "Loot Gems+" button allows the player AI to take only gems, gold, and magic items.
+* "Loot Magic" button allows the player AI to take only gold and magic items.
+* "Heal % Chance -" button decreases the health percentage that the player AI will heal out of combat.
+* "Heal % Chance +" button increases the health percentage that the player AI will heal out of combat.
+* "Heal % Combat -" button decreases the health percentage that the player AI will heal in combat.
+* "Heal % Combat +" button increases the health percentage that the player AI will heal in combat.
+* "Heal On/Off" button will either allow or not allow the player AI to heal.
