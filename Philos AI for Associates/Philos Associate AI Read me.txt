@@ -227,3 +227,4 @@ First version.
 8/9/24
 * Complete rework of the invisibility detection system.
 * Added round counter making defensive spells cast less as the round goes on.
+* Fixed not clearing LockVariable and setting the wrong variable when henchman attempts to unlock objects.

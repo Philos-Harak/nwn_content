@@ -55,27 +55,27 @@ This plugin adds enhanced AI for the players associates reducing the number of t
 ********** Installation **********
 * Must be running at least version v89.8193.37-3 of the game.
 * Philos' Enhancing Player System (PEPS) must be in the override folder or patch folder.
-* Option 1) User Patch:
+* Option 1) User Patch: This method does not require adding any files to the override.
 	    * Add the pi_associate_ai.hak file to your patch folder.
             * Add the following line to the userpatch file: PatchFileXXX=pi_associate_ai where XXX is the next number in the sequence.
 * Option 2) Add the following files to your override folder, they will not override any original game files.
-  0e_ch_1_hb.ncs - On Heartbeat script for the player AI.
-  0e_ch_2_percept.ncs - On Perception script for the player AI.
-  0e_ch_3_endround.ncs - On End of round script for the player AI.
-  0e_ch_4_convers.ncs - On Conversation script for the player AI.
-  0e_ch_5_phyatked.ncs - On Physically attacked script for the player AI.
-  0e_ch_6_damaged_ncs - On Damaged script for the player AI.
-  0e_ch_8_disturb.ncs - On Disturbed script for the player AI.
-  0e_ch_b_castat.ncs - On Cast At script for the player AI.
-  0e_ch_e_blocked.ncs - On Blocked script for the player AI.
+  0e_ch_1_hb.ncs - On Heartbeat script for the associate AI.
+  0e_ch_2_percept.ncs - On Perception script for the associate AI.
+  0e_ch_3_endround.ncs - On End of round script for the associate AI.
+  0e_ch_4_convers.ncs - On Conversation script for the associate AI.
+  0e_ch_5_phyatked.ncs - On Physically attacked script for the associate AI.
+  0e_ch_6_damaged_ncs - On Damaged script for the associate AI.
+  0e_ch_8_disturb.ncs - On Disturbed script for the associate AI.
+  0e_ch_a_rest.ncs - On Rest script for the associate AI.
+  0e_ch_b_castat.ncs - On Cast At script for the associate AI.
+  0e_ch_e_blocked.ncs - On Blocked script for the associate AI.
   0e_do_combat_rnd.ncs - Used during combat to initiate new round. This file overlaps with the other AI files.
-  ai_a_*.ncs - AI script for the different classes and combat modes. These do overlap with the Player AI Plugin.
-  0c_*.ncs - Conversation files used by the new dialogs.
-
-* Add the following files to your override folder, THESE DO OVERRIDE THE ORIGINAL GAME FILES.
+  ai_a_*.ncs - AI script for the different classes and combat modes. These files do overlap with the Player AI Plugin (17 files in total).
+  0c_*.ncs - Conversation files are used by the new dialogs (35 files in total).
+  oc_ai_henchmen.dlg - Dialog file used for henchman.
+  ***** THESE DO OVERRIDE THE ORIGINAL GAME FILES *****
   nw_g_animal.dlg - Dialog file used for animal companions.
   nw_g_fam.dlg - Dialog file used for familiars.
-  oc_ai_henchmen.dlg - Dialog file used for henchman.
   nw_ch_ac1_ncs - On Heartbeat script for original associates.
   nw_ch_summon_9.ncs - On Spawn In script for summoned creatures.
   ***** These are only required for associates to loot *****
