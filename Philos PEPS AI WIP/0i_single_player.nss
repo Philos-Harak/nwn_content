@@ -44,15 +44,13 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     // If we have already seen an enemy then we need to begin combat!
     object oEnemy = GetNearestEnemy(oCreature);
     //ai_Debug("0i_single_player", "43", GetName(oCreature) + " nearest enemy: " + GetName(oEnemy) +
-    //         " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2));
+    //         " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2) +
+    //         " Talents set? " + IntToString(GetLocalInt(oCreature, AI_TALENTS_SET)));
     if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oCreature, oEnemy) < AI_RANGE_PERCEPTION)
     {
-        if(!GetLocalInt(oCreature, AI_TALENTS_SET))
-        {
-            SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
-            ai_SetCreatureTalents(oCreature, FALSE);
-        }
-        //ai_Debug("0i_reinodealdor", "52", GetName(oCreature) + " is starting combat!");
+        ai_SetCreatureTalents(oCreature, FALSE);
+        SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
+        //ai_Debug("0i_single_player", "52", GetName(oCreature) + " is starting combat!");
         ai_DoMonsterCombatRound(oCreature);
     }
 }

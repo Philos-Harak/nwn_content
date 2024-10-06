@@ -4,8 +4,8 @@
  Include script for handling NUI menus.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
+//#include "0i_assoc_debug"
 // Use by NUI windows to stop saving move states while loading.
 const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Maximum number of Plugins allowed on the players widget.

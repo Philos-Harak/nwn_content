@@ -27,7 +27,8 @@ void main()
     // **************************  CLASS FEATURES  ****************************
     if(ai_TrySummonFamiliarTalent(oCreature)) return;
     // ******************  DEFENSIVE TALENTS & POTIONS  ************************
-    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
+    int nRound = ai_GetCurrentRound(oCreature);
+    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
     //*******************  OFFENSIVE TARGETED TALENTS  *************************
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;

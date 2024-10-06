@@ -10,8 +10,8 @@
 //#include "0i_actions_debug"
 void main()
 {
+    return;
     object oCreature = OBJECT_SELF;
-    //ai_Debug("ai_invisibility", "14", GetName(oCreature) + " is using invisiblity tactics!");
     // If we are wounded and since they can't see us we should look at moving
     // out of combat so we can heal.
     int nHp = ai_GetPercHPLoss(oCreature);
@@ -21,12 +21,10 @@ void main()
         float fDistance = GetDistanceBetween(oNearestEnemy, oCreature);
         if(fDistance <= AI_RANGE_MELEE)
         {
-            //ai_Debug("ai_invisibility", "24", GetName(oCreature) + " is wounded and moving out of melee!");
             ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
         }
         else if(fDistance <= AI_RANGE_CLOSE)
         {
-            //ai_Debug("ai_invisibility", "29", GetName(oCreature) + " is wounded and moving away!");
             ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG);
         }
     }
@@ -41,7 +39,8 @@ void main()
     // Skill, Class, Offensive AOE's, and Defensive talents.
     // *************************** SPELL TALENTS ***************************
     // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ************
-    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
+    int nRound = ai_GetCurrentRound(oCreature);
+    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
     // ************************** CLASS FEATURES ***************************
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
@@ -55,7 +54,23 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
-    //ai_Debug("ai_invisibility", "58", "Check for melee attack on weakest enemy!");
+    // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
+    // ************************  RANGED ATTACKS  *******************************
+    if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    {
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            if(oTarget != OBJECT_INVALID)
+            {
+                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                return;
+            }
+            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+        }
+    }
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
@@ -63,23 +78,23 @@ void main()
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
-        //ai_Debug("ai_invisibility", "66", "Check category melee talents!");
         talent tUse = GetCreatureTalentBest(TALENT_CATEGORY_HARMFUL_MELEE, 20, oCreature);
-        if(!GetIsTalentValid(tUse)) return;
-        int nId = GetIdFromTalent(tUse);
-        //ai_Debug("ai_invisibility", "70", "TALENT_CATEGORY_MELEE_TALENTS nId: " + IntToString(nId));
-        if(nId == FEAT_POWER_ATTACK) { if(ai_TryPowerAttackFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_KNOCKDOWN) { if(ai_TryKnockdownFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_SMITE_EVIL) { if(ai_TrySmiteEvilFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_SMITE_GOOD) { if(ai_TrySmiteGoodFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_IMPROVED_POWER_ATTACK) { if(ai_TryImprovedPowerAttackFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_FLURRY_OF_BLOWS) { if(ai_TryFlurryOfBlowsFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_STUNNING_FIST) { if(ai_TryStunningFistFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_SAP) { if(ai_TrySapFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_DISARM) { if(ai_TryDisarmFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_KI_DAMAGE) { if(ai_TryKiDamageFeat(oCreature, oTarget)) return; }
-        else if(nId == FEAT_CALLED_SHOT) { if(ai_TryCalledShotFeat(oCreature, oTarget)) return; }
-        //ai_Debug("ai_invisibility", "82", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
+        if(GetIsTalentValid(tUse))
+        {
+            int nId = GetIdFromTalent(tUse);
+            ai_Debug("ai_invisibility", "92", "TALENT_CATEGORY_MELEE_TALENTS nId: " + IntToString(nId));
+            if(nId == FEAT_POWER_ATTACK) { if(ai_TryPowerAttackFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_KNOCKDOWN) { if(ai_TryKnockdownFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_SMITE_EVIL) { if(ai_TrySmiteEvilFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_SMITE_GOOD) { if(ai_TrySmiteGoodFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_IMPROVED_POWER_ATTACK) { if(ai_TryImprovedPowerAttackFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_FLURRY_OF_BLOWS) { if(ai_TryFlurryOfBlowsFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_STUNNING_FIST) { if(ai_TryStunningFistFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_SAP) { if(ai_TrySapFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_DISARM) { if(ai_TryDisarmFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_KI_DAMAGE) { if(ai_TryKiDamageFeat(oCreature, oTarget)) return; }
+            else if(nId == FEAT_CALLED_SHOT) { if(ai_TryCalledShotFeat(oCreature, oTarget)) return; }
+        }
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
     else ai_SearchForInvisibleCreature(oCreature);

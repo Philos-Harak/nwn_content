@@ -24,7 +24,6 @@ void main()
         if(ai_CheckForCombat(oCreature)) return;
     }
     if(nObjectType != OBJECT_TYPE_DOOR) return;
-    if(GetLockKeyTag(oObject) != "") return;
     if(GetIsDoorActionPossible(oObject, DOOR_ACTION_OPEN) &&
        GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) >= 5)
     {
@@ -33,7 +32,8 @@ void main()
     }
     // If we are in combat we should ignore doors that do not easily open.
     if(GetIsDoorActionPossible(oObject, DOOR_ACTION_BASH) &&
-            ai_GetWeaponDamage(oCreature, 3, TRUE) > GetHardness(oObject))
+       ai_GetWeaponDamage(oCreature, 3, TRUE) > GetHardness(oObject) &&
+       GetLockKeyTag(oObject) == "")
     {
         ActionWait(1.0);
         ActionAttack(oObject);

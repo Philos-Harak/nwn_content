@@ -27,8 +27,7 @@ void main()
     int nMatch = GetListenPatternNumber();
     if(nMatch != -1)
     {
-        if(!GetFactionEqual(oLastSpeaker, oCreature)) return;
-        ai_MonsterCommands(oCreature, oLastSpeaker, nMatch);
+        if(GetFactionEqual(oLastSpeaker, oCreature)) ai_MonsterCommands(oCreature, oLastSpeaker, nMatch);
     }
     else
     {

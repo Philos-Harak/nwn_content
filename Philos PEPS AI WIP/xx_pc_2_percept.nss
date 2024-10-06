@@ -10,11 +10,12 @@
   These states can be set at the same time thus a heard event can see the creature.
   Fires when ever one of these states changes from TRUE to FALSE or FALSE to TRUE.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
+//#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
+    /*
     if(GetLastPerceptionSeen ())
     {
         ai_Debug("xx_pc_2_percept", "20", GetName(oCreature) + " sees " +
@@ -38,10 +39,10 @@ void main()
         ai_Debug("xx_pc_2_percept", "38", GetName(oCreature) + " lost sound of " +
                  GetName(GetLastPerceived()) + ".");
         return;
-    }
+    } */
     object oLastPerceived = GetLastPerceived();
-    ai_Debug("xx_pc_2_percept", "43", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-             " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+    //ai_Debug("xx_pc_2_percept", "43", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
+    //         " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
     if(GetIsDead(oLastPerceived) || !GetIsEnemy(oLastPerceived)) return;
     // All code below assumes the perceived creature is an enemy and is alive!
     // **************************** ENEMY SEEN *********************************
@@ -68,15 +69,15 @@ void main()
         if(ai_Disabled(oCreature)) return;
         // Lets keep a mental note of the invisible creature.
         SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-        ai_Debug("xx_pc_2_percept", "71", " We saw " + GetName(oLastPerceived) + " disappear!");
+        //ai_Debug("xx_pc_2_percept", "71", " We saw " + GetName(oLastPerceived) + " disappear!");
         if(ai_GetIsBusy(oCreature)) return;
         // If in combat check to see if our target disappeared.
         // If they have and we are not in melee with them then reevaluate combat
         // since we lost our target.
         if(ai_GetIsInCombat(oCreature))
         {
-            ai_Debug("xx_pc_2_percept", "78", "Is this our target? " +
-                    IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
+            //ai_Debug("xx_pc_2_percept", "78", "Is this our target? " +
+            //        IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
             if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
             {
                 ai_DoAssociateCombatRound(oCreature);

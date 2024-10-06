@@ -21,7 +21,7 @@ void main()
     }
     if(ai_Disabled(oCreature)) return;
     object oDamager = GetLastDamager(oCreature);
-    //ai_Debug("0e_c2_6_damaged", "24", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
+    ai_Debug("0e_c2_6_damaged", "24", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;
     if(ai_IsInADangerousAOE(oCreature))
     {

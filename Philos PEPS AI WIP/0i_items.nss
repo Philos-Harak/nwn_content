@@ -71,6 +71,8 @@ int ai_GetIsProficientWith(object oCreature, object oWeapon);
 // Returns TRUE if oItem has nItemPropertyType.
 // nItemPropertySubType will not be used if its below 0.
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1);
+// Returns the highest bonus Lock Picks needed to unlock nLockDC in oCreatures inventory.
+object ai_GetBestPicks(object oCreature, int nLockDC);
 
 int ai_GetIsWeapon(object oItem)
 {
@@ -626,4 +628,39 @@ int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemProperty
         ipProperty = GetNextItemProperty(oItem);
     }
     return FALSE;
+}
+object ai_GetBestPicks(object oCreature, int nLockDC)
+{
+    int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
+    int nBonus, nBestBonus = 99, nNeededBonus = nLockDC - nSkill - 20;
+    ai_Debug("0i_items", "651", "nNeededBonus: " + IntToString(nNeededBonus));
+    // We don't need to use any picks!
+    if(nNeededBonus < 1) return OBJECT_INVALID;
+    object oBestItem = OBJECT_INVALID;
+    object oItem = GetFirstItemInInventory(oCreature);
+    while(oItem != OBJECT_INVALID)
+    {
+        if(GetBaseItemType(oItem) == BASE_ITEM_THIEVESTOOLS)
+        {
+            // Get the tools bonus.
+            itemproperty ipProperty = GetFirstItemProperty(oItem);
+            while(GetIsItemPropertyValid(ipProperty))
+            {
+                if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_THIEVES_TOOLS)
+                {
+                    nBonus = GetItemPropertyCostTableValue(ipProperty);
+                    if(nBonus >= nNeededBonus && nBonus < nBestBonus)
+                    {
+                        nBestBonus = nBonus;
+                        oBestItem = oItem;
+                        SetLocalInt(oBestItem, "AI_BONUS", nBestBonus);
+                        break;
+                    }
+                }
+                ipProperty = GetNextItemProperty(oItem);
+            }
+        }
+        oItem = GetNextItemInInventory(oCreature);
+    }
+    return oBestItem;
 }

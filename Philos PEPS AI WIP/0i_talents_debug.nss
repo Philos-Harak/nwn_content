@@ -27,7 +27,7 @@ int ai_TryDefensiveTalent(object oCreature, int nInMelee, int nMaxLevel, string 
 // Checks for a Defensive talent(Protection, Enhancement, or Summons).
 // Randomizes the order to mix up spells in combat.
 // if oTarget is set then the defensive talent will be cast on them or OBJECT_SELF.
-int ai_TryDefensiveTalents(object oCreature, int nInMelee, int nMaxLevel, object oTarget = OBJECT_INVALID);
+int ai_TryDefensiveTalents(object oCreature, int nInMelee, int nMaxLevel, int nRound = 0, object oTarget = OBJECT_INVALID);
 // Returns TRUE if oCreature uses a defensive talent.
 // Checks the enemy faction for most powerful class and picks a buff based on it.
 //int ai_TryAdvancedBuffOnSelf(object oCreature, int nInMelee);
@@ -475,12 +475,12 @@ int ai_TryDefensiveTalent(object oCreature, int nInMelee, int nMaxLevel, string 
 // *****************************************************************************
 // These functions try to find and use a specific set of talents intelligently.
 
-int ai_TryDefensiveTalents(object oCreature, int nInMelee, int nMaxLevel, object oTarget = OBJECT_INVALID)
+int ai_TryDefensiveTalents(object oCreature, int nInMelee, int nMaxLevel, int nRound = 0, object oTarget = OBJECT_INVALID)
 {
     // Summons are powerfull and should be used as much as possible.
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_SUMMON, nInMelee, nMaxLevel, oTarget)) return TRUE;
     // Try to mix them up so we don't always cast spells in the same order.
-    if(ai_GetCurrentRound(oCreature) >= d8()) return FALSE;
+    if(nRound >= d8()) return FALSE;
     int nRoll = d2();
     ai_Debug("0i_talents", "444", "Lets help someone(Check Talents: " +IntToString(nRoll) +
              " nMaxLevel: " + IntToString(nMaxLevel) + ")!");
@@ -1002,24 +1002,19 @@ int ai_TryDragonBreathAttack(object oCreature, int nRound, object oTarget = OBJE
 {
     int nCnt = GetLocalInt(oCreature, "AI_DRAGONS_BREATH");
     ai_Debug("0i_talents", "918", "Try Dragon Breath Attack: nRound(" + IntToString(nRound) + ")" +
-             " > nCnt(" + IntToString(nCnt) + ")!");
+             " <= nCnt(" + IntToString(nCnt) + ")!");
     if(nRound <= nCnt) return FALSE;
     talent tUse = GetCreatureTalentBest(TALENT_CATEGORY_DRAGONS_BREATH, 20, oCreature);
-    if(GetIsTalentValid(tUse)) return FALSE;
-    int nRoll, nInMelee;
+    if(!GetIsTalentValid(tUse)) return FALSE;
     if(oTarget == OBJECT_INVALID)
     {
         string sIndex = IntToString(ai_GetHighestMeleeIndexNotInAOE(oCreature));
-        nInMelee = GetLocalInt(oCreature, AI_ENEMY + "_MELEE" + sIndex) + 1;
         oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
-        // If they found one target and we have a 25% chance when in melee to use it.
-        nRoll = d4();
-        ai_Debug("0i_talents", "931", "oTarget: " + GetName(oTarget) + " nInMelee:" + IntToString(nInMelee) +
-               " d4:" + IntToString(nRoll) + " nTalent: " + IntToString(GetIdFromTalent(tUse)));
-        if(oTarget != OBJECT_INVALID && nInMelee < nRoll) return FALSE;
+        if(oTarget == OBJECT_INVALID) return FALSE;
     }
     SetLocalInt(oCreature, "AI_DRAGONS_BREATH", d4() + nRound);
-    ai_UseFeat(oCreature, GetIdFromTalent(tUse), oTarget);
+    ActionCastSpellAtObject(GetIdFromTalent(tUse), oTarget);
+    ai_Debug("0i_talents", "1019", GetName(oCreature) + " breaths on " + GetName(oTarget) + "!");
     return TRUE;
 }
 void ai_DragonMeleeAttack(object oCreature, object oTarget, string sDmgDice, string sText)
@@ -1263,8 +1258,8 @@ int ai_TryTailSweepAttack(object oCreature)
                 }
             }
         }
+        oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lImpact);
     }
-    oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lImpact);
     // We only sweep every 3 rounds if we can.
     SetLocalInt(oCreature, "0_DRAGON_SWEEP", 3);
     return TRUE;
@@ -1467,7 +1462,7 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
 {
     // Get the talent category, we organize all talents by categories.
     string sCategory = Get2DAString("ai_spells", "Category", nSpell);
-    if(sCategory == "") return;
+    if(sCategory == "" || sCategory == "A") return;
     // Check to see if we should be prebuffing.
     if(bBuff)
     {
@@ -2293,8 +2288,8 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
              " sCategory: " + sCategory);
     if(sCategory == AI_TALENT_DISCRIMINANT_AOE)
     {
-        ai_Debug("0i_talents", "1953", "CompareLastAction: " +
-                  IntToString(ai_CompareLastAction(oCreature, nSpell)));
+        //ai_Debug("0i_talents", "1953", "CompareLastAction: " +
+        //          IntToString(ai_CompareLastAction(oCreature, nSpell)));
         // If we used this spell talent last round then don't use it this round.
         //if(ai_CompareLastAction(oCreature, nSpell)) return FALSE;
         // Check to see if Disjunction should *not* be cast.
@@ -2302,7 +2297,19 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
         {
             // Our master does not want us using any type of dispel!
             if(ai_GetMagicMode(oCreature, AI_MAGIC_STOP_DISPEL)) return FALSE;
+            float fRange;
+            if(nInMelee) fRange = AI_RANGE_MELEE;
+            else fRange = ai_GetOffensiveSpellSearchRange(oCreature, nSpell);
+            // Getting lowest fortitude save since most caster would have the lowest.
+            string sIndex = IntToString(ai_GetHighestMeleeIndexNotInAOE(oCreature));
+            oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
             if(!ai_CreatureHasDispelableEffect(oCreature, oTarget)) return FALSE;
+            // Maybe we should do an area of effect instead?
+            int nEnemies = ai_GetNumOfEnemiesInRange(oTarget, 5.0);
+            if(nEnemies > 2)
+            {
+                if(ai_UseTalentAtLocation(oCreature, jTalent, oTarget, nInMelee)) return TRUE;
+            }
         }
         // These spells have a Range of Personal i.e. cast on themselves, and
         // an Area of Effect of Colossal (10.0).
@@ -2338,8 +2345,8 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
     }
     else if(sCategory == AI_TALENT_INDISCRIMINANT_AOE)
     {
-        ai_Debug("0i_talents", "1991", "CompareLastAction: " +
-                  IntToString(ai_CompareLastAction(oCreature, nSpell)));
+        //ai_Debug("0i_talents", "1991", "CompareLastAction: " +
+        //          IntToString(ai_CompareLastAction(oCreature, nSpell)));
         // If we used this spell talent last round then don't use it this round.
         //if(ai_CompareLastAction(oCreature, nSpell)) return FALSE;
         // These spells have a Range of Personal i.e. cast on themselves, and
@@ -2393,8 +2400,8 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
     }
     else if(sCategory == AI_TALENT_RANGED)
     {
-        ai_Debug("0i_talents", "2045", "CompareLastAction: " +
-                  IntToString(ai_CompareLastAction(oCreature, nSpell)));
+        //ai_Debug("0i_talents", "2045", "CompareLastAction: " +
+        //          IntToString(ai_CompareLastAction(oCreature, nSpell)));
         // If we used this spell talent last round then don't use it this round.
         //if(ai_CompareLastAction(oCreature, nSpell)) return FALSE;
         // Check to see if Dispel Magic and similar spells should *not* be cast
@@ -2492,8 +2499,8 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
     }
     else if(sCategory == AI_TALENT_TOUCH)
     {
-        ai_Debug("0i_talents", "2139", "CompareLastAction: " +
-                  IntToString(ai_CompareLastAction(oCreature, nSpell)));
+        //ai_Debug("0i_talents", "2139", "CompareLastAction: " +
+        //          IntToString(ai_CompareLastAction(oCreature, nSpell)));
         // If we used this spell talent last round then don't use it this round.
         //if(ai_CompareLastAction(oCreature, nSpell)) return FALSE;
         // Get a target for touch spells if one is not already set.
@@ -2565,6 +2572,13 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
                 int nHp = ai_GetPercHPLoss(oTarget);
                 int nHpLimit = ai_GetHealersHpLimit(oCreature);
                 if(nHp > nHpLimit) return FALSE;
+            }
+            if(nSpell == SPELL_PRAYER)
+            {
+                int nEnemies = ai_GetNumOfEnemiesInRange(oCreature, 10.0);
+                int nAllies = ai_GetNumOfAlliesInGroup(oCreature, 10.0);
+                if(nEnemies + nAllies < 5) return FALSE;
+                oTarget = oCreature;
             }
         }
         // Since haste does not have an effect when it comes from items when we

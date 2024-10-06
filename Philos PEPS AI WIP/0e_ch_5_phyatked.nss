@@ -16,7 +16,7 @@ void main()
     //         GetName(oAttacker) + ".");
     SetLocalObject(oAttacker, AI_ATTACKED_PHYSICAL, oCreature);
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
-    if(ai_CheckForCombat(oCreature)) return;
+    if(ai_GetIsInCombat(oCreature)) return;
     // We only inform others if attacked when not busy, not disabled, & not in combat.
     SetLocalObject(oCreature, AI_MY_TARGET, oAttacker);
     SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_SHOUT);

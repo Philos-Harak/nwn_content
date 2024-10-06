@@ -52,7 +52,8 @@ void main()
             // Does our master want to be buffed first?
             object oTarget = OBJECT_INVALID;
             if (ai_GetMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
-            ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, oTarget);
+            int nRound = ai_GetCurrentRound(oCreature);
+            if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound, oTarget)) return;
         }
     }
     object oTarget;

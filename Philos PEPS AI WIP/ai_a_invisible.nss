@@ -11,7 +11,6 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    //ai_Debug("ai_a_invisibility", "14", GetName(oCreature) + " is using invisiblity tactics!");
     // If we are wounded and since they can't see us we should look at moving
     // out of combat so we can heal.
     int nHp = ai_GetPercHPLoss(oCreature);
@@ -21,12 +20,10 @@ void main()
         float fDistance = GetDistanceBetween(oNearestEnemy, oCreature);
         if(fDistance <= AI_RANGE_MELEE)
         {
-            //ai_Debug("ai_a_invisibility", "24", GetName(oCreature) + " is wounded and moving out of melee!");
             ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
         }
         else if(fDistance <= AI_RANGE_CLOSE)
         {
-            //ai_Debug("ai_a_invisibility", "29", GetName(oCreature) + " is wounded and moving away!");
             ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG);
         }
     }
@@ -59,7 +56,8 @@ void main()
             // Does our master want to be buffed first?
             object oTarget = OBJECT_INVALID;
             if(ai_GetMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
-            if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, oTarget)) return;
+            int nRound = ai_GetCurrentRound(oCreature);
+            if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound, oTarget)) return;
             // If we have used all the valid defensive talents then lets move on to offense!
         }
         // ************************** CLASS FEATURES ***************************
@@ -87,8 +85,28 @@ void main()
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
-    //ai_Debug("ai_a_invisibility", "90", "Check for melee attack on weakest enemy!");
     // ************************** Melee feat attacks *************************
+    if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    {
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            // Are we suppose to protect our master first?
+            if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+            if(oTarget == OBJECT_INVALID)
+            {
+                // Lets pick off the weakest targets.
+                if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
+                else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+            }
+            if(oTarget != OBJECT_INVALID)
+            {
+                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                return;
+            }
+            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+        }
+    }
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
@@ -96,12 +114,10 @@ void main()
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
-        //ai_Debug("ai_a_invisibility", "99", "Check category melee talents!");
         talent tUse = GetCreatureTalentBest(TALENT_CATEGORY_HARMFUL_MELEE, 20, oCreature);
         if(GetIsTalentValid(tUse))
         {
             int nId = GetIdFromTalent(tUse);
-            //ai_Debug("ai_a_invisibility", "104", "TALENT_CATEGORY_MELEE_TALENTS nId: " + IntToString(nId));
             if(nId == FEAT_POWER_ATTACK) { if(ai_TryPowerAttackFeat(oCreature, oTarget)) return; }
             else if(nId == FEAT_KNOCKDOWN) { if(ai_TryKnockdownFeat(oCreature, oTarget)) return; }
             else if(nId == FEAT_SMITE_EVIL) { if(ai_TrySmiteEvilFeat(oCreature, oTarget)) return; }
@@ -114,7 +130,6 @@ void main()
             else if(nId == FEAT_KI_DAMAGE) { if(ai_TryKiDamageFeat(oCreature, oTarget)) return; }
             else if(nId == FEAT_CALLED_SHOT) { if(ai_TryCalledShotFeat(oCreature, oTarget)) return; }
         }
-        //ai_Debug("ai_a_invisibility", "117", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
     else ai_SearchForInvisibleCreature(oCreature);

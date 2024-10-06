@@ -43,7 +43,7 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell);
 void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray);
 // Returns if a spell talent was used.
 // This is a common set of AI scripts ran on associate spell casters.
-int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel);
+int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel, int nRound = 0);
 // Targets the nearest creature oCreature it can see.
 // This checks all physcal attack talents starting with ranged attacks then melee.
 // Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
@@ -96,7 +96,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
             SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
         ai_SetCombatRound(oCreature);
         string sAI = GetLocalString(oCreature, AI_COMBAT_SCRIPT);
-        ai_Debug("0i_actions", "99", " AI: " + IntToString(sAI != "ai_coward" && sAI != "ai_a_peaceful") +
+        ai_Debug("0i_actions", "99", " AI not Coward: " + IntToString(sAI != "ai_coward" && sAI != "ai_a_peaceful") +
                  " Invisible: " + IntToString(ai_GetIsInvisible(oCreature)) +
                  " SeeUs: " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
         if(sAI != "ai_coward" && sAI != "ai_a_peaceful" &&
@@ -482,7 +482,7 @@ void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray)
     string sVoice = ai_GetStringArray(sVoiceChatArray, nRoll);
     if(sVoice != "") PlayVoiceChat(StringToInt(sVoice), oCreature);
 }
-int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel)
+int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel, int nRound = 0)
 {
     // ******************* OFFENSIVE AOE TALENTS ***********************
     // Check the battlefield for a group of enemies to shoot a big spell at!
@@ -498,7 +498,7 @@ int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLev
     // Does our master want to be buffed first?
     object oTarget = OBJECT_INVALID;
     if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oAssociate);
-    return ai_TryDefensiveTalents(oAssociate, nInMelee, nMaxLevel, oTarget);
+    return ai_TryDefensiveTalents(oAssociate, nInMelee, nMaxLevel, nRound, oTarget);
 }
 void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE, int bAssociate = FALSE)
 {
@@ -746,10 +746,12 @@ int ai_TryHealing(object oCreature, object oTarget)
     // This keeps everyone from healing the same character in one round and over healing!
     if(oCreature == oTarget) DeleteLocalInt(oTarget, "AI_I_AM_BEING_HEALED");
     else if(GetLocalInt(oTarget, "AI_I_AM_BEING_HEALED")) return FALSE;
+    if(ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF) &&
+       oCreature != oTarget) return FALSE;
+    if(ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF) &&
+       oCreature == oTarget) return FALSE;
     // Undead don't heal so lets skip this for them, maybe later we can fix this.
     if(GetRacialType(oTarget) == RACIAL_TYPE_UNDEAD) return FALSE;
-    if(ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF) &&
-       ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF)) return FALSE;
     object oMaster = ai_GetPlayerMaster(oCreature);
     int nHpLost = ai_GetPercHPLoss(oTarget);
     ai_Debug("0i_actions", "743", "nHpLost: " + IntToString(nHpLost) +
@@ -963,13 +965,13 @@ void ai_ContinueRetrievingItems(object oCreature)
 }
 void ai_SearchObject(object oCreature, object oObject, object oMaster, int nAssociateType, int bOnce = FALSE)
 {
-    //ai_Debug("0i_actions", "954", GetName(OBJECT_SELF) + " is opening " + GetName(oObject));
+    //ai_Debug("0i_actions", "966", GetName(OBJECT_SELF) + " is opening " + GetName(oObject));
     string sID = ObjectToString(oCreature);
-    SetLocalInt(oObject, "AI_LOOTED_" + sID, TRUE);
     AssignCommand(oObject, ActionPlayAnimation(ANIMATION_PLACEABLE_OPEN));
+    SetLocalInt(oObject, "AI_LOOTED_" + sID, TRUE);
     // Big Hack to allow NPC's to loot!
     string sLootScript = GetEventScript(oObject, EVENT_SCRIPT_PLACEABLE_ON_OPEN);
-    ai_Debug("0i_actions", "960", "Loot script: " + sLootScript);
+    ai_Debug("0i_actions", "972", "Loot script: " + sLootScript);
     if(sLootScript != "")
     {
         // Used in Original Campaign, and SOU for loot scripts to get treasure to work.
@@ -980,11 +982,11 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int nAsso
     AssignCommand(oObject, ActionPlayAnimation(ANIMATION_PLACEABLE_CLOSE));
     int nItemType, nGold;
     object oItem = GetFirstItemInInventory(oObject);
-    //ai_Debug("0i_actions", "971", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem) +
+    //ai_Debug("0i_actions", "983", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem) +
     //         " in " + GetName(oObject));
     while(oItem != OBJECT_INVALID)
     {
-       //ai_Debug("0i_actions", "975", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
+       //ai_Debug("0i_actions", "987", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
        if(ai_ShouldIPickItUp(oCreature, oItem))
        {
            if(GetResRef(oItem) == "nw_it_gold001")
@@ -999,7 +1001,7 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int nAsso
                 }
                 else ActionTakeItem(oItem, oObject);
            }
-           //ai_Debug("0i_actions", "988", "Taking: " + GetName(oItem));
+           //ai_Debug("0i_actions", "1002", "Taking: " + GetName(oItem));
            else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
            {
                if(!ai_GetIsCharacter(oCreature)) ai_TakeItemMessage(oCreature, oObject, oItem, oMaster);
@@ -1007,15 +1009,15 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int nAsso
            }
            else
            {
-               //ai_Debug("0i_actions", "996", "Giving to master: " + GetName(oItem));
+               //ai_Debug("0i_actions", "1010", "Giving to master: " + GetName(oItem));
                if(!ai_GetIsCharacter(oCreature)) ai_TakeItemMessage(oCreature, oObject, oItem, oMaster);
                AssignCommand(oObject, ActionGiveItem(oItem, oMaster));
            }
        }
        oItem = GetNextItemInInventory(oObject);
-       //ai_Debug("0i_actions", "1002", GetName(oItem) + " is the next item.");
+       //ai_Debug("0i_actions", "1016", GetName(oItem) + " is the next item.");
     }
-    //ai_Debug("0i_actions", "1004", "Setting object as looted. Check for a new Placeable.");
+    //ai_Debug("0i_actions", "1018", "Setting object as looted. Check for a new Placeable.");
     if(!bOnce) ActionDoCommand(ai_ContinueRetrievingItems(oCreature));
 }
 int ai_IsContainerLootable(object oCreature, object oObject, object oMaster)
@@ -1027,8 +1029,8 @@ int ai_IsContainerLootable(object oCreature, object oObject, object oMaster)
                IntToString(GetUseableFlag(oObject)));
     if(!GetHasInventory(oObject) || !GetUseableFlag(oObject)) return FALSE;
     // This associate has already looted this object, skip.
-    if(GetLocalInt(oObject, "AI_LOOTED_" + sID) ||
-       ai_GetIsCharacter(oObject)) return FALSE;
+    //if(GetLocalInt(oObject, "AI_LOOTED_" + sID) ||
+    //   ai_GetIsCharacter(oObject)) return FALSE;
     //ai_Debug("0i_actions", "1017", " LineOfSight: " + IntToString(ai_GetIsInLineOfSight(oMaster, oObject)));
     if(!ai_GetIsInLineOfSight(oMaster, oObject)) return FALSE;
     // Have the NPC/PC looting things auto find traps! Yea I know...
@@ -1115,40 +1117,11 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
     }
     return FALSE;
 }
-object ai_GetPicks(object oCreature)
-{
-    object oBestItem = OBJECT_INVALID;
-    object oItem = GetFirstItemInInventory(oCreature);
-    int nBonus, nHighestBonus;
-    if(oItem != OBJECT_INVALID)
-    {
-        if(GetBaseItemType(oItem) == BASE_ITEM_THIEVESTOOLS)
-        {
-            // Get the tools bonus.
-            itemproperty ipProperty = GetFirstItemProperty(oItem);
-            while(GetIsItemPropertyValid(ipProperty))
-            {
-                if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_THIEVES_TOOLS)
-                {
-                    nBonus = GetItemPropertySubType(ipProperty);
-                    if(nHighestBonus < nBonus)
-                    {
-                        nHighestBonus = nBonus;
-                        oBestItem = oItem;
-                        SetLocalInt(oBestItem, "AI_BONUS", nHighestBonus);
-                    }
-                }
-                ipProperty = GetNextItemProperty(oItem);
-            }
-        }
-    }
-    return oBestItem;
-}
 int ai_AttemptToByPassLock(object oCreature, object oLocked)
 {
     string sID = ObjectToString(oCreature);
-    ai_Debug("0i_actions", "1094", "oCreature: " + GetName(oCreature) + " oLocked:" + GetName(oLocked));
-    ai_Debug("0i_actions", "1095", " AI_LOCKED_: " + IntToString(GetLocalInt(oLocked, "AI_LOCKED_" + sID)) +
+    ai_Debug("0i_actions", "1121", "oCreature: " + GetName(oCreature) + " oLocked:" + GetName(oLocked));
+    ai_Debug("0i_actions", "1122", " AI_LOCKED_: " + IntToString(GetLocalInt(oLocked, "AI_LOCKED_" + sID)) +
              " AI_STATED_LOCKED_: " + IntToString(GetLocalInt(oLocked, "AI_STATED_LOCKED_" + sID)));
     if(GetLocalInt(oLocked, "AI_LOCKED_" + sID)) return FALSE;
     // Attempt to cast knock because its always safe to cast it, even on a trapped object.
@@ -1159,14 +1132,14 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
         // Ick! Try and disarm the trap first
         if(ai_AttemptToDisarmTrap(oCreature, oLocked)) return TRUE;
     }
-    ai_Debug("0i_actions", "1107", "bNeedKey:" + IntToString(GetLockKeyRequired(oLocked)));
+    ai_Debug("0i_actions", "1133", "bNeedKey:" + IntToString(GetLockKeyRequired(oLocked)));
     if(GetLockKeyRequired(oLocked))
     {
         // We might be able to open this.
         string sKeyTag = GetLockKeyTag(oLocked);
         // Do we have the key?
         object oItem = ai_GetCreatureHasItem(oCreature, sKeyTag, FALSE);
-        ai_Debug("0i_actions", "1115", "sKeyTag: " + sKeyTag + " oItem: " + GetName(oItem));
+        ai_Debug("0i_actions", "1140", "sKeyTag: " + sKeyTag + " oItem: " + GetName(oItem));
         if(oItem != OBJECT_INVALID)
         {
             int nObjectType = GetObjectType(oLocked);
@@ -1191,15 +1164,16 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
         // Now, let's try and pick the lock
         int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
         int nLockDC = GetLockUnlockDC(oLocked);
-        object oPicks = ai_GetPicks(oCreature);
-        int nBonus = GetLocalInt(oPicks, "AI_BONUS");
-        if(nSkill + 20 + nBonus >= nLockDC)
+        object oPicks = ai_GetBestPicks(oCreature, nLockDC);
+        int nPickBonus = GetLocalInt(oPicks, "AI_BONUS");
+        ai_Debug("0i_actions", "1167", GetName(oPicks) + " nSkill :" + IntToString(nSkill) +
+                 " nPickBonus: " + IntToString(nPickBonus) +
+                 " + 20 = " + IntToString(nSkill + nPickBonus + 20) + " nLockDC: " + IntToString(nLockDC));
+        if(nSkill + 20 + nPickBonus >= nLockDC)
         {
-            ai_Debug("0i_actions", "1132", "nSkill:" + IntToString(nSkill) + " CanWeUsePlaceable?: " +
-                     " Attemp Pick: " + IntToString(GetLocalInt(oLocked, "AI_ATTEMPT_PICK_" + sID)));
             ai_ClearCreatureActions();
             ActionWait(1.0);
-            AssignCommand(oCreature, ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oItem));
+            AssignCommand(oCreature, ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oPicks));
             ActionWait(1.0);
             // Let them know we did it!
             ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":44:42:26:31:35:"));
@@ -1230,34 +1204,19 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
 }
 int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bForce = FALSE)
 {
-    ai_Debug("0i_actions", "1158", "AttemptToDisarmTrap");
+    ai_Debug("0i_actions", "1205", "AttemptToDisarmTrap");
     string sID = ObjectToString(oCreature);
     if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sID) && !bForce) return FALSE;
     int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
     int nTrapDC = GetTrapDisarmDC(oTrap);
     if(GetTrapDisarmable(oTrap))
     {
-        object oItem = ai_GetCreatureHasItem (oCreature, "0_thief_tools", FALSE);
-        int nBonus;
-        if(oItem != OBJECT_INVALID)
-        {
-            // Get the tools bonus.
-            itemproperty ipProperty = GetFirstItemProperty(oItem);
-            while(GetIsItemPropertyValid(ipProperty))
-            {
-                if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_THIEVES_TOOLS)
-                {
-                    nBonus = GetItemPropertySubType(ipProperty);
-                }
-                ipProperty = GetNextItemProperty(oItem);
-            }
-        }
-        ai_Debug("0i_actions", "1044", "nSkill: " + IntToString(nSkill + nBonus + 20) +
-                 " nTrapDC: " + IntToString(nTrapDC));
-        if(nSkill + nBonus + 20 >= nTrapDC)
+        ai_Debug("0i_actions", "1212", "nSkill: " + IntToString(nSkill) +
+                 " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
+        if(nSkill + 20 >= nTrapDC)
         {
             ai_ClearCreatureActions();
-            ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0, oItem);
+            ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0);
             // Let them know we did it!
             ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:"));
             return TRUE;
@@ -1274,17 +1233,6 @@ int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bForce = FALSE)
     AssignCommand(oCreature, SpeakStringByStrRef(40551));
     // Let them know we can't get this done!.
     ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:");
-    // This is a bit extreme. The player should make them do this.
-    /*if(GetObjectType(oTrap) != OBJECT_TYPE_TRIGGER)
-    {
-        ActionAttack(oTrap);
-        return TRUE;
-    }
-    // Throw ourselves on it nobly! :-)
-    ActionMoveToLocation(GetLocation(oTrap));
-    SetFacingPoint(GetPositionFromLocation(GetLocation(oTrap)));
-    ActionRandomWalk();
-    */
     return FALSE;
 }
 void ai_DetermineSpecialBehavior(object oCreature)

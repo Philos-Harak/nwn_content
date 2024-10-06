@@ -15,7 +15,7 @@ void main()
     object oCreature = OBJECT_SELF;
     int nMatch = GetListenPatternNumber();
     //ai_Debug("0e_ch_4_convers", "17", GetName(oCreature) + " listens " +
-    //         IntToString(GetListenPatternNumber()) + " to " + GetName(GetLastSpeaker()) + ".");
+    //         IntToString(nMatch) + " to " + GetName(GetLastSpeaker()) + ".");
     // Skip ASSOCIATE_COMMAND_MASTERUNDERATTACK(11) since it fires for
     // every physical attack made on our master. This fires alot!
     if(nMatch == ASSOCIATE_COMMAND_MASTERUNDERATTACK) return;
@@ -25,7 +25,7 @@ void main()
     // Some commands override being busy so we check in ai_SelectAssociateCommand.
     if(nMatch != -1)
     {
-        if(!GetFactionEqual(oLastSpeaker, oCreature)) ai_SelectAssociateCommand(oCreature, oLastSpeaker, nMatch);
+        if(GetFactionEqual(oLastSpeaker, oCreature)) ai_SelectAssociateCommand(oCreature, oLastSpeaker, nMatch);
     }
     else
     {

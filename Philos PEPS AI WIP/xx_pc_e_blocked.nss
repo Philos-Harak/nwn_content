@@ -5,8 +5,8 @@
   Player OnBlocked event script for PC AI;
   Can be blocked by a creature or door.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
+//#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -33,7 +33,8 @@ void main()
     }
     // If we are in combat we should ignore doors that do not easily open.
     if(GetIsDoorActionPossible(oObject, DOOR_ACTION_BASH) &&
-            ai_GetWeaponDamage(oCreature, 3, TRUE) > GetHardness(oObject))
+       ai_GetWeaponDamage(oCreature, 3, TRUE) > GetHardness(oObject) &&
+       GetLockKeyTag(oObject) == "")
     {
         ActionWait(1.0);
         ActionAttack(oObject);

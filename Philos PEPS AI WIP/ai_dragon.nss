@@ -25,7 +25,8 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
-    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
+    int nRound = ai_GetCurrentRound(oCreature);
+    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
     //**********************  OFFENSIVE TARGETED TALENTS  **********************
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
@@ -34,14 +35,14 @@ void main()
     object oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
-        if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_LONG)
+        if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_CLOSE)
         {
             // Can we do a crush attack(HD 18+)?
             if(ai_TryCrushAttack(oCreature, oTarget)) return;
             ai_FlyToTarget(oCreature, oTarget);
             return;
         }
-        else if(ai_TryDragonBreathAttack(oCreature, ai_GetCurrentRound(oCreature))) return;
+        if(ai_TryDragonBreathAttack(oCreature, nRound)) return;
         ai_TryWingAttacks(oCreature);
         // If we don't do a Tail sweep attack(HD 30+) then see if we can do a Tail slap(HD 12+)!
         if(!ai_TryTailSweepAttack(oCreature)) ai_TryTailSlap(oCreature);

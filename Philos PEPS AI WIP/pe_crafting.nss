@@ -5,7 +5,13 @@
  Philos Single Player Enhancements.
 *///////////////////////////////////////////////////////////////////////////////
 #include "nw_inc_gff"
+#include "0i_main"
 #include "0i_items"
+// Maximum model number for all items except weapons.
+const int CRAFT_MAX_MODEL_NUMBER = 99;
+// Maximum model number for weapons. Note this will be the 100s and 10s places.
+// The color number uses the ones place. Thus 25 is actually 250.
+const int CRAFT_MAX_WEAPON_MODEL_NUMBER = 99;
 const string CRAFT_ORIGINAL_ITEM = "CRAFT_ORIGINAL_ITEM";
 const string CRAFT_COOL_DOWN = "CRAFT_COOL_DOWN";
 const string CRAFT_ITEM_SELECTION = "CRAFT_ITEM_SELECTION";
@@ -66,6 +72,8 @@ void SaveCraftedItem(object oPC, object oTarget, int nToken);
 void RemoveTagedEffects(object oCreature, string sEffectTag);
 // Returns TRUE/FALSE if item has temporary item property.
 int CheckForTemporaryItemProperty(object oItem);
+// Updates the model number text in the NUI menu.
+void SetModelNumberText(object oPC, int nToken);
 void main()
 {
     // Let the inspector handle what it wants.
@@ -81,14 +89,21 @@ void main()
     // Crafting window events.
     if(sWndId == "plcraftwin")
     {
-        // Delay crafting so it has time to equip and unequip as well as remove.
-        if(GetLocalInt(oPC, CRAFT_COOL_DOWN)) return;
-        SetLocalInt(oPC, CRAFT_COOL_DOWN, TRUE);
-        DelayCommand(0.25f, DeleteLocalInt(oPC, CRAFT_COOL_DOWN));
         object oTarget = oPC;
         // Get the item we are crafting.
         int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
         object oItem = GetSelectedItem(oTarget, nItemSelected);
+        // Changing the name needs to be before the cooldown.
+        if(sEvent == "watch" && sElem == "txt_item_name")
+        {
+            string sName = JsonGetString(NuiGetBind(oPC, nToken, "txt_item_name"));
+            SetName(oItem, sName);
+            return;
+        }
+        // Delay crafting so it has time to equip and unequip as well as remove.
+        if(GetLocalInt(oPC, CRAFT_COOL_DOWN)) return;
+        SetLocalInt(oPC, CRAFT_COOL_DOWN, TRUE);
+        DelayCommand(0.25f, DeleteLocalInt(oPC, CRAFT_COOL_DOWN));
         // They have selected a color.
         if(sEvent == "mousedown" && sElem == "color_pallet")
         {
@@ -159,14 +174,15 @@ void main()
             // The player is changing the item they are crafting.
             if(sElem == "item_combo_selected")
             {
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetLocalInt (oPC, CRAFT_ITEM_SELECTION, nSelected);
+                int nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                SetLocalInt(oPC, CRAFT_MODEL_SELECTION, 0);
+                SetLocalInt(oPC, CRAFT_ITEM_SELECTION, nSelected);
                 // Set special option.
                 if(nSelected == 0)
                 {
                     int nSpecial = GetLocalInt(oPC, CRAFT_MODEL_SPECIAL);
                     if(nSpecial > 2) nSpecial = 0;
-                    SetLocalInt (oPC, CRAFT_MODEL_SPECIAL, nSpecial);
+                    SetLocalInt(oPC, CRAFT_MODEL_SPECIAL, nSpecial);
                 }
                 // Set button for cloak and helms.
                 else if(nSelected == 1 || nSelected == 2)
@@ -183,8 +199,9 @@ void main()
             // They have selected a part to change.
             else if(sElem == "model_combo_selected")
             {
-                int nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
                 SetLocalInt(oPC, CRAFT_MODEL_SELECTION, nSelected);
+                SetModelNumberText(oPC, nToken);
             }
             // They have changed the material (color item) for the item.
             else if(sElem == "material_combo_selected")
@@ -290,12 +307,24 @@ void main()
                     NuiSetBind(oPC, nToken, "btn_part_color", JsonBool (FALSE));
                 }
             }
+            else if(sElem == "btn_save_template")
+            {
+                json jItem = ObjectToJson(oItem, TRUE);
+                string sResRef = JsonGetString(NuiGetBind(oPC, nToken, "txt_item_resref"));
+                sResRef = ai_RemoveIllegalCharacters(sResRef);
+                if(sResRef == "") ai_SendMessages(GetName(oItem) + " has not been saved! ResRef does not have a value.", AI_COLOR_RED, oPC);
+                else
+                {
+                    JsonToTemplate(jItem, sResRef, RESTYPE_UTC);
+                    ai_SendMessages(GetName(oItem) + " has been saved as " + sResRef + ".utc in your Neverwinter Nights Temp directory.", AI_COLOR_GREEN, oPC);
+                }
+            }
         }
     }
 }
 void CopyCraftingItem(object oPC, object oItem)
 {
-    ai_Debug("pe_crafting", "295", JsonDump(ObjectToJson(oItem), 2));
+    //ai_Debug("pe_crafting", "295", JsonDump(ObjectToJson(oItem), 2));
     json jItem = ObjectToJson(oItem);
     SetLocalInt(oPC, CRAFT_COPY_ITEM, TRUE);
     int nSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
@@ -561,32 +590,43 @@ int GetArmorModelSelected (object oPC)
 object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oItem, int nDirection)
 {
     // Get the item we are changing.
-    int nModel, nModelSelected;
+    int nModelSelected;
     int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
     string sModelName, sModelNumber;
     object oNewItem;
     // Weapons.
     if (ai_GetIsWeapon (oItem))
     {
-        int nColor;
         string sColumn, sComponent;
-        nModelSelected = GetLocalInt (oPC, CRAFT_MODEL_SELECTION);
+        nModelSelected = GetLocalInt(oPC, CRAFT_MODEL_SELECTION);
         // Get the column so we can get the max model.
         if(nModelSelected == 0) { sColumn = "BottomModel"; sComponent = "_b_"; }
         else if(nModelSelected == 1) { sColumn = "MiddleModel"; sComponent = "_m_"; }
         else if(nModelSelected == 2) { sColumn = "TopModel"; sComponent = "_t_"; }
         sModelName = Get2DAString("baseitems", "ItemClass", GetBaseItemType(oItem)) + sComponent;
         // Get the model and color of the weapon model.
-        if(nModel == 0) nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, nModelSelected);
-        if(nColor == 0) nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, nModelSelected);
+        int nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, nModelSelected);
+        int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, nModelSelected);
         // Get next/previous color/model.
         nColor += nDirection;
+        if(nColor > 9)
+        {
+            nColor = 1;
+            nModel += nDirection;
+            if(nModel > CRAFT_MAX_WEAPON_MODEL_NUMBER) nModel = 1;
+        }
+        else if(nColor < 1)
+        {
+            nColor = 9;
+            nModel += nDirection;
+            if(nModel < 1) nModel = CRAFT_MAX_WEAPON_MODEL_NUMBER;
+        }
         int nModelNumber = (nModel * 10) + nColor;
         if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
         else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
         else sModelNumber = IntToString(nModelNumber);
-        ai_Debug("pe_crafting", "587", "sModel: " + sModelName + sModelNumber +
-                 " nModel: " + IntToString(nModel) + " nColor: " + IntToString(nColor));
+        //ai_Debug("pe_crafting", "587", "sModel: " + sModelName + sModelNumber +
+        //         " nModel: " + IntToString(nModel) + " nColor: " + IntToString(nColor));
         while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "")
         {
             // Get next/previous color/model.
@@ -595,24 +635,24 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
             {
                 nColor = 1;
                 nModel += nDirection;
-                if(nModel > 25) nModel = 1;
+                if(nModel > CRAFT_MAX_WEAPON_MODEL_NUMBER) nModel = 1;
             }
             else if(nColor < 1)
             {
                 nColor = 9;
                 nModel += nDirection;
-                if(nModel < 1) nModel = 25;
+                if(nModel < 1) nModel = CRAFT_MAX_WEAPON_MODEL_NUMBER;
             }
             // Create the model name.
             nModelNumber = (nModel * 10) + nColor;
             if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
             else sModelNumber = IntToString(nModelNumber);
-            ai_Debug("pe_crafting", "610", "sModel: " + sModelName + sModelNumber +
-                 " nModel: " + IntToString(nModel) + " nColor: " + IntToString(nColor));
+            //ai_Debug("pe_crafting", "610", "sModelPart: " + sModelName + sModelNumber +
+            //     " nModel: " + IntToString(nModel) + " nColorPart: " + IntToString(nColor));
         }
         json jItem = ObjectToJson(oItem, TRUE);
-        ai_Debug("pe_crafting", "614", "ModelPart" + IntToString(nModelSelected + 1) +
-                 " nModelNumber: " + IntToString(nModelNumber));
+        //ai_Debug("pe_crafting", "614", "ModelPart" + IntToString(nModelSelected + 1) +
+        //         " nModelNumber: " + IntToString(nModelNumber));
         jItem = GffReplaceByte(jItem, "ModelPart" + IntToString(nModelSelected + 1), nModelNumber);
         jItem = GffReplaceWord(jItem, "xModelPart" + IntToString(nModelSelected + 1), nModelNumber);
         oNewItem = JsonToObject(jItem, GetLocation(oTarget), oTarget, TRUE);
@@ -620,9 +660,14 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         // Item selected 3 is the right hand, 4 is the left hand.
         if (nItemSelected == 3) AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_RIGHTHAND));
         else AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_LEFTHAND));
+        string sModelSelected;
+        if(nModelSelected == 0) sModelSelected = "_l";
+        else if(nModelSelected == 1) sModelSelected = "_c";
+        else if(nModelSelected == 2) sModelSelected = "_r";
+        NuiSetBind(oPC, nToken, "txt_model_name" + sModelSelected, JsonString(IntToString(nModelNumber)));
     }
     // Armor.
-    else if (nItemSelected == 0)
+    else if(nItemSelected == 0)
     {
         // Create the model name.
         // Get the ModelType.
@@ -639,6 +684,7 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         nModelSelected = GetArmorModelSelected(oPC);
         // Get if we are doing the left/right or linking both together.
         int nModelSide = GetLocalInt(oPC, CRAFT_MODEL_SPECIAL);
+        //ai_Debug("pe_crafting", "646", "nModelSide: " + IntToString(nModelSide));
         // These models only have one side so make sure we are not linked.
         if (nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
             nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
@@ -652,37 +698,38 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
             if(nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
             else nModelSelected++;
         }
-        nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected);
-        nModel += nDirection;
-        if(nModel > 255) nModel = 0;
-        else if(nModel < 0) nModel = 255;
+        int nModelNumber = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected);
+        int nBaseModelNumber = nModelNumber;
+        nModelNumber += nDirection;
+        if(nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+        else if(nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
         string sModelNumber;
-        if(nModel < 10) sModelNumber = "00" + IntToString(nModel);
-        else if(nModel < 100) sModelNumber = "0" + IntToString(nModel);
-        else sModelNumber = IntToString(nModel);
+        if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
+        else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
+        else sModelNumber = IntToString(nModelNumber);
         // Check for changes to the torso (base part of the armor linked to AC).
         if(nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO)
         {
-            string sCurrentACBonus = Get2DAString("parts_chest", "ACBONUS", nModel);
-            string sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModel);
+            string sCurrentACBonus = Get2DAString("parts_chest", "ACBONUS", nBaseModelNumber);
+            string sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModelNumber);
             sModelName += Get2DAString ("capart", "MDLNAME", nModelSelected);
-            ai_Debug("pe_crafting", "654", "sModelName: " + sModelName + sModelNumber +
-                     " nModel: " + IntToString(nModel) + " sCurrentACBonus: " + sCurrentACBonus + " sACBonus: " + sACBonus);
+            //ai_Debug("pe_crafting", "654", "sModelName: " + sModelName + sModelNumber +
+            //         " nModelNumber: " + IntToString(nModelNumber) + " sCurrentACBonus: " + sCurrentACBonus + " sACBonus: " + sACBonus);
             while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "" ||
                   sACBonus != sCurrentACBonus)
             {
-                nModel += nDirection;
-                if (nModel > 255) nModel = 0;
-                else if (nModel < 0) nModel = 255;
-                if(nModel < 10) sModelNumber = "00" + IntToString(nModel);
-                else if(nModel < 100) sModelNumber = "0" + IntToString(nModel);
-                else sModelNumber = IntToString(nModel);
-                sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModel);
-                ai_Debug("pe_crafting", "666", "sModelName: " + sModelName + sModelNumber +
-                         " nModel: " + IntToString(nModel) + " sACBonus: " + sACBonus);
+                nModelNumber += nDirection;
+                if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+                else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
+                if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
+                else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
+                else sModelNumber = IntToString(nModelNumber);
+                sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModelNumber);
+                //ai_Debug("pe_crafting", "666", "sModelName: " + sModelName + sModelNumber +
+                //         " nModelNumber: " + IntToString(nModelNumber) + " sACBonus: " + sACBonus);
             }
             // Change the model.
-            oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModel, TRUE);
+            oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
             DestroyObject (oItem);
             AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
         }
@@ -690,21 +737,20 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         else
         {
             sModelName += Get2DAString("capart", "MDLNAME", nModelSelected);
-            ai_Debug("pe_crafting", "695", "sModelName: " + sModelName + sModelNumber +
-                     " nModel: " + IntToString(nModel));
+            //ai_Debug("pe_crafting", "695", "sModelName: " + sModelName + sModelNumber +
+            //         " nModelNumber: " + IntToString(nModelNumber));
             while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "")
             {
-                nModel += nDirection;
-                if (nModel > 255) nModel = 0;
-                else if (nModel < 0) nModel = 255;
-                if(nModel < 10) sModelNumber = "00" + IntToString(nModel);
-                else if(nModel < 100) sModelNumber = "0" + IntToString(nModel);
-                else sModelNumber = IntToString(nModel);
-                ai_Debug("pe_crafting", "705", "sModelName: " + sModelName + sModelNumber +
-                         " nModel: " + IntToString(nModel));
+                nModelNumber += nDirection;
+                if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+                else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
+                if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
+                else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
+                else sModelNumber = IntToString(nModelNumber);
+                //ai_Debug("pe_crafting", "705", "sModelName: " + sModelName + sModelNumber +
+                //         " nModelNumber: " + IntToString(nModelNumber));
             }
-            // We set which model is selected above.
-            oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModel, TRUE);
+            oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
             DestroyObject (oItem);
             // If linked then change the left side too.
             if(nModelSide == 0)
@@ -712,72 +758,103 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 // Note: Right Thigh and Left Thigh are backwards so this fixes that!
                 if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
                 else nModelSelected++;
-                oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModel, TRUE);
+                oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
                 DestroyObject(oNewItem);
                 AssignCommand(oTarget, ActionEquipItem(oItem, INVENTORY_SLOT_CHEST));
             }
             else AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
         }
+        string sModelSelected;
+        if (nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+        {
+            NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(IntToString(nModelNumber)));
+        }
+        else
+        {
+            if(nModelSide == 1 || nModelSide == 0)
+            {
+                NuiSetBind(oPC, nToken, "txt_model_name_l", JsonString(IntToString(nModelNumber)));
+            }
+            if(nModelSide == 2 || nModelSide == 0)
+            {
+                NuiSetBind(oPC, nToken, "txt_model_name_r", JsonString(IntToString(nModelNumber)));
+            }
+        }
     }
-    /*/ All other items.
+    // All other items.
     else
     {
-        int nSlot, nBaseItem = GetBaseItemType (oItem);
-        // Get max models and inventory slot.
-        if (nBaseItem == BASE_ITEM_CLOAK)
+        int nSlot, nResType, nBaseItemType = GetBaseItemType(oItem);
+        string sModelName = Get2DAString("baseitems", "ItemClass", nBaseItemType) + "_";
+        if(nBaseItemType == BASE_ITEM_CLOAK)
         {
-            nMaxModel = 107;
             nSlot = INVENTORY_SLOT_CLOAK;
+            nResType = RESTYPE_PLT;
         }
-        else if (nBaseItem == BASE_ITEM_HELMET)
+        else if(nBaseItemType == BASE_ITEM_HELMET)
         {
-            nMaxModel = 62;
             nSlot = INVENTORY_SLOT_HEAD;
+            nResType = RESTYPE_MDL;
         }
-        else if (nBaseItem == BASE_ITEM_LARGESHIELD || nBaseItem == BASE_ITEM_SMALLSHIELD ||
-                 nBaseItem == BASE_ITEM_TOWERSHIELD)
+        else if(nBaseItemType == BASE_ITEM_LARGESHIELD ||
+                nBaseItemType == BASE_ITEM_SMALLSHIELD ||
+                nBaseItemType == BASE_ITEM_TOWERSHIELD)
         {
             nSlot = INVENTORY_SLOT_LEFTHAND;
-            if (nBaseItem == BASE_ITEM_SMALLSHIELD) nMaxModel = 64;
-            else if (nBaseItem == BASE_ITEM_LARGESHIELD) nMaxModel = 163;
-            else if (nBaseItem == BASE_ITEM_TOWERSHIELD) nMaxModel = 124;
+            nResType = RESTYPE_MDL;
         }
-        nModel = GetItemAppearance (oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
-        nModel = nModel + nDirection;
-        if (nModel > nMaxModel) nModel = 0;
-        else if (nModel < 0) nModel = nMaxModel;
-        if (JsonGetString (NuiGetBind (oPC, nToken, "craft_warning_label")) != "CANNOT CRAFT!")
+        int nModelNumber = GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
+        nModelNumber += nDirection;
+        if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+        else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
+        if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
+        else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
+        else sModelNumber = IntToString(nModelNumber);
+        //ai_Debug("pe_crafting", "804", "sModelName: " + sModelName + sModelNumber +
+        //         " nModelNumber: " + IntToString(nModelNumber));
+        while(ResManGetAliasFor(sModelName + sModelNumber, nResType) == "")
         {
-            NuiSetBind (oPC, nToken, "craft_warning_label", JsonString ("Model # " + IntToString (nModel)));
+            nModelNumber += nDirection;
+            if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+            else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
+            if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
+            else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
+            else sModelNumber = IntToString(nModelNumber);
+            //ai_Debug("pe_crafting", "841", "sModelName: " + sModelName + sModelNumber +
+            //         " nModelNumber: " + IntToString(nModelNumber));
         }
-        oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0, nModel, TRUE);
-        DestroyObject (oItem);
-        AssignCommand (oTarget, ActionEquipItem (oNewItem, nSlot));
-    }  */
+        oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0, nModelNumber, TRUE);
+        DestroyObject(oItem);
+        AssignCommand(oTarget, ActionEquipItem (oNewItem, nSlot));
+        NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(IntToString(nModelNumber)));
+    }
     NuiSetBind(oPC, nToken, "txt_model_name", JsonString(sModelName + sModelNumber));
     SetLocalString(oPC, CRAFT_MODEL, sModelName + sModelNumber);
     return oNewItem;
 }
-object RandomizeItemsCraftAppearance (object oPlayer, object oTarget, int nToken, object oItem)
+object RandomizeItemsCraftAppearance(object oPlayer, object oTarget, int nToken, object oItem)
 {
     // Get the item we are changing.
     int nModelSelected, nModel, nMaxModel, nColor, nMaxColor;
-    int nItemSelected = GetLocalInt (oPlayer, "0_CRAFT_ITEM_SELECTION");
+    int nItemSelected = GetLocalInt(oPlayer, CRAFT_ITEM_SELECTION);
     int iBaseItemType, iType, iIndex, iDie, iMod, iRoll, iColor, iRtop, iRmid, iRbottom;
     int iColorT, iColorM, iColorB;
     object oItem1, oItem2, oItem3, oItem4, oItem5, oItem6, oItem7, oItemFinal, oItemDone;
     object oNewItem;
-    SetLocalInt (oItem, "0_EQUIP_LOCKED", FALSE);
-    if (ai_GetIsWeapon (oItem))
+    if(ai_GetIsWeapon(oItem))
     {
         int iWModuleBottom, iWModuleMiddle, iWModuleTop;
         iWModuleBottom = 9;
         iWModuleMiddle = 9;
         iWModuleTop = 9;
         iColor = 4;
-        iRtop = Random (iWModuleTop) + 1;
+        iRtop = Random(iWModuleTop) + 1;
         // Check bows as they must randomize to the same top, middle, and bottom otherwise they look bad.
-        if (iBaseItemType == BASE_ITEM_LONGBOW || iBaseItemType == BASE_ITEM_SHORTBOW)
+        if(iBaseItemType == BASE_ITEM_LONGBOW || iBaseItemType == BASE_ITEM_SHORTBOW)
         {
             iRmid = iRtop;
             iRbottom = iRtop;
@@ -785,153 +862,140 @@ object RandomizeItemsCraftAppearance (object oPlayer, object oTarget, int nToken
         // Randomize each item individualy for other weapons.
         else
         {
-            iRmid = Random (iWModuleMiddle) + 1;
-            iRbottom = Random (iWModuleBottom) + 1;
+            iRmid = Random(iWModuleMiddle) + 1;
+            iRbottom = Random(iWModuleBottom) + 1;
         }
         // Change weapons model.
-        oItem2 = CopyItemAndModify (oItem1, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_TOP, iRtop, TRUE);
-        DestroyObject (oItem1, 0.0f);
-        oItem3 = CopyItemAndModify (oItem2, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_MIDDLE, iRmid, TRUE);
-        DestroyObject (oItem2, 0.2f);
-        oItem4 = CopyItemAndModify (oItem3, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_BOTTOM, iRbottom, TRUE);
+        oItem2 = CopyItemAndModify(oItem1, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_TOP, iRtop, TRUE);
+        DestroyObject(oItem1, 0.0f);
+        oItem3 = CopyItemAndModify(oItem2, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_MIDDLE, iRmid, TRUE);
+        DestroyObject(oItem2, 0.2f);
+        oItem4 = CopyItemAndModify(oItem3, ITEM_APPR_TYPE_WEAPON_MODEL, ITEM_APPR_WEAPON_MODEL_BOTTOM, iRbottom, TRUE);
         DestroyObject (oItem3, 0.4f);
         // Change weapons color.
-        iColorT = Random (iColor) + 1;
-        iColorM = Random (iColor) + 1;
-        iColorB = Random (iColor) + 1;
-        oItem5 = CopyItemAndModify (oItem4, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_TOP, iColorT, TRUE);
-        DestroyObject (oItem4, 0.6f);
-        oItem6 = CopyItemAndModify (oItem5, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_MIDDLE, iColorM, TRUE);
-        DestroyObject (oItem5, 0.8f);
-        oItemFinal = CopyItemAndModify (oItem6, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_BOTTOM, iColorB, TRUE);
-        DestroyObject (oItem6, 1.0f);
-        if (nItemSelected == 3) AssignCommand (oTarget, ActionEquipItem (oItemFinal, INVENTORY_SLOT_RIGHTHAND));
-        else if (nItemSelected == 4) AssignCommand (oTarget, ActionEquipItem (oItemFinal, INVENTORY_SLOT_LEFTHAND));
+        iColorT = Random(iColor) + 1;
+        iColorM = Random(iColor) + 1;
+        iColorB = Random(iColor) + 1;
+        oItem5 = CopyItemAndModify(oItem4, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_TOP, iColorT, TRUE);
+        DestroyObject(oItem4, 0.6f);
+        oItem6 = CopyItemAndModify(oItem5, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_MIDDLE, iColorM, TRUE);
+        DestroyObject(oItem5, 0.8f);
+        oItemFinal = CopyItemAndModify(oItem6, ITEM_APPR_TYPE_WEAPON_COLOR, ITEM_APPR_WEAPON_COLOR_BOTTOM, iColorB, TRUE);
+        DestroyObject(oItem6, 1.0f);
+        if(nItemSelected == 3) AssignCommand(oTarget, ActionEquipItem(oItemFinal, INVENTORY_SLOT_RIGHTHAND));
+        else if(nItemSelected == 4) AssignCommand(oTarget, ActionEquipItem(oItemFinal, INVENTORY_SLOT_LEFTHAND));
     }
     // Armor.
     else if (nItemSelected == 0)
     {
-        object oItem1 = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER1, Random (175) + 1, TRUE);
-        DestroyObject (oItem);
-        object oItem2 = CopyItemAndModify (oItem1, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER2, Random (175) + 1, TRUE);
-        DestroyObject (oItem1);
-        object oItem3 = CopyItemAndModify (oItem2, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH1, Random (175) + 1, TRUE);
-        DestroyObject (oItem2);
-        object oItem4 = CopyItemAndModify (oItem3, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH2, Random (175) + 1, TRUE);
-        DestroyObject (oItem3);
-        object oItem5 = CopyItemAndModify (oItem4, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL1, Random (175) + 1, TRUE);
+        object oItem1 = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER1, Random(175) + 1, TRUE);
+        DestroyObject(oItem);
+        object oItem2 = CopyItemAndModify(oItem1, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER2, Random(175) + 1, TRUE);
+        DestroyObject(oItem1);
+        object oItem3 = CopyItemAndModify(oItem2, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH1, Random(175) + 1, TRUE);
+        DestroyObject(oItem2);
+        object oItem4 = CopyItemAndModify(oItem3, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH2, Random(175) + 1, TRUE);
+        DestroyObject(oItem3);
+        object oItem5 = CopyItemAndModify(oItem4, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL1, Random(175) + 1, TRUE);
         DestroyObject (oItem4);
-        oNewItem = CopyItemAndModify (oItem5, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL2, Random (175) + 1, TRUE);
-        DestroyObject (oItem5);
-        AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
+        oNewItem = CopyItemAndModify(oItem5, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL2, Random(175) + 1, TRUE);
+        DestroyObject(oItem5);
+        AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
     }
     // All other items.
     else
     {
-        int nSlot, nBaseItem = GetBaseItemType (oItem);
+        int nSlot, nBaseItem = GetBaseItemType(oItem);
         // Get max models and inventory slot.
-        if (nBaseItem == BASE_ITEM_CLOAK)
+        if(nBaseItem == BASE_ITEM_CLOAK)
         {
             nMaxModel = 107;
             nSlot = INVENTORY_SLOT_CLOAK;
         }
-        else if (nBaseItem == BASE_ITEM_HELMET)
+        else if(nBaseItem == BASE_ITEM_HELMET)
         {
             nMaxModel = 62;
             nSlot = INVENTORY_SLOT_HEAD;
         }
-        else if (nBaseItem == BASE_ITEM_LARGESHIELD || nBaseItem == BASE_ITEM_SMALLSHIELD ||
-                 nBaseItem == BASE_ITEM_TOWERSHIELD)
+        else if(nBaseItem == BASE_ITEM_LARGESHIELD || nBaseItem == BASE_ITEM_SMALLSHIELD ||
+                nBaseItem == BASE_ITEM_TOWERSHIELD)
         {
             nSlot = INVENTORY_SLOT_LEFTHAND;
-            if (nBaseItem == BASE_ITEM_SMALLSHIELD) nMaxModel = 64;
-            else if (nBaseItem == BASE_ITEM_LARGESHIELD) nMaxModel = 163;
-            else if (nBaseItem == BASE_ITEM_TOWERSHIELD) nMaxModel = 124;
+            if(nBaseItem == BASE_ITEM_SMALLSHIELD) nMaxModel = 64;
+            else if(nBaseItem == BASE_ITEM_LARGESHIELD) nMaxModel = 163;
+            else if(nBaseItem == BASE_ITEM_TOWERSHIELD) nMaxModel = 124;
         }
-        nModel = Random (nMaxModel) + 1;
-        object oItem1 = CopyItemAndModify (oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0, nModel, TRUE);
-        DestroyObject (oItem);
+        nModel = Random(nMaxModel) + 1;
+        object oItem1 = CopyItemAndModify(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0, nModel, TRUE);
+        DestroyObject(oItem);
         if (nBaseItem == BASE_ITEM_CLOAK || nBaseItem == BASE_ITEM_HELMET)
         {
-            object oItem2 = CopyItemAndModify (oItem1, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER1, Random (175) + 1, TRUE);
-            DestroyObject (oItem1);
-            object oItem3 = CopyItemAndModify (oItem2, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER2, Random (175) + 1, TRUE);
-            DestroyObject (oItem2);
-            object oItem4 = CopyItemAndModify (oItem3, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH1, Random (175) + 1, TRUE);
-            DestroyObject (oItem3);
-            object oItem5 = CopyItemAndModify (oItem4, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH2, Random (175) + 1, TRUE);
-            DestroyObject (oItem4);
-            object oItem6 = CopyItemAndModify (oItem5, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL1, Random (175) + 1, TRUE);
-            DestroyObject (oItem5);
-            oNewItem = CopyItemAndModify (oItem6, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL2, Random (175) + 1, TRUE);
-            DestroyObject (oItem6);
+            object oItem2 = CopyItemAndModify(oItem1, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER1, Random(175) + 1, TRUE);
+            DestroyObject(oItem1);
+            object oItem3 = CopyItemAndModify(oItem2, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_LEATHER2, Random(175) + 1, TRUE);
+            DestroyObject(oItem2);
+            object oItem4 = CopyItemAndModify(oItem3, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH1, Random(175) + 1, TRUE);
+            DestroyObject(oItem3);
+            object oItem5 = CopyItemAndModify(oItem4, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_CLOTH2, Random(175) + 1, TRUE);
+            DestroyObject(oItem4);
+            object oItem6 = CopyItemAndModify(oItem5, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL1, Random(175) + 1, TRUE);
+            DestroyObject(oItem5);
+            oNewItem = CopyItemAndModify(oItem6, ITEM_APPR_TYPE_ARMOR_COLOR, ITEM_APPR_ARMOR_COLOR_METAL2, Random(175) + 1, TRUE);
+            DestroyObject(oItem6);
         }
         else
         {
             oNewItem = oItem1;
         }
-        AssignCommand (oTarget, ActionEquipItem (oNewItem, nSlot));
-        if (JsonGetString (NuiGetBind (oPlayer, nToken, "craft_warning_label")) != "CANNOT CRAFT!")
-        {
-            NuiSetBind (oPlayer, nToken, "craft_warning_label", JsonString ("Model # " + IntToString (nModel)));
-        }
+        AssignCommand(oTarget, ActionEquipItem(oNewItem, nSlot));
     }
     return oNewItem;
 }
-
-// Returns the correct item based on the crafting menu selected item.
-object GetSelectedItem (object oTarget, int nItemSelected)
+object GetSelectedItem(object oTarget, int nItemSelected)
 {
-    if (nItemSelected == 0) return GetItemInSlot (INVENTORY_SLOT_CHEST, oTarget);
-    else if (nItemSelected == 1) return GetItemInSlot (INVENTORY_SLOT_CLOAK, oTarget);
-    else if (nItemSelected == 2) return GetItemInSlot (INVENTORY_SLOT_HEAD, oTarget);
-    else if (nItemSelected == 3) return GetItemInSlot (INVENTORY_SLOT_RIGHTHAND, oTarget);
-    else if (nItemSelected == 4) return GetItemInSlot (INVENTORY_SLOT_LEFTHAND, oTarget);
+    if(nItemSelected == 0) return GetItemInSlot(INVENTORY_SLOT_CHEST, oTarget);
+    else if(nItemSelected == 1) return GetItemInSlot(INVENTORY_SLOT_CLOAK, oTarget);
+    else if(nItemSelected == 2) return GetItemInSlot(INVENTORY_SLOT_HEAD, oTarget);
+    else if(nItemSelected == 3) return GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oTarget);
+    else if(nItemSelected == 4) return GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oTarget);
     return OBJECT_INVALID;
 }
-
-// Cancels the crafted item for the player and restoring the original.
-void CancelCraftedItem (object oPlayer, object oTarget)
+void CancelCraftedItem(object oPlayer, object oTarget)
 {
-    int nItemSelected = GetLocalInt (oPlayer, "0_CRAFT_ITEM_SELECTION");
-    object oItem = GetSelectedItem (oTarget, nItemSelected);
-    SetLocalInt (oItem, "0_EQUIP_LOCKED", FALSE);
-    DeleteLocalInt (oPlayer, "0_RANKS_REQUIRED");
-    object oOriginalItem = GetLocalObject (oPlayer, "0_ORIGINAL_CRAFT_ITEM");
-    if (oOriginalItem != OBJECT_INVALID)
+    int nItemSelected = GetLocalInt(oPlayer, CRAFT_ITEM_SELECTION);
+    object oItem = GetSelectedItem(oTarget, nItemSelected);
+    object oOriginalItem = GetLocalObject(oPlayer, CRAFT_ORIGINAL_ITEM);
+    if(oOriginalItem != OBJECT_INVALID)
     {
-        DestroyObject (oItem);
-        int nSlot = GetItemSelectedEquipSlot (nItemSelected);
+        DestroyObject(oItem);
+        int nSlot = GetItemSelectedEquipSlot(nItemSelected);
         // Give item Backup to Player
-        oOriginalItem = CopyItem (oOriginalItem, oTarget, TRUE);
-        DelayCommand (0.2f, AssignCommand (oTarget, ActionEquipItem (oOriginalItem, nSlot)));
-        DeleteLocalObject (oPlayer, "0_ORIGINAL_CRAFT_ITEM");
+        oOriginalItem = CopyItem(oOriginalItem, oTarget, TRUE);
+        DelayCommand(0.2f, AssignCommand (oTarget, ActionEquipItem(oOriginalItem, nSlot)));
+        DeleteLocalObject(oPlayer, CRAFT_ORIGINAL_ITEM);
     }
 }
 // Gets the colorId from a image of the color pallet.
 // Thanks Zunath for the base code.
-int GetColorPalletId (object oPC)
+int GetColorPalletId(object oPC)
 {
-    float fScale = IntToFloat (GetPlayerDeviceProperty (oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0f;
-    json jPayload = NuiGetEventPayload ();
-    json jMousePosition = JsonObjectGet (jPayload, "mouse_pos");
-    json jX = JsonObjectGet (jMousePosition, "x");
-    json jY = JsonObjectGet (jMousePosition, "y");
-    float fX = StringToFloat (JsonDump (jX));
-    float fY = StringToFloat (JsonDump (jY));
+    float fScale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0f;
+    json jPayload = NuiGetEventPayload();
+    json jMousePosition = JsonObjectGet(jPayload, "mouse_pos");
+    json jX = JsonObjectGet(jMousePosition, "x");
+    json jY = JsonObjectGet(jMousePosition, "y");
+    float fX = StringToFloat(JsonDump (jX));
+    float fY = StringToFloat(JsonDump (jY));
     float fCellSize = 16.0f * fScale;
-    int nCellX = FloatToInt (fX / fCellSize);
-    int nCellY = FloatToInt (fY / fCellSize);
-    if (nCellX < 0) nCellX = 0;
+    int nCellX = FloatToInt(fX / fCellSize);
+    int nCellY = FloatToInt(fY / fCellSize);
+    if(nCellX < 0) nCellX = 0;
     else if (nCellX > 16) nCellX = 16;
-    if (nCellY < 0) nCellY = 0;
-    else if (nCellY > 11) nCellY = 11;
+    if(nCellY < 0) nCellY = 0;
+    else if(nCellY > 11) nCellY = 11;
     return nCellX + nCellY * 16;
 }
-
-
-// Locks/Unlocks specific buttons when an item has been changed.
-void LockItemInCraftingWindow (object oPC, object oItem, int nToken)
+void LockItemInCraftingWindow(object oPC, object oItem, int nToken)
 {
     NuiSetBind(oPC, nToken, "btn_copy", JsonBool(FALSE));
     NuiSetBind(oPC, nToken, "btn_copy_event", JsonBool(FALSE));
@@ -942,63 +1006,58 @@ void LockItemInCraftingWindow (object oPC, object oItem, int nToken)
     NuiSetBind(oPC, nToken, "btn_cancel_label", JsonString("Cancel"));
     NuiSetBind(oPC, nToken, "btn_save_event", JsonBool(TRUE));
 }
-
-// Locks/Unlocks specific buttons when an item has been cleared.
-void ClearItemInCraftingWindow (object oPC, object oItem, int nToken)
+void ClearItemInCraftingWindow(object oPC, object oItem, int nToken)
 {
-    NuiSetBind (oPC, nToken, "btn_copy_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_paste_event", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "btn_save_event", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "item_combo_event", JsonBool (TRUE));
+    NuiSetBind(oPC, nToken, "btn_copy_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_paste_event", JsonBool(FALSE));
+    NuiSetBind(oPC, nToken, "btn_save_event", JsonBool(FALSE));
+    NuiSetBind(oPC, nToken, "item_combo_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_prev_target_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_next_target_event", JsonBool(TRUE));
-    NuiSetBind (oPC, nToken, "btn_cancel_label", JsonString ("Exit"));
+    NuiSetBind(oPC, nToken, "btn_cancel_label", JsonString("Exit"));
 }
-void DoSpecialButton (object oPC, object oItem, int nToken)
+void DoSpecialButton(object oPC, object oItem, int nToken)
 {
-     int nItemSelected = GetLocalInt (oPC, CRAFT_ITEM_SELECTION);
-     int nSpecial = GetLocalInt (oPC, CRAFT_MODEL_SPECIAL) + 1;
+     int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+     int nSpecial = GetLocalInt(oPC, CRAFT_MODEL_SPECIAL) + 1;
      // Change button for armor (Left/Right/Linked).
-     if (nItemSelected == 0)
+     if(nItemSelected == 0)
      {
-         if (nSpecial > 2) nSpecial = 0;
-         if (nSpecial == 0) NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Left/Right Linked"));
-         else if (nSpecial == 1) NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Right Model"));
-         else NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Left Model"));
-         SetLocalInt (oPC, CRAFT_MODEL_SPECIAL, nSpecial);
+         if(nSpecial > 2) nSpecial = 0;
+         if(nSpecial == 0) NuiSetBind(oPC, nToken, "btn_special_label", JsonString("Left/Right Linked"));
+         else if(nSpecial == 1) NuiSetBind(oPC, nToken, "btn_special_label", JsonString("Right Model"));
+         else NuiSetBind(oPC, nToken, "btn_special_label", JsonString("Left Model"));
+         SetLocalInt(oPC, CRAFT_MODEL_SPECIAL, nSpecial);
          //NuiSetBind (oPC, nToken, "btn_special_event", JsonBool (TRUE));
     }
     // Change button for cloak/helmets.
-    else if (nItemSelected == 1 || nItemSelected == 2)
+    else if(nItemSelected == 1 || nItemSelected == 2)
     {
         // Get the item to be visible/hidden.
         // Get the items state and set.
-        int nHidden = GetHiddenWhenEquipped (oItem);
-        if (nHidden)
+        int nHidden = GetHiddenWhenEquipped(oItem);
+        if(nHidden)
         {
-            SetLocalInt (oPC, CRAFT_MODEL_SPECIAL, 3);
-            NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Model Visible"));
-            SetHiddenWhenEquipped (oItem, FALSE);
+            SetLocalInt(oPC, CRAFT_MODEL_SPECIAL, 3);
+            NuiSetBind(oPC, nToken, "btn_special_label", JsonString("Model Visible"));
+            SetHiddenWhenEquipped(oItem, FALSE);
         }
         else
         {
-            SetLocalInt (oPC, CRAFT_MODEL_SPECIAL, 4);
-            NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Model Hidden"));
-            SetHiddenWhenEquipped (oItem, TRUE);
+            SetLocalInt(oPC, CRAFT_MODEL_SPECIAL, 4);
+            NuiSetBind(oPC, nToken, "btn_special_label", JsonString("Model Hidden"));
+            SetHiddenWhenEquipped(oItem, TRUE);
         }
-        LockItemInCraftingWindow (oPC, oItem, nToken);
-        //NuiSetBind (oPC, nToken, "btn_special_event", JsonBool (TRUE));
+        LockItemInCraftingWindow(oPC, oItem, nToken);
     }
 }
-
-// Saves the crafted item for the player removing the original.
-void SaveCraftedItem (object oPC, object oTarget, int nToken)
+void SaveCraftedItem(object oPC, object oTarget, int nToken)
 {
-    int nItemSelected = GetLocalInt (oPC, CRAFT_ITEM_SELECTION);
-    object oItem = GetSelectedItem (oTarget, nItemSelected);
-    ClearItemInCraftingWindow (oPC, oItem, nToken);
-    DestroyObject (GetLocalObject (oPC, CRAFT_ORIGINAL_ITEM));
-    DeleteLocalObject (oPC, CRAFT_ORIGINAL_ITEM);
+    int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    object oItem = GetSelectedItem(oTarget, nItemSelected);
+    ClearItemInCraftingWindow(oPC, oItem, nToken);
+    DestroyObject(GetLocalObject(oPC, CRAFT_ORIGINAL_ITEM));
+    DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
 }
 int CanCraftItem(object oPC, object oItem, int nToken, int bPasteCheck = FALSE)
 {
@@ -1057,22 +1116,18 @@ int CanCraftItem(object oPC, object oItem, int nToken, int bPasteCheck = FALSE)
     }
     return TRUE;
 }
-// Remove Effect of type specified from oCreature;
-// sEffectTag is the tag of the effect to remove.
-// Base tags are Feat, Class, Racial.
-void RemoveTagedEffects (object oCreature, string sEffectTag)
+void RemoveTagedEffects(object oCreature, string sEffectTag)
 {
    //Search for the effect.
    //Debug ("0i_effects", "578", "RemoveTagedEffects: " + sEffectTag);
-   effect eEffect = GetFirstEffect (oCreature);
-   while (GetIsEffectValid (eEffect))
+   effect eEffect = GetFirstEffect(oCreature);
+   while (GetIsEffectValid(eEffect))
    {
       //Debug ("0i_effects", "582", "Effect Tag: " + GetEffectTag (eEffect));
-      if (GetEffectTag (eEffect) == sEffectTag) RemoveEffect (oCreature, eEffect);
-      eEffect = GetNextEffect (oCreature);
+      if (GetEffectTag(eEffect) == sEffectTag) RemoveEffect(oCreature, eEffect);
+      eEffect = GetNextEffect(oCreature);
    }
 }
-// Returns TRUE/FALSE if item has temporary item property.
 int CheckForTemporaryItemProperty (object oItem)
 {
     itemproperty ipProperty;
@@ -1084,5 +1139,75 @@ int CheckForTemporaryItemProperty (object oItem)
         ipProperty = GetNextItemProperty (oItem);
     }
     return FALSE;
+}
+void SetModelNumberText(object oPC, int nToken)
+{
+    int nItem = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    object oItem = GetSelectedItem(oPC, nItem);
+    int nSelected = GetLocalInt(oPC, CRAFT_MODEL_SELECTION);
+    string sModelLeft, sModelCenter, sModelRight;
+    if (ai_GetIsWeapon (oItem))
+    {
+        int nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, 0);
+        int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, 0);
+        int nModelNumber = (nModel * 10) + nColor;
+        sModelLeft = IntToString(nModelNumber);
+        nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, 1);
+        nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, 1);
+        nModelNumber = (nModel * 10) + nColor;
+        sModelCenter = IntToString(nModelNumber);
+        nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, 2);
+        nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, 2);
+        nModelNumber = (nModel * 10) + nColor;
+        sModelRight = IntToString(nModelNumber);
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_l", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_l", JsonString(sModelLeft));
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_c", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(sModelCenter));
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_r", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_r", JsonString(sModelRight));
+    }
+    if(nItem == 0)
+    {
+        nSelected = GetArmorModelSelected(oPC);
+        // These models only have one side so make sure we are not linked.
+        if (nSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+            nSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
+            nSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
+            nSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
+            nSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+        {
+            sModelCenter = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nSelected));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_l", FALSE);
+            NuiSetBind(oPC, nToken, "txt_model_name_l", JsonString(""));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_c", TRUE);
+            NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(sModelCenter));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_r", FALSE);
+            NuiSetBind(oPC, nToken, "txt_model_name_r", JsonString(""));
+        }
+        else
+        {
+            sModelLeft = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nSelected));
+            if(nSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nSelected--;
+            else nSelected++;
+            sModelRight = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nSelected));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_l", TRUE);
+            NuiSetBind(oPC, nToken, "txt_model_name_l", JsonString(sModelLeft));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_c", FALSE);
+            NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(""));
+            NuiSetBindWatch(oPC, nToken, "txt_model_name_r", TRUE);
+            NuiSetBind(oPC, nToken, "txt_model_name_r", JsonString(sModelRight));
+        }
+    }
+    else
+    {
+        sModelCenter = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0));
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_l", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_l", JsonString(""));
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_c", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_c", JsonString(sModelCenter));
+        NuiSetBindWatch(oPC, nToken, "txt_model_name_r", TRUE);
+        NuiSetBind(oPC, nToken, "txt_model_name_r", JsonString(""));
+    }
 }
 

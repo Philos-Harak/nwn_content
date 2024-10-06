@@ -9,7 +9,7 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    //ai_Debug("xx_pc_1_hb", "12", GetName(oCreature) + " heartbeat.");
+    ai_Debug("xx_pc_1_hb", "12", GetName(oCreature) + " heartbeat.");
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     if(ai_GetIsInCombat(oCreature))
     {
@@ -21,6 +21,7 @@ void main()
     if(ai_TryHealing(oCreature, oCreature)) return;
     // When picking up items we also check for traps and locks so if
     // we are not in pickup mode we need to do that here.
+    if(ai_AssociateRetrievingItems(oCreature)) return;
     if(!ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
     {
         // Seek out and disable traps.
@@ -41,7 +42,6 @@ void main()
                ai_AttemptToByPassLock(oCreature, oLock)) return;
         }
     }
-    if(ai_AssociateRetrievingItems(oCreature)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
     {
         //ai_Debug("0e_ch_1_hb", "47", "Going into stealth mode!");

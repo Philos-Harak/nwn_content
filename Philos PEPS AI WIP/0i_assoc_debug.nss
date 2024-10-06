@@ -51,13 +51,14 @@ int ai_CanIAttack(object oAssociate)
 object ai_GetNearestLockedObject(object oCreature)
 {
     int nCnt = 1;
+    object oMaster = GetMaster(oCreature);
+    float fRange = GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE);
     location lCreature = GetLocation(oCreature);
     object oObject = GetNearestObjectToLocation(OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE, lCreature, nCnt);
-    while (oObject != OBJECT_INVALID)
+    while (oObject != OBJECT_INVALID || GetDistanceBetween(oMaster, oObject) > fRange)
     {
-        if(GetLocked(oObject)) return oObject;
-        if(++nCnt > 10) break;
-        oObject = GetNearestObjectToLocation(OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE, lCreature, nCnt);
+        if(GetLocked(oObject) && ai_GetIsInLineOfSight(oMaster, oObject)) return oObject;
+        oObject = GetNearestObjectToLocation(OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE, lCreature, ++nCnt);
     }
     return OBJECT_INVALID;
 }
@@ -438,7 +439,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             {
                 if(AI_REMOVE_HENCHMAN_ON)
                 {
-                    ai_ClearCreatureActions(oCreature);
+                    ai_ClearCreatureActions();
                     ai_FireHenchman (GetPCSpeaker(), oCreature);
                     PlayVoiceChat (VOICE_CHAT_GOODBYE, oCreature);
                 }

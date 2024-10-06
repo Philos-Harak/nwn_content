@@ -71,7 +71,7 @@ const int AI_EMPATHY_COOLDOWN = 3;
 // Change the Custom token number if it conflicts with your server.
 const int AI_BASE_CUSTOM_TOKEN = 1000;
 // Force the AI to overwrite all creature event scripts.
-const int AI_OVERWRITE_EVENT_SCRIPTS = TRUE;
+const int AI_OVERWRITE_EVENT_SCRIPTS = FALSE;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -134,7 +134,7 @@ const int AI_COMBAT_EFFORTLESS = 4;
 // Variables used to keep track of enemies in combat.
 const string AI_ENEMY = "AI_ENEMY"; // The enemy objects.
 const string AI_ENEMY_DISABLED = "AI_ENEMY_DISABLED"; // Int if they are disabled.
-const string AI_ENEMY_SEEN = "AI_ENEMY_SEEN"; // TRUE if we have seen them, FALSE if not.
+const string AI_ENEMY_PERCEIVED = "AI_ENEMY_PERCEIVED"; // TRUE if we have seen or heard them, FALSE if not.
 const string AI_ENEMY_RANGE = "AI_ENEMY_RANGE"; // The range from OBJECT_SELF.
 const string AI_ENEMY_COMBAT = "AI_ENEMY_COMBAT"; // Combat rating: (BAB + AC - 10) / 2
 const string AI_ENEMY_MELEE = "AI_ENEMY_MELEE"; // Enemies within 5 meters - Allies within 5 meters.
@@ -145,7 +145,7 @@ const string AI_ENEMY_NEAREST = "AI_ENEMY_NEAREST"; // Nearest enemy to OBJECT_S
 // Variables used to keep track of allies in combat.
 const string AI_ALLY = "AI_ALLY"; // All friendly creatures
 const string AI_ALLY_DISABLED = "AI_ALLY_DISABLED"; // Int if they are disabled.
-const string AI_ALLY_SEEN = "AI_ALLY_SEEN"; // All allies are set to be seen.
+const string AI_ALLY_PERCEIVED = "AI_ALLY_PERCEIVED"; // All allies are set to be seen and heard.
 const string AI_ALLY_RANGE = "AI_ALLY_RANGE"; // The range from OBJECT_SELF.
 const string AI_ALLY_COMBAT = "AI_ALLY_COMBAT"; // Combat rating: (BAB + AC - 10) / 2
 const string AI_ALLY_MELEE = "AI_ALLY_MELEE"; // Enemies within 5 meters - Allies within 5 meters.

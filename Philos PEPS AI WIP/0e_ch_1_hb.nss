@@ -54,6 +54,7 @@ void main()
         {
             // When picking up items we also check for traps and locks so if
             // we are not in pickup mode we need to do that here.
+            if(ai_AssociateRetrievingItems(oCreature)) return;
             if(!ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
             {
                 // Seek out and disable traps.
@@ -74,7 +75,6 @@ void main()
                        ai_AttemptToByPassLock(oCreature, oLock)) return;
                 }
             }
-            if(ai_AssociateRetrievingItems(oCreature)) return;
             if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
             {
                 ai_ScoutAhead(oCreature);
