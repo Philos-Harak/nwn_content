@@ -59,6 +59,10 @@ int ai_GetMagicMode(object oAssociate, int nBit);
 void ai_SetLootFilter(object oAssociate, int nBit, int bOn = TRUE);
 // Return if nMode is set on oAssociate. Uses the AI_LOOT_* bitwise constants.
 int ai_GetLootFilter(object oAssociate, int nBit);
+// Set one of the AI_IP_* bitwise constants on oCreature to bOn.
+void ai_SetItemProperty(object oCreature, string sVarname, int nBit, int bOn = TRUE);
+// Return if nMode is set on oCreature. Uses the AI_IP_* bitwise constants.
+int ai_GetItemProperty(object oCreature, string sVarname, int nBit);
 // Returns the number of hitpoints a creature must have to not be healed.
 // This is based off of the PC's settings for an associate and other creatures use a default.
 int ai_GetHealersHpLimit(object oCreature, int bInCombat = TRUE);
@@ -243,6 +247,18 @@ void ai_SetLootFilter(object oAssociate, int nLootBit, int bOn = TRUE)
 int ai_GetLootFilter(object oAssociate, int nBit)
 {
     if(GetLocalInt(oAssociate, sLootFilterVarname) & nBit) return TRUE;
+    return FALSE;
+}
+void ai_SetItemProperty(object oCreature, string sVarname, int nBit, int bOn = TRUE)
+{
+    int nItemProperties = GetLocalInt(oCreature, sVarname);
+    if(bOn) nItemProperties = nItemProperties | nBit;
+    else nItemProperties = nItemProperties & ~nBit;
+    SetLocalInt(oCreature, sVarname, nItemProperties);
+}
+int ai_GetItemProperty(object oCreature, string sVarname, int nBit)
+{
+    if(GetLocalInt(oCreature, sVarname) & nBit) return TRUE;
     return FALSE;
 }
 int ai_GetHealersHpLimit(object oCreature, int bInCombat = TRUE)

@@ -6,8 +6,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -27,6 +27,7 @@ void main()
     if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
     if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
@@ -50,9 +51,13 @@ void main()
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }
-            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+            else
+            {
+                ai_SearchForInvisibleCreature(oCreature);
+                return;
+            }
         }
-        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;

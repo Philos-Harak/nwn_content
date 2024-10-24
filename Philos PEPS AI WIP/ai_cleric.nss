@@ -6,8 +6,8 @@
 ////////////////////////////////////////////////////////////////////////////////
  Programmer: Philos
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -29,6 +29,8 @@ void main()
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
+    if(ai_TryDivineShieldFeat(oCreature, nInMelee)) return;
+    if(ai_TryDivineMightFeat(oCreature, nInMelee)) return;
     //**********************  OFFENSIVE TARGETED TALENTS  **********************
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
@@ -47,9 +49,13 @@ void main()
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }
-            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+            else
+            {
+                ai_SearchForInvisibleCreature(oCreature);
+                return;
+            }
         }
-        if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // *************************  MELEE ATTACKS  *******************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;

@@ -18,6 +18,7 @@ void main()
             ai_CheckPlayerForData(oCreature);
             ai_CreateWidgetNUI(oCreature, oCreature);
             ai_SetupPlayerTarget(oCreature);
+            ai_SetNormalAppearance(oCreature);
         }
     }
 }

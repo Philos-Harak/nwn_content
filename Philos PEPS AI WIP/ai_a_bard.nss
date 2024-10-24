@@ -6,8 +6,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -62,12 +62,16 @@ void main()
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }
-            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+            else
+            {
+                ai_SearchForInvisibleCreature(oCreature);
+                return;
+            }
         }
-        if(ai_InCombatEquipBestRangedWeapon(oCreature, TRUE)) return;
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // ************************** Melee feat attacks *************************
-    if(ai_InCombatEquipBestMeleeWeapon(oCreature, TRUE)) return;
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));

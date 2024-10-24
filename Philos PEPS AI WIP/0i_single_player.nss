@@ -8,8 +8,10 @@
 //#include "0i_assoc_debug"
 #include "0i_constants"
 #include "0i_messages"
-// Sets the events for oCreature that use event scripts for monsters.
+// Sets the events for oCreature that use event scripts for monsters in most modules.
 void ai_SetMonsterEventScripts(object oCreature);
+// Sets the events for oCreature that use event scripts for monsters in Infinite Dungeons.
+void ai_SetIDMonsterEventScripts(object oCreature);
 // Sets the events for oCreature that use event scripts for associates.
 void ai_SetAssociateEventScripts(object oCreature);
 // Reverts a single players monsters, NPC's and associate event scripts back to their default.
@@ -38,6 +40,7 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     ai_SetListeningPatterns(oCreature);
     ai_SetCreatureAIScript(oCreature);
     ai_SetMonsterEventScripts(oCreature);
+    ai_SetNormalAppearance(oCreature);
     ai_SetAura(oCreature);
     SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
     SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
@@ -66,6 +69,7 @@ void ai_OnAssociateSpawn(object oCreature)
     ai_SetMagicMode(oCreature, AI_MAGIC_NORMAL_MAGIC_USE);
     ai_SetListeningPatterns(oCreature);
     ai_SetAssociateEventScripts(oCreature);
+    ai_SetNormalAppearance(oCreature);
     ai_SetAssociateAIScript(oCreature, FALSE);
     ai_SetAura(oCreature);
     // Bioware summoned shadows are not incorporeal, also set the ai code.
@@ -119,7 +123,10 @@ void ai_SetMonsterEventScripts(object oCreature)
     if(sScript == "" || sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_c2_6_damaged");
     else if(sScript == "x2_def_ondamage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_c2_6_damaged");
     else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    // This is always set incase they have permanent summons turned on.
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
     if(sScript == "" || sScript == "nw_c2_default8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_c2_8_disturb");
@@ -178,7 +185,10 @@ void ai_SetAssociateEventScripts(object oCreature)
     else if(sScript == "nw_ch_ac5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_c2_6_damaged");
     else if(sScript == "x0_ch_hen_damage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_ch_6_damaged");
     else WriteTimestampedLogEntry("ON_DAMAGED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    // SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    // This is always set incase they have permanent summons turned on.
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_death");
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
     if(sScript == "" || sScript == "nw_ch_ac8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_ch_8_disturb");

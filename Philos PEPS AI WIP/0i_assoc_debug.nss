@@ -9,6 +9,8 @@
 int ai_CanIAttack(object oAssociate);
 // Returns the nearest locked object from oMaster.
 object ai_GetNearestLockedObject(object oCreature);
+// Will look for the oTarget or go to the oSpeaker depending on the situation.
+void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget);
 // Selects the correct response base on nCommand from oCommander.
 // These are given from either a radial menu option or voice command.
 void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand);
@@ -28,10 +30,10 @@ void ai_HenchmanCastDefensiveSpells(object oCreature, object oPC);
 int ai_CheckForCombat(object oCreature);
 // Checks all perceived creatures to see if we should calculate a combat round
 // or start combat for Associates.
-void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived);
+void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, string sPerception);
 // Checks all perceived creatures to see if we should calculate a combat round
 // or start combat for Monsters.
-void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived);
+void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string sPerception);
 //******************************************************************************
 //********************* Creature event scripts *********************************
 //******************************************************************************
@@ -62,30 +64,54 @@ object ai_GetNearestLockedObject(object oCreature)
     }
     return OBJECT_INVALID;
 }
-void ai_FindTheEnemy(object oCreature, object oCommander, object oTarget)
+void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget)
 {
+    if(GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
     float fDistance = GetDistanceBetween(oCreature, oTarget);
-    ai_Debug("0i_associates", "69", " Distance: " + FloatToString(fDistance, 0, 2));
-    if(fDistance <= AI_MAX_ASSOCIATE_PERCEPTION_DISTANCE)
+    ai_Debug("0i_associates", "71", " Distance: " + FloatToString(fDistance, 0, 2) +
+             " AI_RULE_PERCEPTION_DISTANCE: " + FloatToString(GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE), 0, 2) +
+             " Hiding? " + IntToString(GetStealthMode(oTarget)));
+    if(fDistance <= GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE))
     {
         if(LineOfSightObject(oCreature, oTarget))
         {
             SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
-            if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_CLOSE)
+            if(fDistance > AI_RANGE_CLOSE)
             {
-                ai_Debug("0i_associates", "77", "Moving towards " + GetName(oTarget));
-                ActionMoveToObject(oCommander, TRUE, AI_RANGE_CLOSE);
-                ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+                int bMoveForward = TRUE;
+                // We check this because if the enemy is moving or has not
+                // started acting then we don't want to move up on them as they
+                // might move towards us! Just attack! Only sneak attack if they are busy.
+                int nAction = GetCurrentAction(oTarget);
+                ai_Debug("0i_associates", "85", GetName(oTarget) + " current action: " + IntToString(nAction));
+                if(nAction == ACTION_MOVETOPOINT ||
+                   nAction == ACTION_INVALID ||
+                   nAction == ACTION_RANDOMWALK) bMoveForward = FALSE;
+                // If they are attacking make sure it is in melee?
+                // If not then don't move since they might be moving toward us.
+                if(nAction == ACTION_ATTACKOBJECT)
+                {
+                    if(!ai_GetNumOfEnemiesInRange(oTarget)) bMoveForward = FALSE;
+                }
+                if(bMoveForward)
+                {
+                    ai_Debug("0i_associates", "97", "Moving towards " + GetName(oTarget));
+                    ActionMoveToObject(oTarget, TRUE, AI_RANGE_CLOSE);
+                    ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+                    return;
+                }
+                ai_Debug("0i_associates", "102", "Searching for " + GetName(oTarget));
+                SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
                 return;
             }
-            ai_Debug("0i_associates", "82", "Searching for " + GetName(oTarget));
+            ai_Debug("0i_associates", "106", "Moving and searching for " + GetName(oTarget));
             SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
             ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
             ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
             return;
         }
-        ai_Debug("0i_associates", "88", "Looking for " + GetName(oCommander));
-        ActionMoveToObject(oCommander, TRUE, AI_RANGE_MELEE);
+        ai_Debug("0i_associates", "112", "Moving towards " + GetName(oSpeaker));
+        ActionMoveToObject(oSpeaker, TRUE, AI_RANGE_MELEE);
         ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
     }
 }
@@ -271,9 +297,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
     if(!ai_GetIsBusy(oCreature))
     {
         // Respond to shouts from friendly non-PCs only.
-        if (ai_CanIAttack(oCreature) &&
-            !GetLocalInt(oCreature, AI_AM_I_SEARCHING) &&
-            !GetIsEnemy(oCommander, oCreature))
+        if (ai_CanIAttack(oCreature))
         {
             if(nCommand == AI_ALLY_IS_WOUNDED) ai_TryHealing(oCreature, oCommander);
             // A friend sees an enemy. If we are not in combat lets seek them out too!
@@ -281,7 +305,8 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                nCommand == AI_ALLY_HEARD_AN_ENEMY)
             {
                 ai_Debug("0i_associates", "282", GetName(oCreature) + " receives notice that " +
-                         GetName(oCommander) + " has seen/heard an enemy!");
+                         GetName(oCommander) + " has seen/heard an enemy!" +
+                         GetName(GetLocalObject(oCommander, AI_MY_TARGET)) + "!");
                 ai_ReactToAssociate(oCreature, oCommander);
                 return;
             }
@@ -290,7 +315,8 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                     nCommand == AI_ALLY_ATKED_BY_SPELL)
             {
                 ai_Debug("0i_associates", "291", GetName(oCreature) + " receives notice that " +
-                         GetName(oCommander) + " was attacked by an enemy!");
+                         GetName(oCommander) + " was attacked by an enemy!" +
+                         GetName(GetLocalObject(oCommander, AI_MY_TARGET)) + "!");
                 ai_ReactToAssociate(oCreature, oCommander);
                 return;
             }
@@ -592,7 +618,7 @@ int ai_CheckForCombat(object oCreature)
     }
     return FALSE;
 }
-void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived)
+void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, string sPerception)
 {
     if(!ai_CanIAttack(oCreature)) return;
     int nAction = GetCurrentAction(oCreature);
@@ -647,12 +673,18 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived)
     ai_Debug("0i_associates", "661", GetName(oCreature) + " is starting combat!");
     ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
     SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
-    SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_SHOUT);
-    ai_SetCreatureTalents(oCreature, FALSE);
-    if(ai_CanIAttack(oCreature)) ai_DoAssociateCombatRound(oCreature);
-    return;
+    SpeakString(sPerception, TALKVOLUME_SILENT_SHOUT);
+    if(sPerception == AI_I_SEE_AN_ENEMY)
+    {
+        if(ai_CanIAttack(oCreature))
+        {
+            ai_SetCreatureTalents(oCreature, FALSE);
+            ai_DoAssociateCombatRound(oCreature);
+        }
+    }
+    else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived);
 }
-void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived)
+void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string sPerception)
 {
     int nAction = GetCurrentAction(oCreature);
     ai_Debug("0i_associates", "672", "nAction: " + IntToString(nAction));
@@ -705,14 +737,14 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived)
     // We are not in combat so alert our allies!
     ai_Debug("0i_associates", "720", GetName(oCreature) + " is starting combat!");
     SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
-    SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_SHOUT);
-    if(ai_CanIAttack(oCreature))
+    SpeakString(sPerception, TALKVOLUME_SILENT_SHOUT);
+    if(sPerception == AI_I_SEE_AN_ENEMY)
     {
         ai_SetCreatureTalents(oCreature, FALSE);
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
         ai_DoMonsterCombatRound(oCreature);
     }
-    return;
+    else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived);
 }
 
 //******************************************************************************

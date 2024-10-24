@@ -6,8 +6,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -33,8 +33,8 @@ void main()
     // If we are not attacking then setup for counter spelling.
     if(!bAttack)
     {
-        //ai_Debug("ai_a_cntrspell", "34", " Counterspell Mode? " +
-        //         IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
+        ai_Debug("ai_a_cntrspell", "34", " Counterspell Mode? " +
+                 IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
         if(!GetActionMode(oCreature, ACTION_MODE_COUNTERSPELL))
         {
             object oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER);
@@ -58,7 +58,7 @@ void main()
                 if(ai_TryToBecomeInvisible(oCreature)) return;
                 // If we have attempted to become invisible or are invisible then
                 // it is time to counter spell.
-                //ai_Debug("ai_cntrspell", "59", "Setting Counterspell mode!");
+                ai_Debug("ai_cntrspell", "59", "Setting Counterspell mode!");
                 ActionCounterSpell(oTarget);
             }
         }
@@ -102,13 +102,21 @@ void main()
                 // Lets pick off the nearest targets.
                 if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
                 else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
-                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
-                return;
+                if(oTarget != OBJECT_INVALID)
+                {
+                    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                    return;
+                }
+                else
+                {
+                    ai_SearchForInvisibleCreature(oCreature);
+                    return;
+                }
             }
-            if(ai_InCombatEquipBestRangedWeapon(oCreature, TRUE)) return;
+            else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
         }
         // *************************  MELEE ATTACKS  *******************************
-        if(ai_InCombatEquipBestMeleeWeapon(oCreature, TRUE)) return;
+        if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
         oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, FALSE);
         // If we have a target so lets see what our options are.
         if(oTarget != OBJECT_INVALID)
@@ -117,14 +125,14 @@ void main()
             if(ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID)
             {
                 object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-                //ai_Debug("ai_cntrspell", "123", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
+                ai_Debug("ai_cntrspell", "123", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
                 // If we cast a spell last round or are using a bow then lets move back.
                 if((GetLocalInt(oCreature, sLastActionVarname) > -1 ||
                      ai_HasRangedWeaponWithAmmo(oCreature)) &&
                      GetDistanceBetween(oCreature, oNearestEnemy) < AI_RANGE_CLOSE)
                 {
-                    //ai_Debug("ai_cntrspell", "129", GetName(oCreature) +
-                    //          " is moving away from " + GetName(oTarget));
+                    ai_Debug("ai_cntrspell", "129", GetName(oCreature) +
+                              " is moving away from " + GetName(oTarget));
                     ai_SetLastAction(oCreature, AI_LAST_ACTION_NONE);
                     ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
                     return;

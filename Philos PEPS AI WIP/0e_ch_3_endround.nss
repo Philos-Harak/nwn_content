@@ -13,12 +13,12 @@
   GetAttemptedAttackTarget() & GetAttemptedSpellTarget() also get cleared prior to this event.
   This event can be canceled with ClearAllActions(TRUE) and SurrenderToEnemies.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
-    //ai_Debug("0e_ch_3_endround", "21", GetName(oCreature) + " ends combat round.");
+    ai_Debug("0e_ch_3_endround", "21", GetName(oCreature) + " ends combat round.");
     if(ai_Disabled(oCreature)) return;
     // Action modes get cleared prior to each OnCombatRoundEnd!
     // We do this to keep the action mode going.
@@ -30,7 +30,7 @@ void main()
         if(nActionMode == 12) IncrementRemainingFeatUses(oCreature, FEAT_DWARVEN_DEFENDER_DEFENSIVE_STANCE);
     }
     int nAction = GetCurrentAction(oCreature);
-    //ai_Debug("0e_ch_3_endround", "35", "nAction: " + IntToString(nAction));
+    ai_Debug("0e_ch_3_endround", "35", "nAction: " + IntToString(nAction));
     switch(nAction)
     {
         // These actions are uninteruptable.
@@ -42,7 +42,7 @@ void main()
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            //ai_Debug("0e_ch_3_endround", "47", "nCombatWait: " + IntToString(nCombatWait));
+            ai_Debug("0e_ch_3_endround", "47", "nCombatWait: " + IntToString(nCombatWait));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return;

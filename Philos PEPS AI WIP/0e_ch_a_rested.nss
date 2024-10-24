@@ -6,8 +6,8 @@
   Fires when the creature attempts to rest via ActionRest or a PC rests.
 *///////////////////////////////////////////////////////////////////////////////
 //******************************  ADDED AI CODE  *******************************
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 //******************************  ADDED AI CODE  *******************************
 void main()
 {

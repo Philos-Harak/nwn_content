@@ -6,8 +6,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -30,11 +30,14 @@ void main()
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
     if(ai_TryTurningTalent(oCreature)) return;
-    if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     if(ai_TrySummonFamiliarTalent(oCreature)) return;
+    if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
+    if(ai_TryDivineShieldFeat(oCreature, nInMelee)) return;
+    if(ai_TryDivineMightFeat(oCreature, nInMelee)) return;
     //**********************  OFFENSIVE TARGETED TALENTS  **********************
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;

@@ -51,16 +51,26 @@ void ai_SendMessages(string sMessage, string sTextColor = AI_COLOR_YELLOW, objec
 }
 void ai_Debug(string sScriptName, string sLineNumber, string sMessage)
 {
-    sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
-    sMessage = ai_StripColorCodes(sMessage);
+    if(GetName(OBJECT_SELF) == GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE))
+    {
+        sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
+        sMessage = ai_StripColorCodes(sMessage);
+        WriteTimestampedLogEntry(sMessage);
+        return;
+    }
+    //sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
+    //sMessage = ai_StripColorCodes(sMessage);
     //SendMessageToPC(GetFirstPC(), sMessage);
     //WriteTimestampedLogEntry(sMessage);
     //if(GetLocalInt(OBJECT_SELF, "AI_DEBUG")) WriteTimestampedLogEntry(sMessage);
-    //if(GetName(OBJECT_SELF) == "Dancing Sunbeam") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Drakonis Baronas") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Dorna Trapspringer") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Dire Spider") WriteTimestampedLogEntry(sMessage);
-    if(GetName(OBJECT_SELF) == "Shadow Priest") WriteTimestampedLogEntry(sMessage);
-    //if(GetName(OBJECT_SELF) == "Thello Colds") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Shadow Priest") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Tomi Undergallows") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Thello Colds") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Gert Sigers") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Zombie") WriteTimestampedLogEntry(sMessage);
 }
 void ai_Counter_Start()
 {

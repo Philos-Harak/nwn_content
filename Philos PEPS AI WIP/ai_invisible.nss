@@ -6,11 +6,10 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
-    return;
     object oCreature = OBJECT_SELF;
     // If we are wounded and since they can't see us we should look at moving
     // out of combat so we can heal.
@@ -68,7 +67,11 @@ void main()
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }
-            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+            else
+            {
+                ai_SearchForInvisibleCreature(oCreature);
+                return;
+            }
         }
     }
     // ************************** Melee feat attacks *************************
@@ -82,7 +85,6 @@ void main()
         if(GetIsTalentValid(tUse))
         {
             int nId = GetIdFromTalent(tUse);
-            ai_Debug("ai_invisibility", "92", "TALENT_CATEGORY_MELEE_TALENTS nId: " + IntToString(nId));
             if(nId == FEAT_POWER_ATTACK) { if(ai_TryPowerAttackFeat(oCreature, oTarget)) return; }
             else if(nId == FEAT_KNOCKDOWN) { if(ai_TryKnockdownFeat(oCreature, oTarget)) return; }
             else if(nId == FEAT_SMITE_EVIL) { if(ai_TrySmiteEvilFeat(oCreature, oTarget)) return; }

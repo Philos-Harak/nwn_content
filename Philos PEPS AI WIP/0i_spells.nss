@@ -380,10 +380,21 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         {
             if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_DAMAGE_RESISTANCE))
             {
-                //ai_Debug("0i_spells", "334", "Target is resistant to my energy spell!");
+                //ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
                 return TRUE;
             }
-            // Maybe add checks for item damage resistance?
+            // Check for resistances and immunities. Treat resistance as immune.
+            int nIPResist = GetLocalInt(oCreature, sIPResistVarname);
+            int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) & nIPResist;
+            if(nIPImmune > 0)
+            {
+                //ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
+                if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) return TRUE;
+                else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) return TRUE;
+                else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) return TRUE;
+                else if(sIType == "Electricity" && (nIPImmune & DAMAGE_TYPE_ELECTRICAL)) return TRUE;
+                else if(sIType == "Sonic" && (nIPImmune & DAMAGE_TYPE_SONIC)) return TRUE;
+            }
         }
     }
     int nLevel = StringToInt(Get2DAString("ai_spells", "Innate", nSpell));

@@ -42,7 +42,7 @@ void ai_ReactToAlly(object oCreature, object oSpeaker)
     // Check our allies target.
     object oTarget = GetLocalObject(oSpeaker, AI_MY_TARGET);
     //ai_Debug("nw_c2_default4", "38", " Distance: " + FloatToString(GetDistanceBetween(oCreature, oTarget), 0, 2));
-    if(GetDistanceBetween(oCreature, oTarget) <= AI_MAX_MONSTER_PERCEPTION_DISTANCE &&
+    if(GetDistanceBetween(oCreature, oTarget) <= GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE) &&
        LineOfSightObject(oCreature, oSpeaker))
     {
         float fDistance = GetDistanceBetween(oCreature, oTarget);

@@ -144,6 +144,7 @@ void main()
     // Main AI events.
     if(sWndId == "ai_main_nui")
     {
+        //if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
         if(sEvent == "click")
         {
             string sHenchman;
@@ -318,6 +319,82 @@ void main()
                 }
                 SetMaxHenchmen(nMaxHenchman);
                 ai_SendMessages("Maximum henchman has been changed to " + IntToString(nMaxHenchman), AI_COLOR_YELLOW, oPC);
+            }
+            else if(sElem == "txt_debug_creature")
+            {
+                object oModule = GetModule();
+                string sDebugName = JsonGetString(NuiGetBind(oPC, nToken, sElem));
+                SetLocalString(oModule, AI_RULE_DEBUG_CREATURE, sDebugName);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_RULE_DEBUG_CREATURE, JsonString(sDebugName));
+                ai_SetCampaignDbJson("rules", jRules);
+            }
+            else if(sElem == "txt_ai_difficulty")
+            {
+                int nChance = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                if(nChance < 0) nChance = 0;
+                else if(nChance > 100) nChance = 100;
+                SetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY, nChance);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(nChance));
+                ai_SetCampaignDbJson("rules", jRules);
+            }
+            else if(sElem == "txt_perception_distance")
+            {
+                float fDistance = StringToFloat(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                if(fDistance < 10.0) fDistance = 10.0;
+                else if(fDistance > 40.0) fDistance = 40.0;
+                SetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE, fDistance);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(fDistance));
+                ai_SetCampaignDbJson("rules", jRules);
+            }
+            else if(GetStringLeft(sElem, 4) == "chbx")
+            {
+                object oModule = GetModule();
+                int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                json jRules = ai_GetCampaignDbJson("rules");
+                if(sElem == "chbx_moral_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_MORAL_CHECKS, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_buff_monsters_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_buff_summons_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_PRESUMMON, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_advanced_movement_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_ilr_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_ILR, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_ILR, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_umd_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_ALLOW_UMD, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_ALLOW_UMD, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_use_healingkits_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_HEALERSKITS, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_HEALERSKITS, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_perm_assoc_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_PERM_ASSOC, bCheck);
+                    JsonObjectSetInplace(jRules, AI_RULE_PERM_ASSOC, JsonInt(bCheck));
+                }
+                ai_SetCampaignDbJson("rules", jRules);
             }
         }
     }
@@ -508,8 +585,8 @@ void main()
             {
                 if(sElem == "btn_ai")
                 {
-                if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb") ai_TurnOff(oPC, oAssociate, sAssociateType);
-                else ai_TurnOn(oPC, oAssociate, sAssociateType);
+                    if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb") ai_TurnOff(oPC, oAssociate, sAssociateType);
+                    else ai_TurnOn(oPC, oAssociate, sAssociateType);
                 }
                 else if(sElem == "btn_ranged") AssignCommand(oAssociate, ai_Ranged(oPC, oAssociate, sAssociateType));
                 else if(sElem == "btn_follow_minus") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
@@ -895,6 +972,7 @@ void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
     //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
     DeleteLocalString(oAssociate, "AIScript");
+    ai_ClearCreatureActions();
 }
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType)
 {

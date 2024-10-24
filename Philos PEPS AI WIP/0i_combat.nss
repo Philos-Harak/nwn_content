@@ -291,6 +291,11 @@ int ai_CheckClassType(object oCreature, int nClassType);
 // May also check for general racial types with
 // AI_RACIAL_TYPE_ANIMAL_BEAST
 int ai_CheckRacialType(object oCreature, int nRacialType);
+// Saves oCreatures Normal appearance if they are not polymorphed and it has
+// not already been saved.
+void ai_SetNormalAppearance(object oCreature);
+// Returns the normal appearance of oCreature.
+int ai_GetNormalAppearance(object oCreature);
 // Return the number and levels of all creatures within fRange.
 // They are grouped into Fighters, Clerics, Mages, and Monsters.
 struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fRange = AI_RANGE_BATTLEFIELD);
@@ -310,7 +315,7 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 // Returns TRUE if equiped, FALSE if not.
 // oTarget is the creature the caller is targeting.
 int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID);
-// Return TRUE if oCreature is Invisible, shealth mode, or has sanctuary up.
+// Returns TRUE if oCreature is Invisible, stealth mode, or has sanctuary up.
 int ai_GetIsInvisible(object oCreature);
 // Returns TRUE if if oCaster has a good chance of effecting oCreature with nSpell.
 int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell);
@@ -329,7 +334,7 @@ int ai_StrongOpponent(object oCreature, object oTarget, int nAdj = 2);
 // Returns TRUE if attacking oTarget with Power attack is a good option.
 int ai_PowerAttackGood(object oCreature, object oTarget, float fAdj);
 // Returns TRUE if oTarget's AC - oCreature Atk - nAtkAdj can hit within 25% to 75%.
-int ai_AttackAdjustmentGood(object oCreature, object oTarget, float fAtkAdj);
+int ai_AttackPenaltyOk(object oCreature, object oTarget, float fAtkAdj);
 // Returns TRUE if oCreature AC - oTarget's Atk is less than 20.
 int ai_ACAdjustmentGood(object oCreature, object oTarget, float fACAdj);
 // Checks oCreatures melee weapon to see if they can kill oTarget in one hit.
@@ -537,7 +542,9 @@ object ai_SetCombatState(object oCreature)
                     // ********** Set the Enemies distance **********
                     SetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt, fDistance);
                     // ********** Set if the Enemy is seen **********
-                    if(GetObjectSeen(oObject, oCreature) && GetObjectHeard(oObject, oCreature))
+                    if(GetObjectSeen(oObject, oCreature) ||
+                      (GetObjectHeard(oObject, oCreature) && fDistance < AI_RANGE_MELEE &&
+                      ai_GetIsInvisible(oObject)))
                     {
                         SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
                         //sDebugText += "**** PERCEIVED ****";
@@ -752,6 +759,10 @@ void ai_ClearCombatState(object oCreature)
     DeleteLocalInt(oCreature, sLastActionVarname);
     DeleteLocalInt(oCreature, AI_TALENTS_SET);
     DeleteLocalInt(oCreature, AI_ROUND);
+    DeleteLocalInt(oCreature, sIPHasHasteVarname);
+    DeleteLocalInt(oCreature, sIPImmuneVarname);
+    DeleteLocalInt(oCreature, sIPResistVarname);
+    DeleteLocalInt(oCreature, sIPReducedVarname);
     ai_EndCombatRound(oCreature);
 }
 //******************************************************************************
@@ -2710,6 +2721,25 @@ int ai_CheckRacialType(object oTarget, int nRacialType)
     }
     return FALSE;
 }
+void ai_SetNormalAppearance(object oCreature)
+{
+    if(!ai_GetHasEffectType(oCreature, EFFECT_TYPE_POLYMORPH))
+    {
+        int nForm = GetAppearanceType(oCreature);
+        //ai_Debug("0i_combat", "2729", GetName(oCreature) + " form: " + IntToString(nForm));
+        SetLocalInt(oCreature, AI_NORMAL_FORM, nForm + 1);
+    }
+}
+int ai_GetNormalAppearance(object oCreature)
+{
+    int nForm = GetLocalInt(oCreature, AI_NORMAL_FORM) - 1;
+    if(nForm == -1)
+    {
+        ai_SetNormalAppearance(oCreature);
+        nForm = GetLocalInt(oCreature, AI_NORMAL_FORM) - 1;
+    }
+    return nForm;
+}
 struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fRange = AI_RANGE_BATTLEFIELD)
 {
     struct stClasses sCount;
@@ -2900,7 +2930,7 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
         // Non-Identified items have a goldpiecevalue of 1. So they will not be selected.
         if(nValue > 1 && ai_GetIsProficientWith(oCreature, oItem) &&
            StringToInt(Get2DAString("baseitems", "WeaponSize", GetBaseItemType(oItem))) <= nCreatureSize &&
-           (!AI_USE_ITEM_LEVEL_RESTRICTIONS || nMaxItemValue >= nValue))
+           (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
         {
             // Is it a single handed weapon?
             if(ai_GetIsSingleHandedWeapon(oItem, oCreature))
@@ -3032,7 +3062,7 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
             //         IntToString(ai_GetIsProficientWith(oCreature, oItem)) + " nMaxItemValue: " + IntToString(nMaxItemValue));
             // Non-Identified items have a goldpiecevalue of 1. So they will not be selected.
             if(nValue > 1 && ai_GetIsProficientWith(oCreature, oItem) &&
-              (!AI_USE_ITEM_LEVEL_RESTRICTIONS || nMaxItemValue >= nValue))
+              (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
             {
                 //ai_Debug("0i_combat", "2876", " Creature Size: " + IntToString(GetCreatureSize(oCreature)) +
                 //       " Weapon Size: " + Get2DAString("baseitems", "WeaponSize", nType));
@@ -3153,12 +3183,13 @@ int ai_EquipBestMonkMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALI
 }
 int ai_GetIsInvisible(object oCreature)
 {
-    return (ai_GetHasEffectType(oCreature, EFFECT_TYPE_INVISIBILITY) ||
-            ai_GetHasEffectType(oCreature, EFFECT_TYPE_IMPROVEDINVISIBILITY) ||
-            GetHasSpellEffect(SPELL_DARKNESS, oCreature) ||
-            GetActionMode(oCreature, ACTION_MODE_STEALTH) ||
-            ai_GetHasEffectType(oCreature, EFFECT_TYPE_SANCTUARY) ||
-            ai_GetHasEffectType(oCreature, EFFECT_TYPE_ETHEREAL));
+    if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_INVISIBILITY) ||
+       ai_GetHasEffectType(oCreature, EFFECT_TYPE_IMPROVEDINVISIBILITY) ||
+       ai_GetHasEffectType(oCreature, EFFECT_TYPE_SANCTUARY) ||
+       ai_GetHasEffectType(oCreature, EFFECT_TYPE_ETHEREAL) ||
+       GetHasSpellEffect(SPELL_DARKNESS, oCreature) ||
+       GetActionMode(oCreature, ACTION_MODE_STEALTH)) return TRUE;
+   return FALSE;
 }
 int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell)
 {
@@ -3409,29 +3440,42 @@ int ai_PowerAttackGood(object oCreature, object oTarget, float fAdj)
     //         " < fAdjChance: " + FloatToString(fAdjChance, 0, 2) + " = " + IntToString(fNormalChance < fAdjChance));
     return fNormalChance < fAdjChance;
 }
-int ai_AttackAdjustmentGood(object oCreature, object oTarget, float fAtkAdj)
+int ai_AttackPenaltyOk(object oCreature, object oTarget, float fAtkAdj)
 {
     float fTargetAC = IntToFloat(GetAC(oTarget));
     float fCreatureAtk = IntToFloat(ai_GetCreatureAttackBonus(oCreature));
     float fNormalChance = (21.0-(fTargetAC - fCreatureAtk))/20.0;
-    //ai_Debug("0i_combat", "3431", "Normal Avg Dmg: " + FloatToString(fNormalChance, 0, 2));
+    //ai_Debug("0i_combat", "3431", "Normal Avg Chance: " + FloatToString(fNormalChance, 0, 2) + " <= 0.05");
     // We already need a 20 to hit so this doesn't hurt our chances!
     if(fNormalChance <= 0.05) return TRUE;
-    float fAdjChance = (21.0-(fTargetAC - fCreatureAtk - fAtkAdj))/20.0;
-    //ai_Debug("0i_combat", "3435", "Adjusted Avg Dmg: " + FloatToString(fAdjChance, 0, 2));
+    float fAdjChance = (21.0-(fTargetAC - fCreatureAtk + fAtkAdj))/20.0;
+    //ai_Debug("0i_combat", "3435", "Adjusted Avg Chance: " + FloatToString(fAdjChance, 0, 2) + " > 0.55");
     // if our chance is 55% or better to hit then use it.
     return fAdjChance > 0.55;
+}
+int ai_AttackBonusGood(object oCreature, object oTarget, float fAtkAdj)
+{
+    float fTargetAC = IntToFloat(GetAC(oTarget));
+    float fCreatureAtk = IntToFloat(ai_GetCreatureAttackBonus(oCreature));
+    float fNormalChance = (21.0-(fTargetAC - fCreatureAtk))/20.0;
+    //ai_Debug("0i_combat", "3450", "Normal Avg Chance: " + FloatToString(fNormalChance, 0, 2) + " > 0.99");
+    // We already hit them with any roll so this will not help.
+    if(fNormalChance > 0.99) return FALSE;
+    float fAdjChance = (21.0-(fTargetAC - fCreatureAtk - fAtkAdj))/20.0;
+    //ai_Debug("0i_combat", "3454", "Adjusted Avg Chance: " + FloatToString(fAdjChance, 0, 2) + " < 0.0");
+    // if our chance increases our to hit then this is good.
+    return fAdjChance > 0.0;
 }
 int ai_ACAdjustmentGood(object oCreature, object oTarget, float fACAdj)
 {
     float fCreatureAC = IntToFloat(GetAC(oCreature));
     float fTargetAtk = IntToFloat(ai_GetCreatureAttackBonus(oTarget));
     float fNormalChance = (21.0-(fCreatureAC - fTargetAtk))/20.0;
-    //ai_Debug("0i_combat", "3444", "Normal Chance To Hit: " + FloatToString(fNormalChance, 0, 2));
+    //ai_Debug("0i_combat", "3444", "Normal Chance To Hit: " + FloatToString(fNormalChance, 0, 2) + " <= 0.05");
     // They already need a 20 to hit so adding more AC is worthless.
     if(fNormalChance <= 0.05) return FALSE;
     float fAdjChance = (21.0-(fCreatureAC - fTargetAtk + fACAdj))/20.0;
-    //ai_Debug("0i_combat", "3448", "Adjusted Chance To Hit: " + FloatToString(fAdjChance, 0, 2));
+    //ai_Debug("0i_combat", "3448", "Adjusted Chance To Hit: " + FloatToString(fAdjChance, 0, 2) + " < 1.00");
     // Anything less than 1 helps are AC!
     return fAdjChance < 1.00;
 }
@@ -3443,20 +3487,17 @@ int ai_CanIMoveInCombat(object oCreature)
 }
 int ai_CanIUseRangedWeapon(object oCreature, int nInMelee)
 {
-    return (!nInMelee ||
-           (ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID ||
-           (AI_FIRE_IN_MELEE && nInMelee == 1 && GetHasFeat(FEAT_POINT_BLANK_SHOT, oCreature))));
+    return (!nInMelee || ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID);
 }
 int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
 {
-    object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-    //ai_Debug("0i_combat", "3337", "oNearestEnemy: " + GetName(oNearestEnemy) +
-    //         " fDistance: " + FloatToString(GetDistanceBetween(oCreature, oNearestEnemy), 0, 2));
     if(nAction == AI_LAST_ACTION_RANGED_ATK)
     {
+        // Watch the nearest enemy instead of our target as they could move toward us.
+        object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
         float fDistance = GetDistanceBetween(oCreature, oNearestEnemy);
-        //ai_Debug("0i_combat", "3342", " oTarget: " + GetName(oTarget) + " fDistance " + FloatToString(GetDistanceBetween(oCreature, oTarget), 0, 2) +
-        //         " oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance " + FloatToString(fDistance, 0, 2));
+        //ai_Debug("0i_combat", "3337", "oNearestEnemy: " + GetName(oNearestEnemy) +
+        //         " fDistance: " + FloatToString(fDistance, 0, 2));
         // If we have sneak attack then we need to be within 30'.
         if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature))
         {
@@ -3470,6 +3511,12 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
                 if(nAction == ACTION_MOVETOPOINT ||
                    nAction == ACTION_INVALID ||
                    nAction == ACTION_RANDOMWALK) return FALSE;
+                // If they are attacking make sure it is in melee?
+                // If not then don't move since they might be moving toward us.
+                if(nAction == ACTION_ATTACKOBJECT)
+                {
+                    if(!ai_GetNumOfEnemiesInRange(oNearestEnemy)) return FALSE;
+                }
                 //ai_Debug("0i_combat", "3355", GetName(oCreature) + " is moving closer [8.0] to " +
                 //         GetName(oNearestEnemy) + " to sneak attack with a ranged weapon.");
                 ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
@@ -3477,14 +3524,6 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
                 ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
                 return TRUE;
             }
-            /* This is where we want to be further than melee and less than close.
-            else
-            {
-                ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
-                ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
-                //ai_Debug("0i_combat", "3360", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) + " to sneak attack with a ranged weapon.");
-                return TRUE;
-            } */
         }
         else if(fDistance < AI_RANGE_LONG)
         {
@@ -3574,11 +3613,11 @@ int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, i
 }
 int ai_CheckCombatPosition(object oCreature, object oTarget, int nInMelee, int nAction, int nBaseItemType = 0)
 {
-    if(!AI_ADVANCED_COMBAT_MOVEMENT) return FALSE;
+    if(!GetLocalInt(GetModule(), AI_RULE_ADVANCED_MOVEMENT)) return FALSE;
     //ai_Debug("0i_combat", "3460", "|-----> Checking position in combat: " +
     //         GetName(oCreature) + " nMelee: " + IntToString(nInMelee) +
     //         " Action: " + IntToString(nAction) + " Use Advanced Movement: " +
-    //         IntToString(AI_ADVANCED_COMBAT_MOVEMENT));
+    //         IntToString(GetLocalInt(GetModule(), AI_RULE_ADVANCED_MOVEMENT)));
     if(ai_CompareLastAction(oCreature, AI_LAST_ACTION_MOVE)) return FALSE;
     // We are not in melee combat so lets see how close we should get.
     if(!nInMelee) return ai_CheckRangedCombatPosition(oCreature, oTarget, nAction);

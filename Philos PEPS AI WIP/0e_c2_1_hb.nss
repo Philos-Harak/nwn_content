@@ -5,8 +5,8 @@
   Monster OnHeartbeat script;
   This will usually fire every 6 seconds (1 game round).
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 #include "x0_i0_walkway"
 //#include "x0_i0_anims"
 void main()
@@ -14,8 +14,8 @@ void main()
     object oCreature = OBJECT_SELF;
     // * if not runnning normal or better AI then exit for performance reasons
     if (GetAILevel(oCreature) == AI_LEVEL_VERY_LOW) return;
-    //ai_Debug("0e_c2_1_hb", "17", GetName(oCreature) + " Heartbeat." +
-    //         " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
+    ai_Debug("0e_c2_1_hb", "17", GetName(oCreature) + " Heartbeat." +
+             " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
     {
         // If we're asleep and this is the result of sleeping
@@ -59,11 +59,11 @@ void main()
         if(oPC != OBJECT_INVALID && GetIsEnemy(oPC, oCreature) &&
            GetDistanceBetween(oCreature, oPC) <= AI_RANGE_BATTLEFIELD)
         {
-            //ai_Debug("0e_c2_1_hb", "62", GetName(oCreature) + " is " +
-            //         FloatToString(GetDistanceBetween(oCreature, oPC), 0, 2) + " from " + GetName(oPC));
+            ai_Debug("0e_c2_1_hb", "62", GetName(oCreature) + " is " +
+                     FloatToString(GetDistanceBetween(oCreature, oPC), 0, 2) + " from " + GetName(oPC));
             int nCondition = GetLocalInt(oCreature, "NW_GENERIC_MASTER");
             // Should we buff a caster? Added legacy code just in case.
-            if((AI_BUFF_MONSTERS || nCondition & 0x04000000) &&
+            if((GetLocalInt(GetModule(), AI_RULE_BUFF_MONSTERS) || nCondition & 0x04000000) &&
                !GetLocalInt(oCreature, AI_CASTER_BUFFS_SET))
             {
                 SetLocalInt(oCreature, AI_CASTER_BUFFS_SET, TRUE);
@@ -75,7 +75,7 @@ void main()
             else ai_SetCreatureTalents(oCreature, FALSE);
             if(GetObjectSeen(oPC, oCreature))
             {
-                //ai_Debug("0e_c2_1_hb", "78", GetName(oCreature) + " is starting combat!");
+                ai_Debug("0e_c2_1_hb", "78", GetName(oCreature) + " is starting combat!");
                 ai_DoMonsterCombatRound(oCreature);
                 return;
             }

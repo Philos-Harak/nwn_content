@@ -15,16 +15,16 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-    //ai_Debug("ai_a_defensive", "27", "oNearest Enemy: " + GetName(oNearestEnemy) +
-    //       " Distance to Nearest Enemy: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
+    ai_Debug("ai_a_defensive", "27", "oNearest Enemy: " + GetName(oNearestEnemy) +
+           " Distance to Nearest Enemy: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
     // Has our master told us to not use magic?
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     // ALWAYS - Check for healing and cure talents.
@@ -75,5 +75,5 @@ void main()
     }
     //**********************  PHYSICAL ATTACKS  ********************************
     // Even in defensive mode we want to be in battle so go find someone!
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }

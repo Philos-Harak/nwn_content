@@ -10,14 +10,14 @@
   These states can be set at the same time thus a heard event can see the creature.
   Fires when ever one of these states changes from TRUE to FALSE or FALSE to TRUE.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     // * if not runnning normal or better Ai then exit for performance reasons
     if (GetAILevel() == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
-    /*
+
     if(GetLastPerceptionSeen())
     {
         ai_Debug("0e_c2_2_percept", "23", GetName(oCreature) + " sees " +
@@ -34,17 +34,17 @@ void main()
     {
         ai_Debug("0e_c2_2_percept", "35", GetName(oCreature) + " lost sight of " +
                  GetName(GetLastPerceived ()) + ".");
-    } */
+    }
     // We do nothing on Inaudibles so drop out early!
     if(GetLastPerceptionInaudible())
     {
-        //ai_Debug("xx_pc_2_percept", "41", GetName(oCreature) + " lost sound of " +
-        //         GetName(GetLastPerceived()) + ".");
+        ai_Debug("xx_pc_2_percept", "41", GetName(oCreature) + " lost sound of " +
+                 GetName(GetLastPerceived()) + ".");
         return;
     }
     object oLastPerceived = GetLastPerceived();
-    //ai_Debug("0e_c2_2_percept", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-    //         " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+    ai_Debug("0e_c2_2_percept", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
+             " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
     if(GetIsDead(oLastPerceived)) return;
     // Send the user-defined event if appropriate
     if(GetSpawnInCondition(NW_FLAG_PERCIEVE_EVENT) && GetLastPerceptionSeen())
@@ -83,13 +83,13 @@ void main()
         {
             DeleteLocalObject(oCreature, AI_IS_INVISIBLE);
         }
-        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived);
+        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
         return;
     }
     // **************************** ENEMY HEARD ********************************
     else if(GetLastPerceptionHeard())
     {
-        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived);
+        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
         return;
     }
     // **************************** ENEMY VANISHED *****************************
@@ -98,15 +98,15 @@ void main()
         if(ai_Disabled(oCreature)) return;
         // Lets keep a mental note of the invisible creature.
         SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-        //ai_Debug("0e_c2_2_percept", "101", " We saw " + GetName(oLastPerceived) + " disappear!");
+        ai_Debug("0e_c2_2_percept", "101", " We saw " + GetName(oLastPerceived) + " disappear!");
         if(ai_GetIsBusy(oCreature)) return;
         // If in combat check to see if our target disappeared.
         // If they have and we are not in melee with them then reevaluate combat
         // since we lost our target.
         if(ai_GetIsInCombat(oCreature))
         {
-            //ai_Debug("0e_c2_2_percept", "107", "Is this our target? " +
-            //        IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
+            ai_Debug("0e_c2_2_percept", "107", "Is this our target? " +
+                    IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
             if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
             {
                 ai_DoMonsterCombatRound(oCreature);

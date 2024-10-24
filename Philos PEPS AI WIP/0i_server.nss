@@ -34,6 +34,7 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     ai_SetListeningPatterns(oCreature);
     ai_SetCreatureAIScript(oCreature);
     ai_SetMonsterEventScripts(oCreature);
+    ai_SetNormalAppearance(oCreature);
     ai_SetAura(oCreature);
     SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 50);
     SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
@@ -63,6 +64,7 @@ void ai_OnAssociateSpawn(object oCreature)
     ai_SetMagicMode(oCreature, AI_MAGIC_NORMAL_MAGIC_USE);
     ai_SetListeningPatterns(oCreature);
     ai_SetAssociateEventScripts(oCreature);
+    ai_SetNormalAppearance(oCreature);
     ai_SetAssociateAIScript(oCreature, FALSE);
     ai_SetAura(oCreature);
     // Bioware summoned shadows are not incorporeal, also set the ai code.

@@ -14,8 +14,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -38,15 +38,39 @@ void main()
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
-    if(nDifficulty >= AI_COMBAT_EASY)
+    if(nDifficulty >= AI_COMBAT_MODERATE)
     {
         //**************************  SKILL FEATURES  **************************
         if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
         if(ai_TryBarbarianRageFeat(oCreature)) return;
         if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
+        if(bUseMagic)
+        {
+            // ******************* OFFENSIVE AOE TALENTS ***********************
+            // Check the battlefield for a group of enemies to shoot a big spell at!
+            // We are checking here since these opportunities are rare and we need
+            // to take advantage of them as often as possible.
+            if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
+            {
+                if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
+                if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
+            }
+            if(!ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
+            {
+                // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ************
+                // Does our master want to be buffed first?
+                object oTarget = OBJECT_INVALID;
+                if(ai_GetMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
+                if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, 0, oTarget)) return;
+                if(ai_TryDivineShieldFeat(oCreature, nInMelee)) return;
+                if(ai_TryDivineMightFeat(oCreature, nInMelee)) return;
+            }
+        }
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
@@ -61,6 +85,6 @@ void main()
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }
 

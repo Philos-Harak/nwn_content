@@ -9,9 +9,9 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    //ai_Debug("0e_ch_1_hb", "18", GetName(oCreature) + " Heartbeat." +
-    //         " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
-    //         " Action: " + IntToString(GetCurrentAction(oCreature)));
+    ai_Debug("0e_ch_1_hb", "18", GetName(oCreature) + " Heartbeat." +
+             " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
+             " Action: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     // If we don't have a master then we exit.
     object oMaster = GetMaster(oCreature);
@@ -34,6 +34,7 @@ void main()
             {
                 ai_CreateWidgetNUI(oMaster, oCreature);
             }
+            ai_SetNormalAppearance(oCreature);
         }
     }
     // If follow mode we do not want the NPC doing anything but follow.
@@ -85,12 +86,12 @@ void main()
     // Finally we check to make sure we are following our master.
     if(GetCurrentAction(oCreature) != ACTION_FOLLOW)
     {
-        //ai_Debug("0e_ch_1_hb", "66", "Follow master: " +
-        //         " Stealth: " + IntToString(ai_GetAssociateMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
-        //         " Search: " + IntToString(ai_GetAssociateMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
+        ai_Debug("0e_ch_1_hb", "66", "Follow master: " +
+                 " Stealth: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
+                 " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
         if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
         {
-            //ai_Debug("0e_ch_1_hb", "67", "Going into stealth mode!");
+            ai_Debug("0e_ch_1_hb", "67", "Going into stealth mode!");
             int nStealth = GetSkillRank(SKILL_HIDE, oCreature);
             nStealth += GetSkillRank(SKILL_MOVE_SILENTLY, oCreature);
             if(nStealth / 2 >= ai_GetCharacterLevels(oCreature))
@@ -104,7 +105,7 @@ void main()
             SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
             if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH))
             {
-                //ai_Debug("0e_ch_1_hb", "72", "Going into search mode!");
+                ai_Debug("0e_ch_1_hb", "72", "Going into search mode!");
                 SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
             }
             else SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);

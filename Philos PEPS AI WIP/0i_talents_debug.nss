@@ -94,7 +94,7 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID);
 // These functions try to find and use a specific set of feats intelligently.
 
 // Wrapper to have oCreature use nFeat on oTarget.
-void ai_UseFeat(object oCreature, int nFeat, object oTarget);
+void ai_UseFeat(object oCreature, int nFeat, object oTarget, int nSubFeat = 0);
 // Wrapper to have oCreature use nActionMode on oTarget.
 // nInMelee is only used in AI_LAST_ACTION_RANGED_ATK actions.
 // bPassive TRUE oCreature will not move while attacking.
@@ -111,6 +111,12 @@ int ai_TryCalledShotFeat(object oCreature, object oTarget);
 // Returns TRUE if oCreature uses Disarm.
 // This checks if they have the feat and if its viable.
 int ai_TryDisarmFeat(object oCreature, object oTarget);
+// Returns TRUE if oCreature uses Divine Might.
+// This only checks if they can use the feat and have turn undead uses left.
+int ai_TryDivineMightFeat(object oCreature, int nInMelee);
+// Returns TRUE if oCreature uses Divine Shield.
+// This only checks if they can use the feat and have turn undead uses left.
+int ai_TryDivineShieldFeat(object oCreature, int nInMelee);
 // Returns TRUE if oCreature uses Expertise.
 // This checks if they have the feat and if its viable.
 // Also checks to see if the Improved Expertise feat would be better.
@@ -132,6 +138,9 @@ int ai_TryKiDamageFeat(object oCreature, object oTarget);
 // Returns TRUE if oCreature uses Knockdown.
 // This checks if they have the feat and if its viable.
 int ai_TryKnockdownFeat(object oCreature, object oTarget);
+// Returns TRUE if oCreature uses a polymorph self feat.
+// This checks if they have the feat and will use the best one.
+int ai_TryPolymorphSelfFeat(object oCreature);
 // Returns TRUE if oCreature uses Power Attack.
 // This checks if they have the feat and if its viable.
 // Also checks to see if the Improved Power Attack would be better.
@@ -623,7 +632,7 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
               " Concentration: " + IntToString(GetSkillRank(SKILL_CONCENTRATION, oTarget)) + ".");
      nDC += GetHitDice(oTarget);
     // Our chance is greater than 50%.
-    if(nEmpathyRnk >= nDC) return FALSE;
+    if(nEmpathyRnk <= nDC) return FALSE;
     ai_UseSkill(oCreature, SKILL_ANIMAL_EMPATHY, oTarget);
     SetLocalInt(oCreature, "AI_EMPATHY_COOLDOWN", AI_EMPATHY_COOLDOWN);
     return TRUE;
@@ -633,14 +642,14 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
 // *****************************************************************************
 // These functions try to find and use a specific set of feats intelligently.
 
-void ai_UseFeat(object oCreature, int nFeat, object oTarget)
+void ai_UseFeat(object oCreature, int nFeat, object oTarget, int nSubFeat = 0)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_FEAT);
     if(GetIsEnemy(oTarget)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     ai_Debug("0i_talents", "600", GetName(oCreature) + " is using feat: " +
              GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat))) +
              " on " + GetName(oTarget));
-    ActionUseFeat(nFeat, oTarget);
+    ActionUseFeat(nFeat, oTarget, nSubFeat);
     ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
 }
 void ai_UseFeatAttackMode(object oCreature, int nActionMode, int nAction, object oTarget, int nInMelee = 0, int bPassive = FALSE)
@@ -676,7 +685,7 @@ int ai_TryBardSongFeat(object oCreature)
 int ai_TryCalledShotFeat(object oCreature, object oTarget)
 {
     // Called shot has a -4 to hit adjustment.
-    if(!ai_AttackAdjustmentGood(oCreature, oTarget, -4.0)) return FALSE;
+    if(!ai_AttackPenaltyOk(oCreature, oTarget, -4.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_CALLED_SHOT, oTarget);
     return TRUE;
 }
@@ -696,8 +705,36 @@ int ai_TryDisarmFeat(object oCreature, object oTarget)
     // Do they have Improved Disarm?
     if(GetHasFeat(FEAT_IMPROVED_DISARM, oCreature)) nOAtk += 2;
     // Disarm has a -6 atk adjustment.
-    if(!ai_AttackAdjustmentGood(oCreature, oTarget, -6.0)) return FALSE;
+    if(!ai_AttackPenaltyOk(oCreature, oTarget, -6.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_DISARM, oTarget);
+    return TRUE;
+}
+int ai_TryDivineMightFeat(object oCreature, int nInMelee)
+{
+    if(!GetHasFeat(FEAT_TURN_UNDEAD)) return FALSE;
+    if(!GetHasFeat(FEAT_DIVINE_MIGHT)) return FALSE;
+    if(GetHasFeatEffect(FEAT_DIVINE_MIGHT, oCreature)) return FALSE;
+    if(!nInMelee) return FALSE;
+    object oTarget = ai_GetEnemyAttackingMe(oCreature);
+    if(oTarget == OBJECT_INVALID) return FALSE;
+    float fAtkAdj = IntToFloat(GetAbilityModifier(ABILITY_CHARISMA, oCreature));
+    if(!ai_AttackBonusGood(oCreature, oTarget, fAtkAdj)) return FALSE;
+    ai_Debug("0i_talents", "722", "USING DIVINE MIGHT on " + GetName(oCreature) + ".");
+    ai_UseFeat(oCreature, FEAT_DIVINE_MIGHT, oCreature);
+    return TRUE;
+}
+int ai_TryDivineShieldFeat(object oCreature, int nInMelee)
+{
+    if(!GetHasFeat(FEAT_TURN_UNDEAD)) return FALSE;
+    if(!GetHasFeat(FEAT_DIVINE_SHIELD)) return FALSE;
+    if(GetHasFeatEffect(FEAT_DIVINE_SHIELD, oCreature)) return FALSE;
+    if(!nInMelee) return FALSE;
+    object oTarget = ai_GetEnemyAttackingMe(oCreature);
+    if(oTarget == OBJECT_INVALID) return FALSE;
+    float fACAdj = IntToFloat(GetAbilityModifier(ABILITY_CHARISMA, oCreature));
+    if(!ai_ACAdjustmentGood(oCreature, oTarget, fACAdj)) return FALSE;
+    ai_Debug("0i_talents", "736", "USING DIVINE SHIELD on " + GetName(oCreature) + ".");
+    ai_UseFeat(oCreature, FEAT_DIVINE_SHIELD, oCreature);
     return TRUE;
 }
 int ai_TryExpertiseFeat(object oCreature)
@@ -706,8 +743,8 @@ int ai_TryExpertiseFeat(object oCreature)
     object oTarget = ai_GetEnemyAttackingMe(oCreature);
     // Expertise has a -5 atk and a +5 AC adjustment.
     if(oTarget == OBJECT_INVALID ||
-       !ai_AttackAdjustmentGood(oCreature, oTarget, -5.0) ||
-       ai_ACAdjustmentGood(oCreature, oTarget, 5.0))
+       !ai_AttackPenaltyOk(oCreature, oTarget, -5.0) ||
+       !ai_ACAdjustmentGood(oCreature, oTarget, 5.0))
     {
         SetActionMode(oCreature, ACTION_MODE_EXPERTISE, FALSE);
         DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
@@ -721,7 +758,7 @@ int ai_TryFlurryOfBlowsFeat(object oCreature, object oTarget)
 {
     if(!GetHasFeat(FEAT_FLURRY_OF_BLOWS, oCreature)) return FALSE;
     // Flurry of Blows has a -2 atk adjustment.
-    if(!ai_AttackAdjustmentGood(oCreature, oTarget, -2.0))
+    if(!ai_AttackPenaltyOk(oCreature, oTarget, -2.0))
     {
         SetActionMode(oCreature, ACTION_MODE_FLURRY_OF_BLOWS, FALSE);
         DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
@@ -737,8 +774,8 @@ int ai_TryImprovedExpertiseFeat(object oCreature)
     object oTarget = ai_GetEnemyAttackingMe(oCreature);
     // Improved expertise has a -10 atk +10 AC adjustment.
     if(oTarget == OBJECT_INVALID ||
-       !ai_AttackAdjustmentGood(oCreature, oTarget, -10.0) ||
-       ai_ACAdjustmentGood(oCreature, oTarget, 10.0))
+       !ai_AttackPenaltyOk(oCreature, oTarget, -10.0) ||
+       !ai_ACAdjustmentGood(oCreature, oTarget, 10.0))
     {
         SetActionMode(oCreature, ACTION_MODE_IMPROVED_EXPERTISE, FALSE);
         DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
@@ -791,9 +828,99 @@ int ai_TryKnockdownFeat(object oCreature, object oTarget)
     // Knockdown has a -4 atk adjustment.
     if(GetIsImmune(oTarget, IMMUNITY_TYPE_KNOCKDOWN) ||
        GetCreatureSize(oTarget) > nMySize + 1 ||
-       !ai_AttackAdjustmentGood(oCreature, oTarget, -4.0)) return FALSE;
+       !ai_AttackPenaltyOk(oCreature, oTarget, -4.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_KNOCKDOWN, oTarget);
     return TRUE;
+}
+int ai_TryPolymorphSelfFeat(object oCreature)
+{
+    if(GetHasFeat(FEAT_EPIC_OUTSIDER_SHAPE))
+    {
+        int nSubFeat = Random(3) + 733; // 733 azer, 734 rakshasa,  735 Slaad.
+        if(ai_UseFeat(oCreature, FEAT_EPIC_OUTSIDER_SHAPE, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_EPIC_CONSTRUCT_SHAPE))
+    {
+        int nSubFeat = Random(3) + 738; // 738 Stone, 739 Flesh,  740 Iron.
+        if(ai_UseFeat(oCreature, FEAT_EPIC_CONSTRUCT_SHAPE, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_EPIC_WILD_SHAPE_DRAGON))
+    {
+        int nSubFeat = Random(3) + 707; // 707 Red, 708 Blue,  709 Green.
+        if(ai_UseFeat(oCreature, FEAT_EPIC_WILD_SHAPE_DRAGON, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_EPIC_WILD_SHAPE_UNDEAD))
+    {
+        int nSubFeat = Random(3) + 704; // 704 Risen Lord, 705 Vampire, 706 Spectre.
+        if(ai_UseFeat(oCreature, FEAT_EPIC_WILD_SHAPE_UNDEAD, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_GREATER_WILDSHAPE_4))
+    {
+        int nSubFeat;
+        int nRoll = d3();
+        if(nRoll == 1) nSubFeat = 679; // Medusa
+        else if(nRoll == 2) nSubFeat = 691; // Mindflayer
+        else nSubFeat = 694; // DireTiger
+        if(ai_UseFeat(oCreature, FEAT_GREATER_WILDSHAPE_4, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_GREATER_WILDSHAPE_3))
+    {
+        int nSubFeat;
+        int nRoll = d3();
+        if(nRoll == 1) nSubFeat = 670; // Basilisk
+        else if(nRoll == 2) nSubFeat = 673; // Drider
+        else nSubFeat = 674; // Manticore
+        if(ai_UseFeat(oCreature, FEAT_GREATER_WILDSHAPE_3, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_GREATER_WILDSHAPE_2))
+    {
+        int nSubFeat;
+        int nRoll = d3();
+        if(nRoll == 1) nSubFeat = 672; // Harpy
+        else if(nRoll == 2) nSubFeat = 678; // Gargoyle
+        else nSubFeat = 680; // Minotaur
+        if(ai_UseFeat(oCreature, FEAT_GREATER_WILDSHAPE_2, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_GREATER_WILDSHAPE_1))
+    {
+        int nSubFeat = Random(5) + 658; // Wyrmling
+        if(ai_UseFeat(oCreature, FEAT_GREATER_WILDSHAPE_1, oCreature, nSubFeat)) return TRUE;
+    }
+    if(GetHasFeat(FEAT_HUMANOID_SHAPE))
+    {
+        int nSubFeat = Random(3) + 682; // 682 Drow, 683 Lizard, 684 Kobold.
+        if(ai_UseFeat(oCreature, FEAT_HUMANOID_SHAPE, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_ELEMENTAL_SHAPE))
+    {
+        int nSubFeat = Random(4) + SUBFEAT_ELEMENTAL_SHAPE_EARTH;
+        if(ai_UseFeat(oCreature, FEAT_ELEMENTAL_SHAPE, oCreature, nSubFeat)) return TRUE;
+    }
+    else if(GetHasFeat(FEAT_WILD_SHAPE))
+    {
+        int nSubFeat;
+        int nCompanionType = GetAnimalCompanionCreatureType(oCreature);
+        if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_NONE)
+            nSubFeat = Random(5) + SUBFEAT_WILD_SHAPE_BROWN_BEAR;
+        else
+        {
+            if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_BADGER)
+                nSubFeat = SUBFEAT_WILD_SHAPE_BADGER;
+            else if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_BOAR)
+                nSubFeat = SUBFEAT_WILD_SHAPE_BOAR;
+            else if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_BEAR)
+                nSubFeat = SUBFEAT_WILD_SHAPE_BROWN_BEAR;
+            else if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_PANTHER)
+                nSubFeat = SUBFEAT_WILD_SHAPE_PANTHER;
+            else if(nCompanionType == ANIMAL_COMPANION_CREATURE_TYPE_WOLF)
+                nSubFeat = SUBFEAT_WILD_SHAPE_WOLF;
+            else nSubFeat = Random(5) + SUBFEAT_WILD_SHAPE_BROWN_BEAR;
+        }
+        ai_Debug("0i_talents", "885", " Using wild shape feat: " + IntToString(nSubFeat));
+        ai_UseFeat(oCreature, FEAT_WILD_SHAPE, oCreature, nSubFeat);
+        return TRUE;
+    }
+    return FALSE;
 }
 int ai_TryPowerAttackFeat(object oCreature, object oTarget)
 {
@@ -821,7 +948,7 @@ int ai_TryRapidShotFeat(object oCreature, object oTarget, int nInMelee)
 {
     if(!GetHasFeat(FEAT_RAPID_SHOT, oCreature)) return FALSE;
     // Rapidshot has a -4 atk adjustment.
-    if(!ai_AttackAdjustmentGood(oCreature, oTarget, -4.0))
+    if(!ai_AttackPenaltyOk(oCreature, oTarget, -4.0))
     {
         SetActionMode(oCreature, ACTION_MODE_RAPID_SHOT, FALSE);
         DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
@@ -836,7 +963,7 @@ int ai_TrySapFeat(object oCreature, object oTarget)
     // Sap has a -4 atk adjustment.
     if(GetIsImmune(oTarget, IMMUNITY_TYPE_CRITICAL_HIT) ||
        GetIsImmune(oTarget, IMMUNITY_TYPE_STUN) ||
-       !ai_AttackAdjustmentGood(oCreature, oTarget, -4.0)) return FALSE;
+       !ai_AttackPenaltyOk(oCreature, oTarget, -4.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_SAP, oTarget);
     return TRUE;
 }
@@ -866,7 +993,7 @@ int ai_TryStunningFistFeat(object oCreature, object oTarget)
        GetIsImmune(oTarget, IMMUNITY_TYPE_CRITICAL_HIT) ||
        GetIsImmune(oTarget, IMMUNITY_TYPE_STUN) ||
        !ai_StrongOpponent(oCreature, oTarget) ||
-       !ai_AttackAdjustmentGood(oCreature, oTarget, -4.0)) return FALSE;
+       !ai_AttackPenaltyOk(oCreature, oTarget, -4.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_STUNNING_FIST, oTarget);
     return TRUE;
 }
@@ -1344,10 +1471,6 @@ int ai_GetMonsterTalentMaxLevel(object oCreature)
     // they all don't look robotic. Mix it up based on an Intelligence check.
     int nMaxLevel = (ai_GetCharacterLevels(oCreature) + 1) / 2;
     if(nMaxLevel > 9) nMaxLevel = 9;
-    //if(d20() + GetAbilityModifier(ABILITY_INTELLIGENCE) <= AI_INTELLIGENCE_DC)
-    //{
-    //    nMaxLevel = Random(nMaxLevel) + 1;
-    //}
     ai_Debug("0i_talents", "1258", "nMaxLevel: " + IntToString(nMaxLevel));
     return nMaxLevel;
 }
@@ -1393,7 +1516,7 @@ int ai_GetHasTalent(object oCreature, int nTalent)
 object ai_CheckTalentForBuffing(object oCreature, string sCategory, int nSpell)
 {
     if(sCategory != "P" && sCategory != "E" &&
-      (sCategory != "S" && AI_PREBUFF_SUMMONS)) return OBJECT_INVALID;
+      (sCategory != "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON))) return OBJECT_INVALID;
     return ai_GetBuffTarget(oCreature, nSpell);
 }
 int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nSpell, int nType, object oTarget, object oItem)
@@ -1710,17 +1833,56 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEqui
                 }
             }
         }
-        if(nIPType == ITEM_PROPERTY_IMMUNITY_SPECIFIC_SPELL)
+        if(bEquiped)
         {
-            bHasItemImmunity = TRUE;
-            nSpellImmunity = GetItemPropertyCostTableValue(ipProp);
-            nSpellImmunity = StringToInt(Get2DAString("iprp_spellcost", "SpellIndex", nSpellImmunity));
-            ai_Debug("0i_talents", "1707", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
-            JsonArrayInsertInplace(jImmunity, JsonInt(nSpell));
-        }
-        if(nIPType == ITEM_PROPERTY_HASTE && bEquiped)
-        {
-            SetLocalInt(oCreature, "AI_HAS_HASTE_ITEM", TRUE);
+            if(nIPType == ITEM_PROPERTY_IMMUNITY_SPECIFIC_SPELL)
+            {
+                bHasItemImmunity = TRUE;
+                nSpellImmunity = GetItemPropertyCostTableValue(ipProp);
+                nSpellImmunity = StringToInt(Get2DAString("iprp_spellcost", "SpellIndex", nSpellImmunity));
+                //ai_Debug("0i_talents", "1707", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
+                JsonArrayInsertInplace(jImmunity, JsonInt(nSpellImmunity));
+            }
+            else if(nIPType == ITEM_PROPERTY_HASTE) SetLocalInt(oCreature, sIPHasHasteVarname, TRUE);
+            else if(nIPType == ITEM_PROPERTY_IMMUNITY_DAMAGE_TYPE)
+            {
+                int nBit, nIpSubType = GetItemPropertySubType(ipProp);
+                if(nIpSubType == 0) nBit = DAMAGE_TYPE_BLUDGEONING;
+                else if(nIpSubType == 1) nBit = DAMAGE_TYPE_PIERCING;
+                else if(nIpSubType == 2) nBit = DAMAGE_TYPE_SLASHING;
+                else if(nIpSubType == 5) nBit = DAMAGE_TYPE_MAGICAL;
+                else if(nIpSubType == 6) nBit = DAMAGE_TYPE_ACID;
+                else if(nIpSubType == 7) nBit = DAMAGE_TYPE_COLD;
+                else if(nIpSubType == 8) nBit = DAMAGE_TYPE_DIVINE;
+                else if(nIpSubType == 9) nBit = DAMAGE_TYPE_ELECTRICAL;
+                else if(nIpSubType == 10) nBit = DAMAGE_TYPE_FIRE;
+                else if(nIpSubType == 11) nBit = DAMAGE_TYPE_NEGATIVE;
+                else if(nIpSubType == 12) nBit = DAMAGE_TYPE_POSITIVE;
+                else if(nIpSubType == 13) nBit = DAMAGE_TYPE_SONIC;
+                if(nBit > 0) ai_SetItemProperty(oCreature, sIPImmuneVarname, nBit, TRUE);
+            }
+            else if(nIPType == ITEM_PROPERTY_DAMAGE_RESISTANCE)
+            {
+                int nBit, nIpSubType = GetItemPropertySubType(ipProp);
+                if(nIpSubType == 0) nBit = DAMAGE_TYPE_BLUDGEONING;
+                else if(nIpSubType == 1) nBit = DAMAGE_TYPE_PIERCING;
+                else if(nIpSubType == 2) nBit = DAMAGE_TYPE_SLASHING;
+                else if(nIpSubType == 5) nBit = DAMAGE_TYPE_MAGICAL;
+                else if(nIpSubType == 6) nBit = DAMAGE_TYPE_ACID;
+                else if(nIpSubType == 7) nBit = DAMAGE_TYPE_COLD;
+                else if(nIpSubType == 8) nBit = DAMAGE_TYPE_DIVINE;
+                else if(nIpSubType == 9) nBit = DAMAGE_TYPE_ELECTRICAL;
+                else if(nIpSubType == 10) nBit = DAMAGE_TYPE_FIRE;
+                else if(nIpSubType == 11) nBit = DAMAGE_TYPE_NEGATIVE;
+                else if(nIpSubType == 12) nBit = DAMAGE_TYPE_POSITIVE;
+                else if(nIpSubType == 13) nBit = DAMAGE_TYPE_SONIC;
+                if(nBit > 0) ai_SetItemProperty(oCreature, sIPResistVarname, nBit, TRUE);
+            }
+            else if(nIPType == ITEM_PROPERTY_DAMAGE_REDUCTION)
+            {
+                int nIpSubType = GetItemPropertySubType(ipProp);
+                SetLocalInt(oCreature, sIPReducedVarname, nIpSubType);
+            }
         }
         ipProp = GetNextItemProperty(oItem);
     }
@@ -1890,6 +2052,8 @@ int ai_UseSpontaneousCureTalentFromCategory(object oCreature, string sCategory, 
 }
 int ai_UseCreatureSpellTalent(object oCreature, json jLevel, json jTalent, string sCategory, int nInMelee, object oTarget = OBJECT_INVALID)
 {
+    // Check for polymorph, spells cannot be used while polymorphed.
+    if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)) return FALSE;
     // Get the spells information so we can check if they still have it.
     int nClass = JsonGetInt(JsonArrayGet(jTalent, 2));
     int nLevel = JsonGetInt(JsonArrayGet(jTalent, 3));
@@ -1918,9 +2082,11 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
     // Check if the item is a potion since there are some special cases.
     if(nItemType == BASE_ITEM_POTIONS || nItemType == BASE_ITEM_ENCHANTED_POTION)
     {
+        // For now we are allowing creatures to use "give" potions to others
+        // unless the player has them turned off.
+        if(oCreature != oTarget &&
+           ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF)) return FALSE;
         // Potions cause attack of opportunities and this could be deadly!
-        // For now we are allowing creatures to use "give" potions to others.
-        //if(oCreature != oTarget){ return FALSE;}
         // Removed for healing potions as that is one time you would use potions in melee.
         if(sCategory != AI_TALENT_HEALING)
         {
@@ -1928,9 +2094,11 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
             if(nInMelee > 1) return FALSE;
         }
     }
+    // Check for polymorph, only potions can be used while polymorphed.
+    else if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)) return FALSE;
     else if(nItemType == BASE_ITEM_HEALERSKIT)
     {
-        if(!AI_USE_HEALERSKITS_IN_COMBAT) return FALSE;
+        if(!GetLocalInt(GetModule(), AI_RULE_HEALERSKITS)) return FALSE;
         ai_Debug("0i_talents", "1724", "Using " + GetName(oItem) + " nInMelee: " + IntToString(nInMelee));
         ActionUseItemOnObject(oItem, GetFirstItemProperty(oItem), oTarget);
         // We also must check for stack size.
@@ -2538,26 +2706,14 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
     }
     else if(sCategory == AI_TALENT_ENHANCEMENT)
     {
-        ai_Debug("0i_talents", "2237", "CompareLastAction: " +
+        ai_Debug("0i_talents", "2713", "CompareLastAction: " +
                   IntToString(ai_CompareLastAction(oCreature, nSpell)));
         // If we used this spell talent last round then don't use it this round.
         if(ai_CompareLastAction(oCreature, nSpell)) return FALSE;
-        // If anyone goes into a polymorphed form we use a polymorph ai script.
-        if(nSpell == FEAT_WILD_SHAPE || nSpell == 304/*FEAT_ELEMENTAL_SHAPE*/ ||
-            nSpell == FEAT_EPIC_WILD_SHAPE_DRAGON || nSpell == FEAT_EPIC_WILD_SHAPE_UNDEAD ||
-            nSpell == FEAT_GREATER_WILDSHAPE_1 || nSpell == FEAT_GREATER_WILDSHAPE_2 ||
-            nSpell == FEAT_GREATER_WILDSHAPE_3 || nSpell == FEAT_GREATER_WILDSHAPE_4 ||
-            nSpell == 1060/*FEAT_EPIC_OUTSIDER_SHAPE*/ || nSpell == 1061/*FEAT_EPIC_CONSTRUCT_SHAPE*/ ||
-            nSpell == 902/*FEAT_HUMANOID_SHAPE*/)
-        {
-            // Save the original form so we can check when we turn back(Add 1 so we don't save a 0!).
-            SetLocalInt(oCreature, AI_NORMAL_FORM, GetAppearanceType(oCreature) + 1);
-            SetLocalString(oCreature, AI_COMBAT_SCRIPT, "ai_polymorphed");
-            oTarget = oCreature;
-        }
         if(nSpell == SPELL_INVISIBILITY || nSpell == SPELL_SANCTUARY)
         {
-            // Lets not run past an enemy to heal unless we have the feats, bad tactics!
+            // Lets not run past an enemy to cast an enhancement unless we have
+            // the ability to move in combat, bad tactics!
             float fRange;
             if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
             else
@@ -2583,7 +2739,28 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
         }
         // Since haste does not have an effect when it comes from items when we
         // check for item properties we set this variable so we know they have it.
-        else if(nSpell == SPELL_HASTE && GetLocalInt(oCreature, "AI_HAS_HASTE_ITEM")) return FALSE;
+        else if(nSpell == SPELL_HASTE && GetLocalInt(oCreature, sIPHasHasteVarname)) return FALSE;
+        // Only reason to cast Ultravision(Darkvision) in combat is if a Darkness
+        // spell is nearby.
+        else if(nSpell == SPELL_DARKVISION)
+        {
+            int nCnt = 1, bCastSpell;
+            string sAOEType;
+            object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
+            while(oAOE != OBJECT_INVALID && GetDistanceBetween(oCreature, oAOE) <= AI_RANGE_PERCEPTION)
+            {
+                // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
+                sAOEType = GetTag(oAOE);
+                ai_Debug("0i_talents", "2759", "Ultravision check; AOE tag: " + sAOEType);
+                if(sAOEType == "VFX_PER_DARKNESS")
+                {
+                   if(!GetHasFeat(FEAT_DARKVISION)) bCastSpell = TRUE;
+                   break;
+                }
+                oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
+            }
+            if(!bCastSpell) return FALSE;
+        }
         // Get a target for enhancement spells if one is not already set.
         if(oTarget == OBJECT_INVALID)
         {
@@ -2636,6 +2813,43 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             oTarget = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oCreature);
             if(oTarget == OBJECT_INVALID) return FALSE;
         }
+        // Lets see if we should cast resistances in our current situation,
+        // lets check for enemy casters that may have energy damaging spells, or energy weapons.
+        else if(nSpell == SPELL_ENDURE_ELEMENTS || nSpell == SPELL_PROTECTION_FROM_ELEMENTS ||
+                nSpell == SPELL_RESIST_ELEMENTS || nSpell == SPELL_ENERGY_BUFFER)
+        {
+            int bCastSpell;
+            object oEnemy = ai_GetEnemyAttackingMe(oCreature);
+            if(oEnemy != OBJECT_INVALID)
+            {
+                object oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oEnemy);
+                if(oWeapon == OBJECT_INVALID) oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oEnemy);
+                if(oWeapon == OBJECT_INVALID) oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_B, oEnemy);
+                ai_Debug("0i_talents", "2812", GetName(oEnemy) + " is using weapon: " + GetName(oWeapon));
+                if(oWeapon != OBJECT_INVALID)
+                {
+                    itemproperty nProperty = GetFirstItemProperty(oWeapon);
+                    while(GetIsItemPropertyValid(nProperty))
+                    {
+                        if(GetItemPropertyType(nProperty) == ITEM_PROPERTY_DAMAGE_BONUS)
+                        {
+                            int nSubType = GetItemPropertySubType(nProperty);
+                            ai_Debug("0i_talents", "2821", GetName(oWeapon) + " has PropertySubType: " +
+                                     IntToString(nSubType) + " If equals [6,7,9,10,13] don't cast!");
+                            if(nSubType == 6 || nSubType == 7 || nSubType == 9 ||
+                               nSubType == 10 || nSubType == 13)
+                            {
+                                bCastSpell = TRUE;
+                                break;
+                            }
+                        }
+                        nProperty = GetNextItemProperty(oWeapon);
+                    }
+                }
+            }
+            if(ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER) != OBJECT_INVALID) bCastSpell = TRUE;
+            if(!bCastSpell) return FALSE;
+        }
         // Get a target for protection spells if one is not already set.
         if(oTarget == OBJECT_INVALID)
         {
@@ -2650,34 +2864,6 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
         //**********************************************************************
         //********** These spells are checked after picking a target ***********
         //**********************************************************************
-        // Lets see if we should cast this against our enemy, lets check for
-        // enemy casters that may have energy damaging spells, or energy weapons.
-        else if(nSpell == SPELL_ENDURE_ELEMENTS || nSpell == SPELL_PROTECTION_FROM_ELEMENTS ||
-                nSpell == SPELL_RESIST_ELEMENTS || nSpell == SPELL_ENERGY_BUFFER)
-        {
-            int bCastSpell;
-            object oEnemy = ai_GetEnemyAttackingMe(oTarget);
-            object oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oEnemy);
-            itemproperty nProperty = GetFirstItemProperty(oWeapon);
-            while(GetIsItemPropertyValid(nProperty))
-            {
-                if(GetItemPropertyType(nProperty) == ITEM_PROPERTY_DAMAGE_BONUS)
-                {
-                    int nSubType = GetItemPropertySubType(nProperty);
-                    ai_Debug("0i_talents", "2341", GetName(oWeapon) + " has PropertySubType: " +
-                             IntToString(nSubType) + " If equals [6,7,9,10,13] don't cast!");
-                    if(nSubType == 6 || nSubType == 7 || nSubType == 9 ||
-                       nSubType == 10 || nSubType == 13)
-                    {
-                        bCastSpell = TRUE;
-                        break;
-                    }
-                }
-                nProperty = GetNextItemProperty(oWeapon);
-            }
-            if(ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER) == OBJECT_INVALID) bCastSpell = TRUE;
-            if(!bCastSpell) return FALSE;
-        }
         // Don't double up Stoneskin, Ghostly visage, or Ethereal visage.
         if(nSpell == SPELL_GHOSTLY_VISAGE || nSpell == SPELL_ETHEREAL_VISAGE ||
            nSpell == SPELL_STONESKIN)

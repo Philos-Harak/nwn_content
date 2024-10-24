@@ -6,8 +6,8 @@
 ////////////////////////////////////////////////////////////////////////////////
  Programmer: Philos
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -55,5 +55,5 @@ void main()
     // Taunt the nearest target!
     if (ai_TryTaunt (oCreature, ai_GetNearestTargetForMeleeCombat (oCreature, nInMelee))) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK), TRUE);
+    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }

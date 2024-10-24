@@ -121,7 +121,7 @@ void main()
     if((nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION ||
        nAssociateType == ASSOCIATE_TYPE_FAMILIAR ||
        nAssociateType == ASSOCIATE_TYPE_SUMMONED) &&
-       !ai_GetIsCharacter(oMaster) && AI_PERMANENT_ASSOCIATES)
+       !ai_GetIsCharacter(oMaster) && GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
     {
         SetIsDestroyable (FALSE, FALSE, TRUE);
     }

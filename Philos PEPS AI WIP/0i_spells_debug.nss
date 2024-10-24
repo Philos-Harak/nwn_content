@@ -380,10 +380,21 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         {
             if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_DAMAGE_RESISTANCE))
             {
-                ai_Debug("0i_spell", "334", "Target is resistant to my energy spell!");
+                ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
                 return TRUE;
             }
-            // Maybe add checks for item damage resistance?
+            // Check for resistances and immunities. Treat resistance as immune.
+            int nIPResist = GetLocalInt(oCreature, sIPResistVarname);
+            int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) & nIPResist;
+            if(nIPImmune > 0)
+            {
+                ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
+                if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) return TRUE;
+                else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) return TRUE;
+                else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) return TRUE;
+                else if(sIType == "Electricity" && (nIPImmune & DAMAGE_TYPE_ELECTRICAL)) return TRUE;
+                else if(sIType == "Sonic" && (nIPImmune & DAMAGE_TYPE_SONIC)) return TRUE;
+            }
         }
     }
     int nLevel = StringToInt(Get2DAString("ai_spells", "Innate", nSpell));
@@ -1086,12 +1097,12 @@ void ai_SetupAllyTargets(object oCaster, object oPC)
     SetLocalObject(oCaster, "AI_ALLY_TARGET_8", GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC));
     SetLocalObject(oCaster, "AI_ALLY_TARGET_9", GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC));
     nCntr = 1;
-    while(nCntr < 10)
-    {
-        ai_Debug("0i_spells", "910", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
-                 GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
-        nCntr++;
-    }
+    //while(nCntr < 10)
+    //{
+    //    ai_Debug("0i_spells", "910", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
+    //             GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
+    //    nCntr++;
+    //}
 }
 void ai_SetupAllyHealingTargets(object oCaster, object oPC)
 {
@@ -1282,21 +1293,21 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell)
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        ai_Debug("0i_spells", "1128", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1128", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            ai_Debug("0i_spells", "1131", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1131", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
-                ai_Debug("0i_spells", "1134", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                         " nSlots: " + IntToString(stSpell.nSlot));
+                //ai_Debug("0i_spells", "1134", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                //         " nSlots: " + IntToString(stSpell.nSlot));
                 while(stSpell.nSlot < stSpell.nMaxSlots)
                 {
-                    ai_Debug("0i_spells", "1238", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
+                    //ai_Debug("0i_spells", "1238", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
                     if(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot))
                     {
                         nSpell = GetMemorizedSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
-                        ai_Debug("0i_spells", "1142", "nSpell: " + IntToString(nSpell));
+                        //ai_Debug("0i_spells", "1142", "nSpell: " + IntToString(nSpell));
                         if(Get2DAString("ai_spells", "Category", nSpell) == "S")
                         {
                             SetLocalInt(stSpell.oCaster, "AI_USED_SPELL_GROUP_-2", TRUE);
@@ -1314,7 +1325,7 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell)
                     stSpell.nSlot++;
                 }
                 stSpell.nLevel--;
-                ai_Debug("0i_spells", "1153", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1153", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1324,7 +1335,7 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell)
         }
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-        ai_Debug("0i_spells", "1164", "nClass: " + IntToString(stSpell.nClass));
+        //ai_Debug("0i_spells", "1164", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
@@ -1346,32 +1357,32 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell)
 }
 void ai_ActionCastKnownSummons(struct stSpell stSpell)
 {
-    ai_Debug("0i_spells", "1184", "Start of ActionCastKnownSummons!");
+    //ai_Debug("0i_spells", "1184", "Start of ActionCastKnownSummons!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        ai_Debug("0i_spells", "1190", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1190", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            ai_Debug("0i_spells", "1193", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1193", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
                 if(stSpell.nMaxSlots)
                 {
-                    ai_Debug("0i_spells", "1198", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                             " nSlots: " + IntToString(stSpell.nSlot));
+                    //ai_Debug("0i_spells", "1198", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                    //         " nSlots: " + IntToString(stSpell.nSlot));
                     while(stSpell.nSlot < stSpell.nMaxSlots)
                     {
                         nSpell = GetKnownSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
-                        ai_Debug("0i_spells", "1203", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
+                        //ai_Debug("0i_spells", "1203", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
                         if(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell))
                         {
                             if(Get2DAString("ai_spells", "Category", nSpell) == "S")
                             {
                                 SetLocalInt(stSpell.oCaster, "AI_USED_SPELL_GROUP_S", TRUE);
-                                ai_Debug("0i_spells", "1209", "nSpell: " + IntToString(nSpell));
+                                //ai_Debug("0i_spells", "1209", "nSpell: " + IntToString(nSpell));
                                 ai_CastKnownSpell(stSpell.oCaster, stSpell.nClass, nSpell, stSpell.oCaster, TRUE, stSpell.oPC);
                                 stSpell.nPosition = 1;
                                 stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
@@ -1387,7 +1398,7 @@ void ai_ActionCastKnownSummons(struct stSpell stSpell)
                     }
                 }
                 stSpell.nLevel--;
-                ai_Debug("0i_spells", "1218", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1218", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1398,7 +1409,7 @@ void ai_ActionCastKnownSummons(struct stSpell stSpell)
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        ai_Debug("0i_spells", "1229", "nClass: " + IntToString(stSpell.nClass));
+        //ai_Debug("0i_spells", "1229", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
@@ -1416,30 +1427,29 @@ void ai_ActionCastKnownSummons(struct stSpell stSpell)
 }
 void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
 {
-    ai_Debug("0i_spells", "1246", "Start of ActionCastMemorizedBuff!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        ai_Debug("0i_spells", "1252", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1252", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            ai_Debug("0i_spells", "1255", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1255", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
-                ai_Debug("0i_spells", "1258", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                         " nSlots: " + IntToString(stSpell.nSlot));
+                //ai_Debug("0i_spells", "1258", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                //         " nSlots: " + IntToString(stSpell.nSlot));
                 while(stSpell.nSlot < stSpell.nMaxSlots)
                 {
-                    ai_Debug("0i_spells", "1262", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
+                    //ai_Debug("0i_spells", "1262", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
                     if(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot))
                     {
                         nSpell = GetMemorizedSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
                         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                        ai_Debug("0i_spells", "1267", "nBuffType: " + IntToString(stSpell.nBuffType) +
-                                 " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
-                                 " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
+                        //ai_Debug("0i_spells", "1267", "nBuffType: " + IntToString(stSpell.nBuffType) +
+                        //         " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
+                        //         " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
                         if(stSpell.nBuffType == nSpellBuffDuration || stSpell.nBuffType == 1)
                         {
                             if(stSpell.nTarget > 0)
@@ -1454,8 +1464,8 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
                                 else oTarget == OBJECT_INVALID;
                             }
                             else oTarget = ai_GetBuffTarget(stSpell.oCaster, nSpell);
-                            ai_Debug("0i_spells", "1284", "nSpell: " + IntToString(nSpell) +
-                                     " oTarget: " + GetName(oTarget));
+                            //ai_Debug("0i_spells", "1284", "nSpell: " + IntToString(nSpell) +
+                            //         " oTarget: " + GetName(oTarget));
                             if(oTarget != OBJECT_INVALID)
                             {
                                 ai_CastMemorizedSpell(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot, oTarget, TRUE, stSpell.oPC);
@@ -1468,7 +1478,7 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
                     stSpell.nSlot++;
                 }
                 stSpell.nLevel--;
-                ai_Debug("0i_spells", "1298", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1298", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1479,7 +1489,7 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        ai_Debug("0i_spells", "1309", "nClass: " + IntToString(stSpell.nClass));
+        //ai_Debug("0i_spells", "1309", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
@@ -1500,32 +1510,31 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
 }
 void ai_ActionCastKnownBuff(struct stSpell stSpell)
 {
-    ai_Debug("0i_spells", "1340", "Start of ActionCastKnownBuff!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        ai_Debug("0i_spells", "1347", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1347", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            ai_Debug("0i_spells", "1350", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1350", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
                 if(stSpell.nMaxSlots)
                 {
-                ai_Debug("0i_spells", "1356", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                         " nSlots: " + IntToString(stSpell.nSlot));
+                    //ai_Debug("0i_spells", "1356", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                    //         " nSlots: " + IntToString(stSpell.nSlot));
                     while(stSpell.nSlot < stSpell.nMaxSlots)
                     {
                         nSpell = GetKnownSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
                         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                        ai_Debug("0i_spells", "1361", "nBuffType: " + IntToString(stSpell.nBuffType) +
-                                 " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
-                                 " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
+                        //ai_Debug("0i_spells", "1361", "nBuffType: " + IntToString(stSpell.nBuffType) +
+                        //         " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
+                        //         " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
                         if(stSpell.nBuffType == nSpellBuffDuration || stSpell.nBuffType == 1)
                         {
-                            ai_Debug("0i_spells", "1367", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
+                            //ai_Debug("0i_spells", "1367", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
                             if(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell))
                             {
                                 if(stSpell.nTarget > 0)
@@ -1540,8 +1549,8 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell)
                                     else oTarget == OBJECT_INVALID;
                                 }
                                 else oTarget = ai_GetBuffTarget(stSpell.oCaster, nSpell);
-                                ai_Debug("0i_spells", "1382", "nSpell: " + IntToString(nSpell) +
-                                         " oTarget: " + GetName(oTarget));
+                                //ai_Debug("0i_spells", "1382", "nSpell: " + IntToString(nSpell) +
+                                //         " oTarget: " + GetName(oTarget));
                                 if(oTarget != OBJECT_INVALID)
                                 {
                                     ai_CastKnownSpell(stSpell.oCaster, stSpell.nClass, nSpell, oTarget, TRUE, stSpell.oPC);
@@ -1555,7 +1564,7 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell)
                     }
                 }
                 stSpell.nLevel--;
-                ai_Debug("0i_spells", "1396", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1396", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);

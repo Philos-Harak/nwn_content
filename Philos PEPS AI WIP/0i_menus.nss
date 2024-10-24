@@ -4,8 +4,8 @@
  Include script for handling NUI menus.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 // Use by NUI windows to stop saving move states while loading.
 const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Maximum number of Plugins allowed on the players widget.
@@ -128,6 +128,9 @@ void ai_SetupHenchmanButton(object oPlayer, int nToken, int nIndex)
 void ai_CreateAIOptionsNUI(object oPC)
 {
     string sText;
+    // Set window to not save until it has been created.
+    //SetLocalInt (oPC, AI_NO_NUI_SAVE, TRUE);
+    //DelayCommand (0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 482 / 73
     json jRow = JsonArray();
@@ -137,7 +140,23 @@ void ai_CreateAIOptionsNUI(object oPC)
     // Add row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 ******************************************************************* 482 / 101
+    // Row 2 ******************************************************************* 482 / 129
+    jRow = JsonArray();
+    CreateLabel(jRow, "Max Henchman:", "lbl_max_hench", 110.0f, 20.0f);
+    CreateTextEditBox(jRow, "sPlaceHolder", "txt_max_henchman", 1, FALSE, 30.0f, 20.0f, "txt_max_henchman_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButtonSelect(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 150.0f, 20.0f, "btn_assoc_widget_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButtonSelect(jRow, "Ghost Mode", "btn_ghost_mode", 150.0f, 20.0f, "btn_ghost_mode_tooltip");
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 3 ******************************************************************* 482 / 101
+    jRow = JsonArray();
+    CreateLabel(jRow, "Debug Creature:", "lbl_debug_creature", 120.0f, 20.0f);
+    CreateTextEditBox(jRow, "sPlaceHolder", "txt_debug_creature", 25, FALSE, 300.0f, 20.0f, "txt_debug_creature_tooltip");
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 4 ******************************************************************* 482 / 129
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     if(ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) == "") sText = "Monsters are not using Philos' AI.";
@@ -146,34 +165,63 @@ void ai_CreateAIOptionsNUI(object oPC)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 ******************************************************************* 482 / 129
+    // Row 5 ******************************************************************* 482 / 157
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Toggle Associate Widgets On/Off", "btn_toggle_assoc_widget", 300.0f, 20.0f);
+    CreateLabel(jRow, "AI RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 ******************************************************************* 482 / 157
+    // Row 6 ******************************************************************* 482 / 417
     jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "Maximum Henchman:", "lbl_max_hench", 150.0f, 20.0f);
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_max_henchman", 2, FALSE, 50.0f, 20.0f, "txt_max_henchman_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Command Ghost Mode", "btn_ghost_mode", 200.0f, 20.0f, "btn_ghost_mode_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Make the AI options a Group.
+    json jGroupRow = JsonArray();
+    json jGroupCol = JsonArray();
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 3, FALSE, 35.0f, 20.0f, "txt_ai_difficulty_tooltip");
+    CreateLabel(jGroupRow, " Chance monster AI attacks the weakest target.", "lbl_ai_difficulty", 330.0f, 20.0f, 0, 0, 0.0, "txt_ai_difficulty_tooltip");
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Moral checks, wounded AI creatures may flee from combat", "chbx_moral", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Allow AI monsters to prebuff before combat starts", "chbx_buff_monsters", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Allow AI monsters to summon before combat starts", "chbx_buff_summons", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Summoned associates to remain after masters death.", "chbx_perm_assoc", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Use advanced AI movement during combat", "chbx_advanced_movement", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Item Level Restrictions for AI creatures. This defaults to off!", "chbx_ilr", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Allow AI to use Use Magic Device.", "chbx_umd", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateCheckBox(jGroupRow, " Allow AI to use Healing kits.", "chbx_use_healingkits", 450.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
+    CreateLabel(jGroupRow, " meters distance a monster can perceive the player.", "lbl_perception_distance", 355.0f, 20.0f, 0, 0, 0.0, "txt_perception_distance_tooltip");
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 ******************************************************************* 482 / 185
+    // Row 7 ******************************************************************* 482 / 445
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Add Plugin", "btn_add_plugin", 230.0f, 20.0f);
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_plugin", 16, FALSE, 230.0f, 20.0f, "txt_exe_plugin_tooltip");
+    CreateTextEditBox(jRow, "sPlaceHolder", "txt_plugin", 16, FALSE, 230.0f, 20.0f, "txt_plugin_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 185.0;
-    // Row 6+ ******************************************************************* 482 /
+    float fHeight = 445.0;
+    // Row 8+ ******************************************************************* 482 /
     int nIndex;
     string sIndex;
     json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
@@ -206,25 +254,55 @@ void ai_CreateAIOptionsNUI(object oPC)
     // Set all binds, events, and watches.
     // Row 1 - Version label.
     // Row 2
+    NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetMaxHenchmen())));
+    NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
+    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-6)."));
     if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "")
     {
-        // Row 3
         NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool(TRUE));
         int bWidgetOn = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, OBJECT_INVALID, "pc");
         NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget", JsonBool(bWidgetOn));
+        NuiSetBind(oPC, nToken, "btn_assoc_widget_tooltip", JsonString("  Turns On/Off all associate widgets."));
     }
-    // Row 4
-    NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetMaxHenchmen())));
-    NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
-    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("Set max number of henchman allowed."));
     int bGhostMode = ai_GetAIMode(oPC, AI_MODE_GHOST);
     NuiSetBind(oPC, nToken, "btn_ghost_mode", JsonBool (bGhostMode));
     NuiSetBind(oPC, nToken, "btn_ghost_mode_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString("  Allows associates to move through creatures while in command mode."));
-    // Row 5
+    // Row 3
+    object oModule = GetModule();
+    NuiSetBind(oPC, nToken, "txt_debug_creature", JsonString(GetLocalString(oModule, AI_RULE_DEBUG_CREATURE)));
+    NuiSetBindWatch (oPC, nToken, "txt_debug_creature", TRUE);
+    NuiSetBind(oPC, nToken, "txt_debug_creature_tooltip", JsonString("  Enter creature name to set debug mode for a creature (See Log file for data)."));
+    // Row 4 Label showing if monster AI is in use.
+    // Row 5 Label for AI RULES
+    // Row 6
+    NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
+    NuiSetBindWatch (oPC, nToken, "txt_ai_difficulty", TRUE);
+    NuiSetBind(oPC, nToken, "txt_ai_difficulty_tooltip", JsonString("  This is a percentage from 0 to 100."));
+    NuiSetBind(oPC, nToken, "chbx_moral_check", JsonBool(GetLocalInt(oModule, AI_RULE_MORAL_CHECKS)));
+    NuiSetBindWatch (oPC, nToken, "chbx_moral_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
+    NuiSetBindWatch (oPC, nToken, "chbx_buff_monsters_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_buff_summons_check", JsonBool(GetLocalInt(oModule, AI_RULE_PRESUMMON)));
+    NuiSetBindWatch (oPC, nToken, "chbx_buff_summons_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_perm_assoc_check", JsonBool(GetLocalInt(oModule, AI_RULE_PERM_ASSOC)));
+    NuiSetBindWatch (oPC, nToken, "chbx_perm_assoc_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_advanced_movement_check", JsonBool(GetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT)));
+    NuiSetBindWatch (oPC, nToken, "chbx_advanced_movement_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_ilr_check", JsonBool(GetLocalInt(oModule, AI_RULE_ILR)));
+    NuiSetBindWatch (oPC, nToken, "chbx_ilr_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_umd_check", JsonBool(GetLocalInt(oModule, AI_RULE_ALLOW_UMD)));
+    NuiSetBindWatch (oPC, nToken, "chbx_umd_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_use_healingkits_check", JsonBool(GetLocalInt(oModule, AI_RULE_HEALERSKITS)));
+    NuiSetBindWatch (oPC, nToken, "chbx_use_healingkits_check", TRUE);
+    NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE), 0, 0)));
+    NuiSetBindWatch (oPC, nToken, "txt_perception_distance", TRUE);
+    NuiSetBind(oPC, nToken, "txt_perception_distance_tooltip", JsonString("  Distance can be 10 meters to 40 meters."));
+    // Row 7
     NuiSetBind(oPC, nToken, "btn_add_plugin_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_plugin_event", JsonBool(TRUE));
-    // Row 6+
+    NuiSetBind(oPC, nToken, "txt_plugin_tooltip", JsonString("  Enter a plugin file name that is in the override folder."));
+    // Row 8+
     nIndex = 0;
     jScript = JsonArrayGet(jPlugins, nIndex);
     while(JsonGetType(jScript) != JSON_TYPE_NULL)

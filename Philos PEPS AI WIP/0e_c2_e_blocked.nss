@@ -5,14 +5,14 @@
   Monsters OnBlocked event script;
   Can be blocked by a creature or door.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
     // This actually gets either a Creature or Door that is blocking OBJECT_SELF.
     object oObject = GetBlockingDoor();
-    //ai_Debug("0e_c2_e_blocked", "15", GetName(oCreature) + " is being blocked by " + GetName(oObject));
+    ai_Debug("0e_c2_e_blocked", "15", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
     if(nObjectType == OBJECT_TYPE_CREATURE && GetIsEnemy(oObject, oCreature))
     {

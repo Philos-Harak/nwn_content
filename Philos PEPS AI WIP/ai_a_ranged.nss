@@ -54,12 +54,11 @@ void main()
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-   //ai_Debug("0i_actions", "541", "Check for ranged attack on weakest enemy!");
     object oTarget;
     // ************************** Ranged feat attacks **************************
     if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
        !ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) &&
-       (nInMelee < 4 || ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID))
+       (nInMelee < 3 || ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID))
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
@@ -80,15 +79,18 @@ void main()
             if(oTarget != OBJECT_INVALID)
             {
                 if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-                //ai_Debug("0i_actions", "559", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }
-            else if(ai_SearchForInvisibleCreature(oCreature)) return;
+            else
+            {
+                ai_SearchForInvisibleCreature(oCreature);
+                return;
+            }
         }
-        else if(ai_InCombatEquipBestRangedWeapon(oCreature, TRUE)) return;
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
-    //ai_Debug("0i_actions", "571", "Check for melee attack on weakest enemy!");
+    ai_Debug("ai_a_ranged", "91", "Check for melee attack on weakest enemy!");
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
@@ -99,7 +101,6 @@ void main()
     if(oTarget != OBJECT_INVALID)
     {
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
-        //ai_Debug("0i_actions", "580", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
     else ai_SearchForInvisibleCreature(oCreature);

@@ -10,58 +10,15 @@
 const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version 0.1";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
-//***************************  ADJUSTABLE CONSTANTS  ***************************
-// Should moral checks be used.
-const int AI_USE_MORAL = FALSE;
-// Summons, familiars, and companions are permanent and don't disappear when the caster dies.
-// This mode will only work on a server that adds Philos AI code to the OnDeath
-// script event for Permanent associates. See 0e_ch_9_onspawn and 0e_ch_7_ondeath event scripts.
-const int AI_PERMANENT_ASSOCIATES = FALSE;
+//***************************  ADJUSTABLECONSTANTS  ***************************
 // Should creatures summon familiars be used?
 // These don't work very well unless you can change the familiar via NWNX.
 const int AI_SUMMON_FAMILIARS = FALSE;
 // Should creatures summon animal companions be used?
 // These don't work very well unless you can change the companion via NWNX.
 const int AI_SUMMON_COMPANIONS = FALSE;
-// Should all monsters prebuff before combat?
-const int AI_BUFF_MONSTERS = TRUE;
-// Should monsters cast summons spells when prebuffing?
-const int AI_PREBUFF_SUMMONS = TRUE;
 // Should monsters use potions to prebuff before combat? Not working at the moment.
 const int AI_BUFF_MONSTER_POTIONS = FALSE;
-// Should the AI allow a creature with Point Blank Shot to fire in melee against one opponent?
-const int AI_FIRE_IN_MELEE = FALSE;
-// Should the AI move during combat base on the situation.
-const int AI_ADVANCED_COMBAT_MOVEMENT = TRUE;
-// Should the game follow Item Level Restrictions. Usually off in Single player
-// and on in Multi player.
-const int AI_USE_ITEM_LEVEL_RESTRICTIONS = FALSE;
-// Should the AI allow the use of Use Magic Device?
-const int AI_ALLOW_USE_MAGIC_DEVICE = TRUE;
-// Should the AI use healing kits in combat. They will still use them outside of combat.
-const int AI_USE_HEALERSKITS_IN_COMBAT = TRUE;
-// Set to 9999 if you don't want to use kits. A good base number is 12.
-const int AI_MIN_HP_TO_USE_HEALINGKIT = 12;
-// Variable that can be change the distance for looting checks.
-const float AI_LOOT_DISTANCE = 25.0f;
-// The DC monsters make to decide if they cast the best talent vs random talent.
-const int AI_INTELLIGENCE_DC = 12;
-// Arcane Spell failure% or less that a caster must have to still try to cast a spell.
-const int AI_ASF_WILL_USE = 15;
-// Delay between Henchman casting Buff spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_BUFF_DELAY = 0.2;
-// Delay between Henchman casting Healing spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_HEALING_DELAY = 6.0;
-// Variable that can change the distance monsters will come and attack after
-// hearing a shout from an ally that sees or hears an enemy.
-// Or when searching for an invisible, heard enemy.
-// 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
-const float AI_MAX_MONSTER_PERCEPTION_DISTANCE = 35.0f;
-// Variable that can change the distance associates will come and attack after
-// hearing a shout from an ally that sees or hears an enemy.
-// Or when searching for an invisible, heard enemy.
-// 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
-const float AI_MAX_ASSOCIATE_PERCEPTION_DISTANCE = 10.0f;
 // The number of classes allowed for a character to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 3;
 // Taunts cool down time before the AI attemps another Taunt.
@@ -70,8 +27,10 @@ const int AI_TAUNT_COOLDOWN = 3;
 const int AI_EMPATHY_COOLDOWN = 3;
 // Change the Custom token number if it conflicts with your server.
 const int AI_BASE_CUSTOM_TOKEN = 1000;
-// Force the AI to overwrite all creature event scripts.
-const int AI_OVERWRITE_EVENT_SCRIPTS = FALSE;
+// Arcane Spell failure% or less than, for a caster to still try to cast a spell.
+const int AI_ASF_WILL_USE = 15;
+// Delay between Henchman casting Buff spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_BUFF_DELAY = 0.2;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -109,6 +68,10 @@ const int AI_BLOODY_MORAL_DC = 15;
 // understanding the whole system could cause unforseen results.
 //                            CHANGE AT YOUR OWN RISK.
 
+// Force the AI to overwrite all creature event scripts.
+const int AI_OVERWRITE_EVENT_SCRIPTS = FALSE;
+// Delay between Henchman casting Healing spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_HEALING_DELAY = 6.0;
 // A variable that can be set on creatures to stop mobile animations.
 const string AI_NO_ANIMATION = "AI_NO_ANIMATION";
 // How many seconds in a combat round.
@@ -486,6 +449,43 @@ const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
 const string AI_TARGET_MODE = "AI_TARGET_MODE";
 // Variable used on the player to define which associate triggered the OnPlayer Target.
 const string AI_TARGET_ASSOCIATE = "AI_TARGET_ASSOCIATE";
+// Bitwise constants for immune damage item properties that is used with Get/SetItemProperty().
+const string sIPImmuneVarname = "AI_IP_IMMUNE";
+// Bitwise constants for resisted damage item properties that is used with Get/SetItemProperty().
+const string sIPResistVarname = "AI_IP_RESIST";
+// Variable name for the Int constant for reduced damage item property set to the bonus of the weapon required.
+const string sIPReducedVarname = "AI_IP_REDUCED";
+// Variable name for the Int (Bool) constant for the haste item property.
+const string sIPHasHasteVarname = "AI_IP_HAS_HASTE";
+//***************************** AI RULES CONSTANTS *****************************
+// Variable name set to a creatures full name to set debugging on.
+const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
+// Moral checks on or off.
+const string AI_RULE_MORAL_CHECKS = "AI_RULE_MORAL_CHECKS";
+// Allows monsters to prebuff before combat starts.
+const string AI_RULE_BUFF_MONSTERS = "AI_RULE_BUFF_MONSTERS";
+// Allows monsters cast summons spells when prebuffing.
+const string AI_RULE_PRESUMMON = "AI_RULE_PRESUMMON";
+// Allow the AI move during combat base on the situation and action taking.
+const string AI_RULE_ADVANCED_MOVEMENT = "AI_RULE_ADVANCED_MOVEMENT";
+const int AI_ADVANCED_COMBAT_MOVEMENT = TRUE;
+// Follow Item Level Restrictions for monsters/associates.
+// Usually off in Single player and on in Multi player.
+const string AI_RULE_ILR = "AI_RULE_ILR";
+// Allow the AI to use Use Magic Device.
+const string AI_RULE_ALLOW_UMD = "AI_RULE_ALLOW_UMD";
+// Allow the AI to use healing kits.
+const string AI_RULE_HEALERSKITS = "AI_RULE_HEALERSKITS";
+// Summoned associates are permanent and don't disappear when the caster dies.
+const string AI_RULE_PERM_ASSOC = "AI_RULE_PERM_ASSOC";
+// Monster AI's chance to attack the weakest target instead of the nearest.
+const string AI_RULE_AI_DIFFICULTY = "AI_RULE_AI_DIFFICULTY";
+// Variable that can change the distance creatures will come and attack after
+// hearing a shout from an ally that sees or hears an enemy.
+// Or when searching for an invisible, heard enemy.
+// 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
+const string AI_RULE_PERCEPTION_DISTANCE = "AI_RULE_PERCEPTION_DISTANCE";
+
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction

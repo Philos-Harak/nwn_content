@@ -20,8 +20,12 @@
 const string AI_OLD_TABLE_I = "ASSOCIATE_TABLE";
 const string AI_OLD_TABLE_II = "ASSOCIATE_DB_TABLE";
 const string AI_NEW_TABLE = "PEPS_TABLE";
+const string AI_CAMPAIGN_DATABASE = "peps_ai_rules";
 #include "0i_constants"
 #include "0i_messages"
+// Check if AI rules is set on the module and if not the it sets them.
+// Creates default rules if they do not exist.
+void ai_CheckAIRules();
 // Returns TRUE if oCreature is controlled by a player.
 int ai_GetIsCharacter(object oCreature);
 // Returns TRUE if oCreature is controlled by a dungeon master.
@@ -59,6 +63,12 @@ string ai_GetStringArray(string sText, int nIndex, string sSeperator = ":");
 string ai_SetStringArray(string sText, int nIndex, string sField, string sSeperator = ":");
 // Returns the number of magical properties oItem has.
 int ai_GetNumberOfProperties(object oItem);
+// Checks if the campaign database has been created.
+void ai_CheckCampaignDataAndInitialize();
+// Sets json to a campaign database.
+void ai_SetCampaignDbJson(string sDataField, json jData);
+// Gets json from a campaign database.
+json ai_GetCampaignDbJson(string sDataField);
 // Checks if oMaster has the Table created for Associate data.
 // If no table found then the table is created and then initialized.
 void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType);
@@ -100,6 +110,87 @@ void ai_GetAssociateDataFromDB(object oPlayer, object oAssociate);
 // Moves old henchman data to new henchman data by tag.
 void ai_CheckForHenchmanOldDataToNewData(object oPlayer, string sAssociateData);
 
+void ai_CheckAIRules()
+{
+    object oModule = GetModule();
+    ai_CheckCampaignDataAndInitialize();
+    json jRules = ai_GetCampaignDbJson("rules");
+    if(JsonGetType(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS)) == JSON_TYPE_NULL)
+    {
+        jRules = JsonObject();
+        SetLocalInt(oModule, "AI_RULES_SET", TRUE);
+        // Variable name set to a creatures full name to set debugging on.
+        JsonObjectSetInplace(jRules, AI_RULE_DEBUG_CREATURE, JsonString(""));
+        // Moral checks on or off.
+        SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_MORAL_CHECKS, JsonInt(FALSE));
+        // Allows monsters to prebuff before combat starts.
+        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(TRUE));
+        // Allows monsters cast summons spells when prebuffing.
+        SetLocalInt(oModule, AI_RULE_PRESUMMON, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(TRUE));
+        // Allow the AI to move during combat base on the situation and action taking.
+        SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(TRUE));
+        // Follow Item Level Restrictions for monsters/associates.
+        SetLocalInt(oModule, AI_RULE_ILR, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_ILR, JsonInt(FALSE));
+        // Allow the AI to use Use Magic Device.
+        SetLocalInt(oModule, AI_RULE_ALLOW_UMD, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_ALLOW_UMD, JsonInt(TRUE));
+        // Allow the AI to use healing kits.
+        SetLocalInt(oModule, AI_RULE_HEALERSKITS, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_HEALERSKITS, JsonInt(TRUE));
+        // Associates are permanent and don't get removed when the master dies.
+        SetLocalInt(oModule, AI_RULE_PERM_ASSOC, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_PERM_ASSOC, JsonInt(FALSE));
+        // Monster AI's chance to attack the weakest target instead of the nearest.
+        SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, 0);
+        JsonObjectSetInplace(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(0));
+        // Monster AI's perception distance from player.
+        SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, 30.0);
+        JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(30.0));
+        ai_SetCampaignDbJson("rules", jRules);
+    }
+    else if(!GetLocalInt(oModule, "AI_RULES_SET"))
+    {
+        SetLocalInt(oModule, "AI_RULES_SET", TRUE);
+        // Variable name set to a creatures full name to set debugging on.
+        string sValue = JsonGetString(JsonObjectGet(jRules, AI_RULE_DEBUG_CREATURE));
+        SetLocalString(oModule, AI_RULE_DEBUG_CREATURE, sValue);
+        // Moral checks on or off.
+        int bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS));
+        SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, bValue);
+        // Allows monsters to prebuff before combat starts.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_BUFF_MONSTERS));
+        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bValue);
+        // Allows monsters cast summons spells when prebuffing.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
+        SetLocalInt(oModule, AI_RULE_PRESUMMON, bValue);
+        // Allow the AI to move during combat base on the situation and action taking.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ADVANCED_MOVEMENT));
+        SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, bValue);
+        // Follow Item Level Restrictions for monsters/associates.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ILR));
+        SetLocalInt(oModule, AI_RULE_ILR, bValue);
+        // Allow the AI to use Use Magic Device.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ALLOW_UMD));
+        SetLocalInt(oModule, AI_RULE_ALLOW_UMD, bValue);
+        // Allow the AI to use healing kits.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_HEALERSKITS));
+        SetLocalInt(oModule, AI_RULE_HEALERSKITS, bValue);
+        // Associates are permanent and don't get removed when the owner dies.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PERM_ASSOC));
+        SetLocalInt(oModule, AI_RULE_PERM_ASSOC, bValue);
+        // Monster AI's chance to attack the weakest target instead of the nearest.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AI_DIFFICULTY));
+        SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, bValue);
+        // Monster AI's perception distance from player.
+        float fValue = JsonGetFloat(JsonObjectGet(jRules, AI_RULE_PERCEPTION_DISTANCE));
+        SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, fValue);
+    }
+}
 int ai_GetIsCharacter(object oCreature)
 {
     return (GetIsPC(oCreature) && !GetIsDM(oCreature) && !GetIsDMPossessed(oCreature));
@@ -320,6 +411,62 @@ int ai_GetNumberOfProperties(object oItem)
     if(GetBaseItemType(oItem) == BASE_ITEM_WHIP) nNumOfProperties --;
    return nNumOfProperties;
 }
+void ai_CreateCampaignDataTable()
+{
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE,
+        "CREATE TABLE IF NOT EXISTS " + AI_NEW_TABLE + "(" +
+        "name              TEXT, " +
+        "rules             TEXT, " +
+        "PRIMARY KEY(name));");
+    SqlStep(sql);
+    //ai_Debug("0i_main", "343", We are creating a campaign table [" +
+    //         AI_NEW_TABLE + "] in the database.");
+}
+void ai_CheckCampaignDataTableAndCreateTable()
+{
+    string sQuery = "SELECT name FROM sqlite_master WHERE type ='table' " +
+                    "AND name =@table;";
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
+    SqlBindString(sql, "@table", AI_NEW_TABLE);
+    if(!SqlStep(sql)) ai_CreateCampaignDataTable();
+    //else ai_Debug("0i_main", "354", We have a database with table [" + AI_NEW_TABLE + "].");
+}
+void ai_InitializeCampaignData()
+{
+    string sQuery = "INSERT INTO " + AI_NEW_TABLE + "(name, rules) " +
+        "VALUES(@name, @rules);";
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
+    SqlBindString(sql, "@name", "PEPS_DATA");
+    SqlBindJson(sql, "@rules", JsonObject());
+    //ai_Debug("0i_main", "363", "We are initializing campaign " +
+    //         " data for table[" + AI_NEW_TABLE + "].");
+    SqlStep(sql);
+}
+void ai_CheckCampaignDataAndInitialize()
+{
+    ai_CheckCampaignDataTableAndCreateTable();
+    string sQuery = "SELECT name FROM " + AI_NEW_TABLE + " WHERE name = @name;";
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
+    SqlBindString(sql, "@name", "PEPS_DATA");
+    if(!SqlStep(sql)) ai_InitializeCampaignData();
+}
+void ai_SetCampaignDbJson(string sDataField, json jData)
+{
+    string sQuery = "UPDATE " + AI_NEW_TABLE + " SET " + sDataField +
+                    " = @data WHERE name = @name;";
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
+    SqlBindJson (sql, "@data", jData);
+    SqlBindString (sql, "@name", "PEPS_DATA");
+    SqlStep (sql);
+}
+json ai_GetCampaignDbJson(string sDataField)
+{
+    string sQuery = "SELECT " + sDataField + " FROM " + AI_NEW_TABLE + " WHERE name = @name;";
+    sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
+    SqlBindString (sql, "@name", "PEPS_DATA");
+    if (SqlStep (sql)) return SqlGetJson (sql, 0);
+    else return JsonArray ();
+}
 void ai_CreateAssociateDataTable(object oPlayer)
 {
     sqlquery sql = SqlPrepareQueryObject(oPlayer,
@@ -488,6 +635,7 @@ void aiSaveAssociateAIModesToDb(object oPlayer, object oAssociate)
 }
 void ai_CheckPlayerForData(object oPlayer)
 {
+    ai_CheckAIRules();
     // If the player has no data then lets create some.
     string sQuery = "SELECT name FROM sqlite_master WHERE type ='table' " +
                     "AND name =@table;";

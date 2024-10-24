@@ -6,8 +6,8 @@
   Fires when oCreature becomes the target of a spell via SignalEvent.
   Fires when a healing kit is used on a creature.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
-//#include "0i_assoc_debug"
+//#include "0i_associates"
+#include "0i_assoc_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -19,8 +19,8 @@ void main()
     if(GetFactionEqual(oCaster, oCreature)) ClearPersonalReputation(oCaster, oCreature);
     // Lets see what kind of area of effect this is and select an appropriate action.
     int nSpell = GetLastSpell();
-    //ai_Debug("xx_pc_b_castat", "22", GetName(OBJECT_SELF) + " has been hit by a harmful spell(" +
-    //         Get2DAString("spells", "Label", nSpell) + ")!");
+    ai_Debug("xx_pc_b_castat", "22", GetName(OBJECT_SELF) + " has been hit by a harmful spell(" +
+             Get2DAString("spells", "Label", nSpell) + ")!");
     if(ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
        !ai_CreatureImmuneToEffect(oCaster, oCreature, nSpell))
     {

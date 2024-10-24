@@ -9,8 +9,8 @@
   Fires when EffectDamage is applied to oCreature even if 0 damage.
   Fires when a weapon damages a oCreature, but not if resisted.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;

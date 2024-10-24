@@ -511,7 +511,7 @@ int ai_GetCreatureAttackBonus(object oCreature)
  }
 int ai_CheckUseMagicDevice(object oCreature, string sColumn, object oItem)
 {
-    if(!AI_ALLOW_USE_MAGIC_DEVICE) return FALSE;
+    if(!GetLocalInt(GetModule(), AI_RULE_ALLOW_UMD)) return FALSE;
     int nUMD = GetSkillRank(SKILL_USE_MAGIC_DEVICE, oCreature);
     //ai_Debug("0i_talents", "1600", GetName(oCreature) + " is check UMD: " + IntToString(nUMD));
     if(nUMD < 1) return FALSE;
