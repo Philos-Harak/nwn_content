@@ -2,6 +2,7 @@
 This is my repository for Neverwinter Nights content.
 
 Folders descriptions:
+
 Philos AI for Associates: This is only the Associates AI files, place in override folder to use.
 
 Philos AI for Monsters: This is only the monster AI files, place in override folder to use.
