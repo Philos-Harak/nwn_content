@@ -208,6 +208,11 @@ int ai_Disabled(object oCreature)
                 return GetEffectType(eEffect);
             }
         }
+        if(!GetCommandable(oCreature))
+        {
+            ai_Debug("0i_stats_cond", "213", GetName(oCreature) + " is disabled(Not Commandable)!");
+            return EFFECT_TYPE_PARALYZE;
+        }
         eEffect = GetNextEffect(oCreature);
     }
     ai_Debug("0i_states_cond", "202", GetName(oCreature) + " is not disabled.");

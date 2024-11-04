@@ -11,5 +11,5 @@ int StartingConditional()
     object oHenchman = OBJECT_SELF;
     return (AI_TAUNTING_ON &&
             GetSkillRank(SKILL_TAUNT, oHenchman) > ai_GetCharacterLevels(oHenchman) &&
-            GetLocalString(oHenchman, AI_COMBAT_SCRIPT) != "ai_a_taunt");
+            GetLocalString(oHenchman, AI_COMBAT_SCRIPT) != "ai_a_taunter");
 }

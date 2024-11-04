@@ -48,10 +48,6 @@ const int AI_OPEN_INVENTORY = TRUE;
 const int AI_PICKUP_LOOT = TRUE;
 // Allows players to remove a henchman.
 const int AI_REMOVE_HENCHMAN_ON = FALSE;
-// The distances associates will stay away from the player.
-const float AI_DISTANCE_CLOSE = 0.5;
-const float AI_DISTANCE_MEDIUM = 2.5;
-const float AI_DISTANCE_LONG = 4.5;
 //*****************************  Health Constants  *****************************
 // % of health for when a creature is considered wounded.
 const int AI_HEALTH_WOUNDED = 50;

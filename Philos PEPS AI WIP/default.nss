@@ -15,6 +15,7 @@ void main()
     {
         if(GetIsPC(oCreature))
         {
+            WriteTimestampedLogEntry("Module Name: " + GetModuleName() + ".");
             ai_CheckPlayerForData(oCreature);
             ai_CreateWidgetNUI(oCreature, oCreature);
             ai_SetupPlayerTarget(oCreature);

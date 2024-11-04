@@ -11,16 +11,16 @@
 int StartingConditional()
 {
     object oPC = GetPCSpeaker();
-    object oHenchman = OBJECT_SELF;
+    object oAssociate = OBJECT_SELF;
     string sParam = GetScriptParam("sOption");
     if(sParam == "BaseMode")
     {
         string sBaseMode = "I'm ready to attack.";
         // Lets get which base mode the henchman is in.
-        if(ai_GetAIMode(oHenchman, AI_MODE_STAND_GROUND)) sBaseMode = "I'm holding here.";
-        else if(ai_GetAIMode(oHenchman, AI_MODE_DEFEND_MASTER)) sBaseMode = "I'm defending you.";
-        else if(ai_GetAIMode(oHenchman, AI_MODE_FOLLOW)) sBaseMode = "I'm following you.";
-        if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_coward") sBaseMode = "I will not fight the enemy!";
+        if(ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND)) sBaseMode = "I'm holding here.";
+        else if(ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER)) sBaseMode = "I'm defending you.";
+        else if(ai_GetAIMode(oAssociate, AI_MODE_FOLLOW)) sBaseMode = "I'm following you.";
+        if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_peaceful") sBaseMode = "I will not fight the enemy!";
         SetCustomToken(AI_BASE_CUSTOM_TOKEN, sBaseMode);
     }
     else if(sParam == "CombatTactics")
@@ -29,43 +29,45 @@ int StartingConditional()
         string sAtkAssociates = "";
         string sTargets = "against all enemies and ";
         // Lets get which base mode the henchman is in.
-        if(ai_GetAIMode(oHenchman, AI_MODE_CHECK_ATTACK)) sTargets = "against enemies I can handle and ";
-        if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_a_ambusher") sCombatTactic = "I'm using ambush tactics ";
-        else if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_a_defensive") sCombatTactic = "I'm using defensive tactics ";
-        else if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_a_taunter") sCombatTactic = "I'm ready to taunt ";
-        if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_coward")
+        if(ai_GetAIMode(oAssociate, AI_MODE_CHECK_ATTACK)) sTargets = "against enemies I can handle and ";
+        if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_ambusher") sCombatTactic = "I'm using ambush tactics ";
+        else if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_defensive") sCombatTactic = "I'm using defensive tactics ";
+        else if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_taunter") sCombatTactic = "I'm ready to taunt ";
+        else if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_cntrspell") sCombatTactic = "I'm ready to counter spell ";
+        if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_peaceful")
         {
             sCombatTactic = "I will not fight the enemy!";
             sTargets = "";
         }
         else
         {
-            if(ai_GetAIMode(oHenchman, AI_MODE_STOP_RANGED)) sRangedUse = "will not use a ranged weapon.";
+            if(ai_GetAIMode(oAssociate, AI_MODE_STOP_RANGED)) sRangedUse = "will not use a ranged weapon.";
             else sRangedUse = "will use a ranged weapon.";
-            if(ai_GetAIMode(oHenchman, AI_MODE_IGNORE_ASSOCIATES)) sAtkAssociates = " I will also ignore familiars, companions, and summons.";
+            if(ai_GetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES)) sAtkAssociates = " I will also ignore familiars, companions, and summons.";
             else sAtkAssociates = " I will also attack familiars, companions, and summons.";
         }
         SetCustomToken(AI_BASE_CUSTOM_TOKEN + 1, sCombatTactic + sTargets + sRangedUse + sAtkAssociates);
     }
+    else if(sParam == "Plans")
+    {
+        float fFollowRange = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE);
+        string sFollowRange = FloatToString(fFollowRange, 0, 0);
+        string sDistance = "I'm following from " + sFollowRange + " meters away while";
+        string sStealth, sSearch, sPickup;
+        if(ai_GetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS)) sPickup = " picking up items";
+        else sPickup = " not picking up any items";
+        if(ai_GetAIMode(oAssociate, AI_MODE_AGGRESSIVE_STEALTH)) sStealth = " in stealth";
+        else sStealth = "";
+        if(ai_GetAIMode(oAssociate, AI_MODE_AGGRESSIVE_SEARCH)) sSearch = " and searching";
+        else sSearch = "";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 2, sDistance + sPickup + sStealth + sSearch + ".");
+    }
     else if(sParam == "Healing")
     {
-        string sHealingIn = IntToString(GetLocalInt(oHenchman, AI_HEAL_IN_COMBAT_LIMIT)) + "%";
-        string sHealingOut = IntToString(GetLocalInt(oHenchman, AI_HEAL_OUT_OF_COMBAT_LIMIT)) + "%";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 2, "I'm healing our allies if they go below " +
+        string sHealingIn = IntToString(GetLocalInt(oAssociate, AI_HEAL_IN_COMBAT_LIMIT)) + "%";
+        string sHealingOut = IntToString(GetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT)) + "%";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, "I'm healing our allies if they go below " +
                  sHealingIn + " health in combat and " + sHealingOut + " out of combat.");
-    }
-    else if(sParam == "Distance")
-    {
-        float fFollowRange = GetLocalFloat(oHenchman, AI_FOLLOW_RANGE);
-        string sFollowRange = FloatToString(fFollowRange, 0, 0);
-        string sDistance = "I'm staying + " + sFollowRange + " meters away.";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 3, sDistance);
-    }
-    else if(sParam == "Pickup")
-    {
-        string sPickup = "I'm not picking up any items.";
-        if(ai_GetAIMode(oHenchman, AI_MODE_PICKUP_ITEMS)) sPickup = "I'm picking up items.";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 4, sPickup);
     }
     else if(sParam == "Spells")
     {
@@ -73,55 +75,55 @@ int StartingConditional()
         string sType = " spells I choose.";
         string sBuff = " I'll also targeting anyone that needs it.";
         string sDispel = " Finally I may use Dispel spells.";
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first.";
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_STOP_DISPEL)) sDispel = " Finally I will not use Dispel spells.";
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_LOW_MAGIC_USE)) sCasting = "I'm sparingly casting";
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_HEAVY_MAGIC_USE)) sCasting = "I'm heavily casting";
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_CONSTANT_MAGIC_USE)) sCasting = "I'm always casting";
-        if(GetLocalString(oHenchman, AI_COMBAT_SCRIPT) == "ai_a_cntrspell")
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first.";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_STOP_DISPEL)) sDispel = " Finally I will not use Dispel spells.";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_LOW_MAGIC_USE)) sCasting = "I'm sparingly casting";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_HEAVY_MAGIC_USE)) sCasting = "I'm heavily casting";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_CONSTANT_MAGIC_USE)) sCasting = "I'm always casting";
+        if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_cntrspell")
         {
             sCasting = "I'm ready to counter spell our enemies.";
             sType = "";
             sBuff = "";
             sDispel = "";
         }
-        if(ai_GetMagicMode(oHenchman, AI_MAGIC_NO_MAGIC))
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC))
         {
             sCasting = "I'm not use any magic.";
             sType = "";
             sBuff = "";
             sDispel = "";
         }
-        else if(ai_GetMagicMode(oHenchman, AI_MAGIC_DEFENSIVE_CASTING)) sType = " defensive spells only.";
-        else if(ai_GetMagicMode(oHenchman, AI_MAGIC_OFFENSIVE_CASTING))
+        else if(ai_GetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING)) sType = " defensive spells only.";
+        else if(ai_GetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING))
         {
             sType = " offensive spells only.";
             sBuff = "";
         }
         SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, sCasting + sType + sBuff + sDispel);
     }
-    else if(sParam == "Traps")
+    else if(sParam == "Objects")
     {
-        string sTraps = "I'll leave any traps we find for you to deal with.";
-        if(ai_GetAIMode(oHenchman, AI_MODE_DISARM_TRAPS)) sTraps = "I'll help you disarm any traps we find.";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 6, sTraps);
-    }
-    else if(sParam == "Locks")
-    {
-        string sLocks = "I'll leave any locked doors or chests we find for you to deal with.";
-        if(ai_GetAIMode(oHenchman, AI_MODE_PICK_LOCKS)) sLocks = "I'll help you pick any locked doors or chests we find.";
-        if(ai_GetAIMode(oHenchman, AI_MODE_PICK_LOCKS) &&
-           ai_GetAIMode(oHenchman, AI_MODE_BASH_LOCKS))
+        int bTraps = ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS);
+        int bLocks = ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS);
+        int bBash = ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS);
+        string sText;
+        if(bTraps && bLocks && bBash)
         {
-            sLocks = "I'll help you pick or bash any locked doors or chests we find.";
+            sText = "I'm disarming all the traps and am either picking or bashing any of the locks we find.";
         }
-        if(ai_GetAIMode(oHenchman, AI_MODE_BASH_LOCKS)) sLocks = "I'll help you bash any locked doors or chests we find.";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 7, sLocks);
+        else if(bTraps && bLocks) sText = "I'm going to disarm all the traps and I'll pick all the locks we encounter.";
+        else if(bTraps && bBash) sText = "I shall disarm all the traps and will bash any locks we come across.";
+        else if(bTraps) sText = "I will disarm all the traps I can but will leave any locks for you to deal with.";
+        else if(bLocks && bBash) sText = "I will leave the traps for you but will either pick or bash any locks we see.";
+        else if(bLocks) sText = "I'll keep my distance from any traps we see, but will pick the locks found.";
+        else if(bBash) sText = "I'll let you mess with the traps, but I'll bash any locks that are out there.";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 3, sText);
     }
     else if(sParam == "RestBuffing")
     {
         string sRestBuffing = "";
-        if(!ai_GetMagicMode(oHenchman, AI_MAGIC_BUFF_AFTER_REST)) sRestBuffing = "not ";
+        if(!ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_AFTER_REST)) sRestBuffing = "not ";
         SetCustomToken(AI_BASE_CUSTOM_TOKEN + 10, "After we rest I am " + sRestBuffing + "casting my long buff spells on us.");
     }
     return TRUE;

@@ -105,7 +105,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
             {
                 sAI = "ai_a_polymorphed";
             }
-            else if(ai_GetIsInvisible(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
+            else if(ai_GetIsInvisible(oCreature, FALSE) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
         }
         if(sAI == "") sAI = "ai_a_default";
         ai_Debug("0i_actions", "105", "********** " + GetName (oCreature) + " **********");
@@ -153,7 +153,7 @@ void ai_DoMonsterCombatRound(object oCreature)
             {
                 sAI = "ai_polymorphed";
             }
-            else if(ai_GetIsInvisible(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_invisible";
+            else if(ai_GetIsInvisible(oCreature, FALSE) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_invisible";
         }
         if(sAI == "") sAI = "ai_default";
         ai_Debug("0i_actions", "139", "********** " + GetName (oCreature) + " **********");

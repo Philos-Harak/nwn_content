@@ -153,7 +153,7 @@ void ai_CreateAIOptionsNUI(object oPC)
     // Row 3 ******************************************************************* 482 / 101
     jRow = JsonArray();
     CreateLabel(jRow, "Debug Creature:", "lbl_debug_creature", 120.0f, 20.0f);
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_debug_creature", 25, FALSE, 300.0f, 20.0f, "txt_debug_creature_tooltip");
+    CreateTextEditBox(jRow, "sPlaceHolder", "txt_debug_creature", 40, FALSE, 340.0f, 20.0f, "txt_debug_creature_tooltip");
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 482 / 129

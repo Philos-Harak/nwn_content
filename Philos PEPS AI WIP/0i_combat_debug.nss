@@ -316,7 +316,8 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 // oTarget is the creature the caller is targeting.
 int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 // Return TRUE if oCreature is Invisible, shealth mode, or has sanctuary up.
-int ai_GetIsInvisible(object oCreature);
+// bDarkness if FALSE then Darkness will not be counted.
+int ai_GetIsInvisible(object oCreature, int bDarkness = TRUE);
 // Returns TRUE if if oCaster has a good chance of effecting oCreature with nSpell.
 int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell);
 // Returns TRUE if oCreature is in a Dangerous Area of Effect in fRange.
@@ -547,7 +548,8 @@ object ai_SetCombatState(object oCreature)
                       ai_GetIsInvisible(oObject)))
                     {
                         SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
-                        sDebugText += "**** PERCEIVED ****";
+                        sDebugText += "**** PERCEIVED Seen: " + IntToString(GetObjectSeen(oObject, oCreature)) +
+                        " Heard: " + IntToString(GetObjectHeard(oObject, oCreature)) + " ****";
                     }
                     else SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, FALSE);
                     // ********** Set the Nearest Enemy seen **********
@@ -934,7 +936,7 @@ int ai_GetHighestCRIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, s
                     if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
                       (bIngnoreAssociates && GetAssociateType(oTarget)))
                     {
-                        if(nCombat < nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
+                        if(nCombat > nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
                         {
                             fLowestDTargetRange = fTargetRange;
                             nHDCombat = nCombat;
@@ -3067,75 +3069,79 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
     int nCreatureSize = GetCreatureSize(oCreature) + 1;
     while(oItem != OBJECT_INVALID)
     {
-        nType = GetBaseItemType(oItem);
-        // Make sure this is a ranged weapon.
-        ai_Debug("0i_combat", "2868", "oItem: " + GetName(oItem) + " Ranged Weapon: " +
-               Get2DAString("baseitems", "RangedWeapon", nType));
-        if(Get2DAString("baseitems", "RangedWeapon", nType) != "")
+        ai_Debug("0i_combat", "2868", "oItem: " + GetName(oItem) +
+                 " Identified: " + IntToString(GetIdentified(oItem)));
+        if(GetIdentified(oItem))
         {
-            nValue = GetGoldPieceValue(oItem);
-            ai_Debug("0i_combat", "2949", "nValue: " + IntToString(nValue) + " > 1 Proficient: " +
-                     IntToString(ai_GetIsProficientWith(oCreature, oItem)) + " nMaxItemValue: " + IntToString(nMaxItemValue));
-            // Non-Identified items have a goldpiecevalue of 1. So they will not be selected.
-            if(nValue > 1 && ai_GetIsProficientWith(oCreature, oItem) &&
-              (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
+            nType = GetBaseItemType(oItem);
+            // Make sure this is a ranged weapon.
+            ai_Debug("0i_combat", "2868", " Ranged Weapon: " + Get2DAString("baseitems", "RangedWeapon", nType));
+            if(Get2DAString("baseitems", "RangedWeapon", nType) != "")
             {
-                ai_Debug("0i_combat", "2876", " Creature Size: " + IntToString(nCreatureSize) +
-                       " Weapon Size: " + Get2DAString("baseitems", "WeaponSize", nType));
-                // Make sure they are large enough to use it.
-                if(StringToInt(Get2DAString("baseitems", "WeaponSize", nType)) <= nCreatureSize)
+                nValue = GetGoldPieceValue(oItem);
+                ai_Debug("0i_combat", "2949", "nValue: " + IntToString(nValue) +
+                         " Proficient: " + IntToString(ai_GetIsProficientWith(oCreature, oItem)) +
+                         " nMaxItemValue: " + IntToString(nMaxItemValue));
+                if(ai_GetIsProficientWith(oCreature, oItem) &&
+                  (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
                 {
-                    ai_Debug("0i_combat", "2887", "nValue: " + IntToString(nValue) +
-                             " nRangedValue: " + IntToString(nRangedValue) + " nType: " + IntToString(nType));
-                    // Is it of the best range weapon type? 0 is any range weapon.
-                    // Also grab any range weapon until we have a best type.
-                    if(nType == nBestType1 || nType == nBestType2 ||
-                        nBestType1 == 0 || oRanged == OBJECT_INVALID)
+                    ai_Debug("0i_combat", "2876", " Creature Size: " + IntToString(nCreatureSize) +
+                           " Weapon Size: " + Get2DAString("baseitems", "WeaponSize", nType));
+                    // Make sure they are large enough to use it.
+                    if(StringToInt(Get2DAString("baseitems", "WeaponSize", nType)) <= nCreatureSize)
                     {
-                        if(nValue > nRangedValue)
+                        ai_Debug("0i_combat", "2887", "nValue: " + IntToString(nValue) +
+                                 " nRangedValue: " + IntToString(nRangedValue) + " nType: " + IntToString(nType));
+                        // Is it of the best range weapon type? 0 is any range weapon.
+                        // Also grab any range weapon until we have a best type.
+                        if(nType == nBestType1 || nType == nBestType2 ||
+                            nBestType1 == 0 || oRanged == OBJECT_INVALID)
                         {
-                            if(ai_GetHasItemProperty(oItem, ITEM_PROPERTY_UNLIMITED_AMMUNITION))
+                            if(nValue > nRangedValue)
                             {
-                                oRanged = oItem; nRangedValue = nValue;
-                                ai_Debug("0i_combat", "2891", "Selecting oRanged: " + GetName(oRanged) +
-                                         " nRangedValue: " + IntToString(nRangedValue) + " and doesn't need ammo!");
-                            }
-                            else
-                            {
-                                if(nBestType1 == 0)
-                                {
-                                    if(nType == BASE_ITEM_LONGBOW || nType == BASE_ITEM_SHORTBOW)
-                                    { nAmmo = BASE_ITEM_ARROW; sAmmo = "arrow"; nAmmoSlot = INVENTORY_SLOT_ARROWS; }
-                                    else if(nType == BASE_ITEM_HEAVYCROSSBOW || nType == BASE_ITEM_LIGHTCROSSBOW)
-                                    { nAmmo = BASE_ITEM_BOLT; sAmmo = "bolt"; nAmmoSlot = INVENTORY_SLOT_BOLTS; }
-                                    else if(nType == BASE_ITEM_SLING)
-                                    { nAmmo = BASE_ITEM_BULLET; sAmmo = "bullet"; nAmmoSlot = INVENTORY_SLOT_BULLETS; }
-                                    else nAmmo = 0;
-                                }
-                                // Now do we have ammo for it?
-                                ai_Debug("0i_combat", "2907", "nAmmo: " + IntToString(nAmmo));
-                                if(nAmmo > 0)
-                                {
-                                    if(nAmmo == BASE_ITEM_ARROW ||
-                                        nAmmo == BASE_ITEM_BOLT ||
-                                        nAmmo == BASE_ITEM_BULLET) oAmmo = GetItemInSlot(nAmmoSlot);
-                                    if(oAmmo == OBJECT_INVALID)
-                                    {
-                                        // We don't have ammo equiped so lets see if we have any in our inventory.
-                                        oAmmo = GetFirstItemInInventory();
-                                        while(oAmmo != OBJECT_INVALID)
-                                        {
-                                            if(GetBaseItemType(oAmmo) == nAmmo) break;
-                                            oAmmo = GetNextItemInInventory();
-                                        }
-                                        if(oAmmo != OBJECT_INVALID) ActionEquipItem(oAmmo, nAmmoSlot);
-                                    }
-                                }
-                                if(oAmmo != OBJECT_INVALID)
+                                if(ai_GetHasItemProperty(oItem, ITEM_PROPERTY_UNLIMITED_AMMUNITION))
                                 {
                                     oRanged = oItem; nRangedValue = nValue;
-                                    ai_Debug("0i_combat", "2928", "Selecting oRanged: " + GetName(oRanged) +
-                                             " nRangedValue: " + IntToString(nRangedValue));
+                                    ai_Debug("0i_combat", "2891", "Selecting oRanged: " + GetName(oRanged) +
+                                             " nRangedValue: " + IntToString(nRangedValue) + " and doesn't need ammo!");
+                                }
+                                else
+                                {
+                                    if(nBestType1 == 0)
+                                    {
+                                        if(nType == BASE_ITEM_LONGBOW || nType == BASE_ITEM_SHORTBOW)
+                                        { nAmmo = BASE_ITEM_ARROW; sAmmo = "arrow"; nAmmoSlot = INVENTORY_SLOT_ARROWS; }
+                                        else if(nType == BASE_ITEM_HEAVYCROSSBOW || nType == BASE_ITEM_LIGHTCROSSBOW)
+                                        { nAmmo = BASE_ITEM_BOLT; sAmmo = "bolt"; nAmmoSlot = INVENTORY_SLOT_BOLTS; }
+                                        else if(nType == BASE_ITEM_SLING)
+                                        { nAmmo = BASE_ITEM_BULLET; sAmmo = "bullet"; nAmmoSlot = INVENTORY_SLOT_BULLETS; }
+                                        else nAmmo = 0;
+                                    }
+                                    // Now do we have ammo for it?
+                                    ai_Debug("0i_combat", "2907", "nAmmo: " + IntToString(nAmmo));
+                                    if(nAmmo > 0)
+                                    {
+                                        if(nAmmo == BASE_ITEM_ARROW ||
+                                            nAmmo == BASE_ITEM_BOLT ||
+                                            nAmmo == BASE_ITEM_BULLET) oAmmo = GetItemInSlot(nAmmoSlot);
+                                        if(oAmmo == OBJECT_INVALID)
+                                        {
+                                            // We don't have ammo equiped so lets see if we have any in our inventory.
+                                            oAmmo = GetFirstItemInInventory();
+                                            while(oAmmo != OBJECT_INVALID)
+                                            {
+                                                if(GetBaseItemType(oAmmo) == nAmmo) break;
+                                                oAmmo = GetNextItemInInventory();
+                                            }
+                                            if(oAmmo != OBJECT_INVALID) ActionEquipItem(oAmmo, nAmmoSlot);
+                                        }
+                                    }
+                                    if(oAmmo != OBJECT_INVALID)
+                                    {
+                                        oRanged = oItem; nRangedValue = nValue;
+                                        ai_Debug("0i_combat", "2928", "Selecting oRanged: " + GetName(oRanged) +
+                                                 " nRangedValue: " + IntToString(nRangedValue));
+                                    }
                                 }
                             }
                         }
@@ -3197,13 +3203,13 @@ int ai_EquipBestMonkMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALI
     ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
     return TRUE;
 }
-int ai_GetIsInvisible(object oCreature)
+int ai_GetIsInvisible(object oCreature, int bDarkness = TRUE)
 {
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_INVISIBILITY) ||
        ai_GetHasEffectType(oCreature, EFFECT_TYPE_IMPROVEDINVISIBILITY) ||
        ai_GetHasEffectType(oCreature, EFFECT_TYPE_SANCTUARY) ||
        ai_GetHasEffectType(oCreature, EFFECT_TYPE_ETHEREAL) ||
-       GetHasSpellEffect(SPELL_DARKNESS, oCreature) ||
+       (bDarkness && GetHasSpellEffect(SPELL_DARKNESS, oCreature)) ||
        GetActionMode(oCreature, ACTION_MODE_STEALTH)) return TRUE;
    return FALSE;
 }

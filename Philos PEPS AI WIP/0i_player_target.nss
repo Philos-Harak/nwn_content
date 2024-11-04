@@ -394,3 +394,4 @@ void ai_PlaceTrap(object oPC, location lLocation)
     }
     else ai_SendMessages("This trap kit does not have a trap property!", AI_COLOR_YELLOW, oPC);
 }
+

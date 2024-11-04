@@ -186,6 +186,7 @@ void main()
     NuiSetBind(oPC, nToken, "btn_prev_event", JsonBool(TRUE));
     string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
     if(sColorPallet == "") sColorPallet = "cloth_pallet";
+//  original file name  if(sColorPallet == "") sColorPallet = "mvpal_cloth.bmp";
     NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
     NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_next", JsonBool(TRUE));
