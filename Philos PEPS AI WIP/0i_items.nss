@@ -47,6 +47,7 @@ int ai_CheckPotionIsIdentified(object oCreature, int nSpell);
 object ai_GetCreatureHasItem(object oCreature, string sTag, int bCheckEquiped = FALSE);
 // Returns TRUE if oCreature can identify oItem based on the file SkillVsItemCost.2da
 // Reports the findings to oPC unless oPC = OBJECT_INVALID.
+// If the item can be identified by oCreature then it will be identified.
 int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJECT_INVALID);
 // Identifies all items on oObject based on the file SkillVsItemCost.2da
 // Reports the findings to oPC unless oPC = OBJECT_INVALID
@@ -396,6 +397,7 @@ object ai_GetCreatureHasItem(object oCreature, string sTag, int bCheckEquiped = 
 }
 int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJECT_INVALID)
 {
+    if(GetIdentified(oItem)) return FALSE;
     // SkillVsItemCost 2da starts 1 at 0 ... go figure!
     int nKnowledge = GetSkillRank(SKILL_LORE, oCreature) - 1;
     int nItemValue; // gold value of item
@@ -404,7 +406,6 @@ int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJE
     int nMaxValue = StringToInt(sMaxValue);
     // * Handle overflow(November 2003 - BK)
     if(sMaxValue == "") nMaxValue = 0;
-    if(GetIdentified(oItem)) return FALSE;
     // Setting TRUE to get the true value of the item.
     SetIdentified(oItem, TRUE);
     nItemValue = GetGoldPieceValue(oItem);
@@ -633,7 +634,7 @@ object ai_GetBestPicks(object oCreature, int nLockDC)
 {
     int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
     int nBonus, nBestBonus = 99, nNeededBonus = nLockDC - nSkill - 20;
-    ai_Debug("0i_items", "651", "nNeededBonus: " + IntToString(nNeededBonus));
+    //ai_Debug("0i_items", "651", "nNeededBonus: " + IntToString(nNeededBonus));
     // We don't need to use any picks!
     if(nNeededBonus < 1) return OBJECT_INVALID;
     object oBestItem = OBJECT_INVALID;

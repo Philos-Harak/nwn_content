@@ -16,12 +16,14 @@ int StartingConditional()
     if(sParam == "BaseMode")
     {
         string sBaseMode = "I'm ready to attack.";
+        string sVolume = " While shouting when I see things.";
         // Lets get which base mode the henchman is in.
         if(ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND)) sBaseMode = "I'm holding here.";
         else if(ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER)) sBaseMode = "I'm defending you.";
         else if(ai_GetAIMode(oAssociate, AI_MODE_FOLLOW)) sBaseMode = "I'm following you.";
         if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_peaceful") sBaseMode = "I will not fight the enemy!";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN, sBaseMode);
+        if(ai_GetAIMode(oAssociate, AI_MODE_DO_NOT_SPEAK)) sVolume = " While not speaking unless spoken to.";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN, sBaseMode + sVolume);
     }
     else if(sParam == "CombatTactics")
     {
@@ -71,15 +73,14 @@ int StartingConditional()
     }
     else if(sParam == "Spells")
     {
+        string sCastingLevel = "[" + IntToString(GetLocalInt(oAssociate, AI_DIFFICULTY_ADJUSTMENT)) + "] ";
         string sCasting = "I'm casting";
         string sType = " spells I choose.";
-        string sBuff = " I'll also targeting anyone that needs it.";
-        string sDispel = " Finally I may use Dispel spells.";
-        if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first.";
-        if(ai_GetMagicMode(oAssociate, AI_MAGIC_STOP_DISPEL)) sDispel = " Finally I will not use Dispel spells.";
-        if(ai_GetMagicMode(oAssociate, AI_MAGIC_LOW_MAGIC_USE)) sCasting = "I'm sparingly casting";
-        if(ai_GetMagicMode(oAssociate, AI_MAGIC_HEAVY_MAGIC_USE)) sCasting = "I'm heavily casting";
-        if(ai_GetMagicMode(oAssociate, AI_MAGIC_CONSTANT_MAGIC_USE)) sCasting = "I'm always casting";
+        string sBuff = " I'll also targeting anyone that needs it ";
+        string sDispel = "while using Dispel spells.";
+        string sMagicItems = " Lastly I'll use any magic items I have.";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_MASTER)) sBuff = " Ofcourse I'll target you first ";
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_STOP_DISPEL)) sDispel = "while not using Dispel spells.";
         if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_a_cntrspell")
         {
             sCasting = "I'm ready to counter spell our enemies.";
@@ -100,14 +101,15 @@ int StartingConditional()
             sType = " offensive spells only.";
             sBuff = "";
         }
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, sCasting + sType + sBuff + sDispel);
+        else if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS)) sMagicItems = " Finally I'll not use magic items.";
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, sCastingLevel + sCasting + sType + sBuff + sDispel+ sMagicItems);
     }
     else if(sParam == "Objects")
     {
         int bTraps = ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS);
         int bLocks = ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS);
         int bBash = ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS);
-        string sText;
+        string sText = "I'm going to ignore all traps and locks.";
         if(bTraps && bLocks && bBash)
         {
             sText = "I'm disarming all the traps and am either picking or bashing any of the locks we find.";

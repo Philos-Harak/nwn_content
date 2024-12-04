@@ -7,8 +7,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void ai_DoActions(object oCreature, int nForm)
 {
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
@@ -21,7 +21,7 @@ void ai_DoActions(object oCreature, int nForm)
     }
     if(GetPercentageHPLoss(oCreature) <= AI_HEALTH_BLOODY)
     {
-        ai_Debug("ai_a_polymorphed", "24", "We are wounded and are transforming back!");
+        //ai_Debug("ai_a_polymorphed", "24", "We are wounded and are transforming back!");
         ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH);
         return;
     }
@@ -54,7 +54,7 @@ void ai_DoActions(object oCreature, int nForm)
     object oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     // If we don't find a target then we don't want to fight anyone!
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, FALSE);
 }
 void main()
 {

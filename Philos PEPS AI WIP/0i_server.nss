@@ -21,11 +21,14 @@ void ai_SetAssociateEventScripts(object oCreature);
 void ai_OnMonsterSpawn(object oCreature, int bIncorporeal);
 // Add to nw_ch_ac9 OnSpawn event script of henchman.
 void ai_OnAssociateSpawn(object oCreature);
+// Adds variables to the module that doesn't use the menu system.
+void ai_SetModuleValues();
 //******************************************************************************
 //********************* Creature event scripts *********************************
 //******************************************************************************
 void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
 {
+    ai_SetModuleValues();
     if(bIncorporeal)
     {
         string sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
@@ -36,19 +39,20 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     ai_SetMonsterEventScripts(oCreature);
     ai_SetNormalAppearance(oCreature);
     ai_SetAura(oCreature);
-    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 50);
+    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
     SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
     // If we have already seen an enemy then we need to begin combat!
     object oEnemy = GetNearestEnemy(oCreature);
-    //ai_Debug("0i_default", "42", GetName(oCreature) + " nearest enemy: " + GetName(oEnemy) +
-    //         " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2));
+    //ai_Debug("0i_replace_j_ai", "46", GetName(oCreature) + " nearest enemy: " + GetName(oEnemy) +
+    //         " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2) +
+    //         " Talents set? " + IntToString(GetLocalInt(oCreature, AI_TALENTS_SET)));
     if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oCreature, oEnemy) < AI_RANGE_PERCEPTION)
     {
-        if(!GetLocalInt(oCreature, AI_TALENTS_SET))
-        {
-            ai_SetCreatureTalents(oCreature, FALSE);
-        }
-        //ai_Debug("0i_default", "50", GetName(oCreature) + " is starting combat!");
+        ai_SetupMonsterBuffTargets(oCreature);
+        // To save steps and time we set the talenst while we buff!
+        ai_SetCreatureTalents(oCreature, TRUE);
+        ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
+        //ai_Debug("0i_default", "63", GetName(oCreature) + " is starting combat!");
         ai_DoMonsterCombatRound(oCreature);
     }
 }
@@ -193,4 +197,38 @@ void ai_SetAssociateEventScripts(object oCreature)
     else if(AI_OVERWRITE_EVENT_SCRIPTS) SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_ch_e_blocked");
     else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+}
+void ai_SetModuleValues()
+{
+    object oModule = GetModule();
+    if(GetLocalInt(oModule, "AI_RULES_SET")) return;
+    SetLocalInt(oModule, "AI_RULES_SET", TRUE);
+    // Allow the AI move during combat base on the situation and action taking.
+    SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, TRUE);
+    // Monster AI's chance to attack the weakest target instead of the nearest.
+    SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, 0);
+    // Allow the AI to use Use Magic Device.
+    SetLocalInt(oModule, AI_RULE_ALLOW_UMD, TRUE);
+    // Allows monsters to use the ambush AI scripts.
+    SetLocalInt(oModule, AI_RULE_AMBUSH, TRUE);
+    // Allows monsters to prebuff before combat starts.
+    SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, TRUE);
+    // Allow the AI to use healing kits.
+    SetLocalInt(oModule, AI_RULE_HEALERSKITS, TRUE);
+    // Follow Item Level Restrictions for monsters/associates.
+    // Usually off in Single player and on in Multi player.
+    SetLocalInt(oModule, AI_RULE_ILR, TRUE);
+    // Moral checks on or off.
+    SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, TRUE);
+    // Variable that can change the distance creatures will come and attack after
+    // hearing a shout from an ally that sees or hears an enemy.
+    // Or when searching for an invisible, heard enemy.
+    // 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
+    SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, 30.0);
+    // Summoned associates are permanent and don't disappear when the caster dies.
+    SetLocalInt(oModule, AI_RULE_PERM_ASSOC, FALSE);
+    // Allows monsters cast summons spells when prebuffing.
+    SetLocalInt(oModule, AI_RULE_PRESUMMON, TRUE);
+    // Makes all monsters wander around.
+    SetLocalInt(GetModule(), AI_RULE_WANDER, FALSE);
 }

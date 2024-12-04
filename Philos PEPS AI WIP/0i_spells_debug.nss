@@ -998,7 +998,7 @@ void ai_CastMemorizedSpell(object oCaster, int nClass, int nSpellLevel, int nSpe
     int nMetaMagic = GetMemorizedSpellMetaMagic(oCaster, nClass, nSpellLevel, nSpellSlot);
     ai_Debug("0i_spells", "951", "nSpell: " + IntToString(nSpell) + " oTarget: " + GetName(oTarget) +
              " nMetaMagic: " + IntToString(nMetaMagic) + " nDomain: " + IntToString(nDomain) +
-             " nClass: " + IntToString(nClass));
+             " bInstant: " + IntToString(bInstant) + " nClass: " + IntToString(nClass));
     ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, bInstant);
     // Right now I cannot get nClass to work here...
     //DelayCommand(fDelay, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, TRUE, nClass));

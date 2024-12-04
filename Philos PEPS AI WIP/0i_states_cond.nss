@@ -82,8 +82,8 @@ int ai_GetBehaviorState(int nCondition);
 
 void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 {
-    //ai_Debug("0i_states_cond", "71", GetName(OBJECT_SELF) + " is clearing actions (" +
-    //         IntToString(bClearCombatState) + ")!");
+   //ai_Debug("0i_states_cond", "71", GetName(OBJECT_SELF) + " is clearing actions (" +
+   //          IntToString(bClearCombatState) + ")!");
     DeleteLocalInt(OBJECT_SELF, AI_CURRENT_ACTION_MODE);
     ClearAllActions(bClearCombatState);
 }
@@ -121,29 +121,29 @@ int ai_IsNonliving(int nRacialType)
 }
 int ai_GetIsInCombat(object oCreature)
 {
-    //ai_Debug("0i_states_cond", "110", "Is in Combat: Enemy Numbers = " + IntToString(GetLocalInt(oCreature, AI_ENEMY_NUMBERS)));
+   //ai_Debug("0i_states_cond", "110", "Is in Combat: Enemy Numbers = " + IntToString(GetLocalInt(oCreature, AI_ENEMY_NUMBERS)));
     return GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
 }
 void ai_SetCombatRound(object oCreature)
 {
     SetLocalInt(oCreature, "AI_COMBAT_ROUND_START", SQLite_GetTimeStamp());
-    //ai_Debug("0i_states_cond", "116", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+   //ai_Debug("0i_states_cond", "116", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
 }
 void ai_EndCombatRound(object oCreature)
 {
-    //ai_Debug("0i_states_cond", "120", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+   //ai_Debug("0i_states_cond", "120", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
     DeleteLocalInt(oCreature, "AI_COMBAT_ROUND_START");
 }
 int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_SECONDS)
 {
     int nCombatRoundStart = GetLocalInt(oCreature, "AI_COMBAT_ROUND_START");
-    //ai_Debug("0i_states_cond", "126", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
+   //ai_Debug("0i_states_cond", "126", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
     if(!nCombatRoundStart) return FALSE;
     // New combat round calculator. If 6 seconds has passed then we are on a new round!
     int nSQLTime = SQLite_GetTimeStamp();
     int nCombatRoundTime = nSQLTime - nCombatRoundStart;
-    //ai_Debug("0i_states_cond", "131", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
-    //         "(" + IntToString(nSQLTime - nCombatRoundStart) + ")");
+   //ai_Debug("0i_states_cond", "131", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
+   //          "(" + IntToString(nSQLTime - nCombatRoundStart) + ")");
     if(nCombatRoundTime < nCombatRound) return TRUE;
     ai_EndCombatRound(oCreature);
     return FALSE;
@@ -152,8 +152,8 @@ int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_S
 int ai_GetIsBusy(object oCreature)
 {
     int nAction = GetCurrentAction(oCreature);
-    //ai_Debug("0i_states_cond", "140", GetName(oCreature) + " Get is Busy, action: " +
-    //         IntToString(nAction));
+   //ai_Debug("0i_states_cond", "140", GetName(oCreature) + " Get is Busy, action: " +
+   //          IntToString(nAction));
     switch(nAction)
     {
         case ACTION_CASTSPELL :
@@ -164,10 +164,12 @@ int ai_GetIsBusy(object oCreature)
         case ACTION_ATTACKOBJECT :
         case ACTION_COUNTERSPELL :
         case ACTION_SETTRAP : return TRUE;
+        case ACTION_WAIT :
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            //ai_Debug("0i_states_cond", "153", "nCombatWait: " + IntToString(nCombatWait));
+            //ai_Debug("0i_states_cond", "153", "nCombatWait: " + IntToString(nCombatWait) +
+            //         " AI_AM_I_SEARCHING: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return TRUE;
@@ -203,14 +205,19 @@ int ai_Disabled(object oCreature)
             case EFFECT_TYPE_PETRIFY :
             case EFFECT_TYPE_TIMESTOP :
             {
-                //ai_Debug("0i_stats_cond", "195", GetName(oCreature) + " is disabled(" +
-                //         IntToString(GetEffectType(eEffect)) + ")");
+               //ai_Debug("0i_stats_cond", "195", GetName(oCreature) + " is disabled(" +
+               //          IntToString(GetEffectType(eEffect)) + ")");
                 return GetEffectType(eEffect);
             }
         }
+        if(!GetCommandable(oCreature))
+        {
+           //ai_Debug("0i_stats_cond", "213", GetName(oCreature) + " is disabled(Not Commandable)!");
+            return EFFECT_TYPE_PARALYZE;
+        }
         eEffect = GetNextEffect(oCreature);
     }
-    //ai_Debug("0i_states_cond", "202", GetName(oCreature) + " is not disabled.");
+   //ai_Debug("0i_states_cond", "202", GetName(oCreature) + " is not disabled.");
     return FALSE;
 }
 void ai_SetAIMode(object oAssociate, int nBit, int bOn = TRUE)

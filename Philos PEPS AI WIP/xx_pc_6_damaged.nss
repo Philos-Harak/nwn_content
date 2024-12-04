@@ -17,10 +17,13 @@ void main()
     if(ai_Disabled(oCreature)) return;
     object oDamager = GetLastDamager(oCreature);
     ai_Debug("xx_pc_6_damaged", "19", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
-    if(ai_IsInADangerousAOE(oCreature))
+    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
     {
-        ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
-        return;
+        if(ai_IsInADangerousAOE(oCreature))
+        {
+            ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
+            return;
+        }
     }
     if(ai_GetIsBusy(oCreature) || ai_GetIsInCombat(oCreature)) return;
     if(GetDistanceBetween(oCreature, oDamager) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);

@@ -7,8 +7,8 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -84,13 +84,13 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature);
+                ai_SearchForInvisibleCreature(oCreature, FALSE);
                 return;
             }
         }
         else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
-    ai_Debug("ai_a_ranged", "91", "Check for melee attack on weakest enemy!");
+    //ai_Debug("ai_a_ranged", "91", "Check for melee attack on weakest enemy!");
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
@@ -103,6 +103,6 @@ void main()
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, FALSE);
 }
 

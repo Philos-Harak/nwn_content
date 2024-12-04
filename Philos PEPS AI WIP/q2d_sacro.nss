@@ -27,7 +27,6 @@ void main()
     if(nDoOnce == 1) return;
     SetLocalInt(OBJECT_SELF, "DO_MUMMY_ONCE", 1);
     object oMummy = CreateObject(OBJECT_TYPE_CREATURE, "nw_mummy", GetLocation(oOpener));
-    WriteTimestampedLogEntry(GetName(oMummy) + " oOpener: " + GetName(oOpener));
     AssignCommand(oMummy, SetFacingPoint(GetPosition(oOpener)));
     // This is removed as Philos' AI will start the combat.
     //AssignCommand(oMummy, DetermineCombatRound(oPC));

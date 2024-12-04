@@ -72,7 +72,7 @@ void main()
                 {
                     if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
                     {
-                        ai_Debug("ai_ambusher", "75", GetName(oCreature) + " is using hide in plain sight!");
+                        ai_Debug("ai_coward", "75", GetName(oCreature) + " is using hide in plain sight!");
                         ClearAllActions(TRUE);
                         SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
                         return;
@@ -83,14 +83,14 @@ void main()
                 {
                     string sEnemyIndex = IntToString(nEnemyIndex);
                     float fEnemyDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sEnemyIndex);
-                    ai_Debug("ai_ambusher", "86", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
+                    ai_Debug("ai_coward", "86", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
                     if(fEnemyDistance >= AI_RANGE_CLOSE)
                     {
                         int bTried = GetLocalInt(oCreature, AI_TRIED_TO_HIDE);
                         if(!bTried)
                         {
                             // Move away so we can hide.
-                            ai_Debug("ai_ambusher", "93", GetName(oCreature) + " is trying to move away to hide!");
+                            ai_Debug("ai_coward", "93", GetName(oCreature) + " is trying to move away to hide!");
                             SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
                             object oEnemy = GetLocalObject(oCreature, AI_ENEMY + sEnemyIndex);
                             ActionMoveAwayFromObject(oEnemy, TRUE, AI_RANGE_BATTLEFIELD);
@@ -110,7 +110,7 @@ void main()
         else if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
         {
             // Use any hiding talents we have
-            ai_Debug("ai_ambusher", "113", GetName(oCreature) + " is trying to hide!");
+            ai_Debug("ai_coward", "113", GetName(oCreature) + " is trying to hide!");
             SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
             SetLocalInt(oCreature, AI_TRIED_TO_HIDE, 3);
             return;
@@ -123,6 +123,11 @@ void main()
     if(ai_TryCureConditionTalent(oCreature, 0)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     //**************************  DEFENSIVE TALENTS  ***************************
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
     // Stand and watch the battle we don't want to provoke anyone!
     ai_Debug("ai_coward", "128", GetName(oCreature) + " is holding here.");

@@ -233,14 +233,6 @@ void main()
     // * attacking anew.
     // SetLocalString(oCreature, AI_DEFAULT_SCRIPT, "ai_ambusher");
 
-    // Philos AI - This is valid to use.
-    // *
-    // * Cowardly
-    // * Cowardly creatures will attempt to flee
-    // * attackers.
-    // SetLocalString(oCreature, AI_DEFAULT_SCRIPT, "ai_coward");
-
-
     // * Philos AI - This does not work.
     // *
     // **** Escape Commands ***** //

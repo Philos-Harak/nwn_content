@@ -11,12 +11,6 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version 0.
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 //***************************  ADJUSTABLECONSTANTS  ***************************
-// Should creatures summon familiars be used?
-// These don't work very well unless you can change the familiar via NWNX.
-const int AI_SUMMON_FAMILIARS = FALSE;
-// Should creatures summon animal companions be used?
-// These don't work very well unless you can change the companion via NWNX.
-const int AI_SUMMON_COMPANIONS = FALSE;
 // Should monsters use potions to prebuff before combat? Not working at the moment.
 const int AI_BUFF_MONSTER_POTIONS = FALSE;
 // The number of classes allowed for a character to take in the server/module.
@@ -63,7 +57,9 @@ const int AI_BLOODY_MORAL_DC = 15;
 // The following constants are core constants and changing any of these without
 // understanding the whole system could cause unforseen results.
 //                            CHANGE AT YOUR OWN RISK.
-
+const int AI_DEBUG = TRUE;
+// The maximum number of henchman the code works for.
+const int AI_MAX_HENCHMAN = 12;
 // Force the AI to overwrite all creature event scripts.
 const int AI_OVERWRITE_EVENT_SCRIPTS = FALSE;
 // Delay between Henchman casting Healing spells. Must be minimum of 0.1 seconds.
@@ -303,6 +299,12 @@ const int BTN_CMD_ACTION     = 0x00000400; // Command associate to do an action.
 const int BTN_CMD_GHOST_MODE = 0x00000800; // Toggle's associates ghost mode.
 const int BTN_CMD_AI_SCRIPT  = 0x00001000; // Toggle's special tactics ai scripts.
 const int BTN_CMD_PLACE_TRAP = 0x00002000; // A trapper may place traps.
+const int BTN_CMD_CAMERA     = 0x00004000; // Places camera view on associate.
+const int BTN_CMD_INVENTORY  = 0x00008000; // Opens inventory of associate.
+const int BTN_CMD_FAMILIAR   = 0x00010000; // Summons familiar.
+const int BTN_CMD_COMPANION  = 0x00020000; // Summons Companion.
+const int BTN_CMD_SEARCH     = 0x00040000; // Command all associates to use search mode. PC widget only.
+const int BTN_CMD_STEALTH    = 0x00080000; // Command all associates to use stealth mode. PC widget only.
 // Bitwise menu constants for Associate AI buttons that are used with Get/SetAssociateAIButtons().
 const string sAIButtonsVarname = "ASSOCIATE_AI_BUTTONS";
 const int BTN_AI_FOR_PC             = 0x00000001; // PC use AI. PC widget only.
@@ -311,62 +313,28 @@ const int BTN_AI_USE_SEARCH         = 0x00000004; // AI uses Search.
 const int BTN_AI_USE_STEALTH        = 0x00000008; // AI uses Stealth.
 const int BTN_AI_REMOVE_TRAPS       = 0x00000010; // AI seeks out and removes traps.
 const int BTN_AI_PICK_LOCKS         = 0x00000020; // AI will attempt to pick locks.
-const int BTN_AI_MAGIC_USE_PLUS     = 0x00000040; // Increase chance to use magic in battle.
-const int BTN_AI_MAGIC_USE_MINUS    = 0x00000080; // Decrease chance to use magic in battle.
+const int BTN_AI_MAGIC_LEVEL        = 0x00000040; // Increase chance to use magic in battle.
+const int BTN_AI_NO_SPONTANEOUS     = 0x00000080; // Stops the use of spontaneous spells.
 const int BTN_AI_NO_MAGIC_USE       = 0x00000100; // Will not use magic in battle.
 const int BTN_AI_ALL_MAGIC_USE      = 0x00000200; // Will use all types of magic in battle.
 const int BTN_AI_DEF_MAGIC_USE      = 0x00000400; // Will use Defensive spells only in battle.
 const int BTN_AI_OFF_MAGIC_USE      = 0x00000800; // Will use Offensive spells only in battle.
 const int BTN_AI_LOOT               = 0x00001000; // Auto picking up loot on/off.
 const int BTN_AI_FOLLOW_TARGET      = 0x00002000; // Selects a target to follow.
-const int BTN_AI_HEAL_OUT_PLUS      = 0x00004000; // Increase minimum hp required before ai heals out of combat.
-const int BTN_AI_HEAL_OUT_MINUS     = 0x00008000; // Decrease minimum hp required before ai heals out of combat.
-const int BTN_AI_HEAL_IN_PLUS       = 0x00010000; // Increase minimum hp required before ai heals in combat.
-const int BTN_AI_HEAL_IN_MINUS      = 0x00020000; // Decrease minimum hp required before ai heals in combat.
+const int BTN_AI_HEAL_OUT           = 0x00004000; // Increase minimum hp required before ai heals out of combat.
+//const int                           = 0x00008000; // Not used.
+const int BTN_AI_HEAL_IN       = 0x00010000; // Increase minimum hp required before ai heals in combat.
+//const int                           = 0x00020000; // Not used.
 const int BTN_AI_STOP_SELF_HEALING  = 0x00040000; // Stops AI from using any healing on self.
 const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any healing on party.
-const int BTN_AI_LOOT_RANGE_PLUS    = 0x00100000; // Increase range where we will check for loot.
-const int BTN_AI_LOOT_RANGE_MINUS   = 0x00200000; // Decrease range where we will check for loot.
-const int BTN_AI_UNLOCK_RANGE_PLUS  = 0x00400000; // Increase range where we will check for locks.
-const int BTN_AI_UNLOCK_RANGE_MINUS = 0x00800000; // Decrease range where we will check for locks.
-const int BTN_AI_TRAPS_RANGE_PLUS   = 0x01000000; // Increase range where we will check for traps.
-const int BTN_AI_TRAPS_RANGE_MINUS  = 0x02000000; // Decrease range where we will check for traps.
+//const int BTN_AI                    = 0x00100000; // Not used.
+//const int BTN_AI                    = 0x00200000; // Not used.
+//const int BTN_AI                    = 0x00400000; // Not used.
+//const int BTN_AI                    = 0x00800000; // Not used.
+//const int BTN_AI                    = 0x01000000; // Not used.
+//const int BTN_AI                    = 0x02000000; // Not used.
 const int BTN_AI_BASH_LOCKS         = 0x04000000; // AI will attempt to bash any locks they can't get past.
 const int BTN_AI_REDUCE_SPEECH      = 0x08000000; // Reduce the associates speaking.
-const int BTN_AI_FOLLOW_PLUS        = 0x10000000; // Increase distance the associate will follow.
-const int BTN_AI_FOLLOW_MINUS       = 0x20000000; // Decrease distance the associate will follow.
-// Bitwise menu constants for a second Associate AI buttons that are used with Get/SetAssociateAIButtons().
-const string sAIButtons2Varname = "ASSOCIATE_AI_BUTTONS_2";
-const int BTN2_AI_NO_SPONTANEOUS     = 0x00000001; // Not used.
-//const int BTN2_AI_                 = 0x00000002; // Not used.
-//const int BTN2_AI_                 = 0x00000004; // Not used.
-//const int BTN2_AI_                 = 0x00000008; // Not used.
-//const int BTN2_AI_                 = 0x00000010; // Not used.
-//const int BTN2_AI_                 = 0x00000020; // Not used.
-//const int BTN2_AI_                 = 0x00000040; // Not used.
-//const int BTN2_AI_                 = 0x00000080; // Not used.
-//const int BTN2_AI_                 = 0x00000100; // Not used.
-//const int BTN2_AI_                 = 0x00000200; // Not used.
-//const int BTN2_AI_                 = 0x00000400; // Not used.
-//const int BTN2_AI_                 = 0x00000800; // Not used.
-//const int BTN2_AI_                 = 0x00001000; // Not used.
-//const int BTN2_AI_                 = 0x00002000; // Not used.
-//const int BTN2_AI_                 = 0x00004000; // Not used.
-//const int BTN2_AI_                 = 0x00008000; // Not used.
-//const int BTN2_AI_                 = 0x00010000; // Not used.
-//const int BTN2_AI_                 = 0x00020000; // Not used.
-//const int BTN2_AI_                 = 0x00040000; // Not used.
-//const int BTN2_AI_                 = 0x00080000; // Not used.
-//const int BTN2_AI_                 = 0x00100000; // Not used.
-//const int BTN2_AI_                 = 0x00200000; // Not used.
-//const int BTN2_AI_                 = 0x00400000; // Not used.
-//const int BTN2_AI_                 = 0x00800000; // Not used.
-//const int BTN2_AI_                 = 0x01000000; // Not used.
-//const int BTN2_AI_                 = 0x02000000; // Not used.
-//const int BTN2_AI_                 = 0x04000000; // Not used.
-//const int BTN2_AI_                 = 0x08000000; // Not used.
-//const int BTN2_AI_                 = 0x10000000; // Not used.
-//const int BTN2_AI_                 = 0x20000000; // Not used.
 // Bitwise constants for Associate loot options that are used with Get/SetAssociateLootMode().
 const string sLootFilterVarname = "ASSOCIATE_LOOT_MODES";
 const int AI_LOOT_PLOT              = 0x00000001;
@@ -441,6 +409,8 @@ const string AI_NO_TALENTS = "AI_NO_TALENTS_";
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
 // Variable that saves any module target event script so we can pass it along.
 const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
+// Variable for plugins to inject Targeting mode code into PEPS.
+const string AI_PLUGIN_TARGET_SCRIPT = "AI_PLUGIN_TARGET_SCRIPT";
 // Variable used on the player to define the targeting action in the OnPlayerTarget event script.
 const string AI_TARGET_MODE = "AI_TARGET_MODE";
 // Variable used on the player to define which associate triggered the OnPlayer Target.
@@ -460,6 +430,10 @@ const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
 const string AI_RULE_MORAL_CHECKS = "AI_RULE_MORAL_CHECKS";
 // Allows monsters to prebuff before combat starts.
 const string AI_RULE_BUFF_MONSTERS = "AI_RULE_BUFF_MONSTERS";
+// Allows monsters to use the ambush AI scripts.
+const string AI_RULE_AMBUSH = "AI_RULE_AMBUSH";
+// Enemies may summon familiars and Animal companions and will be randomized.
+const string AI_RULE_SUMMON_COMPANIONS = "AI_RULE_SUMMON_COMPANIONS";
 // Allows monsters cast summons spells when prebuffing.
 const string AI_RULE_PRESUMMON = "AI_RULE_PRESUMMON";
 // Allow the AI move during combat base on the situation and action taking.
@@ -481,7 +455,10 @@ const string AI_RULE_AI_DIFFICULTY = "AI_RULE_AI_DIFFICULTY";
 // Or when searching for an invisible, heard enemy.
 // 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
 const string AI_RULE_PERCEPTION_DISTANCE = "AI_RULE_PERCEPTION_DISTANCE";
-
+// Enemy corpses remain on the floor instead of dissappearing.
+const string AI_RULE_CORPSES_STAY = "AI_RULE_CORPSES_STAY";
+// Monsters will wander around when not in combat.
+const string AI_RULE_WANDER = "AI_RULE_WANDER";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction

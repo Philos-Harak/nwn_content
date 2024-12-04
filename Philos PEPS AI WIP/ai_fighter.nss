@@ -47,7 +47,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature);
+                ai_SearchForInvisibleCreature(oCreature, TRUE);
                 return;
             }
         }
@@ -62,5 +62,5 @@ void main()
         if(ai_TryMeleeTalents (oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, TRUE);
 }

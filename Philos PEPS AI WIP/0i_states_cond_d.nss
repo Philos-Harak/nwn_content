@@ -164,10 +164,12 @@ int ai_GetIsBusy(object oCreature)
         case ACTION_ATTACKOBJECT :
         case ACTION_COUNTERSPELL :
         case ACTION_SETTRAP : return TRUE;
+        case ACTION_WAIT :
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            ai_Debug("0i_states_cond", "153", "nCombatWait: " + IntToString(nCombatWait));
+            ai_Debug("0i_states_cond", "153", "nCombatWait: " + IntToString(nCombatWait) +
+                     " AI_AM_I_SEARCHING: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return TRUE;

@@ -41,6 +41,11 @@ void main()
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
     // ************************** CLASS FEATURES ***************************
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
     // ******************* OFFENSIVE AOE TALENTS ***********************
@@ -69,7 +74,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature);
+                ai_SearchForInvisibleCreature(oCreature, TRUE);
                 return;
             }
         }
@@ -99,5 +104,5 @@ void main()
         }
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, TRUE);
 }

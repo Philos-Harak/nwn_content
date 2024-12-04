@@ -26,7 +26,7 @@ void main()
     //****************************  SKILL FEATURES  ****************************
     if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
-    if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS) && ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
@@ -53,7 +53,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature);
+                ai_SearchForInvisibleCreature(oCreature, TRUE);
                 return;
             }
         }
@@ -67,5 +67,5 @@ void main()
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, TRUE);
 }

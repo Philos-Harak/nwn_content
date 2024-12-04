@@ -66,7 +66,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature);
+                ai_SearchForInvisibleCreature(oCreature, FALSE);
                 return;
             }
         }
@@ -77,5 +77,5 @@ void main()
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
-    else ai_SearchForInvisibleCreature(oCreature);
+    else ai_SearchForInvisibleCreature(oCreature, FALSE);
 }

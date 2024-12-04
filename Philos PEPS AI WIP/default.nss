@@ -11,15 +11,17 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     int nEvent = GetCurrentlyRunningEvent();
-    if(nEvent == EVENT_SCRIPT_CREATURE_ON_SPAWN_IN)
+    if(ai_GetIsCharacter(oCreature))
     {
-        if(GetIsPC(oCreature))
+        if(nEvent == EVENT_SCRIPT_CREATURE_ON_SPAWN_IN)
         {
-            WriteTimestampedLogEntry("Module Name: " + GetModuleName() + ".");
-            ai_CheckPlayerForData(oCreature);
-            ai_CreateWidgetNUI(oCreature, oCreature);
-            ai_SetupPlayerTarget(oCreature);
-            ai_SetNormalAppearance(oCreature);
+            if(ai_GetIsCharacter(oCreature))
+            {
+                ai_CheckPlayerForData(oCreature);
+                ai_CreateWidgetNUI(oCreature, oCreature);
+                ai_SetupPlayerTarget(oCreature);
+                ai_SetNormalAppearance(oCreature);
+            }
         }
     }
 }

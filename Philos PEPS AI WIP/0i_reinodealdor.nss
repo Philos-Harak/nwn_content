@@ -41,11 +41,10 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     //         " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2));
     if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oCreature, oEnemy) < AI_RANGE_PERCEPTION)
     {
-        if(!GetLocalInt(oCreature, AI_TALENTS_SET))
-        {
-            SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
-            ai_SetCreatureTalents(oCreature, FALSE);
-        }
+        ai_SetupMonsterBuffTargets(oCreature);
+        // To save steps and time we set the talenst while we buff!
+        ai_SetCreatureTalents(oCreature, TRUE);
+        ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
         //ai_Debug("0i_reinodealdor", "49", GetName(oCreature) + " is starting combat!");
         ai_DoMonsterCombatRound(oCreature);
     }

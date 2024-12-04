@@ -58,7 +58,7 @@ void main()
                 if(ai_TryToBecomeInvisible(oCreature)) return;
                 // If we have attempted to become invisible or are invisible then
                 // it is time to counter spell.
-                ai_Debug("ai_cntrspell", "59", "Setting Counterspell mode!");
+                //ai_Debug("ai_cntrspell", "59", "Setting Counterspell mode!");
                 ActionCounterSpell(oTarget);
             }
         }
@@ -109,7 +109,7 @@ void main()
                 }
                 else
                 {
-                    ai_SearchForInvisibleCreature(oCreature);
+                    ai_SearchForInvisibleCreature(oCreature, FALSE);
                     return;
                 }
             }

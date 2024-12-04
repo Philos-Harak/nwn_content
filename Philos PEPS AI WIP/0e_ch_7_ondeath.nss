@@ -11,10 +11,12 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     // Added code to allow for permanent associates in the battle!
-    int nIndex;
-    object oAssociate;
+    ai_Debug("0e_ch_7_ondeath", "14", GetName(oCreature) + " has died!" +
+             " AI_RULE_PERM_ASSOC: " + IntToString(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC)));
     if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
     {
+        object oAssociate;
+        int nIndex;
         for(nIndex = 1; nIndex < 5; nIndex++)
         {
             oAssociate = GetAssociate(nIndex, oCreature);
@@ -25,5 +27,8 @@ void main()
             }
         }
     }
-    ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"), oCreature);
+    //ai_Debug("0e_ch_7_ondeath", "28", "AI_ON_DEATH: " + GetLocalString(oCreature, "AI_ON_DEATH") +
+    //         " OBJECT_SELF: " + GetName(OBJECT_SELF) + " NW_L_HEN_I_DIED: " +
+    //         IntToString(GetLocalInt(oCreature, "NW_L_HEN_I_DIED")));
+    ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

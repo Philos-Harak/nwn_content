@@ -30,8 +30,11 @@ void main()
     if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
     if(ai_TryTurningTalent(oCreature)) return;
-    if(ai_TrySummonFamiliarTalent(oCreature)) return;
-    if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);

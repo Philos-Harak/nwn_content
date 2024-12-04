@@ -21,10 +21,12 @@ void main()
             ai_DoMonsterCombatRound(oCreature);
             return;
         }
-        if(ai_CheckForCombat(oCreature)) return;
+        if(ai_CheckForCombat(oCreature, TRUE)) return;
     }
+    // Anything below blocking us is a door.
     if(nObjectType != OBJECT_TYPE_DOOR) return;
-    if(GetIsDoorActionPossible(oObject, DOOR_ACTION_OPEN) &&
+    //if(GetLockKeyTag(oObject) != "") return;
+    else if(GetIsDoorActionPossible(oObject, DOOR_ACTION_OPEN) &&
        GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) >= 5)
     {
         DoDoorAction(oObject, DOOR_ACTION_OPEN);
@@ -39,5 +41,6 @@ void main()
         ActionAttack(oObject);
         // Give them 3 rounds to break through a door.
         DelayCommand(18.0, ai_ClearCreatureActions(TRUE));
+        return;
     }
 }

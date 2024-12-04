@@ -21,8 +21,11 @@ void main()
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     //****************************  CLASS FEATURES  ****************************
     if(ai_TryBardSongFeat(oCreature)) return;
-    if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
-    if(ai_TrySummonFamiliarTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     //**************************  DEFENSIVE TALENTS  ***************************
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
     //********************  DEFENSIVE MELEE FEATS  *****************************

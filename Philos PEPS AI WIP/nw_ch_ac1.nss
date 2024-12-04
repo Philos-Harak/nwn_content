@@ -9,6 +9,7 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "X2_INC_SUMMSCALE"
 //#include "0i_server"
+//#include "0i_replace_j_ai"
 #include "0i_single_player"
 void main()
 {
@@ -43,7 +44,6 @@ void main()
         SSMSetSummonLevelUpOK(OBJECT_SELF);
     }
     ai_OnAssociateSpawn(OBJECT_SELF);
-    ExecuteScript("0e_ch_1_hb");
 }
 
 

@@ -13,8 +13,8 @@ void main()
     // Added code to allow for permanent associates in the battle!
     if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
     {
-        int nIndex;
         object oAssociate;
+        int nIndex;
         for(nIndex = 1; nIndex < 5; nIndex++)
         {
             oAssociate = GetAssociate(nIndex, oCreature);
@@ -25,5 +25,5 @@ void main()
             }
         }
     }
-    ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"), oCreature);
+    ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

@@ -16,8 +16,8 @@
   GetAttemptedAttackTarget() & GetAttemptedSpellTarget() also get cleared prior to this event.
   This event can be canceled with ClearAllActions(TRUE) and SurrenderToEnemies.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
-//#include "0i_actions_debug"
+//#include "0i_actions"
+#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;

@@ -45,78 +45,92 @@ void main()
     object oLastPerceived = GetLastPerceived();
     ai_Debug("0e_c2_2_percept", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
              " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+    if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived)) return;
-    // Send the user-defined event if appropriate
-    if(GetSpawnInCondition(NW_FLAG_PERCIEVE_EVENT) && GetLastPerceptionSeen())
-    {
-        SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_PERCEIVE));
-    }
     int bSeen = GetLastPerceptionSeen();
-    // This will cause the all NPC's to speak their one-liner conversation
+    // This will cause all NPC's to speak their one-liner conversation
     // on perception even if they are already in combat.
-    if(bSeen)
+    if(GetIsPC(oLastPerceived) && bSeen)
     {
-        if(GetIsPC(oLastPerceived))
+        if(GetSpawnInCondition(NW_FLAG_SPECIAL_COMBAT_CONVERSATION))
         {
-            if(GetSpawnInCondition(NW_FLAG_SPECIAL_COMBAT_CONVERSATION))
+            SpeakOneLinerConversation();
+        }
+    }
+    if(GetIsEnemy(oLastPerceived))
+    {
+        // ************************** ENEMY SEEN *******************************
+        if(bSeen)
+        {
+            // If the creature we are perceiving was our invisible creature then
+            // remove that they are invisible.
+            if(oLastPerceived == GetLocalObject(oCreature, AI_IS_INVISIBLE))
             {
-                SpeakOneLinerConversation();
+                DeleteLocalObject(oCreature, AI_IS_INVISIBLE);
             }
-            else if(GetSpawnInCondition(NW_FLAG_SPECIAL_CONVERSATION))
+            ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
+        }
+        // ************************** ENEMY HEARD ******************************
+        else if(GetLastPerceptionHeard())
+        {
+            ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
+        }
+        // ************************** ENEMY VANISHED ***************************
+        else if(GetLastPerceptionVanished())
+        {
+            // Lets keep a mental note of the invisible creature.
+            SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
+            ai_Debug("0e_c2_2_percept", "82", " We saw " + GetName(oLastPerceived) + " disappear!");
+            if(ai_GetIsBusy(oCreature)) return;
+            // If in combat check to see if our target disappeared.
+            // If they have and we are not in melee with them then reevaluate combat
+            // since we lost our target.
+            if(ai_GetIsInCombat(oCreature))
             {
-                // The NPC will speak their one-liner conversation
-                // This should probably be: SpeakOneLinerConversation(oPercep);
-                // instead, but leaving it as is for now.
+                ai_Debug("0e_c2_2_percept", "90", "Is this our target? " +
+                        IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
+                if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
+                {
+                    ai_DoMonsterCombatRound(oCreature);
+                }
+            }
+            // If they are not invisible then that means they left our perception
+            // range and we need follow them.
+            else ActionMoveToObject(oLastPerceived, TRUE, AI_RANGE_CLOSE);
+        }
+        // ************************ ENEMY INAUDIBLE*****************************
+        // Not used.
+    }
+    else
+    {
+        // ************************ NON_ENEMY SEEN *****************************
+        if(bSeen)
+        {
+            if(ai_GetBehaviorState(NW_FLAG_BEHAVIOR_SPECIAL)) ai_DetermineSpecialBehavior(oCreature);
+            else if(GetSpawnInCondition(NW_FLAG_SPECIAL_CONVERSATION) && GetIsPC(oLastPerceived))
+            {
                 ActionStartConversation(oCreature);
             }
         }
-        if(ai_GetBehaviorState(NW_FLAG_BEHAVIOR_SPECIAL)) ai_DetermineSpecialBehavior(oCreature);
     }
-    if(!GetIsEnemy(oLastPerceived)) return;
-    // All code below assumes the perceived creature is an enemy and is alive!
-    // **************************** ENEMY SEEN *********************************
-    if(bSeen)
+    if(!IsInConversation(oCreature))
     {
-        // If the creature we are perceiving was our invisible creature then
-        // remove that they are invisible.
-        if(oLastPerceived == GetLocalObject(oCreature, AI_IS_INVISIBLE))
+        if(GetIsPostOrWalking())
         {
-            DeleteLocalObject(oCreature, AI_IS_INVISIBLE);
+            WalkWayPoints();
         }
-        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
-        return;
-    }
-    // **************************** ENEMY HEARD ********************************
-    else if(GetLastPerceptionHeard())
-    {
-        ai_MonsterEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
-        return;
-    }
-    // **************************** ENEMY VANISHED *****************************
-    else if(GetLastPerceptionVanished())
-    {
-        if(ai_Disabled(oCreature)) return;
-        // Lets keep a mental note of the invisible creature.
-        SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-        ai_Debug("0e_c2_2_percept", "101", " We saw " + GetName(oLastPerceived) + " disappear!");
-        if(ai_GetIsBusy(oCreature)) return;
-        // If in combat check to see if our target disappeared.
-        // If they have and we are not in melee with them then reevaluate combat
-        // since we lost our target.
-        if(ai_GetIsInCombat(oCreature))
+        else if(GetIsPC(oLastPerceived) &&
+               (GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS) ||
+                GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS_AVIAN) ||
+                GetSpawnInCondition(NW_FLAG_IMMOBILE_AMBIENT_ANIMATIONS) ||
+                GetIsEncounterCreature()))
         {
-            ai_Debug("0e_c2_2_percept", "107", "Is this our target? " +
-                    IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
-            if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
-            {
-                ai_DoMonsterCombatRound(oCreature);
-            }
-            return;
+            SetAnimationCondition(NW_ANIM_FLAG_IS_ACTIVE);
         }
-        // If they are not invisible then that means they left our perception
-        // range and we need follow them.
-        ActionMoveToObject(oLastPerceived, TRUE, AI_RANGE_CLOSE);
     }
-    // **************************** ENEMY INAUDIBLE*****************************
-    // Not used.
+    // Send the user-defined event if appropriate
+    if(GetSpawnInCondition(NW_FLAG_PERCIEVE_EVENT) && bSeen)
+    {
+        SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_PERCEIVE));
+    }
 }

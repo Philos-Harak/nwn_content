@@ -125,11 +125,17 @@ void ai_CheckAIRules()
         SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, FALSE);
         JsonObjectSetInplace(jRules, AI_RULE_MORAL_CHECKS, JsonInt(FALSE));
         // Allows monsters to prebuff before combat starts.
-        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, TRUE);
-        JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(TRUE));
+        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(FALSE));
         // Allows monsters cast summons spells when prebuffing.
-        SetLocalInt(oModule, AI_RULE_PRESUMMON, TRUE);
-        JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(TRUE));
+        SetLocalInt(oModule, AI_RULE_PRESUMMON, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(FALSE));
+        // Allows monsters to use ambush AI scripts.
+        SetLocalInt(oModule, AI_RULE_AMBUSH, TRUE);
+        JsonObjectSetInplace(jRules, AI_RULE_AMBUSH, JsonInt(TRUE));
+        // Enemies may summon familiars and Animal companions and will be randomized.
+        SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_SUMMON_COMPANIONS, JsonInt(FALSE));
         // Allow the AI to move during combat base on the situation and action taking.
         SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, TRUE);
         JsonObjectSetInplace(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(TRUE));
@@ -151,6 +157,12 @@ void ai_CheckAIRules()
         // Monster AI's perception distance from player.
         SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, 30.0);
         JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(30.0));
+        // Enemy corpses remain on the floor instead of dissappearing.
+        SetLocalInt(oModule, AI_RULE_CORPSES_STAY, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_CORPSES_STAY, JsonInt(FALSE));
+        // Monsters will wander around when not in combat.
+        SetLocalInt(oModule, AI_RULE_WANDER, FALSE);
+        JsonObjectSetInplace(jRules, AI_RULE_WANDER, JsonInt(FALSE));
         ai_SetCampaignDbJson("rules", jRules);
     }
     else if(!GetLocalInt(oModule, "AI_RULES_SET"))
@@ -168,6 +180,12 @@ void ai_CheckAIRules()
         // Allows monsters cast summons spells when prebuffing.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
         SetLocalInt(oModule, AI_RULE_PRESUMMON, bValue);
+        // Allows monsters to use ambush AI scripts.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AMBUSH));
+        SetLocalInt(oModule, AI_RULE_AMBUSH, bValue);
+        // Enemies may summon familiars and Animal companions and will be randomized.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_SUMMON_COMPANIONS));
+        SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, bValue);
         // Allow the AI to move during combat base on the situation and action taking.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ADVANCED_MOVEMENT));
         SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, bValue);
@@ -189,6 +207,12 @@ void ai_CheckAIRules()
         // Monster AI's perception distance from player.
         float fValue = JsonGetFloat(JsonObjectGet(jRules, AI_RULE_PERCEPTION_DISTANCE));
         SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, fValue);
+        // Enemy corpses remain on the floor instead of dissappearing.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_CORPSES_STAY));
+        SetLocalInt(oModule, AI_RULE_CORPSES_STAY, bValue);
+        // Monsters will wander around when not in combat.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_WANDER));
+        SetLocalInt(oModule, AI_RULE_WANDER, bValue);
     }
 }
 int ai_GetIsCharacter(object oCreature)
@@ -480,7 +504,7 @@ void ai_CreateAssociateDataTable(object oPlayer)
         "locations         TEXT, " +
         "PRIMARY KEY(name));");
     SqlStep(sql);
-    //ai_Debug("0i_main", "326", GetName(oPlayer) + " is creating a table [" +
+    //ai_Debug("0i_main", "489", GetName(oPlayer) + " is creating a table [" +
     //         AI_NEW_TABLE + "] in the database.");
 }
 void ai_CheckDataTableAndCreateTable(object oPlayer)
@@ -490,7 +514,7 @@ void ai_CheckDataTableAndCreateTable(object oPlayer)
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString(sql, "@table", AI_NEW_TABLE);
     if(!SqlStep(sql)) ai_CreateAssociateDataTable (oPlayer);
-    //else ai_Debug("0i_main", "335", GetName(oPlayer) + " has a database with table [" + AI_NEW_TABLE + "].");
+    //else ai_Debug("0i_main", "499", GetName(oPlayer) + " has a database with table [" + AI_NEW_TABLE + "].");
 }
 void ai_InitializeAssociateData(object oPlayer, string sAssociateType)
 {
@@ -505,7 +529,7 @@ void ai_InitializeAssociateData(object oPlayer, string sAssociateType)
     SqlBindJson(sql, "@lootfilters", JsonArray());
     SqlBindJson(sql, "@plugins", JsonArray());
     SqlBindJson(sql, "@locations", JsonArray());
-    //ai_Debug("0i_main", "350", GetName(oPlayer) + " is initializing associate " +
+    //ai_Debug("0i_main", "514", GetName(oPlayer) + " is initializing associate " +
     //         sAssociateType + " data for table[" + AI_NEW_TABLE + "].");
     SqlStep(sql);
 }
@@ -515,35 +539,7 @@ void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType)
     string sQuery = "SELECT name FROM " + AI_NEW_TABLE + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject (oPlayer, sQuery);
     SqlBindString(sql, "@name", sAssociateType);
-    if(!SqlStep(sql))
-    {
-        ai_InitializeAssociateData(oPlayer, sAssociateType);
-        // Check old sAssociateTypes for data.
-        ai_CheckForHenchmanOldDataToNewData(oPlayer, sAssociateType);
-        // Check Old Database table ASSOCIATE_DB_TABLE.
-        // New Database table is PEPS_TABLE.
-        // Check for old table and if found then copy data to new table.
-        sQuery = "SELECT name FROM sqlite_master WHERE type ='table' " +
-                        "AND name =@table;";
-        sql = SqlPrepareQueryObject(oPlayer, sQuery);
-        SqlBindString(sql, "@table", AI_OLD_TABLE_II);
-        if(SqlStep(sql))
-        {
-            ai_UpdateOldTableIIToNewTable(oPlayer, sAssociateType);
-            return;
-        }
-        // Old Database table is ASSOCIATE_TABLE.
-        // New Database table is PEPS_TABLE.
-        // Check for old table and if found then copy data to new table.
-        string sQuery = "SELECT name FROM sqlite_master WHERE type ='table' " +
-                        "AND name =@table;";
-        sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
-        SqlBindString(sql, "@table", AI_OLD_TABLE_I);
-        if(SqlStep(sql))
-        {
-            ai_UpdateOldTableIToNewTable(oPlayer, sAssociateType);
-        }
-    }
+    if(!SqlStep(sql)) ai_InitializeAssociateData(oPlayer, sAssociateType);
 }
 object ai_GetAssociateByStringType(object oPlayer, string sAssociateType)
 {
@@ -608,20 +604,27 @@ float ai_GetAssociateDbFloat(object oPlayer, string sAssociatetype, string sData
 }
 void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, json jData, string sTable = AI_NEW_TABLE)
 {
+    //ai_Debug("0i_main", "629", "Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
     string sQuery = "UPDATE " + sTable + " SET " + sDataField +
                     " = @data WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
-    SqlBindJson (sql, "@data", jData);
-    SqlBindString (sql, "@name", sAssociateType);
-    SqlStep (sql);
+    SqlBindJson(sql, "@data", jData);
+    SqlBindString(sql, "@name", sAssociateType);
+    SqlStep(sql);
 }
 json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, string sTable = AI_NEW_TABLE)
 {
+    //ai_Debug("0i_main", "638", "Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
     string sQuery = "SELECT " + sDataField + " FROM " + sTable + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString (sql, "@name", sAssociateType);
-    if (SqlStep (sql)) return SqlGetJson (sql, 0);
-    else return JsonArray ();
+    if(SqlStep(sql))
+    {
+        json jReturn = SqlGetJson(sql, 0);
+        //ai_Debug("0i_main", "646", JsonDump(jReturn, 1));
+        return jReturn;
+    }
+    else return JsonNull();
 }
 void aiSaveAssociateAIModesToDb(object oPlayer, object oAssociate)
 {
@@ -647,165 +650,6 @@ void ai_CheckPlayerForData(object oPlayer)
     }
     ai_GetAssociateDataFromDB(oPlayer, oPlayer);
 }
-void ai_UpdateOldTableIToNewTable(object oPlayer, string sAssociateType)
-{
-    //ai_Debug("0i_main", "501", GetName(oPlayer) + " is updating from " + AI_OLD_TABLE_I + " to " + AI_NEW_TABLE +
-    //         " for associate:" + sAssociateType);
-    json jModes = JsonArray();
-    json jButtons = JsonArray();
-    json jAIData = JsonArray();
-    json jLootFilters = JsonArray();
-    json jPlugins = JsonArray();
-    json jLocations = JsonObject();
-    // ********** Associate Modes **********
-    // Modes go from int in the database to Json in the database.
-    int nModes = ai_GetAssociateDbInt(oPlayer, sAssociateType, "modes", AI_OLD_TABLE_I);
-    JsonArrayInsertInplace(jModes, JsonInt(nModes));
-    nModes = ai_GetAssociateDbInt(oPlayer, sAssociateType, "magicmodes", AI_OLD_TABLE_I);
-    JsonArrayInsertInplace(jModes, JsonInt(nModes));
-    // ********** Buttons **********
-    // Modes go from int on player to json in the database.
-    int nButtons = GetLocalInt(oPlayer, sWidgetButtonsVarname + sAssociateType);
-    JsonArrayInsertInplace(jButtons, JsonInt(nButtons));
-    nButtons = GetLocalInt(oPlayer, sAIButtonsVarname + sAssociateType);
-    JsonArrayInsertInplace(jButtons, JsonInt(nButtons));
-    // ********** AI Data **********
-    // AIData goes from ints in the database to json in the database.
-    int nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "magic", AI_OLD_TABLE_I);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "healoutcombat", AI_OLD_TABLE_I);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "healincombat", AI_OLD_TABLE_I);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    // The below values are not in this version set them to defaut values.
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Loot check range.
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Lock check range.
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Trap check range.
-    JsonArrayInsertInplace(jAIData, JsonFloat(3.0)); // Follow range.
-    // ********** LootFilters **********
-    // The below values are not in this version set them to defaut values.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(200)); // Max Weight.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(AI_LOOT_ALL_ON)); // Loot filters.
-    // Minimum Gold limits. Was not in this version so lets set them to 0.
-    //  Item filters in min gold json array; 2-plot, 3-armor, 4-belts, 5-boots,
-    //      6-cloaks, 7-gems, 8-gloves, 9-headgear, 10-jewelry, 11-misc, 12-potions,
-    //      13-scrolls, 14-shields, 15-wands, 16-weapons, 17-arrow, 18-bolt, 19-bullet.
-    int nIndex;
-    for(nIndex = 2; nIndex < 20; nIndex++)
-    {
-        JsonArrayInsertInplace(jLootFilters, JsonInt(0));
-    }
-    // ********** Plugins **********
-    // This will be setup once a player adds a plugin.
-    // ********** Menu Locations **********
-    // We cannot get these from this TABLE version.
-    JsonObjectSetInplace(jLocations, "h", JsonFloat(92.0));
-    JsonObjectSetInplace(jLocations, "w", JsonFloat(98.0));
-    JsonObjectSetInplace(jLocations, "x", JsonFloat(1.0));
-    JsonObjectSetInplace(jLocations, "y", JsonFloat(1.0));
-    // ********** Save data to new database **********
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "plugins", jPlugins, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_NEW_TABLE);
-    //ai_Debug("0i_main", "588", "Done updating from " + AI_OLD_TABLE_I);
-}
-void ai_UpdateOldTableIIToNewTable(object oPlayer, string sAssociateType)
-{
-    //ai_Debug("0i_main", "563", GetName(oPlayer) + " is updating from " + AI_OLD_TABLE_II + " to " + AI_NEW_TABLE +
-    //         " for associate:" + sAssociateType);
-    json jModes = JsonArray();
-    json jButtons = JsonArray();
-    json jAIData = JsonArray();
-    json jLootFilters = JsonArray();
-    json jPlugins = JsonArray();
-    json jLocations = JsonObject();
-    // ********** Modes **********
-    // Modes go from int in the DB to Json.
-    int nModes = ai_GetAssociateDbInt(oPlayer, sAssociateType, "modes", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jModes, JsonInt(nModes));
-    // ********** Associate Magic Modes **********
-    nModes = ai_GetAssociateDbInt(oPlayer, sAssociateType, "magicmodes", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jModes, JsonInt(nModes));
-    // ********** Buttons **********
-    int nButtons = GetLocalInt(oPlayer, sWidgetButtonsVarname + sAssociateType);
-    JsonArrayInsertInplace(jButtons, JsonInt(nButtons));
-    nButtons = GetLocalInt(oPlayer, sAIButtonsVarname + sAssociateType);
-    JsonArrayInsertInplace(jButtons, JsonInt(nButtons));
-    // ********** AI Data **********
-    int nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "magic", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "healoutcombat", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "healincombat", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonInt(nData));
-    float fData = ai_GetAssociateDbFloat(oPlayer, sAssociateType, "lootrange", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonFloat(fData));
-    fData = ai_GetAssociateDbFloat(oPlayer, sAssociateType, "lockrange", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonFloat(fData));
-    fData = ai_GetAssociateDbFloat(oPlayer, sAssociateType, "traprange", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jAIData, JsonFloat(fData));
-    // Follow range. Not in this version so set to 3.0 meters.
-    JsonArrayInsertInplace(jAIData, JsonFloat(3.0));
-    // ********** LootFilters **********
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "maxweight", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "lootmodes", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    // Minimum Gold limits. Was not in this version so lets set them to 0.
-    //  Item filters in min gold json array; 2-plot, 3-armor, 4-belts, 5-boots,
-    //      6-cloaks, 7-gems, 8-gloves, 9-headgear, 10-jewelry, 11-misc, 12-potions,
-    //      13-scrolls, 14-shields, 15-wands, 16-weapons, 17-arrow, 18-bolt, 19-bullet.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(0));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldarmor", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldbelts", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldboots", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldcloaks", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldgems", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldgloves", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldheadgear", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldjewelry", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldmisc", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldpotions", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldscrolls", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldshields", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldwands", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldweapons", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    nData = ai_GetAssociateDbInt(oPlayer, sAssociateType, "mingoldammo", AI_OLD_TABLE_II);
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    // min gold limit - bolts.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    // min gold limit - bullets.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(nData));
-    // ********** Plugins **********
-    // This will be setup once a player adds a plugin.
-    // ********** Locations **********
-    jLocations = ai_GetAssociateDbJson(oPlayer, sAssociateType, "locations", AI_OLD_TABLE_II);
-    // ********** Save data to new database **********
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "plugins", jPlugins, AI_NEW_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_NEW_TABLE);
-    //ai_Debug("0i_main", "680", "Done updating from " + AI_OLD_TABLE_I);
-}
 void ai_GetButtons(object oPC, object oAssociate, string sAssociateType)
 {
     json jButtons = ai_GetAssociateDbJson(oPC, sAssociateType, "buttons");
@@ -817,10 +661,6 @@ void ai_GetButtons(object oPC, object oAssociate, string sAssociateType)
     int nAIButtons = JsonGetInt(JsonArrayGet(jButtons, 1));
     string sAIButtonName = sAIButtonsVarname + sAssociateType;
     if(nAIButtons) SetLocalInt(oAssociate, sAIButtonName, nAIButtons);
-    // ********** Associate AI Buttons 2 **********
-    int nAIButtons2 = JsonGetInt(JsonArrayGet(jButtons, 2));
-    string sAIButton2Name = sAIButtons2Varname + sAssociateType;
-    if(nAIButtons2) SetLocalInt(oAssociate, sAIButton2Name, nAIButtons2);
 }
 void ai_GetAssociateDataFromDB(object oPlayer, object oAssociate)
 {
@@ -927,50 +767,4 @@ void ai_GetAssociateDataFromDB(object oPlayer, object oAssociate)
         // These are pulled straight from the database.
     }
     //ai_Debug("0i_main", "765", "Done setting data to " + GetName(oAssociate));
-}
-void ai_CheckForHenchmanOldDataToNewData(object oPlayer, string sAssociateType)
-{
-    if(sAssociateType == "pc" || sAssociateType == "familiar" ||
-       sAssociateType == "companion" || sAssociateType == "summons") return;
-    object oAssociate = GetNearestObjectByTag(sAssociateType, oPlayer);
-    int nIndex = 1;
-    string sOldAssociateType, sName = GetName(oAssociate);
-    while(nIndex < 7)
-    {
-        if(sName == GetName(GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPlayer, nIndex)))
-        {
-            sOldAssociateType = "henchman" + IntToString(nIndex);
-            break;
-        }
-        nIndex++;
-    }
-    json jModes = ai_GetAssociateDbJson(oPlayer, sOldAssociateType, "modes");
-    if(JsonGetType(JsonArrayGet(jModes, 0)) == JSON_TYPE_NULL) return;
-    //ai_Debug("0i_main", "791", GetName(oAssociate) + " is loading data from old " + sOldAssociateType + " + to new " + sAssociateType + ".");
-    // Get data from the database and place on to the associates and player.
-    // ********** Modes **********
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes);
-    // ********** Buttons **********
-    json jButtons = ai_GetAssociateDbJson(oPlayer, sOldAssociateType, "buttons");
-    if(JsonGetType(jButtons) == JSON_TYPE_NULL)
-    {
-        jButtons = JsonArray();
-        int nWidgetButtons = GetLocalInt(oAssociate, sWidgetButtonsVarname);
-        int nAIButtons = GetLocalInt(oAssociate, sAIButtonsVarname);
-        JsonArrayInsertInplace(jButtons, JsonInt(nWidgetButtons)); // Command buttons.
-        JsonArrayInsertInplace(jButtons, JsonInt(nAIButtons)); // AI buttons.
-    }
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons);
-    // ********** AI Data **********
-    json jAIData = ai_GetAssociateDbJson(oPlayer, sOldAssociateType, "aidata");
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
-    // ********** LootFilters **********
-    json jLootFilters = ai_GetAssociateDbJson(oPlayer, sOldAssociateType, "lootfilters");
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters);
-    // ********** Plugins ************
-    // These are pulled straight from the database on the player only.
-    // ********** Locations **********
-    json jLocations = ai_GetAssociateDbJson(oPlayer, sOldAssociateType, "locations");
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations);
-    //ai_Debug("0i_main", "822", "Done setting old " + sOldAssociateType + " data to new " + sAssociateType + " data.");
 }

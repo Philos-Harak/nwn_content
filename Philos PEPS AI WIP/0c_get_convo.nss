@@ -9,12 +9,14 @@
  Allows use of ai_conversation for henchman in other modules.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
-void BeginOriginalHenchmanConversation(object oPC)
+void BeginOriginalHenchmanConversation(string sDialog, object oPC)
 {
-    BeginConversation("", oPC);
+    BeginConversation(sDialog, oPC);
 }
 void main()
 {
     ai_ClearCreatureActions();
-    DelayCommand(0.0, BeginOriginalHenchmanConversation(GetPCSpeaker()));
+    // Need to check special dialogs for HOTU henchman.
+    string sDialog = GetDialogFileToUse(GetLastSpeaker());
+    DelayCommand(0.0, BeginOriginalHenchmanConversation(sDialog, GetPCSpeaker()));
 }

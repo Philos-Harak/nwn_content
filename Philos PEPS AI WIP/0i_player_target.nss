@@ -26,8 +26,7 @@ void ai_SetupPlayerTarget(object oCreature)
     string sModuleTargetEvent = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET);
     if(sModuleTargetEvent != "")
     {
-        if(sModuleTargetEvent == "0e_player_target") DeleteLocalString(oModule, AI_MODULE_TARGET_EVENT);
-        else SetLocalString(oModule, AI_MODULE_TARGET_EVENT, sModuleTargetEvent);
+        if(sModuleTargetEvent != "0e_player_target") SetLocalString(oModule, AI_MODULE_TARGET_EVENT, sModuleTargetEvent);
     }
     SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET, "0e_player_target");
 }
@@ -142,7 +141,7 @@ void ai_OriginalActionAllAssociates(object oPC, object oTarget, location lLocati
 {
     object oAssociate;
     int nIndex;
-    for(nIndex = 1; nIndex < 7; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
@@ -173,7 +172,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             float fFollowDistance = ai_GetFollowDistance(oPC);
             if(GetDistanceBetween(oAssociate, oPC) <= fFollowDistance)
             {
-                AssignCommand(oPC, ActionMoveToLocation(lLocation, TRUE));
+                DelayCommand(fFollowDistance, AssignCommand(oPC, ActionMoveToObject(oAssociate, TRUE, fFollowDistance)));
             }
             else AssignCommand(oPC, ActionMoveToObject(oAssociate, TRUE, fFollowDistance));
         }
@@ -259,7 +258,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE));
+            AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE)));
         }
         DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
@@ -277,7 +276,7 @@ void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
 {
     object oAssociate;
     int nIndex;
-    for(nIndex = 1; nIndex < 7; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
@@ -292,6 +291,9 @@ void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
 {
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     int nToken = NuiFindWindow(oPC, sAssociateType + "_widget");
+    float fRange = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE) +
+                   StringToFloat(Get2DAString("appearance", "PREFATCKDIST", GetAppearanceType(oAssociate)));
+    string sRange = FloatToString(fRange, 0, 0);
     if(oAssociate == oTarget)
     {
         ai_SetAIMode(oAssociate, AI_MODE_FOLLOW, FALSE);
@@ -307,7 +309,7 @@ void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
             sTarget = GetName(oPC);
             ai_SendMessages(GetName(oAssociate) + " is now following " + sTarget + "!", AI_COLOR_YELLOW, oPC);
         }
-        NuiSetBind(oPC, nToken, "btn_follow_target_tooltip", JsonString("  " + GetName(oAssociate) + " is following " + sTarget));
+        ai_UpdateToolTipUI(oPC, sAssociateType + "_cmd_menu", sAssociateType + "_widget", "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
     }
     else
     {
@@ -315,7 +317,7 @@ void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
         SetLocalObject(oAssociate, AI_FOLLOW_TARGET, oTarget);
         ai_SendMessages(GetName(oAssociate) + " is now following " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
         AssignCommand(oAssociate, ActionMoveToObject(oTarget, TRUE, ai_GetFollowDistance(oAssociate)));
-        NuiSetBind(oPC, nToken, "btn_follow_target_tooltip", JsonString("  " + GetName(oAssociate) + " following " + GetName(oTarget)));
+        ai_UpdateToolTipUI(oPC, sAssociateType + "_cmd_menu", sAssociateType + "_widget", "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + GetName(oTarget) + " [" + sRange + " meters]");
     }
     aiSaveAssociateAIModesToDb(oPC, oAssociate);
 }
@@ -323,7 +325,7 @@ void ai_OriginalRemoveAllActionMode(object oPC)
 {
     object oAssociate;
     int nIndex;
-    for(nIndex = 1; nIndex < 7; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
        if(oAssociate != OBJECT_INVALID && ai_GetAIMode(oPC, AI_MODE_GHOST))
@@ -346,7 +348,7 @@ void ai_RemoveAllActionMode(object oPC)
 {
     object oAssociate;
     int nIndex;
-    for(nIndex = 1; nIndex < 7; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
         oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
         if(oAssociate != OBJECT_INVALID)

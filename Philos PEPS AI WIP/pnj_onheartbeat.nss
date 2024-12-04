@@ -11,5 +11,4 @@
 void main()
 {
     ai_OnMonsterSpawn(OBJECT_SELF, GetCreatureFlag(OBJECT_SELF, CREATURE_VAR_IS_INCORPOREAL));
-    ExecuteScript("0e_c2_1_hb");
 }

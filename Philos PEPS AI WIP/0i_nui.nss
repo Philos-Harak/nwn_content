@@ -306,9 +306,10 @@ void CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, in
     if(sTooltip != "") jObject = NuiTooltip(jObject, NuiBind (sTooltip));
     JsonArrayInsertInplace(jRow, jObject);
 }
-void CreateCombo(json jRow, json jCombo, string sId, float fWidth, float fHeight, string sTooltip = "")
+void CreateCombo(json jRow, json jList, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
-    jCombo = NuiId(NuiCombo (jCombo, NuiBind (sId + "_selected")), sId);
+    json jCombo;
+    jCombo = NuiId(NuiCombo (jList, NuiBind (sId + "_selected")), sId);
     jCombo = NuiEnabled(jCombo, NuiBind (sId + "_event"));
     jCombo = NuiWidth(jCombo, fWidth);
     jCombo = NuiHeight(jCombo, fHeight);

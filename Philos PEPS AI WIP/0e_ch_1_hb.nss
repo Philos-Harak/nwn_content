@@ -9,32 +9,33 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    ai_Debug("0e_ch_1_hb", "18", GetName(oCreature) + " Heartbeat." +
+    ai_Debug("0e_ch_1_hb", "12", GetName(oCreature) + " Heartbeat." +
              " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
              " Action: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
-    // If we don't have a master then we exit.
+    // If we are an associate and don't have a master then exit.
     object oMaster = GetMaster(oCreature);
     if(oMaster == OBJECT_INVALID) return;
-    if(GetIsPC(oMaster))
+    // ***** Code for Henchman data and menus *****
+    if(ai_GetIsCharacter(oMaster))
     {
         string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
-        // We have to wait for a heartbeat to get our master so we can pull up our menu.
-        if(!NuiFindWindow(oMaster, sAssociateType + "_widget"))
+        // We need to have a master to setup our database and if our follow
+        // range is not set then we need to either initialize or pull our info.
+        if(JsonGetType(ai_GetAssociateDbJson(oMaster, sAssociateType, "locations")) == JSON_TYPE_NULL)
         {
-            // If this associate has no data then lets create some and maybe setup our widget.
-            // We do this here since they have to be an associate of a player.
-            json jGeometry = ai_GetAssociateDbJson(oMaster, sAssociateType, "locations");
-            if(JsonGetType(JsonObjectGet(jGeometry, "x")) == JSON_TYPE_NULL)
-            {
-                ai_CheckDataAndInitialize(oMaster, sAssociateType);
-                ai_GetAssociateDataFromDB(oMaster, oCreature);
-            }
-            if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
+            // If the player doesn't have data saved on them then create or get.
+            // We do this here since they have to be an associate of the player.
+            ai_CheckDataAndInitialize(oMaster, sAssociateType);
+            ai_GetAssociateDataFromDB(oMaster, oCreature);
+        }
+        // Widget code.
+        if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
+        {
+            if(!NuiFindWindow(oMaster, sAssociateType + "_widget"))
             {
                 ai_CreateWidgetNUI(oMaster, oCreature);
             }
-            ai_SetNormalAppearance(oCreature);
         }
     }
     // If follow mode we do not want the NPC doing anything but follow.
@@ -46,13 +47,12 @@ void main()
             ai_DoAssociateCombatRound(oCreature);
             return;
         }
-        if(ai_CheckForCombat(oCreature)) return;
-        // Lets not interupt conversations.
+        if(ai_CheckForCombat(oCreature, FALSE)) return;
         if(IsInConversation(oCreature)) return;
-        if(ai_TryHealing(oCreature, oCreature)) return;
         // In command mode we let the player tell us what to do.
         if(!ai_GetAIMode(oCreature, AI_MODE_COMMANDED))
         {
+            if(ai_TryHealing(oCreature, oCreature)) return;
             // When picking up items we also check for traps and locks so if
             // we are not in pickup mode we need to do that here.
             if(ai_AssociateRetrievingItems(oCreature)) return;
@@ -86,9 +86,9 @@ void main()
     // Finally we check to make sure we are following our master.
     if(GetCurrentAction(oCreature) != ACTION_FOLLOW)
     {
-        ai_Debug("0e_ch_1_hb", "66", "Follow master: " +
-                 " Stealth: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
-                 " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
+        //ai_Debug("0e_ch_1_hb", "66", "Follow master: " +
+        //         " Stealth: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
+        //         " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
         if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
         {
             ai_Debug("0e_ch_1_hb", "67", "Going into stealth mode!");

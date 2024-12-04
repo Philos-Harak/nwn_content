@@ -26,8 +26,8 @@ void main()
     // If we are not attacking then setup for counter spelling.
     if(!bAttack)
     {
-        //ai_Debug("ai_cntrspell", "34", " Counterspell Mode? " +
-        //          IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
+        ai_Debug("ai_cntrspell", "34", " Counterspell Mode? " +
+                  IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
         if(!GetActionMode(oCreature, ACTION_MODE_COUNTERSPELL))
         {
             object oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER);
@@ -74,8 +74,11 @@ void main()
         //****************************  CLASS FEATURES  ****************************
         if(ai_TryBardSongFeat(oCreature)) return;
         if(ai_TryTurningTalent(oCreature)) return;
-        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
-        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+        {
+            if(ai_TrySummonFamiliarTalent(oCreature)) return;
+            if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        }
         //**************************  DEFENSIVE TALENTS  ***************************
         int nRound = ai_GetCurrentRound(oCreature);
         if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
@@ -100,7 +103,7 @@ void main()
                 }
                 else
                 {
-                    ai_SearchForInvisibleCreature(oCreature);
+                    ai_SearchForInvisibleCreature(oCreature, TRUE);
                     return;
                 }
             }

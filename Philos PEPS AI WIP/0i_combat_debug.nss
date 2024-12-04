@@ -3343,37 +3343,40 @@ void ai_SetCreatureAIScript(object oCreature)
     if(GetStandardFactionReputation(STANDARD_FACTION_HOSTILE) > 89 &&
        (sCombatAI == ""))
     {
-        // Ambusher: requires either Improved Invisibility or Invisibility.
-        if(GetHasSpell(SPELL_IMPROVED_INVISIBILITY, oCreature) ||
-           GetHasSpell(SPELL_INVISIBILITY, oCreature))
+        if(GetLocalInt(GetModule(), AI_RULE_AMBUSH))
         {
-            int bCast = ai_TryToCastSpell(oCreature, SPELL_IMPROVED_INVISIBILITY, oCreature);
-            if(!bCast) bCast = ai_TryToCastSpell(oCreature, SPELL_INVISIBILITY, oCreature);
-            if(bCast)
+            // Ambusher: requires either Improved Invisibility or Invisibility.
+            if(GetHasSpell(SPELL_IMPROVED_INVISIBILITY, oCreature) ||
+               GetHasSpell(SPELL_INVISIBILITY, oCreature))
+            {
+                int bCast = ai_TryToCastSpell(oCreature, SPELL_IMPROVED_INVISIBILITY, oCreature);
+                if(!bCast) bCast = ai_TryToCastSpell(oCreature, SPELL_INVISIBILITY, oCreature);
+                if(bCast)
+                {
+                    sCombatAI = "ai_ambusher";
+                }
+            }
+            // Ambusher: Requires a Hide and Move silently skill equal to your level + 1.
+            else if(GetSkillRank(SKILL_HIDE, oCreature) >= nSkillNeeded &&
+                    GetSkillRank(SKILL_MOVE_SILENTLY, oCreature) >= nSkillNeeded)
             {
                 sCombatAI = "ai_ambusher";
             }
         }
-        // Ambusher: Requires a Hide and Move silently skill equal to your level + 1.
-        else if(GetSkillRank(SKILL_HIDE, oCreature) >= nSkillNeeded &&
-                GetSkillRank(SKILL_MOVE_SILENTLY, oCreature) >= nSkillNeeded)
+        // Defensive : requires Parry skill equal to your level or Expertise.
+        else if(sCombatAI == "" &&
+              (GetSkillRank(SKILL_PARRY, oCreature) >= nSkillNeeded ||
+               GetHasFeat(FEAT_EXPERTISE, oCreature) ||
+               GetHasFeat(FEAT_IMPROVED_EXPERTISE, oCreature)))
         {
-            sCombatAI = "ai_ambusher";
+            sCombatAI = "ai_defensive";
         }
+        //else if(sCombatAI == "" && (GetHasSpell(SPELL_LESSER_DISPEL, oCreature) ||
+        //        GetHasSpell(SPELL_DISPEL_MAGIC, oCreature) || GetHasSpell(SPELL_GREATER_DISPELLING, oCreature)))
+        //{
+        //    sCombatAI = "ai_cntrspell";
+        //}
     }
-    // Defensive : requires Parry skill equal to your level or Expertise.
-    else if(sCombatAI == "" &&
-          (GetSkillRank(SKILL_PARRY, oCreature) >= nSkillNeeded ||
-           GetHasFeat(FEAT_EXPERTISE, oCreature) ||
-           GetHasFeat(FEAT_IMPROVED_EXPERTISE, oCreature)))
-    {
-        sCombatAI = "ai_defensive";
-    }
-    //else if(sCombatAI == "" && (GetHasSpell(SPELL_LESSER_DISPEL, oCreature) ||
-    //        GetHasSpell(SPELL_DISPEL_MAGIC, oCreature) || GetHasSpell(SPELL_GREATER_DISPELLING, oCreature)))
-    //{
-    //    sCombatAI = "ai_cntrspell";
-    //}
     if(sCombatAI == "")
     {
         int nAssociateType = GetAssociateType(oCreature);
@@ -3543,7 +3546,7 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
                          GetName(oNearestEnemy) + " to sneak attack with a ranged weapon.");
                 ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
                 ActionMoveToObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
-                ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+                AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
                 return TRUE;
             }
         }
@@ -3554,7 +3557,7 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
                      GetName(oNearestEnemy) + "[2.0] to use a ranged weapon.");
             ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
             ActionMoveAwayFromObject(oNearestEnemy, TRUE, 2.0);
-            ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+            AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
             return TRUE;
         }
     }
@@ -3582,7 +3585,7 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
                      GetName(oTarget) + "[2.0] to cast a spell.");
             ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
             ActionMoveAwayFromObject(oTarget, FALSE, 2.0);
-            ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+            AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
             return TRUE;
         }
     }
@@ -3607,7 +3610,7 @@ int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, i
         // Lets move just out of melee range!
         int bRun = ai_CanIMoveInCombat(oCreature);
         ActionMoveAwayFromObject(oNearestEnemy, bRun, AI_RANGE_MELEE - fDistance + 1.0);
-        ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+        AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
         return TRUE;
     }
     // If we want to cast a spell this round then back away!
@@ -3628,7 +3631,7 @@ int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, i
         // Lets move just out of melee range!
         int bRun = ai_CanIMoveInCombat(oCreature);
         ActionMoveAwayFromObject(oNearestEnemy, bRun, AI_RANGE_MELEE - fDistance + 1.0);
-        ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+        AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
         return TRUE;
     }
     return FALSE;

@@ -23,10 +23,13 @@ void main()
     object oDamager = GetLastDamager(oCreature);
     ai_Debug("0e_c2_6_damaged", "24", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;
-    if(ai_IsInADangerousAOE(oCreature))
+    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
     {
-        ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
-        return;
+        if(ai_IsInADangerousAOE(oCreature))
+        {
+            ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
+            return;
+        }
     }
     if(ai_GetIsBusy(oCreature) || ai_GetIsInCombat(oCreature)) return;
     if(GetDistanceBetween(oCreature, oDamager) < AI_RANGE_CLOSE) ai_DoMonsterCombatRound(oCreature);

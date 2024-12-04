@@ -33,7 +33,7 @@ void main()
         return;
     }
     if(ai_GetIsBusy(oCreature)) return;
-    if(ai_CheckForCombat(oCreature)) return;
+    if(ai_CheckForCombat(oCreature, TRUE)) return;
     // We have been attacked out of combat, so let our allies know.
     SetLocalObject(oCreature, AI_MY_TARGET, oCaster);
     SpeakString(AI_ATKED_BY_SPELL, TALKVOLUME_SILENT_TALK);

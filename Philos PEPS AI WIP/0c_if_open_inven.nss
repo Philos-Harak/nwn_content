@@ -8,5 +8,6 @@
 #include "0i_associates"
 int StartingConditional()
 {
+    if(GetAssociateType(OBJECT_SELF) != ASSOCIATE_TYPE_HENCHMAN) return FALSE;
     return AI_OPEN_INVENTORY;
 }

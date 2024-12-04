@@ -16,7 +16,7 @@ void main()
         ai_DoAssociateCombatRound(oCreature);
         return;
     }
-    if(ai_CheckForCombat(oCreature)) return;
+    if(ai_CheckForCombat(oCreature, FALSE)) return;
     if(IsInConversation(oCreature)) return;
     if(ai_TryHealing(oCreature, oCreature)) return;
     // When picking up items we also check for traps and locks so if

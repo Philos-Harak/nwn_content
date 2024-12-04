@@ -207,8 +207,8 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
 // Removes a talent nSlotIndex from jLevel in jCategory.
 void ai_RemoveTalent(object oCreature, json jCategory, json jLevel, string sCategory, int nLevel, int nSlotIndex);
 // Saves a creatures talents to variables upon them for combat use.
-// bBuff will have oCreature Prebuff for combat by using quick talents.
-void ai_SetCreatureTalents(object oCreature, int bBuff);
+// bMonster will check to see if they should be buffed when we set the talents.
+void ai_SetCreatureTalents(object oCreature, int bMonster);
 // Return TRUE if oCreature spontaneously casts a cure spell from a talent in sCategory.
 int ai_UseSpontaneousCureTalentFromCategory(object oCreature, string sCategory, int nInMelee, int nDamage, object oTarget = OBJECT_INVALID);
 // Returns TRUE if oCreature uses jTalent on oTarget.
@@ -549,7 +549,7 @@ void ai_UseSkill(object oCreature, int nSkill, object oTarget)
              GetStringByStrRef(StringToInt(Get2DAString("skills", "Name", nSkill))) +
              " on " + GetName(oTarget));
     ActionUseSkill(nSkill, oTarget);
-    ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+    AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
 }
 int ai_TryParry(object oCreature)
 {
@@ -650,7 +650,7 @@ void ai_UseFeat(object oCreature, int nFeat, object oTarget, int nSubFeat = 0)
              GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat))) +
              " on " + GetName(oTarget));
     ActionUseFeat(nFeat, oTarget, nSubFeat);
-    ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+    AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
 }
 void ai_UseFeatAttackMode(object oCreature, int nActionMode, int nAction, object oTarget, int nInMelee = 0, int bPassive = FALSE)
 {
@@ -1000,25 +1000,26 @@ int ai_TryStunningFistFeat(object oCreature, object oTarget)
 void ai_NameAssociate(object oCreature, int nAssociateType, string sName)
 {
     object oAssociate = GetAssociate(nAssociateType, oCreature);
+    if(GetName(oCreature) != "") return;
     SetName(oAssociate, sName);
     ChangeFaction(oAssociate, oCreature);
 }
 int ai_TrySummonAnimalCompanionTalent(object oCreature)
 {
-    if(!AI_SUMMON_COMPANIONS || !GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature)) return FALSE;
+    if(!GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature)) return FALSE;
     if(GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oCreature) != OBJECT_INVALID) return FALSE;
     ai_UseFeat(oCreature, FEAT_ANIMAL_COMPANION, oCreature);
     //SummonAnimalCompanion(oCreature);
     //DecrementRemainingFeatUses(oCreature, FEAT_ANIMAL_COMPANION);
-    //DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_FAMILIAR, "Animal Companion"));
+    DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_FAMILIAR, "Animal Companion"));
     return TRUE;
 }
 int ai_TrySummonFamiliarTalent(object oCreature)
 {
-    if(!AI_SUMMON_FAMILIARS || !GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature)) return FALSE;
+    if(!GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature)) return FALSE;
     if(GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oCreature) != OBJECT_INVALID) return FALSE;
     ai_UseFeat(oCreature, FEAT_SUMMON_FAMILIAR, oCreature);
-    //DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_FAMILIAR, "Familiar"));
+    DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_FAMILIAR, "Familiar"));
     return TRUE;
 }
 int ai_TryLayOnHands(object oCreature)
@@ -1107,7 +1108,7 @@ void ai_ActionAttack(object oCreature, int nAction, object oTarget, int nInMelee
              " Lastround Attacked Target: " + GetName(ai_GetAttackedTarget(oCreature)) +
              " bPassive: " + IntToString(bPassive) + " nActionMode: " + IntToString(nActionMode));
     ActionAttack(oTarget, bPassive);
-    if(nActionMode == 0) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+    if(nActionMode == 0) AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
 }
 void ai_FlyToAttacks(object oCreature, object oTarget)
 {
@@ -1515,9 +1516,12 @@ int ai_GetHasTalent(object oCreature, int nTalent)
 }
 object ai_CheckTalentForBuffing(object oCreature, string sCategory, int nSpell)
 {
-    if(sCategory != "P" && sCategory != "E" &&
-      (sCategory != "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON))) return OBJECT_INVALID;
-    return ai_GetBuffTarget(oCreature, nSpell);
+    // Should we buff this monster caster? Added legacy code just in case.
+    if((sCategory == "P" || sCategory == "E") &&
+       (GetLocalInt(GetModule(), AI_RULE_BUFF_MONSTERS) ||
+        GetLocalInt(oCreature, "NW_GENERIC_MASTER") & 0x04000000)) return ai_GetBuffTarget(oCreature, nSpell);
+    if(sCategory == "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON)) return oCreature;
+    return OBJECT_INVALID;
 }
 int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nSpell, int nType, object oTarget, object oItem)
 {
@@ -1581,17 +1585,19 @@ int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nS
     } */
     return FALSE;
 }
-void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bBuff, object oItem = OBJECT_INVALID)
+void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bMonster, object oItem = OBJECT_INVALID)
 {
     // Get the talent category, we organize all talents by categories.
     string sCategory = Get2DAString("ai_spells", "Category", nSpell);
+    // If it is a blank talent or it is an Area of Effect talent we skip.
     if(sCategory == "" || sCategory == "A") return;
     // Check to see if we should be prebuffing.
-    if(bBuff)
+    if(bMonster)
     {
         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
         if(nSpellBuffDuration == 3)
         {
+            ai_Debug("0i_talents", "1600", GetName(oCreature) + " is buffing with spell " + IntToString(nSpell));
             object oTarget = ai_CheckTalentForBuffing(oCreature, sCategory, nSpell);
             if(oTarget != OBJECT_INVALID &&
                ai_UseBuffTalent(oCreature, nClass, nLevel, nSlot, nSpell, nType, oTarget, oItem)) return;
@@ -1662,10 +1668,10 @@ void ai_RemoveTalentLevel(object oCreature, json jCategory, json jLevel, string 
     ai_Debug("0i_talents", "1412", "jCategory: " + JsonDump(jCategory, 2));
     SetLocalJson(oCreature, sCategory, jCategory);
 }
-void ai_SetCreatureSpellTalents(object oCreature, int bBuff)
+void ai_SetCreatureSpellTalents(object oCreature, int bMonster)
 {
     ai_Debug("0i_talents", "1417", GetName(oCreature) + ": Setting Spell Talents for combat [Buff: " +
-             IntToString(bBuff) + "].");
+             IntToString(bMonster) + "].");
     // Cycle through all classes and spells.
     int nClassPosition = 1, nMaxSlot, nLevel, nSlot, nSpell, nIndex, nMetaMagic;
     int nClass = GetClassByPosition(nClassPosition);
@@ -1706,7 +1712,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bBuff)
                                 else if(nMetaMagic == METAMAGIC_MAXIMIZE) nMetaMagic = 3;
                                 else if(nMetaMagic == METAMAGIC_QUICKEN) nMetaMagic = 4;
                             }
-                            ai_SaveTalent(oCreature, nClass, nLevel + nMetaMagic, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bBuff);
+                            ai_SaveTalent(oCreature, nClass, nLevel + nMetaMagic, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster);
                         }
                         nSlot++;
                     }
@@ -1734,7 +1740,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bBuff)
                                  IntToString(GetSpellUsesLeft(oCreature, nClass, nSpell)));
                         if(GetSpellUsesLeft(oCreature, nClass, nSpell) > 0)
                         {
-                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bBuff);
+                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster);
                         }
                         nSlot++;
                     }
@@ -1746,7 +1752,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bBuff)
         nClass = GetClassByPosition(nClassPosition);
     }
 }
-void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bBuff)
+void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bMonster)
 {
     ai_Debug("0i_talents", "1488", GetName(oCreature) + ": Setting Special Ability Talents for combat.");
     // Cycle through all the creatures special abilities.
@@ -1761,13 +1767,13 @@ void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bBuff)
             if(GetSpellAbilityReady(oCreature, nSpell))
             {
                 nLevel = StringToInt(Get2DAString("spells", "Innate", nSpell));
-                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_SP_ABILITY, bBuff);
+                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_SP_ABILITY, bMonster);
             }
             nIndex++;
         }
     }
 }
-void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEquiped = FALSE)
+void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bEquiped = FALSE)
 {
     ai_Debug("0i_talents", "1509", "Checking Item properties on " + GetName(oItem));
     // We have established that we can use the item if it is equiped.
@@ -1816,7 +1822,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEqui
                     nIprpSubType = GetItemPropertySubType(ipProp);
                     nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
                     nLevel = StringToInt(Get2DAString("iprp_spells", "InnateLvl", nIprpSubType));
-                    ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bBuff, oItem);
+                    ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, oItem);
                     nIndex++;
                 }
             }
@@ -1828,7 +1834,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEqui
                 // Must also have ranks in healing kits.
                 if(GetSkillRank(SKILL_HEAL, oCreature) > 0)
                 {
-                    ai_SaveTalent(oCreature, 255, 5, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bBuff, oItem);
+                    ai_SaveTalent(oCreature, 255, 5, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, oItem);
                     nIndex++;
                 }
             }
@@ -1889,7 +1895,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bBuff, int bEqui
     // If nSpellImmunity has been set then we need to save our Immunity json.
     if(bHasItemImmunity) SetLocalJson(oCreature, AI_TALENT_IMMUNITY, jImmunity);
 }
-void ai_SetCreatureItemTalents(object oCreature, int bBuff)
+void ai_SetCreatureItemTalents(object oCreature, int bMonster)
 {
     ai_Debug("0i_talents", "1561", GetName(oCreature) + ": Setting Item Talents for combat.");
     int bEquiped;
@@ -1903,7 +1909,7 @@ void ai_SetCreatureItemTalents(object oCreature, int bBuff)
             // Does the item need to be equiped to use its powers?
             sSlots = Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem));
             ai_Debug("0i_talents", "1572", GetName(oItem) + " requires " + Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem)) + " slots.");
-            if(sSlots == "0x00000") ai_CheckItemProperties(oCreature, oItem, bBuff);
+            if(sSlots == "0x00000") ai_CheckItemProperties(oCreature, oItem, bMonster);
         }
         oItem = GetNextItemInInventory(oCreature);
     }
@@ -1912,33 +1918,35 @@ void ai_SetCreatureItemTalents(object oCreature, int bBuff)
     oItem = GetItemInSlot(nSlot, oCreature);
     while(nSlot < 11)
     {
-        if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bBuff, TRUE);
+        if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bMonster, TRUE);
         oItem = GetItemInSlot(++nSlot, oCreature);
     }
     oItem = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oCreature);
-    if(oItem != OBJECT_SELF) ai_CheckItemProperties(oCreature, oItem, bBuff, TRUE);
+    if(oItem != OBJECT_SELF) ai_CheckItemProperties(oCreature, oItem, bMonster, TRUE);
 }
-void ai_SetCreatureTalents(object oCreature, int bBuff)
+void ai_SetCreatureTalents(object oCreature, int bMonster)
 {
     if(GetLocalInt(oCreature, AI_TALENTS_SET)) return;
     SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
     ai_Counter_Start();
-    ai_SetCreatureSpellTalents(oCreature, bBuff);
+    ai_SetCreatureSpellTalents(oCreature, bMonster);
     ai_Counter_End(GetName(oCreature) + ": Spell Talents");
-    ai_SetCreatureSpecialAbilityTalents(oCreature, bBuff);
+    ai_SetCreatureSpecialAbilityTalents(oCreature, bMonster);
     ai_Counter_End(GetName(oCreature) + ": Special Ability Talents");
     DeleteLocalJson(oCreature, AI_TALENT_IMMUNITY);
-    ai_SetCreatureItemTalents(oCreature, bBuff);
+    ai_SetCreatureItemTalents(oCreature, bMonster);
     ai_Counter_End(GetName(oCreature) + ": Item Talents");
-    if(AI_SUMMON_COMPANIONS && !GetLocalInt(oCreature, "AI_NO_COMPANION"))
+    object oModule = GetModule();
+    if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) && GetLocalInt(oModule, AI_RULE_PRESUMMON) && bMonster)
     {
-        SummonAnimalCompanion(oCreature);
-        DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_ANIMALCOMPANION, "Animal Companion"));
-    }
-    if(AI_SUMMON_FAMILIARS && !GetLocalInt(oCreature, "AI_NO_FAMILIAR"))
-    {
-        SummonFamiliar(oCreature);
-        DelayCommand(0.0, ai_NameAssociate(oCreature, ASSOCIATE_TYPE_FAMILIAR, "Familiar"));
+        if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature))
+        {
+            ai_TrySummonFamiliarTalent(oCreature);
+        }
+        if(GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature))
+        {
+            ai_TrySummonAnimalCompanionTalent(oCreature);
+        }
     }
     // AI_CAT_CURE is setup differently we save the level as the highest.
     if(JsonGetType(GetLocalJson(oCreature, AI_TALENT_CURE)) != JSON_TYPE_NULL) SetLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_CURE, 9);
@@ -2354,7 +2362,7 @@ int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nIn
         }
         ai_SetLastAction(oCreature, nSpell);
         ActionUseItemOnObject(oItem, ipProp, oTarget, nSubIndex);
-        ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+        AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
         ai_Debug("0i_talents", "1850", GetName(oCreature) + " is using " + GetName(oItem) + " on " + GetName(oTarget));
         return TRUE;
     }
@@ -2362,7 +2370,7 @@ int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nIn
              " nDomain: " + IntToString(nDomain) + " nClass: " + IntToString(nClass));
     ai_SetLastAction(oCreature, nSpell);
     ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, FALSE, nClass, FALSE);
-    ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+    AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
     string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
     ai_Debug("0i_talents", "1859", GetName(oCreature) + " is casting " + sSpellName + " on " + GetName(oTarget));
     return TRUE;
@@ -2437,14 +2445,14 @@ int ai_UseTalentAtLocation(object oCreature, json jTalent, object oTarget, int n
         if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
         ai_SetLastAction(oCreature, nSpell);
         ActionUseItemAtLocation(oItem, ipProp, GetLocation(oTarget), nSubIndex);
-        ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+        AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
         ai_Debug("0i_talents", "1934", GetName(oCreature) + " is using " + GetName(oItem) + " at a location.");
         return TRUE;
     }
     if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
     ai_SetLastAction(oCreature, nSpell);
     ActionCastSpellAtLocation(nSpell, GetLocation(oTarget), nMetaMagic, FALSE, 0, FALSE, nClass, FALSE, nDomain);
-    ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+    AssignCommand(oCreature, ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature)));
     string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
     ai_Debug("0i_talents", "1943", GetName(oCreature) + " is casting " + sSpellName + " at a location!");
     return TRUE;
