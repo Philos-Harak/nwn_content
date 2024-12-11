@@ -7,8 +7,7 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void ai_DoActions(object oCreature, int nForm)
 {
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
@@ -17,7 +16,7 @@ void ai_DoActions(object oCreature, int nForm)
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     if(GetPercentageHPLoss(oCreature) <= AI_HEALTH_BLOODY)
     {
-        ai_Debug("ai_polymorphed", "24", "We are wounded and are transforming back!");
+        if(AI_DEBUG) ai_Debug("ai_polymorphed", "19", "We are wounded and are transforming back!");
         ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH);
         return;
     }

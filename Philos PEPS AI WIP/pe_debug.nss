@@ -5,7 +5,7 @@
     PEPS Plugin to allow use of special Debug scripts
 /*//////////////////////////////////////////////////////////////////////////////
 #include "0i_main"
-#include "0i_single_player"
+#include "0i_module"
 void main()
 {
     // Get the last player to use targeting mode

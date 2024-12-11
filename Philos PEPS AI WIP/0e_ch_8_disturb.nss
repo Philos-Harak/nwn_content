@@ -7,11 +7,10 @@
   Creatures can't have items added or removed from its inventory (it's not a
     container), then the only way this fires for creatures if something is stolen.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
-    ai_Debug("0e_ch_8_disturb", "14", GetName(OBJECT_SELF) + " is been disturbed!");
+    if(AI_DEBUG) ai_Debug("0e_ch_8_disturb", "13", GetName(OBJECT_SELF) + " is been disturbed!");
     // We do nothing at the moment... lets not mess up our factions ok?
     // This should be defined by the server admins and is commented out.
     //if(ai_GetIsBusy(OBJECT_SELF, FALSE) || ai_Disabled()) return;

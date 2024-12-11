@@ -7,8 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////
  Programmer: Philos
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -72,7 +71,7 @@ void main()
                 {
                     if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
                     {
-                        ai_Debug("ai_coward", "75", GetName(oCreature) + " is using hide in plain sight!");
+                        if(AI_DEBUG) ai_Debug("ai_coward", "74", GetName(oCreature) + " is using hide in plain sight!");
                         ClearAllActions(TRUE);
                         SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
                         return;
@@ -83,7 +82,7 @@ void main()
                 {
                     string sEnemyIndex = IntToString(nEnemyIndex);
                     float fEnemyDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sEnemyIndex);
-                    ai_Debug("ai_coward", "86", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
+                    if(AI_DEBUG) ai_Debug("ai_coward", "85", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
                     if(fEnemyDistance >= AI_RANGE_CLOSE)
                     {
                         int bTried = GetLocalInt(oCreature, AI_TRIED_TO_HIDE);
@@ -130,5 +129,5 @@ void main()
     }
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel)) return;
     // Stand and watch the battle we don't want to provoke anyone!
-    ai_Debug("ai_coward", "128", GetName(oCreature) + " is holding here.");
+    if(AI_DEBUG) ai_Debug("ai_coward", "132", GetName(oCreature) + " is holding here.");
 }

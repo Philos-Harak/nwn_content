@@ -6,8 +6,7 @@
 ////////////////////////////////////////////////////////////////////////////////
  Programmer: Philos
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -21,8 +20,8 @@ void main()
         // If we are not being attacked then we should back out of combat.
         if(ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID)
         {
-            //ai_Debug("ai_a_peaceful", "24", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
-            //         "[" + FloatToString(AI_RANGE_MELEE - fDistance + 1.0, 0, 2) + "]" + " to use a ranged weapon.");
+            if(AI_DEBUG) ai_Debug("ai_a_peaceful", "23", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
+                         "[" + FloatToString(AI_RANGE_MELEE - fDistance + 1.0, 0, 2) + "]" + " to use a ranged weapon.");
             //ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
             // Lets move just out of melee range!
             int bRun = ai_CanIMoveInCombat(oCreature);
@@ -47,8 +46,8 @@ void main()
     }
     if(fDistance <= AI_RANGE_CLOSE)
     {
-        //ai_Debug("ai_a_peaceful", "50", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
-        //         "[" + FloatToString(AI_RANGE_LONG - fDistance, 0, 2) + "]" + ".");
+        if(AI_DEBUG) ai_Debug("ai_a_peaceful", "49", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
+                     "[" + FloatToString(AI_RANGE_LONG - fDistance, 0, 2) + "]" + ".");
         ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
         // Lets move out of cloe range!
         ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG - fDistance);
@@ -78,5 +77,5 @@ void main()
         if(ai_UseCreatureTalent(oCreature, AI_TALENT_PROTECTION, nInMelee, nMaxLevel)) return;
     }
     // Stand and watch the battle we don't want to provoke anyone!
-    //ai_Debug("ai_a_peaceful", "81", GetName(oCreature) + " is holding here.");
+    if(AI_DEBUG) ai_Debug("ai_a_peaceful", "80", GetName(oCreature) + " is holding here.");
 }

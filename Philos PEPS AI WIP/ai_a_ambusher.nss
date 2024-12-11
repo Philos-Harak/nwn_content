@@ -7,13 +7,12 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void main()
 {
     object oCreature = OBJECT_SELF;
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-    ai_Debug("ai_a_ambusher", "16", GetName(oCreature) + " is using ambusher tactics: " +
+    if(AI_DEBUG) ai_Debug("ai_a_ambusher", "15", GetName(oCreature) + " is using ambusher tactics: " +
              " oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " +
              FloatToString(GetDistanceBetween(oNearestEnemy, oCreature)));
     if(GetDistanceBetween(oNearestEnemy, oCreature) > AI_RANGE_LONG)
@@ -53,7 +52,7 @@ void main()
             {
                 if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
                 {
-                    ai_Debug("ai_a_ambusher", "56", GetName(oCreature) + " is using hide in plain sight!");
+                    if(AI_DEBUG) ai_Debug("ai_a_ambusher", "55", GetName(oCreature) + " is using hide in plain sight!");
                     ClearAllActions(TRUE);
                     SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
                     return;
@@ -64,14 +63,14 @@ void main()
             {
                 string sEnemyIndex = IntToString(nEnemyIndex);
                 float fEnemyDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sEnemyIndex);
-                ai_Debug("ai_a_ambusher", "67", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
+                if(AI_DEBUG) ai_Debug("ai_a_ambusher", "66", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
                 if(fEnemyDistance >= AI_RANGE_CLOSE)
                 {
                     int bTried = GetLocalInt(oCreature, AI_TRIED_TO_HIDE);
                     if(!bTried)
                     {
                         // Move away so we can hide.
-                        ai_Debug("ai_a_ambusher", "74", GetName(oCreature) + " is trying to move away to hide!");
+                        if(AI_DEBUG) ai_Debug("ai_a_ambusher", "73", GetName(oCreature) + " is trying to move away to hide!");
                         SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
                         object oEnemy = GetLocalObject(oCreature, AI_ENEMY + sEnemyIndex);
                         ActionMoveAwayFromObject(oEnemy, TRUE, AI_RANGE_BATTLEFIELD);
@@ -91,7 +90,7 @@ void main()
     else if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
     {
         // Use any hiding talents we have
-        ai_Debug("ai_a_ambusher", "94", GetName(oCreature) + " is trying to hide!");
+        if(AI_DEBUG) ai_Debug("ai_a_ambusher", "93", GetName(oCreature) + " is trying to hide!");
         SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
         SetLocalInt(oCreature, AI_TRIED_TO_HIDE, 3);
         return;
@@ -99,6 +98,6 @@ void main()
     // If we have givin up on stealth do our normal actions.
     string sScript = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
     if(sScript == "ai_a_ambusher" || sScript == "") sScript = "ai_a_default";
-    ai_Debug("ai_a_ambusher", "102", "Executing Script: " + sScript);
+    if(AI_DEBUG) ai_Debug("ai_a_ambusher", "101", "Executing Script: " + sScript);
     ExecuteScript(sScript, oCreature);
 }

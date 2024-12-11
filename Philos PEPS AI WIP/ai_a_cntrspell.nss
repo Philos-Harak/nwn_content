@@ -6,8 +6,7 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -33,7 +32,7 @@ void main()
     // If we are not attacking then setup for counter spelling.
     if(!bAttack)
     {
-        ai_Debug("ai_a_cntrspell", "34", " Counterspell Mode? " +
+        if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "35", " Counterspell Mode? " +
                  IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
         if(!GetActionMode(oCreature, ACTION_MODE_COUNTERSPELL))
         {
@@ -125,13 +124,13 @@ void main()
             if(ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID)
             {
                 object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-                ai_Debug("ai_cntrspell", "123", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
+                if(AI_DEBUG) ai_Debug("ai_cntrspell", "127", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
                 // If we cast a spell last round or are using a bow then lets move back.
                 if((GetLocalInt(oCreature, sLastActionVarname) > -1 ||
                      ai_HasRangedWeaponWithAmmo(oCreature)) &&
                      GetDistanceBetween(oCreature, oNearestEnemy) < AI_RANGE_CLOSE)
                 {
-                    ai_Debug("ai_cntrspell", "129", GetName(oCreature) +
+                    if(AI_DEBUG) ai_Debug("ai_cntrspell", "133", GetName(oCreature) +
                               " is moving away from " + GetName(oTarget));
                     ai_SetLastAction(oCreature, AI_LAST_ACTION_NONE);
                     ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);

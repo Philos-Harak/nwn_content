@@ -13,12 +13,11 @@
   GetAttemptedAttackTarget() & GetAttemptedSpellTarget() also get cleared prior to this event.
   This event can be canceled with ClearAllActions(TRUE) and SurrenderToEnemies.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
-    ai_Debug("xx_pc_3_endround", "21", GetName(oCreature) + " ends combat round.");
+    if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "20", GetName(oCreature) + " ends combat round.");
     if(ai_Disabled(oCreature)) return;
     // Action modes get cleared prior to each OnCombatRoundEnd!
     // We do this to keep the action mode going.
@@ -30,7 +29,7 @@ void main()
         if(nActionMode == 12) IncrementRemainingFeatUses(oCreature, FEAT_DWARVEN_DEFENDER_DEFENSIVE_STANCE);
     }
     int nAction = GetCurrentAction(oCreature);
-    ai_Debug("xx_pc_3_endround", "34", "nAction: " + IntToString(nAction));
+    if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "32", "nAction: " + IntToString(nAction));
     switch(nAction)
     {
         // These actions are uninteruptable.

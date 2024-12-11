@@ -18,8 +18,7 @@
 // Created By: Preston Watamaniuk
 // Created On: Nov 19, 2001
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_server"
-#include "0i_single_player"
+#include "0i_module"
 //#include "X0_INC_HENAI"
 void main()
 {

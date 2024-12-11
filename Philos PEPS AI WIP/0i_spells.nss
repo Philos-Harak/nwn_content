@@ -334,7 +334,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
     if(sIType != "")
     {
-       //ai_Debug("0i_spells", "290", "Checking spell immunity type(" + sIType + ").");
+        ai_Debug("0i_spells", "290", "Checking spell immunity type(" + sIType + ").");
         if(sIType == "Death" && GetIsImmune(oCreature, IMMUNITY_TYPE_DEATH)) return TRUE;
         if(sIType == "Level_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_NEGATIVE_LEVEL)) return TRUE;
         if(sIType == "Ability_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_ABILITY_DECREASE)) return TRUE;
@@ -371,7 +371,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         // Negative damage does not work on undead!
         if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
         {
-           //ai_Debug("0i_spell", "325", "Undead are immune to Negative energy!");
+            ai_Debug("0i_spell", "325", "Undead are immune to Negative energy!");
             return TRUE;
         }
         // Elemental damage resistances should be checked.
@@ -380,7 +380,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         {
             if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_DAMAGE_RESISTANCE))
             {
-               //ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
+                ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
                 return TRUE;
             }
             // Check for resistances and immunities. Treat resistance as immune.
@@ -388,7 +388,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
             int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) & nIPResist;
             if(nIPImmune > 0)
             {
-               //ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
+                ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
                 if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) return TRUE;
                 else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) return TRUE;
                 else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) return TRUE;
@@ -412,12 +412,12 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     {
         if(nSpell == JsonGetInt(jSpell))
         {
-           //ai_Debug("0i_spells", "407", GetName(oCreature) + " is immune to the spell via an Item!");
+            ai_Debug("0i_spells", "407", GetName(oCreature) + " is immune to the spell via an Item!");
             return TRUE;
         }
         jSpell = JsonArrayGet(jSpellImmunity, ++nIndex);
     }
-   //ai_Debug("0i_spell", "347", GetName(oCreature) + " is not immune to the spell.");
+    ai_Debug("0i_spell", "347", GetName(oCreature) + " is not immune to the spell.");
     return FALSE;
 }
 float ai_GetSpellRange(int nSpell)
@@ -451,7 +451,7 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
     }
     // if the target has more Helpful spells than harmful spells effecting them
     // then use dispel!
-   //ai_Debug("0i_spells", "381", "nDispelChance: " + IntToString(nDispelChance));
+    ai_Debug("0i_spells", "381", "nDispelChance: " + IntToString(nDispelChance));
     return (nDispelChance > 0);
 }
 void ai_RemoveASpecificEffect(object oCreature, int nEffectType)
@@ -579,9 +579,9 @@ int ai_IsNotSilenced(object oCreature, int nSpell)
 }
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot)
 {
-   //ai_Debug("0i_spells", "561", "Arcane Spells: " + Get2DAString("classes", "ASF", nClass) +
-   //          " Arcane Spell Failure: " + IntToString(GetArcaneSpellFailure(oCreature)) +
-   //          " AI_ASF_WILL_USE: " + IntToString(AI_ASF_WILL_USE));
+    ai_Debug("0i_spells", "561", "Arcane Spells: " + Get2DAString("classes", "ASF", nClass) +
+             " Arcane Spell Failure: " + IntToString(GetArcaneSpellFailure(oCreature)) +
+             " AI_ASF_WILL_USE: " + IntToString(AI_ASF_WILL_USE));
     if(Get2DAString("classes", "ASF", nClass) == "1" &&
        GetArcaneSpellFailure(oCreature) > AI_ASF_WILL_USE)
     {
@@ -939,7 +939,7 @@ object ai_GetBuffTarget(object oCaster, int nSpell)
     if(sGroup == "") sGroup = IntToString(nSpell);
     string sBuffGroup = "AI_USED_SPELL_GROUP_" + sGroup;
     string sBuffTarget = Get2DAString("ai_spells", "Buff_Target", nSpell);
-   //ai_Debug("0i_spells", "769", "BuffTarget: " + sBuffTarget);
+    ai_Debug("0i_spells", "769", "BuffTarget: " + sBuffTarget);
     if(sBuffTarget == "0")
     {
         if(ai_SpellGroupNotCast(oCaster, sBuffGroup) &&
@@ -984,9 +984,9 @@ object ai_GetBuffTarget(object oCaster, int nSpell)
         SetLocalInt(oTarget, sBuffGroup, TRUE);
         DelayCommand(6.0, DeleteLocalInt(oTarget, sBuffGroup));
     }
-   //ai_Debug("0i_spells", "939", GetName(oCaster) + " is targeting " + GetName(oTarget) +
-   //          " with " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell))) + " spell" +
-   //          " sBuffGroup: " + sBuffGroup + ".");
+    ai_Debug("0i_spells", "939", GetName(oCaster) + " is targeting " + GetName(oTarget) +
+             " with " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell))) + " spell" +
+             " sBuffGroup: " + sBuffGroup + ".");
     return oTarget;
 }
 void ai_CastMemorizedSpell(object oCaster, int nClass, int nSpellLevel, int nSpellSlot, object oTarget, int bInstant, object oPC = OBJECT_INVALID)
@@ -996,9 +996,9 @@ void ai_CastMemorizedSpell(object oCaster, int nClass, int nSpellLevel, int nSpe
     if(GetMemorizedSpellIsDomainSpell(oCaster, nClass, nSpellLevel, nSpellSlot) == 1) nDomain = nSpellLevel;
     else nDomain = 0;
     int nMetaMagic = GetMemorizedSpellMetaMagic(oCaster, nClass, nSpellLevel, nSpellSlot);
-   //ai_Debug("0i_spells", "951", "nSpell: " + IntToString(nSpell) + " oTarget: " + GetName(oTarget) +
-   //          " nMetaMagic: " + IntToString(nMetaMagic) + " nDomain: " + IntToString(nDomain) +
-   //          " bInstant: " + IntToString(bInstant) + " nClass: " + IntToString(nClass));
+    ai_Debug("0i_spells", "951", "nSpell: " + IntToString(nSpell) + " oTarget: " + GetName(oTarget) +
+             " nMetaMagic: " + IntToString(nMetaMagic) + " nDomain: " + IntToString(nDomain) +
+             " bInstant: " + IntToString(bInstant) + " nClass: " + IntToString(nClass));
     ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, bInstant);
     // Right now I cannot get nClass to work here...
     //DelayCommand(fDelay, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, TRUE, nClass));
@@ -1010,7 +1010,7 @@ void ai_CastMemorizedSpell(object oCaster, int nClass, int nSpellLevel, int nSpe
 }
 void ai_CastKnownSpell(object oCaster, int nClass, int nSpell, object oTarget, int bInstant, object oPC = OBJECT_INVALID)
 {
-   //ai_Debug("0i_Spells", "965", GetName(oCaster) + " is casting " + IntToString(nSpell));
+    ai_Debug("0i_Spells", "965", GetName(oCaster) + " is casting " + IntToString(nSpell));
     ActionCastSpellAtObject(nSpell, oTarget, 255, FALSE, 0, 0, bInstant);
     // Right now I cannot get nClass to work here...
     //ActionCastSpellAtObject(nSpell, oTarget, 255, FALSE, 0, 0, TRUE, nClass);
@@ -1065,20 +1065,20 @@ int ai_CheckAndCastSpell(object oCaster, int nSpell, int nSpellGroup, float fDel
 }
 void ai_SetupMonsterBuffTargets(object oCaster)
 {
-   //ai_Debug("0i_spells", "1020", GetName(oCaster) + " is setting buff targets.");
+    ai_Debug("0i_spells", "1020", GetName(oCaster) + " is setting buff targets.");
     SetLocalObject (oCaster, "AI_ALLY_TARGET_1" , oCaster);
     SetLocalObject (oCaster, "AI_ALLY_TARGET_2", oCaster);
     int nCntr = 1;
     object oCreature = GetNearestCreature(CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_FRIEND, oCaster, nCntr);
-   //ai_Debug("0i_spells", "864", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
-   //          " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
+    ai_Debug("0i_spells", "864", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
+             " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
     while(oCreature != OBJECT_INVALID && nCntr < 8 && GetDistanceBetween(oCaster, oCreature) < AI_RANGE_CLOSE)
     {
-       //ai_Debug("0i_spells", "1029", "Setting " + GetName(oCreature) + " as AI_ALLY_TARGET_" + IntToString(nCntr + 2));
+        ai_Debug("0i_spells", "1029", "Setting " + GetName(oCreature) + " as AI_ALLY_TARGET_" + IntToString(nCntr + 2));
         SetLocalObject (oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr + 2), oCreature);
         oCreature = GetNearestCreature(CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_FRIEND, oCaster, ++nCntr);
-       //ai_Debug("0i_spells", "871", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
-       //          " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
+        ai_Debug("0i_spells", "871", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
+                 " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
     }
 }
 void ai_SetupAllyTargets(object oCaster, object oPC)
@@ -1099,7 +1099,7 @@ void ai_SetupAllyTargets(object oCaster, object oPC)
     nCntr = 1;
     //while(nCntr < 10)
     //{
-    //   //ai_Debug("0i_spells", "910", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
+    //    ai_Debug("0i_spells", "910", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
     //             GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
     //    nCntr++;
     //}
@@ -1140,13 +1140,13 @@ void ai_SetupAllyHealingTargets(object oCaster, object oPC)
     int nCntr = 1;
     while(nCntr <= 10)
     {
-       //ai_Debug("0i_spells", "1097", "AI_ALLY_HEAL_" + IntToString(nCntr) + ": " +
-       //          GetName(GetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(nCntr++))));
+        ai_Debug("0i_spells", "1097", "AI_ALLY_HEAL_" + IntToString(nCntr) + ": " +
+                 GetName(GetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(nCntr++))));
     }
 }
 void ai_ClearBuffTargets(object oCaster, string sVariable)
 {
-   //ai_Debug("0i_spells", "1106", GetName(oCaster) + " is clearing " + sVariable + " targets.");
+    ai_Debug("0i_spells", "1106", GetName(oCaster) + " is clearing " + sVariable + " targets.");
     int nIndex;
     for(nIndex = 1; nIndex < 10; nIndex++)
     {
@@ -1155,7 +1155,7 @@ void ai_ClearBuffTargets(object oCaster, string sVariable)
 }
 void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, int bEquiped = FALSE)
 {
-   //ai_Debug("0i_spells", "1150", "Checking Item properties on " + GetName(oItem));
+    ai_Debug("0i_spells", "1150", "Checking Item properties on " + GetName(oItem));
     // We have established that we can use the item if it is equiped.
     if(!bEquiped && !ai_CheckIfCanUseItem(oCreature, oItem)) return;
     int nPerDay, nCharges, nUses, nSpellBuffDuration;
@@ -1167,35 +1167,35 @@ void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, 
     // Check for cast spell property and add them to the talent list.
     while(GetIsItemPropertyValid(ipProp))
     {
-       //ai_Debug("0i_spells", "1163", "ItempropertyType(15): " + IntToString(GetItemPropertyType(ipProp)));
+        ai_Debug("0i_spells", "1163", "ItempropertyType(15): " + IntToString(GetItemPropertyType(ipProp)));
         nIPType = GetItemPropertyType(ipProp);
         if(nIPType == ITEM_PROPERTY_CAST_SPELL)
         {
             // Get how they use the item (charges or uses per day).
             nUses = GetItemPropertyCostTableValue(ipProp);
             // We only check uses per day.
-           //ai_Debug("0i_spells", "1172", "Item uses: " + IntToString(nPerDay));
+            ai_Debug("0i_spells", "1172", "Item uses: " + IntToString(nPerDay));
             if(nUses > 7 && nUses < 13)
             {
                 nPerDay = GetItemPropertyUsesPerDayRemaining(oItem, ipProp);
-               //ai_Debug("0i_spells", "1176", "Item uses per day: " + IntToString(nPerDay));
+                ai_Debug("0i_spells", "1176", "Item uses per day: " + IntToString(nPerDay));
                 if(nPerDay > 0)
                 {
                     // SubType is the ip spell index for iprp_spells.2da
                     nIprpSubType = GetItemPropertySubType(ipProp);
                     nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
                     nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                   //ai_Debug("0i_spells", "1183", "nSpell: " + IntToString(nSpell) +
-                   //          " nBuffType: " + IntToString(nBuffType) +
-                   //          " nSpellBuffDuration: " + IntToString(nSpellBuffDuration));
+                    ai_Debug("0i_spells", "1183", "nSpell: " + IntToString(nSpell) +
+                             " nBuffType: " + IntToString(nBuffType) +
+                             " nSpellBuffDuration: " + IntToString(nSpellBuffDuration));
                     if(nBuffType == nSpellBuffDuration || nBuffType == 1)
                     {
                         oTarget = ai_GetBuffTarget(oCreature, nSpell);
                         if(oTarget != OBJECT_INVALID)
                         {
-                           //ai_Debug("0i_spells", "1190", GetName(oCreature) + " is using" +
-                           //          GetName(oItem) + " to cast " + IntToString(nSpell) +
-                           //          " on " + GetName(oTarget));
+                            ai_Debug("0i_spells", "1190", GetName(oCreature) + " is using" +
+                                     GetName(oItem) + " to cast " + IntToString(nSpell) +
+                                     " on " + GetName(oTarget));
                             ActionUseItemOnObject(oItem, ipProp, oTarget);
                         }
                     }
@@ -1207,7 +1207,7 @@ void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, 
 }
 void ai_CheckForPerDayItems(object oCreature, object oPC, int nBuffType)
 {
-   //ai_Debug("0i_spells", "1198", GetName(oCreature) + ": Checking items for per day buffs.");
+    ai_Debug("0i_spells", "1198", GetName(oCreature) + ": Checking items for per day buffs.");
     if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC_ITEMS))
     {
         int bEquiped;
@@ -1220,7 +1220,7 @@ void ai_CheckForPerDayItems(object oCreature, object oPC, int nBuffType)
             {
                 // Does the item need to be equiped to use its powers?
                 sSlots = Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem));
-               //ai_Debug("0i_talents", "1211", GetName(oItem) + " requires " + Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem)) + " slots.");
+                ai_Debug("0i_talents", "1211", GetName(oItem) + " requires " + Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem)) + " slots.");
                 if(sSlots == "0x00000") ai_CheckForPerDayProperties(oCreature, oItem, nBuffType);
             }
             oItem = GetNextItemInInventory(oCreature);
@@ -1261,13 +1261,13 @@ void ai_CheckForBuffSpells(struct stSpell stSpell)
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-       //ai_Debug("0i_spells", "1208", "nClass: " + IntToString(stSpell.nClass));
+        ai_Debug("0i_spells", "1208", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-       //ai_Debug("0i_spells", "1210", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        ai_Debug("0i_spells", "1210", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-           //ai_Debug("0i_spells", "1214", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+            ai_Debug("0i_spells", "1214", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
                 stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1287,7 +1287,7 @@ void ai_CheckForBuffSpells(struct stSpell stSpell)
 }
 void ai_ActionCastMemorizedSummons(struct stSpell stSpell)
 {
-   //ai_Debug("0i_spells", "1122", "Start of ActionCastMemorizedSummons!");
+    ai_Debug("0i_spells", "1122", "Start of ActionCastMemorizedSummons!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
@@ -1597,8 +1597,8 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
     // Buff groups are used to prevent a henchmen to cast spells that have the same effect,
     // for example: resist elements and protection from elements are similiar so the henchmen
     // would cast only the most powerful among these if he has them both.
-   //ai_Debug("0i_spells", "1440", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
-   //          " nTarget: " + IntToString(nTarget) + "!");
+    ai_Debug("0i_spells", "1440", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
+             " nTarget: " + IntToString(nTarget) + "!");
     struct stSpell stSpell;
     stSpell.oPC = oPC;
     stSpell.oCaster = oCaster;
@@ -1611,13 +1611,13 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
         while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
         {
             stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-           //ai_Debug("0i_spells", "1452", "nClass: " + IntToString(stSpell.nClass));
+            ai_Debug("0i_spells", "1452", "nClass: " + IntToString(stSpell.nClass));
             if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-           //ai_Debug("0i_spells", "1454", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+            ai_Debug("0i_spells", "1454", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
             if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
             {
                 stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-               //ai_Debug("0i_spells", "1458", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+                ai_Debug("0i_spells", "1458", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
                 if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1640,7 +1640,7 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
 }
 int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
 {
-   //ai_Debug("0i_spells", "1643", GetName(oCreature) + " is looking to cast a spontaneous cure spell.");
+    ai_Debug("0i_spells", "1643", GetName(oCreature) + " is looking to cast a spontaneous cure spell.");
     if(!GetLevelByClass(CLASS_TYPE_CLERIC, oCreature)) return FALSE;
     int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
     int nSpell, nSlot, nMaxSlots, nLevel = 4;
@@ -1651,11 +1651,11 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
         // We check CLASS_TYPE_CLERIC as thats the only class with spontaneous cure spells.
         nMaxSlots = GetMemorizedSpellCountByLevel(oCreature, CLASS_TYPE_CLERIC, nLevel);
         nSlot = 0;
-       //ai_Debug("0i_spells", "1653", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
+        ai_Debug("0i_spells", "1653", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
         while(nSlot < nMaxSlots)
         {
-           //ai_Debug("0i_spells", "1656", "nSlot: " + IntToString(nSlot) +
-           //          " Spell Ready: " + IntToString(GetMemorizedSpellReady(oCreature, CLASS_TYPE_CLERIC, nLevel, nSlot)));
+            ai_Debug("0i_spells", "1656", "nSlot: " + IntToString(nSlot) +
+                     " Spell Ready: " + IntToString(GetMemorizedSpellReady(oCreature, CLASS_TYPE_CLERIC, nLevel, nSlot)));
             if(GetMemorizedSpellReady(oCreature, CLASS_TYPE_CLERIC, nLevel, nSlot))
             {
                 if(nLevel == 4) nSpell = SPELL_CURE_CRITICAL_WOUNDS;
@@ -1663,7 +1663,7 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
                 else if(nLevel == 2) nSpell = SPELL_CURE_MODERATE_WOUNDS;
                 else if(nLevel == 1) nSpell = SPELL_CURE_LIGHT_WOUNDS;
                 else nSpell = 0;
-               //ai_Debug("0i_spells", "1665", "nSpell: " + IntToString(nSpell));
+                ai_Debug("0i_spells", "1665", "nSpell: " + IntToString(nSpell));
                 if(nSpell)
                 {
                     if(ai_ShouldWeCastThisCureSpell(nSpell, nDamage))
@@ -1671,7 +1671,7 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
                         SetMemorizedSpellReady(oCreature, CLASS_TYPE_CLERIC, nLevel, nSlot, FALSE);
                         sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                         ai_SendMessages(GetName(oCreature) + " has spontaneously cast " + sSpellName + " on " + GetName(oTarget) + ".", AI_COLOR_MAGENTA, oPC);
-                       //ai_Debug("0i_spells", "1673", GetName(oCreature) + " has spontaneously cast " + sSpellName + " on " + GetName(oTarget) + ".");
+                        ai_Debug("0i_spells", "1673", GetName(oCreature) + " has spontaneously cast " + sSpellName + " on " + GetName(oTarget) + ".");
                         ActionCastSpellAtObject(nSpell, oTarget, 255, TRUE);
                         return TRUE;
                     }
@@ -1691,7 +1691,7 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
     // Did we find a cure spell? If we did then use it.
     if(nSpellSave)
     {
-       //ai_Debug("0i_spells", "1693", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
+        ai_Debug("0i_spells", "1693", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
         SetMemorizedSpellReady(oCreature, CLASS_TYPE_CLERIC, nLevelSave, nSlotSave, FALSE);
         sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpellSave)));
         ai_SendMessages(GetName(oCreature) + " has spontaneously cast " + sSpellName + " on " + GetName(oTarget) + ".", AI_COLOR_MAGENTA, oPC);
@@ -1702,7 +1702,7 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
 }
 int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nClass)
 {
-   //ai_Debug("0i_spells", "1702", GetName(oCreature) + " is looking to cast a memorized cure spell.");
+    ai_Debug("0i_spells", "1702", GetName(oCreature) + " is looking to cast a memorized cure spell.");
     int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
     int nSpell, nSlot, nMaxSlots, nLevel = 9;
     int nClassSave, nSlotSave, nLevelSave = 10;
@@ -1710,18 +1710,18 @@ int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nC
     {
         nMaxSlots = GetMemorizedSpellCountByLevel(oCreature, nClass, nLevel);
         nSlot = 0;
-       //ai_Debug("0i_spells", "1710", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
+        ai_Debug("0i_spells", "1710", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
         while(nSlot < nMaxSlots)
         {
-           //ai_Debug("0i_spells", "1713", "nSlot: " + IntToString(nSlot) +
-           //          " Spell Ready: " + IntToString(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot)));
+            ai_Debug("0i_spells", "1713", "nSlot: " + IntToString(nSlot) +
+                     " Spell Ready: " + IntToString(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot)));
             if(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot))
             {
                 nSpell = GetMemorizedSpellId(oCreature, nClass, nLevel, nSlot);
                 if(ai_ShouldWeCastThisCureSpell(nSpell, nDamage))
                 {
                     string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                   //ai_Debug("0i_spells", "1721", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
+                    ai_Debug("0i_spells", "1721", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
                     ai_CastMemorizedSpell(oCreature, nClass, nLevel, nSlot, oTarget, FALSE, oPC);
                     return TRUE;
                 }
@@ -1740,7 +1740,7 @@ int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nC
     // Did we find a cure spell? If we did then use it.
     if(nLevelSave < 10)
     {
-       //ai_Debug("0i_spells", "1740", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
+        ai_Debug("0i_spells", "1740", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
         ai_CastMemorizedSpell(oCreature, nClassSave, nLevelSave, nSlotSave, oTarget, FALSE, oPC);
         return TRUE;
     }
@@ -1748,7 +1748,7 @@ int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nC
 }
 int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass)
 {
-   //ai_Debug("0i_spells", "1748", GetName(oCreature) + " is looking to cast a known cure spell.");
+    ai_Debug("0i_spells", "1748", GetName(oCreature) + " is looking to cast a known cure spell.");
     int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
     int nSpell, nSlot, nMaxSlots, nLevel = 9;
     int nClassSave, nSpellSave, nLevelSave = 10;
@@ -1756,18 +1756,18 @@ int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass
     {
         nMaxSlots = GetKnownSpellCount(oCreature, nClass, nLevel);
         nSlot = 0;
-       //ai_Debug("0i_spells", "1756", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
+        ai_Debug("0i_spells", "1756", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
         while(nSlot < nMaxSlots)
         {
             nSpell = GetKnownSpellId(oCreature, nClass, nLevel, nSlot);
-           //ai_Debug("0i_spells", "1760", "nSlot: " + IntToString(nSlot) +
-           //          " Spell Ready: " + IntToString(GetSpellUsesLeft(oCreature, nClass, nSpell)));
+            ai_Debug("0i_spells", "1760", "nSlot: " + IntToString(nSlot) +
+                     " Spell Ready: " + IntToString(GetSpellUsesLeft(oCreature, nClass, nSpell)));
             if(GetSpellUsesLeft(oCreature, nClass, nSpell))
             {
                 if(ai_ShouldWeCastThisCureSpell(nSpell, nDamage))
                 {
                     string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                   //ai_Debug("0i_spells", "1767", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
+                    ai_Debug("0i_spells", "1767", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
                     ai_CastKnownSpell(oCreature, nClass, nSpell, oTarget, FALSE, oPC);
                     return TRUE;
                 }
@@ -1787,7 +1787,7 @@ int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass
     // Did we find a cure spell? If we did then use it.
     if(nLevelSave < 10)
     {
-       //ai_Debug("0i_spells", "1781", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
+        ai_Debug("0i_spells", "1781", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
         ai_CastKnownSpell(oCreature, nClassSave, nSpellSave, oTarget, FALSE, oPC);
         return TRUE;
     }
@@ -1844,12 +1844,12 @@ int ai_CastInMelee(object oCreature, int nSpell, int nInMelee)
         int nRoll = Random(AI_DEFENSIVE_CASTING_DIE) + 1;
         int nConcentration = GetSkillRank(SKILL_CONCENTRATION, oCreature);
         if(GetHasFeat(FEAT_COMBAT_CASTING, oCreature)) nConcentration += 4;
-       //ai_Debug("0i_spells", "1081", "Use Defensive Casting? nDC: " + IntToString(nDC) + " FEAT_COMBAT_CASTING: " +
-       //        IntToString(GetHasFeat(FEAT_COMBAT_CASTING, oCreature)) +
-       //        " nConcentration: " + IntToString(nConcentration) + " + nRoll: " + IntToString(nRoll));
+        ai_Debug("0i_spells", "1081", "Use Defensive Casting? nDC: " + IntToString(nDC) + " FEAT_COMBAT_CASTING: " +
+               IntToString(GetHasFeat(FEAT_COMBAT_CASTING, oCreature)) +
+               " nConcentration: " + IntToString(nConcentration) + " + nRoll: " + IntToString(nRoll));
         if(nConcentration + nRoll > nDC)
         {
-           //ai_Debug("0i_spells", "1086", GetName(oCreature) + " is casting defensively!");
+            ai_Debug("0i_spells", "1086", GetName(oCreature) + " is casting defensively!");
             SetActionMode(oCreature, ACTION_MODE_DEFENSIVE_CAST, TRUE);
         }
         // Defensive casting is a bad idea so maybe casting anyspell is a bad idea.
@@ -1860,11 +1860,11 @@ int ai_CastInMelee(object oCreature, int nSpell, int nInMelee)
             {
                 nRoll = Random(AI_CASTING_IN_MELEE_ROLL) + 1;
                 nDC = AI_CASTING_IN_MELEE_DC + nSpellLevel + nInMelee * ai_GetCreatureAttackBonus(oMelee);
-               //ai_Debug("0i_spells", "1097", "Cast anyway: nConcentration: " + IntToString(nConcentration) +
-               //        " nRoll: " + IntToString(nRoll) + " nDC: " + IntToString(nDC) +
-               //        " oMelee: " + GetName(oMelee));
+                ai_Debug("0i_spells", "1097", "Cast anyway: nConcentration: " + IntToString(nConcentration) +
+                       " nRoll: " + IntToString(nRoll) + " nDC: " + IntToString(nDC) +
+                       " oMelee: " + GetName(oMelee));
                 if(nConcentration + nRoll > nDC) return TRUE;
-               //ai_Debug("0i_spells", "1101", GetName(oCreature) + " is not casting in melee against " + GetName(oMelee));
+                ai_Debug("0i_spells", "1101", GetName(oCreature) + " is not casting in melee against " + GetName(oMelee));
                 return FALSE;
             }
         }
@@ -1891,7 +1891,7 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
         // We check this because if the enemy is moving or has not started acting
         // then we don't want to move up on them as they might move towards us!
         int nAction = GetCurrentAction(oNearestEnemy);
-       //ai_Debug("0i_spells", "1130", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
+        ai_Debug("0i_spells", "1130", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
         if(nAction != ACTION_MOVETOPOINT || nAction != ACTION_ITEMCASTSPELL ||
            nAction != ACTION_INVALID || nAction != ACTION_USEOBJECT ||
            nAction != ACTION_RANDOMWALK) fRange = fEnemyDistance + (fRange - 7.5);
@@ -1902,8 +1902,8 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
 }
 int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage)
 {
-   //ai_Debug("0i_spells", "1127", "nSpell: " + IntToString(nSpell) + " nDamage: " +
-   //          IntToString(nDamage));
+    ai_Debug("0i_spells", "1127", "nSpell: " + IntToString(nSpell) + " nDamage: " +
+             IntToString(nDamage));
     if(nSpell == SPELL_HEAL && nDamage > 50) return TRUE;
     else if(nSpell == SPELL_CURE_CRITICAL_WOUNDS && nDamage > 31) return TRUE;
     else if(nSpell == SPELL_CURE_SERIOUS_WOUNDS && nDamage > 23) return TRUE;

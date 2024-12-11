@@ -9,9 +9,9 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    ai_Debug("0e_ch_1_hb", "12", GetName(oCreature) + " Heartbeat." +
-             " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
-             " Action: " + IntToString(GetCurrentAction(oCreature)));
+    if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "12", GetName(oCreature) + " Heartbeat." +
+                 " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
+                 " Action: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     // If we are an associate and don't have a master then exit.
     object oMaster = GetMaster(oCreature);
@@ -56,25 +56,22 @@ void main()
             // When picking up items we also check for traps and locks so if
             // we are not in pickup mode we need to do that here.
             if(ai_AssociateRetrievingItems(oCreature)) return;
-            if(!ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
+            // Seek out and disable traps.
+            if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
             {
-                // Seek out and disable traps.
-                if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
-                {
-                    object oTrap = GetNearestTrapToObject(oCreature);
-                    if(oTrap != OBJECT_INVALID &&
-                       GetDistanceBetween(oMaster, oTrap) < GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE) &&
-                       ai_AttemptToDisarmTrap(oCreature, oTrap)) return;
-                }
-                // Seek out and disable locks.
-                if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
-                   ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
-                {
-                    object oLock = ai_GetNearestLockedObject(oCreature);
-                    if(oLock != OBJECT_INVALID &&
-                       GetDistanceBetween(oMaster, oLock) < GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE) &&
-                       ai_AttemptToByPassLock(oCreature, oLock)) return;
-                }
+                object oTrap = GetNearestTrapToObject(oCreature);
+                if(oTrap != OBJECT_INVALID &&
+                   GetDistanceBetween(oMaster, oTrap) < GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE) &&
+                   ai_AttemptToDisarmTrap(oCreature, oTrap)) return;
+            }
+            // Seek out and disable locks.
+            if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
+               ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
+            {
+                object oLock = ai_GetNearestLockedObject(oCreature);
+                if(oLock != OBJECT_INVALID &&
+                   GetDistanceBetween(oMaster, oLock) < GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE) &&
+                   ai_AttemptToByPassLock(oCreature, oLock)) return;
             }
             if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
             {
@@ -91,7 +88,7 @@ void main()
         //         " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
         if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
         {
-            ai_Debug("0e_ch_1_hb", "67", "Going into stealth mode!");
+            if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "94", "Going into stealth mode!");
             int nStealth = GetSkillRank(SKILL_HIDE, oCreature);
             nStealth += GetSkillRank(SKILL_MOVE_SILENTLY, oCreature);
             if(nStealth / 2 >= ai_GetCharacterLevels(oCreature))
@@ -105,7 +102,7 @@ void main()
             SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
             if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH))
             {
-                ai_Debug("0e_ch_1_hb", "72", "Going into search mode!");
+                if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "108", "Going into search mode!");
                 SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
             }
             else SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);

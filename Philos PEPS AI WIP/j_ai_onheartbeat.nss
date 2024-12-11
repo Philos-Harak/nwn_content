@@ -6,7 +6,7 @@
   We use this to change the creatures event scripts to the new AI event scripts.
 *///////////////////////////////////////////////////////////////////////////////
 //#include "J_INC_HEARTBEAT"
-#include "0i_replace_j_ai"
+#include "0i_module"
 
 void main()
 {

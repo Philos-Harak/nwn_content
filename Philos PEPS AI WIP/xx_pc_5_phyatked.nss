@@ -6,14 +6,13 @@
   Fires for all physical attacks, claws, weapons, fists, bow, etc.
   Fires for taunt skill, animal empathy skill.
 /*//////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
     object oAttacker = GetLastAttacker();
-    ai_Debug("xx_pc_5_phyatked", "15", GetName(oCreature) + " was attacked by " +
-             GetName(oAttacker) + ".");
+    if(AI_DEBUG) ai_Debug("xx_pc_5_phyatked", "14", GetName(oCreature) + " was attacked by " +
+                 GetName(oAttacker) + ".");
     SetLocalObject(oAttacker, AI_ATTACKED_PHYSICAL, oCreature);
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     if(ai_GetIsInCombat(oCreature)) return;

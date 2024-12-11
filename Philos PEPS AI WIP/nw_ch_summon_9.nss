@@ -17,9 +17,7 @@ creatures.
 //****************************  ADDED AI CODE  *****************************
 // Include for the summoning AI to use on a server.
 // Include for the summoning AI to use in single player.
-//#include "0i_server"
-//#include "0i_replace_j_ai"
-#include "0i_single_player"
+#include "0i_module"
 //****************************  ADDED AI CODE  *****************************
 //#include "X0_INC_HENAI"
 #include "x2_inc_switches"

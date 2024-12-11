@@ -5,14 +5,13 @@
   Associates OnBlocked event script;
   Can be blocked by a creature or door.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
     // This actually gets either a Creature or Door that is blocking OBJECT_SELF.
     object oObject = GetBlockingDoor();
-    ai_Debug("0e_ch_e_blocked", "15", GetName(oCreature) + " is being blocked by " + GetName(oObject));
+    if(AI_DEBUG) ai_Debug("0e_ch_e_blocked", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
     if(nObjectType == OBJECT_TYPE_CREATURE && GetIsEnemy(oObject, oCreature))
     {
@@ -47,7 +46,7 @@ void main()
     }
     else if(GetLocked(oObject))
     {
-        ai_Debug("0e_ch_e_blocked", "50", GetName(oObject) + " is locked!");
+        if(AI_DEBUG) ai_Debug("0e_ch_e_blocked", "49", GetName(oObject) + " is locked!");
         string sID = ObjectToString(oCreature);
         if(!GetLocalInt(oObject, "AI_STATED_LOCKED_" + sID) &&
            !ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK)) SpeakString("That " + GetName(oObject) + " is locked!");

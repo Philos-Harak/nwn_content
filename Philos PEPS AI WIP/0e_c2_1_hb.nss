@@ -5,15 +5,13 @@
   Monster OnHeartbeat script;
   This will usually fire every 6 seconds (1 game round).
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
-//#include "x0_i0_anims"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
     // * if not runnning normal or better AI then exit for performance reasons
     if (GetAILevel(oCreature) == AI_LEVEL_VERY_LOW) return;
-    ai_Debug("0e_c2_1_hb", "17", GetName(oCreature) + " Heartbeat." +
+    if(AI_DEBUG) ai_Debug("0e_c2_1_hb", "14", GetName(oCreature) + " Heartbeat." +
              " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
     {
@@ -58,16 +56,16 @@ void main()
         if(oPC != OBJECT_INVALID && GetIsEnemy(oPC, oCreature) &&
            GetDistanceBetween(oCreature, oPC) <= AI_RANGE_BATTLEFIELD)
         {
-            ai_Debug("0e_c2_1_hb", "62", GetName(oCreature) + " is " +
+            if(AI_DEBUG) ai_Debug("0e_c2_1_hb", "59", GetName(oCreature) + " is " +
                      FloatToString(GetDistanceBetween(oCreature, oPC), 0, 2) + " from " + GetName(oPC));
-            ai_Debug("0e_c2_1_hb", "68", GetName(oCreature) + " is Setting Creature Talents and buffing!");
+            if(AI_DEBUG) ai_Debug("0e_c2_1_hb", "61", GetName(oCreature) + " is Setting Creature Talents and buffing!");
             ai_SetupMonsterBuffTargets(oCreature);
             // To save steps and time we set the talenst while we buff!
             ai_SetCreatureTalents(oCreature, TRUE);
             ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
             if(GetObjectSeen(oPC, oCreature))
             {
-                ai_Debug("0e_c2_1_hb", "78", GetName(oCreature) + " is starting combat!");
+                if(AI_DEBUG) ai_Debug("0e_c2_1_hb", "68", GetName(oCreature) + " is starting combat!");
                 ai_DoMonsterCombatRound(oCreature);
                 return;
             }

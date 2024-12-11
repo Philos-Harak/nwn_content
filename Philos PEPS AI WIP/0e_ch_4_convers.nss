@@ -7,15 +7,14 @@
   Fires when oCreature hears a shout from another creature.
   If SetListening is FALSE then oCreature will not "hear" anything.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 #include "nw_inc_gff"
 void main()
 {
     object oCreature = OBJECT_SELF;
     int nMatch = GetListenPatternNumber();
-    ai_Debug("0e_ch_4_convers", "17", GetName(oCreature) + " listens " +
-             IntToString(nMatch) + " to " + GetName(GetLastSpeaker()) + ".");
+    if(AI_DEBUG) ai_Debug("0e_ch_4_convers", "16", GetName(oCreature) + " listens " +
+                 IntToString(nMatch) + " to " + GetName(GetLastSpeaker()) + ".");
     // Skip ASSOCIATE_COMMAND_MASTERUNDERATTACK(11) since it fires for
     // every physical attack made on our master. This fires alot!
     if(nMatch == ASSOCIATE_COMMAND_MASTERUNDERATTACK) return;

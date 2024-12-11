@@ -9,8 +9,7 @@
   Fires when EffectDamage is applied to oCreature even if 0 damage.
   Fires when a weapon damages a oCreature, but not if resisted.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_actions"
-#include "0i_actions_debug"
+#include "0i_actions"
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -21,7 +20,7 @@ void main()
     }
     if(ai_Disabled(oCreature)) return;
     object oDamager = GetLastDamager(oCreature);
-    ai_Debug("0e_c2_6_damaged", "24", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
+    if(AI_DEBUG) ai_Debug("0e_c2_6_damaged", "23", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;
     if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
     {

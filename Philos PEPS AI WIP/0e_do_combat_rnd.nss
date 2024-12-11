@@ -7,13 +7,12 @@
     the attacked enemy is dead. We end attack actions with a ClearAllActions
     command and would also end this one so it will not work with attack actions.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
-    ai_Debug("0e_do_combat_rnd", "15", GetName(oCreature) + " is calculating a new round." +
-             "nAction: " + IntToString(GetCurrentAction(oCreature)));
+    if(AI_DEBUG) ai_Debug("0e_do_combat_rnd", "14", GetName(oCreature) + " is calculating a new round." +
+                 "nAction: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsInCombat(oCreature))
     {
         if(GetAssociateType(oCreature) == ASSOCIATE_TYPE_NONE &&

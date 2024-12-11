@@ -8,9 +8,7 @@
   We use this to change the creatures event scripts to the new AI event scripts.
 *///////////////////////////////////////////////////////////////////////////////
 #include "X2_INC_SUMMSCALE"
-//#include "0i_server"
-//#include "0i_replace_j_ai"
-#include "0i_single_player"
+#include "0i_module"
 void main()
 {
     // GZ: Fallback for timing issue sometimes preventing epic summoned creatures from leveling up to their master's level.

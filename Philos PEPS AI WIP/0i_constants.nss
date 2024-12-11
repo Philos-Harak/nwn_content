@@ -459,6 +459,12 @@ const string AI_RULE_PERCEPTION_DISTANCE = "AI_RULE_PERCEPTION_DISTANCE";
 const string AI_RULE_CORPSES_STAY = "AI_RULE_CORPSES_STAY";
 // Monsters will wander around when not in combat.
 const string AI_RULE_WANDER = "AI_RULE_WANDER";
+// Increase the number of encounter creatures.
+const string AI_INCREASE_ENC_MONSTERS = "AI_INCREASE_ENC_MONSTERS";
+// Increase all monsters hitpoints by this percentage.
+const string AI_INCREASE_MONSTERS_HP = "AI_INCREASE_MONSTERS_HP";
+// Variable that can change the distance associates can hear and see.
+const string AI_RULE_ASSOC_PERC_DISTANCE = "AI_RULE_ASSOC_PERC_DISTANCE";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction

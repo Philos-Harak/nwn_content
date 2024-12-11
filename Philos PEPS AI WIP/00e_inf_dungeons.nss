@@ -5,7 +5,6 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
 #include "x0_i0_assoc"
-
 // Followers special heartbeat script.
 void ai_hen_id1_heart(object oCreature);
 // Followers special conversation script.

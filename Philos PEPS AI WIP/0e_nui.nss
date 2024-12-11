@@ -55,13 +55,12 @@ void main()
     string sElem  = NuiGetEventElement();
     int nIndex = NuiGetEventArrayIndex();
     string sWndId = NuiGetWindowId(oPC, nToken);
-    //ai_Debug ("0e_nui", "58", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
-    //          " nToken: " + IntToString(nToken) + " oPC: " + GetName(oPC));
+    //if(AI_DEBUG) ai_Debug ("0e_nui", "58", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
+    //             " nToken: " + IntToString(nToken) + " oPC: " + GetName(oPC));
     // Get if the menu has an associate attached.
     json jData = NuiGetUserData(oPC, nToken);
     object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
-    if(sAssociateType == "") return;
     if(!ai_GetIsCharacter(oAssociate) && !GetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE") &&
       (oAssociate == OBJECT_INVALID || GetMaster(oAssociate) != oPC))
     {
@@ -69,8 +68,9 @@ void main()
         NuiDestroy(oPC, nToken);
         return;
     }
-    //ai_Debug("0e_nui", "78", "oAssociate: " + GetName(oAssociate) + " sAssociateType: " + sAssociateType +
-    //         " AI_NO_NUI_SAVE: " + IntToString(GetLocalInt(oPC, AI_NO_NUI_SAVE)));
+    if(sAssociateType == "") return;
+    //if(AI_DEBUG) ai_Debug("0e_nui", "78", "oAssociate: " + GetName(oAssociate) + " sAssociateType: " + sAssociateType +
+    //             " AI_NO_NUI_SAVE: " + IntToString(GetLocalInt(oPC, AI_NO_NUI_SAVE)));
     //**************************************************************************
     if(sWndId == sAssociateType + "_widget")
     {
@@ -79,7 +79,6 @@ void main()
         {
             if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
             json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
-            ai_Debug("0e_nui", "82", "sAssociateType: " + sAssociateType + " jGeometry: " + JsonDump(jGeometry));
             ai_SetAssociateDbJson(oPC, sAssociateType, "locations", jGeometry);
         }
     }
@@ -281,6 +280,26 @@ void main()
                 SetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE, fDistance);
                 json jRules = ai_GetCampaignDbJson("rules");
                 JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(fDistance));
+                ai_SetCampaignDbJson("rules", jRules);
+            }
+            else if(sElem == "txt_inc_enc")
+            {
+                int nNumber = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                if(nNumber < 0) nNumber = 0;
+                else if(nNumber > 9) nNumber = 9;
+                SetLocalInt(GetModule(), AI_INCREASE_ENC_MONSTERS, nNumber);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_INCREASE_ENC_MONSTERS, JsonInt(nNumber));
+                ai_SetCampaignDbJson("rules", jRules);
+            }
+            else if(sElem == "txt_inc_hp")
+            {
+                int nNumber = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                if(nNumber < 0) nNumber = 0;
+                else if(nNumber > 100) nNumber = 100;
+                SetLocalInt(GetModule(), AI_INCREASE_MONSTERS_HP, nNumber);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
                 ai_SetCampaignDbJson("rules", jRules);
             }
             else if(GetStringLeft(sElem, 4) == "chbx")
@@ -993,13 +1012,19 @@ void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nAssocia
 {
     if(ai_GetIsCharacter(oAssociate)) return;
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
-    string sAssociateType;
-    if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) sAssociateType = "cmb_familiar_selected";
-    else if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) sAssociateType = "cmb_companion_selected";
-    int nSelection = JsonGetInt(NuiGetBind(oPC, nToken, sAssociateType));
+    int nSelection;
     json jAssociate = ObjectToJson(oAssociate, TRUE);
+    if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR)
+    {
+        nSelection = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_familiar_selected"));
+        jAssociate = GffReplaceInt(jAssociate, "FamiliarType", nSelection);
+    }
+    else if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION)
+    {
+        nSelection = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_companion_selected"));
+        jAssociate = GffReplaceInt(jAssociate, "CompanionType", nSelection);
+    }
     //ai_Debug("0e_nui", "916", JsonDump(jAssociate, 1));
-    jAssociate = GffReplaceInt(jAssociate, "FamiliarType", nSelection);
     location lLocation = GetLocation(oAssociate);
     ai_FireHenchman(oPC, oAssociate);
     object oCompanion = GetAssociate(nAssociateType, oAssociate);
@@ -1013,11 +1038,19 @@ void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssocia
     if(ai_GetIsCharacter(oAssociate)) return;
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     string sAssociateType;
-    if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) sAssociateType = "txt_familiar_name";
-    else if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) sAssociateType = "txt_companion_name";
-    string sName = JsonGetString(NuiGetBind(oPC, nToken, sAssociateType));
+    string sName;
     json jAssociate = ObjectToJson(oAssociate, TRUE);
-    jAssociate = GffReplaceString(jAssociate, "FamiliarName", sName);
+    if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR)
+    {
+        sName = JsonGetString(NuiGetBind(oPC, nToken, "txt_familiar_name"));
+        jAssociate = GffReplaceString(jAssociate, "FamiliarName", sName);
+    }
+    else if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION)
+    {
+        sAssociateType = "txt_companion_name";
+        sName = JsonGetString(NuiGetBind(oPC, nToken, "txt_familiar_name"));
+        jAssociate = GffReplaceString(jAssociate, "FamiliarName", sName);
+    }
     location lLocation = GetLocation(oAssociate);
     ai_FireHenchman(oPC, oAssociate);
     object oCompanion = GetAssociate(nAssociateType, oAssociate);

@@ -9,9 +9,7 @@
   Monster OnHeartbeat script
   We use this to change the creatures event scripts to the new AI event scripts.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_server"
-//#include "0i_replace_j_ai"
-#include "0i_single_player"
+#include "0i_module"
 #include "x2_inc_switches"
 void main()
 {

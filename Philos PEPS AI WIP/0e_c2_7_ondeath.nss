@@ -5,8 +5,7 @@
   Monster OnDeath script;
   This fires when the creature dies.
 *////////////////////////////////////////////////////////////////////////////////
-//#include "0i_server"
-#include "0i_single_player"
+#include "0i_module"
 void main()
 {
     object oCreature = OBJECT_SELF;

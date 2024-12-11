@@ -17,11 +17,10 @@
   This event can be canceled with ClearAllActions(TRUE) and SurrenderToEnemies.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
-//#include "0i_actions_debug"
 void main()
 {
     object oCreature = OBJECT_SELF;
-    //ai_Debug("0e_m1_3_endround", "21", GetName(oCreature) + " ends combat round.");
+    if(AI_DEBUG) ai_Debug("0e_m1_3_endround", "23", GetName(oCreature) + " ends combat round.");
     // Action modes get cleared prior to each OnCombatRoundEnd!
     // We do this to keep the action mode going.
     int nActionMode = GetLocalInt(oCreature, AI_CURRENT_ACTION_MODE);

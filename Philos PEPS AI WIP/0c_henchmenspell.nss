@@ -11,8 +11,7 @@
  If nBuffType is 0 then it will cast a specific spell from
  Variable "0_SPELL_TO_CAST". Use script: 0c_h_spell_cast spell to set the spell.
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 float ai_UseLayOnHands(object oTarget, object oPC, float fDelay, object oCaster);
 void main()
 {

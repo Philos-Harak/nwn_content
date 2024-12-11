@@ -12,12 +12,12 @@
   When the game runs it will change all creatures event scripts back to normal.
   and set them up for the default bioware AI scripts.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_single_player"
+#include "0i_module"
 void main()
 {
     object oCreature = OBJECT_SELF;
     ai_FixEventScriptsForAssociate(OBJECT_SELF);
-    SpeakString("Philos' AI has reverted my event scripts!");
+    //SpeakString("Philos' AI has reverted my event scripts!");
     // Need to setup all the old associate stuff!
     string sTag;
     object oNPC;

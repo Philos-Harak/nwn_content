@@ -31,10 +31,9 @@
 // Updated 2003-08-20 Georg Zoeller: Added check for variables to active spawn
 // in conditions without changing the spawnscript
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_server"
-#include "0i_single_player"
+#include "0i_module"
 #include "x0_i0_anims"
-// #include "x0_i0_walkway" - in x0_i0_anims
+//#include "x0_i0_walkway" - in x0_i0_anims
 #include "x0_i0_treasure"
 #include "x2_inc_switches"
 void main()
@@ -379,5 +378,8 @@ void main()
     ai_SetCreatureAIScript(oCreature);
     ai_SetMonsterEventScripts(oCreature);
     ai_SetAura(oCreature);
+    ai_SetNormalAppearance(oCreature);
+    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
+    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
 //****************************  ADDED AI CODE  *********************************
 }

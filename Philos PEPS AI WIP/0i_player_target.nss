@@ -4,8 +4,7 @@
  Include script for handling player targeting functions.
 
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 // Setup an AI OnPlayerTarget Event script while allowing any module onplayer
 // target event script to still work.
 void ai_SetupPlayerTarget(object oCreature);

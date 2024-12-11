@@ -6,8 +6,7 @@
  conversation.
  Param "sAction"
 *///////////////////////////////////////////////////////////////////////////////
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 void main()
 {
     object oPC = GetPCSpeaker();

@@ -13,12 +13,12 @@
   and set them up for the default bioware AI scripts.
 *///////////////////////////////////////////////////////////////////////////////
 #include "x2_inc_switches"
-#include "0i_single_player"
+#include "0i_module"
 void main()
 {
     object oCreature = OBJECT_SELF;
     ai_FixEventScriptsForMonster(OBJECT_SELF);
-    SpeakString("Philos' AI has reverted my event scripts!");
+    //SpeakString("Philos' AI has reverted my event scripts!");
     // * Goes through and sets up which shouts the NPC will listen to.
     SetListeningPatterns();
     WalkWayPoints();

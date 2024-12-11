@@ -4,8 +4,7 @@
  Include script for handling NUI menus.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
-//#include "0i_associates"
-#include "0i_assoc_debug"
+#include "0i_associates"
 // Use by NUI windows to stop saving move states while loading.
 const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Maximum number of Plugins allowed on the players widget.
@@ -108,85 +107,162 @@ void ai_CreateAIOptionsNUI(object oPC)
     // Add row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 ******************************************************************* 482 / 101
+    float fHeight = 73.0;
+    // Row 2a ****************************************************************** 482 / ---
+    string sLocation = ResManGetAliasFor("nw_c2_default1", RESTYPE_NCS);
+    if(sLocation != "OVERRIDE:" && sLocation != "PATCH:peps" && sLocation != "DEVELOPMENT:")
+    {
+        jRow = JsonArray();
+        if(sLocation == "") sLocation = "Not loaded!";
+        else sLocation = " Using: " + sLocation;
+        CreateLabel(jRow, "Error: Monster AI (nw_c2_default1) " + sLocation, "lbl_warning1", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        WriteTimestampedLogEntry("Error: Monster AI (x2_def_heartbeat) " + sLocation);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 2b ****************************************************************** 482 / ---
+    sLocation = ResManGetAliasFor("x2_def_heartbeat", RESTYPE_NCS);
+    if(sLocation != "OVERRIDE:" && sLocation != "PATCH:peps" && sLocation != "DEVELOPMENT:")
+    {
+        jRow = JsonArray();
+        if(sLocation == "") sLocation = "Not loaded!";
+        CreateLabel(jRow, "Error: Monster AI (x2_def_heartbeat) " + sLocation, "lbl_warning2", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        WriteTimestampedLogEntry("Error: Monster AI (x2_def_heartbeat) " + sLocation);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 2c ****************************************************************** 482 / ---
+    sLocation = ResManGetAliasFor("j_ai_onheartbeat", RESTYPE_NCS);
+    if(sLocation != "OVERRIDE:" && sLocation != "PATCH:peps" && sLocation != "DEVELOPMENT:")
+    {
+        jRow = JsonArray();
+        if(sLocation == "") sLocation = "Not loaded!";
+        else sLocation = " Using: " + sLocation;
+        CreateLabel(jRow, "Error: Monster AI (j_ai_onheartbeat) " + sLocation, "lbl_warning3", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        WriteTimestampedLogEntry("Error: Monster AI (j_ai_onheartbeat) " + sLocation);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 2d ****************************************************************** 482 / ---
+    sLocation = ResManGetAliasFor("nw_ch_ac1", RESTYPE_NCS);
+    if(sLocation != "OVERRIDE:" && sLocation != "PATCH:peps" && sLocation != "DEVELOPMENT:")
+    {
+        jRow = JsonArray();
+        if(sLocation == "") sLocation = "Not loaded!";
+        CreateLabel(jRow, "Error: Associate AI (nw_ch_ac1) " + sLocation, "lbl_warning4", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        WriteTimestampedLogEntry("Error: Associate AI (nw_ch_ac1) " + sLocation);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 2e ****************************************************************** 482 / ---
+    sLocation = ResManGetAliasFor("nw_ch_summon_9", RESTYPE_NCS);
+    if(sLocation != "OVERRIDE:" && sLocation != "PATCH:peps" && sLocation != "DEVELOPMENT:")
+    {
+        jRow = JsonArray();
+        if(sLocation == "") sLocation = "Not loaded!";
+        CreateLabel(jRow, "Error: Summons AI (nw_ch_summon_9) " + sLocation, "lbl_warning5", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        WriteTimestampedLogEntry("Error: Summons AI (nw_ch_summon_9) " + sLocation);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 2d ****************************************************************** 482 / ---
+    if(fHeight == 73.0)
+    {
+        jRow = JsonArray();
+        CreateLabel(jRow, "All AI scripts are loaded and working!", "lbl_notice1", 466.0f, 20.0f, NUI_HALIGN_CENTER);
+        // Add row to the column.
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
+    // Row 3 ******************************************************************* 482 / 101
     jRow = JsonArray();
     CreateLabel(jRow, "Max Henchman:", "lbl_max_hench", 110.0f, 20.0f);
     CreateTextEditBox(jRow, "sPlaceHolder", "txt_max_henchman", 2, FALSE, 30.0f, 20.0f, "txt_max_henchman_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButtonSelect(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 150.0f, 20.0f, "btn_assoc_widget_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButtonSelect(jRow, "Ghost Mode", "btn_ghost_mode", 150.0f, 20.0f, "btn_ghost_mode_tooltip");
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 ******************************************************************* 482 / 129
+    // Row 4 ******************************************************************* 482 / 129
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateLabel(jRow, "AI RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 ******************************************************************* 482 / 493
+    // Row 5 ******************************************************************* 482 / 519 (26)
     jRow = JsonArray();
     // Make the AI options a Group.
     json jGroupRow = JsonArray();
     json jGroupCol = JsonArray();
-    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 3, FALSE, 35.0f, 20.0f, "txt_ai_difficulty_tooltip");
-    CreateLabel(jGroupRow, " Chance monster AI attacks the weakest target.", "lbl_ai_difficulty", 330.0f, 20.0f, 0, 0, 0.0, "txt_ai_difficulty_tooltip");
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 3, FALSE, 40.0f, 20.0f, "txt_ai_difficulty_tooltip");
+    CreateLabel(jGroupRow, "% chance monsters attack the weakest target.", "lbl_ai_difficulty", 361.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_ai_difficulty_tooltip");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Moral checks, wounded AI creatures may flee from combat", "chbx_moral", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Moral checks, wounded creatures may flee combat", "chbx_moral", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow monsters to prebuff before combat starts", "chbx_buff_monsters", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow monsters to prebuff before combat starts", "chbx_buff_monsters", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow monsters to summon before combat starts", "chbx_buff_summons", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow monsters to summon before combat starts", "chbx_buff_summons", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow monsters to use ambush scripts", "chbx_ambush_monsters", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow monsters to use ambush scripts", "chbx_ambush_monsters", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " [Experimental!] Allow monsters to summon companions.", "chbx_companions", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " [Experimental!] Allow monsters to summon companions", "chbx_companions", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Summoned associates to remain after masters death.", "chbx_perm_assoc", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Summoned associates to remain after masters death", "chbx_perm_assoc", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Use advanced AI movement during combat", "chbx_advanced_movement", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Use advanced AI movement during combat", "chbx_advanced_movement", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Item Level Restrictions for creatures. This defaults to off!", "chbx_ilr", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Item Level Restrictions for creatures [Default is off]", "chbx_ilr", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow creatures to use Use Magic Device.", "chbx_umd", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow creatures to use Use Magic Device", "chbx_umd", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow creatures to use Healing kits.", "chbx_use_healingkits", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow creatures to use Healing kits", "chbx_use_healingkits", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
     CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
-    CreateLabel(jGroupRow, " meters distance a monster can perceive the player.", "lbl_perception_distance", 355.0f, 20.0f, 0, 0, 0.0, "txt_perception_distance_tooltip");
+    CreateLabel(jGroupRow, "meters distance a monster can perceive the player", "lbl_perception_distance", 361.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " [Experimental!] Enemy corpses remain.", "chbx_corpses_stay", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " [Experimental!] Enemy corpses remain", "chbx_corpses_stay", 400.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateCheckBox(jGroupRow, " Allow monsters to wander.", "chbx_wander", 450.0, 20.0);
+    CreateCheckBox(jGroupRow, " Allow monsters to wander", "chbx_wander", 400.0, 20.0);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = JsonArray();
+    CreateLabel(jGroupRow, "Increase encounter monsters by", "lbl_inc_enc", 223.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0, "txt_inc_enc_tooltip");
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_enc", 1, FALSE, 35.0f, 20.0f, "txt_inc_enc_tooltip");
+    CreateLabel(jGroupRow, "and hitpoints by", "lbl_inc_hp", 117.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0, "txt_inc_hp_tooltip");
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_hp", 3, FALSE, 40.0f, 20.0f, "txt_inc_hp_tooltip");
+    CreateLabel(jGroupRow, "%", "lbl_inc_percentage", 10.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0, "txt_inc_hp_tooltip");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 ******************************************************************* 482 / 521
+    // Row 6 ******************************************************************* 482 / 547
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Add Plugin", "btn_add_plugin", 230.0f, 20.0f);
+    CreateButton(jRow, "Add Plugin", "btn_add_plugin", 200.0f, 20.0f);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateTextEditBox(jRow, "sPlaceHolder", "txt_plugin", 16, FALSE, 230.0f, 20.0f, "txt_plugin_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 521.0;
-    // Row 6+ ******************************************************************* 482 / ---
+    fHeight += 547.0;
+    // Row 7+ ******************************************************************* 482 / ---
     int nIndex;
     string sIndex;
     json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
@@ -196,7 +272,7 @@ void ai_CreateAIOptionsNUI(object oPC)
         sIndex = IntToString(nIndex + 1);
         jRow = JsonArray();
         JsonArrayInsertInplace(jRow, NuiSpacer());
-        CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sIndex, 230.0f, 20.0f);
+        CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sIndex, 200.0f, 20.0f);
         JsonArrayInsertInplace(jRow, NuiSpacer());
         CreateLabel(jRow, JsonGetString(jScript), "txt_plugin_" + sIndex, 230.0f, 20.0f);
         JsonArrayInsertInplace(jRow, NuiSpacer());
@@ -221,7 +297,7 @@ void ai_CreateAIOptionsNUI(object oPC)
     // Row 2
     NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetMaxHenchmen())));
     NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
-    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-6)."));
+    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-12)."));
     if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "")
     {
         NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool(TRUE));
@@ -266,6 +342,12 @@ void ai_CreateAIOptionsNUI(object oPC)
     NuiSetBindWatch (oPC, nToken, "chbx_corpses_stay_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_wander_check", JsonBool(GetLocalInt(oModule, AI_RULE_WANDER)));
     NuiSetBindWatch (oPC, nToken, "chbx_wander_check", TRUE);
+    NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS))));
+    NuiSetBindWatch (oPC, nToken, "txt_inc_enc", TRUE);
+    NuiSetBind(oPC, nToken, "txt_inc_enc_tooltip", JsonString("  Add this number of creatures per creature in an encounter."));
+    NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP))));
+    NuiSetBindWatch (oPC, nToken, "txt_inc_hp", TRUE);
+    NuiSetBind(oPC, nToken, "txt_inc_hp_tooltip", JsonString("  Increases all monsters Hitpoints by this %"));
     // Row 5
     NuiSetBind(oPC, nToken, "btn_add_plugin_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_plugin_event", JsonBool(TRUE));
@@ -421,6 +503,20 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
+    // Row 13 ****************************************************************** 388 / ---
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateLabel(jRow, "", "lbl_info_1", 360.0, 20.0, 0, NUI_VALIGN_BOTTOM);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    fHeight = fHeight + 28.0;
+    // Row 14 ****************************************************************** 388 / ---
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateLabel(jRow, "", "lbl_info_2", 360.0, 20.0, 0, NUI_VALIGN_TOP);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    fHeight = fHeight + 28.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sText, sName = GetName(oAssociate);
@@ -679,11 +775,56 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         else sText = "  [Off] Turn buffing after resting on";
         NuiSetBind (oPC, nToken, "btn_buff_rest_tooltip", JsonString (sText));
     }
+    int nRoll = d8();
+    string sText2;
+    if(nRoll == 1)
+    {
+        sText = "Use your mouse wheel to adjust your options.";
+        sText2 = "Like follow distance, heal chance, and magic level!";
+    }
+    else if(nRoll == 2)
+    {
+        sText = "Talk to your henchman they can do many things.";
+        sText2 = "They can Identify items, cast spells, or heal the party!";
+    }
+    else if(nRoll == 3)
+    {
+        sText = "Give your henchman items they can use. ";
+        sText2 = "Like healing kits, thieves tools, and magic items!";
+    }
+    else if(nRoll == 4)
+    {
+        sText = "Right click your portrait!";
+        sText2 = "It opens your AI menu.";
+    }
+    else if(nRoll == 5)
+    {
+        sText = "Put the camera focus on a henchman.";
+        sText2 = "Then use their action mode!";
+    }
+    else if(nRoll == 6)
+    {
+        sText = "Is the game too easy?";
+        sText2 = "Goto the main menu and change some RULES!";
+    }
+    else if(nRoll == 7)
+    {
+        sText = "If your henchman are just standing around";
+        sText2 = "get them moving by using All Normal Mode.";
+    }
+    else if(nRoll == 8)
+    {
+        sText = "Need help or want to play a specific module?";
+        sText2 = "Ask on the Vault Discord or Forums!";
+    }
+    NuiSetBind(oPC, nToken, "lbl_info_1_label", JsonString(sText));
+    NuiSetBind(oPC, nToken, "lbl_info_2_label", JsonString(sText2));
 }
 void ai_CreateAssociateAINUI(object oPC, object oAssociate)
 {
     // ************************************************************************* Width / Height
     int bIsPC = ai_GetIsCharacter(oAssociate);
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     //int bUsingPCAI = ResManGetAliasFor("xx_pc_1_hb", RESTYPE_NCS) != "";
     // Row 1 ******************************************************************* 388 / 73
     json jRow = JsonArray();
@@ -765,12 +906,17 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     CreateButton(jRow, "Heal Party On/Off", "btn_healp_onoff", 150.0, 20.0, -1.0, "btn_healp_onoff_tooltip");
     CreateCheckBox(jRow, "", "chbx_healp_onoff", 25.0, 20.0);
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    float fHeight = 325.0;
     // Row 11 ****************************************************************** 388 / 353
-    jRow = JsonArray();
-    CreateButton(jRow, "Looting", "btn_loot", 150.0, 20.0, -1.0, "btn_loot_tooltip");
-    CreateCheckBox(jRow, "", "chbx_loot", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    if(sAssociateType != "summons")
+    {
+        jRow = JsonArray();
+        CreateButton(jRow, "Looting", "btn_loot", 150.0, 20.0, -1.0, "btn_loot_tooltip");
+        CreateCheckBox(jRow, "", "chbx_loot", 25.0, 20.0);
+        JsonArrayInsertInplace(jRow, NuiSpacer());
+        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        fHeight += 28.0;
+    }
     // Row 12 ****************************************************************** 388 / 381
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
@@ -778,13 +924,12 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     CreateTextEditBox(jRow, "sPlaceHolder", "txt_ai_script", 16, FALSE, 175.0f, 20.0f, "txt_ai_script_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 381.0;
+    fHeight += 28.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sText, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
-    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     int nToken = SetWindow(oPC, jLayout, sAssociateType + "_ai_menu", sName + " AI Menu",
                            -1.0, -1.0, 388.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     // Get which buttons are activated.
@@ -1590,7 +1735,7 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 *************************************************************** 388 / 101
+    // Row 3 *************************************************************** 388 / 129
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateLabel(jRow, "Minimum Gold", "lbl_min_gold", 100.0, 20.0, NUI_HALIGN_CENTER);
@@ -1599,97 +1744,97 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 *************************************************************** 388 / 129
+    // Row 4 *************************************************************** 388 / 157
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Plot items", 2);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 *************************************************************** 388 / 157
+    // Row 5 *************************************************************** 388 / 185
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Armor", 3);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 *************************************************************** 388 / 185
+    // Row 6 *************************************************************** 388 / 213
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Belts", 4);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 6 *************************************************************** 388 / 213
+    // Row 7 *************************************************************** 388 / 241
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Boots", 5);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 7 *************************************************************** 388 / 241
+    // Row 8 *************************************************************** 388 / 269
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Cloaks", 6);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 8 *************************************************************** 388 / 269
+    // Row 9 *************************************************************** 388 / 297
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Gems", 7);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 9 *************************************************************** 388 / 297
+    // Row 10 *************************************************************** 388 / 325
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Gloves and Bracers", 8);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 10 *************************************************************** 388 / 325
+    // Row 11 *************************************************************** 388 / 353
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Headgear", 9);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 11 *************************************************************** 388 / 353
+    // Row 12 *************************************************************** 388 / 381
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Jewelry", 10);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 12 *************************************************************** 388 / 381
+    // Row 13 *************************************************************** 388 / 409
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Miscellaneous items", 11);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 13 *************************************************************** 388 / 409
+    // Row 14 *************************************************************** 388 / 437
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Potions", 12);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 14 *************************************************************** 388 / 437
+    // Row 15 *************************************************************** 388 / 465
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Scrolls", 13);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 15 *************************************************************** 388 / 465
+    // Row 16 *************************************************************** 388 / 493
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Shields", 14);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 16 *************************************************************** 388 / 493
+    // Row 17 *************************************************************** 388 / 521
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Wands, Rods, and Staves", 15);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 17 ************************************************************** 388 / 521
+    // Row 18 ************************************************************** 388 / 549
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Weapons", 16);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 18 ************************************************************** 388 / 549
+    // Row 19 ************************************************************** 388 / 577
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Arrows", 17);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 18 ************************************************************** 388 / 577
+    // Row 20 ************************************************************** 388 / 605
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Bolts", 18);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 19 ************************************************************** 388 / 605
+    // Row 21 ************************************************************** 388 / 633
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Bullets", 19);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 605.0;
+    float fHeight = 633.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sText, sName = GetName(oAssociate);

@@ -76,7 +76,7 @@ void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType);
 // Text must be one of the following: pc, familiar, companion, summons, henchman#
 object ai_GetAssociateByStringType(object oPlayer, string sAssociateType);
 // Returns the associatetype int string format for oAssociate.
-// They are pc, familar, companion, summons, henchman#
+// They are pc, familar, companion, summons, henchman is the henchmans tag
 string ai_GetAssociateType(object oPlayer, object oAssociate);
 // Sets nData to sDataField for sAssociateType that is on oPlayer.
 // sDataField can be modes, magicmodes, lootmodes, widgetbuttons, aibuttons, magic,
@@ -163,6 +163,12 @@ void ai_CheckAIRules()
         // Monsters will wander around when not in combat.
         SetLocalInt(oModule, AI_RULE_WANDER, FALSE);
         JsonObjectSetInplace(jRules, AI_RULE_WANDER, JsonInt(FALSE));
+        // Increase the number of encounter creatures.
+        SetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS, FALSE);
+        JsonObjectSetInplace(jRules, AI_INCREASE_ENC_MONSTERS, JsonInt(FALSE));
+        // Increase all monsters hitpoints by this percentage.
+        SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, FALSE);
+        JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(FALSE));
         ai_SetCampaignDbJson("rules", jRules);
     }
     else if(!GetLocalInt(oModule, "AI_RULES_SET"))
@@ -213,7 +219,13 @@ void ai_CheckAIRules()
         // Monsters will wander around when not in combat.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_WANDER));
         SetLocalInt(oModule, AI_RULE_WANDER, bValue);
-    }
+        // Monsters will wander around when not in combat.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_ENC_MONSTERS));
+        SetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS, bValue);
+        // Monsters will wander around when not in combat.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_MONSTERS_HP));
+        SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, bValue);
+   }
 }
 int ai_GetIsCharacter(object oCreature)
 {
