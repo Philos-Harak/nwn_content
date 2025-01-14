@@ -11,7 +11,6 @@ void main()
     object oCreature = OBJECT_SELF;
     object oPC = GetPCSpeaker();
     AddHenchman(oPC, oCreature);
-    ai_GetAssociateDataFromDB(oPC, oCreature);
     int nVoice;
     switch(d4())
     {

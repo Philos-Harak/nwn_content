@@ -113,7 +113,7 @@ void main()
             if(sElem == "btns_saved_char")
             {
                 string sIndex = IntToString(++nIndex);
-                ai_Debug("pe_henchman", "113", "sParty: " + sParty + " nIndex: " + sIndex);
+                if(AI_DEBUG) ai_Debug("pe_henchman", "113", "sParty: " + sParty + " nIndex: " + sIndex);
                 string sName = GetHenchmanDbString("name", sParty + sIndex);
                 string sImage = GetHenchmanDbString("image", sParty + sIndex);
                 string sStats = GetHenchmanDbString("stats", sParty + sIndex);

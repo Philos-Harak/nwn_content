@@ -24,5 +24,6 @@ void main()
             }
         }
     }
+    ai_ClearCombatState(oCreature);
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

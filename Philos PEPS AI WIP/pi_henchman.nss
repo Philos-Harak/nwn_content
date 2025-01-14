@@ -87,7 +87,7 @@ void main()
     jList = JsonArrayInsert(JsonArray (), NuiListTemplateCell(jButton, 190.0, TRUE));
     // Create the list with the template.
     CreateList(jRow, jList, "btns_cur_char", 25.0, 250.0, 325.0);
-    ai_Debug("pi_henchman", "91", "json: " + JsonDump(jRow, 1));
+    if(AI_DEBUG) ai_Debug("pi_henchman", "91", "json: " + JsonDump(jRow, 1));
     // ***** Adding character sheet group next to the button list *****
     jGroupRow = JsonArray();
     jGroupCol = JsonArray();

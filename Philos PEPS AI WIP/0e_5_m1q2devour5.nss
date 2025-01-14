@@ -36,7 +36,7 @@ void main()
     // We only inform others if attacked when not busy, not disabled & not in combat.
     if(AI_DEBUG) ai_Debug("0e_c2_5_phyatked", "37", "Tell my allies I've been attacked!");
     SetLocalObject (oCreature, AI_MY_TARGET, oAttacker);
-    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
+    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_SHOUT);
     // Now move towards the attack in the hopes we can see them.
     ActionMoveToObject(oAttacker, TRUE, AI_RANGE_CLOSE);
 }

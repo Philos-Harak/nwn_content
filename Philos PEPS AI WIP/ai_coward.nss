@@ -89,7 +89,7 @@ void main()
                         if(!bTried)
                         {
                             // Move away so we can hide.
-                            ai_Debug("ai_coward", "93", GetName(oCreature) + " is trying to move away to hide!");
+                            if(AI_DEBUG) ai_Debug("ai_coward", "93", GetName(oCreature) + " is trying to move away to hide!");
                             SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
                             object oEnemy = GetLocalObject(oCreature, AI_ENEMY + sEnemyIndex);
                             ActionMoveAwayFromObject(oEnemy, TRUE, AI_RANGE_BATTLEFIELD);
@@ -109,7 +109,7 @@ void main()
         else if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
         {
             // Use any hiding talents we have
-            ai_Debug("ai_coward", "113", GetName(oCreature) + " is trying to hide!");
+            if(AI_DEBUG) ai_Debug("ai_coward", "113", GetName(oCreature) + " is trying to hide!");
             SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
             SetLocalInt(oCreature, AI_TRIED_TO_HIDE, 3);
             return;

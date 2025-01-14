@@ -116,7 +116,7 @@ object GetHenchmanDbObject(location lLocationToSpawn, string sSlot)
     string sQuery = "SELECT henchman FROM HENCHMAN_TABLE WHERE slot = @slot;";
     sqlquery sql = SqlPrepareQueryCampaign("Philos_Henchman_DB", sQuery);
     SqlBindString (sql, "@slot", sSlot);
-    ai_Debug("pe_henchman", "262", "sSlot: " + sSlot);
+    if(AI_DEBUG) ai_Debug("pe_henchman", "262", "sSlot: " + sSlot);
     if (SqlStep (sql)) return SqlGetObject(sql, 0, lLocationToSpawn, OBJECT_INVALID, TRUE);
     return OBJECT_INVALID;
 }

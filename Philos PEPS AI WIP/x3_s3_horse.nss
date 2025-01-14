@@ -39,11 +39,14 @@ void FunctionHenchmanMount(object oHenchman);
 ////////////////////////////////////////////////////////////////////[ MAIN ]////
 void main()
 {
-   object oPC=OBJECT_SELF;
+   object oPC = OBJECT_SELF;
    //*********** Philos Player Setup *********
-   ai_CheckPlayerForData(oPC);
+   ai_CheckAIRules();
+   ai_StartupPlugins(oPC);
+   ai_CheckAssociateData(oPC, oPC, "pc");
    ai_CreateWidgetNUI(oPC, oPC);
    ai_SetupPlayerTarget(oPC);
+   ai_SetNormalAppearance(oPC);
    //*********** Philos Player Setup *********
    object oTarget=GetSpellTargetObject();
    object oHorse;

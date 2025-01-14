@@ -13,8 +13,8 @@
 #include "0i_associates"
 void main()
 {
-    // * if not runnning normal or better Ai then exit for performance reasons
-    if (GetAILevel() == AI_LEVEL_VERY_LOW) return;
+    // * if not runnning normal or better AI then exit for performance reasons
+    //if (GetAILevel() == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
 
     if(GetLastPerceptionSeen())

@@ -7,12 +7,16 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version 0.1";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:01.09.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
-//***************************  ADJUSTABLECONSTANTS  ***************************
-// Should monsters use potions to prebuff before combat? Not working at the moment.
-const int AI_BUFF_MONSTER_POTIONS = FALSE;
+//***************************  ADJUSTABLE CONSTANTS  ***************************
+// Turn On/Off Debug.
+const int AI_DEBUG = FALSE;
+// Defines if we are building for single player or a server.
+const int AI_SERVER = TRUE;
+// Allows Henchman to have a widget.
+const int AI_HENCHMAN_WIDGET = FALSE;
 // The number of classes allowed for a character to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 3;
 // Taunts cool down time before the AI attemps another Taunt.
@@ -25,6 +29,41 @@ const int AI_BASE_CUSTOM_TOKEN = 1000;
 const int AI_ASF_WILL_USE = 15;
 // Delay between Henchman casting Buff spells. Must be minimum of 0.1 seconds.
 const float AI_HENCHMAN_BUFF_DELAY = 0.2;
+//*******************************  SERVER RULES ********************************
+// Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
+const int AI_MORAL_CHECKS = FALSE;
+// Allows monsters to prebuff before combat starts.
+const int AI_PREBUFF = TRUE;
+// Allows monsters cast summons spells when prebuffing.
+const int AI_PRESUMMONS = TRUE;
+// Allows monsters to use tactical AI scripts.
+const int AI_TACTICAL = TRUE;
+// Enemies may summon familiars and Animal companions and will be randomized.
+const int AI_SUMMON_COMPANIONS = TRUE;
+// Allow the AI to move during combat base on the situation and action taking.
+const int AI_ADVANCED_MOVEMENT = TRUE;
+// Follow Item Level Restrictions for monsters/associates.
+const int AI_ITEM_LEVEL_RESTRICTIONS = TRUE;
+// Allow the AI to use Use Magic Device.
+const int AI_USE_MAGIC_DEVICE = TRUE;
+// Allow the AI to use healing kits.
+const int AI_HEALING_KITS = TRUE;
+// Associates are permanent and don't get removed when the master dies.
+const int AI_COMPANIONS_PERMANENT = TRUE;
+// Monster AI's chance (0 to 100) to attack the weakest target instead of the nearest.
+const int AI_TARGET_WEAKEST = 0;
+// Variable that can change the distance creatures will come and attack after
+// hearing a shout from an ally that sees or hears an enemy.
+// Or when searching for an invisible, heard enemy.
+// 10.0 Short, 30.0 Average, 40.0 Long, 60.0 Huge.
+const float AI_SEARCH_DISTANCE = 30.0;
+// Enemy corpses remain on the floor instead of dissappearing.
+const int AI_CORPSE_REMAIN = FALSE;
+// Monsters will wander around when not in combat.
+const int AI_WANDER = FALSE;
+// Monster's actual perception distance.
+// 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
+const int AI_PERCEPTION_DISTANCE = 11;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -57,12 +96,11 @@ const int AI_BLOODY_MORAL_DC = 15;
 // The following constants are core constants and changing any of these without
 // understanding the whole system could cause unforseen results.
 //                            CHANGE AT YOUR OWN RISK.
-const int AI_DEBUG = TRUE;
-// The maximum number of henchman the code works for.
+// Startup variable to tell plugins that we have started.
+const string AI_STARTING_UP = "AI_STARTING_UP";
+// The maximum number of henchman the code works with.
 const int AI_MAX_HENCHMAN = 12;
-// Force the AI to overwrite all creature event scripts.
-const int AI_OVERWRITE_EVENT_SCRIPTS = FALSE;
-// Delay between Henchman casting Healing spells. Must be minimum of 0.1 seconds.
+// Delay between Henchman casting Healing spells. Must be minimum of 0.5 seconds.
 const float AI_HENCHMAN_HEALING_DELAY = 6.0;
 // A variable that can be set on creatures to stop mobile animations.
 const string AI_NO_ANIMATION = "AI_NO_ANIMATION";
@@ -117,12 +155,18 @@ const string AI_ATKED_BY_WEAPON = "AI_ATK_BY_WEAPON";
 const string AI_ATKED_BY_SPELL = "AI_ATK_BY_SPELL";
 const string AI_I_AM_WOUNDED = "AI_I_AM_WOUNDED";
 const string AI_I_AM_DEAD = "AI_I_AM_DEAD";
+const string AI_I_AM_DISEASED = "AI_I_AM_DISEASED";
+const string AI_I_AM_POISONED = "AI_I_AM_POISONED";
+const string AI_I_AM_WEAK = "AI_I_AM_WEAK";
 const int AI_ALLY_SEES_AN_ENEMY = 1;
 const int AI_ALLY_HEARD_AN_ENEMY = 2;
 const int AI_ALLY_ATKED_BY_WEAPON = 3;
 const int AI_ALLY_ATKED_BY_SPELL = 4;
 const int AI_ALLY_IS_WOUNDED = 5;
 const int AI_ALLY_IS_DEAD = 6;
+const int AI_ALLY_IS_DISEASED = 7;
+const int AI_ALLY_IS_POISONED = 8;
+const int AI_ALLY_IS_WEAK = 9;
 const string AI_MY_TARGET = "AI_MY_TARGET";
 // Constant used by monsters to reduce checks while searching for unseen targets.
 const string AI_AM_I_SEARCHING = "AI_AM_I_SEARCHING";
@@ -283,6 +327,8 @@ const int AI_MAGIC_NO_SPONTANEOUS_CURE = 0x00000800; // Caster will stop using s
 //const int AI_MAGIC_ =                  0x20000000; // Not used.
 //const int AI_MAGIC_ =                  0x40000000; // Not used.
 //const int AI_MAGIC_ =                  0x80000000; // Not used.
+// Use by NUI windows to stop saving move states while loading.
+const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Bitwise menu constants for Widget buttons that are used with Get/SetAssociateWidgetButtons().
 const string sWidgetButtonsVarname = "ASSOCIATE_WIDGET_BUTTONS";
 const int BTN_WIDGET_OFF     = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
@@ -322,8 +368,8 @@ const int BTN_AI_OFF_MAGIC_USE      = 0x00000800; // Will use Offensive spells o
 const int BTN_AI_LOOT               = 0x00001000; // Auto picking up loot on/off.
 const int BTN_AI_FOLLOW_TARGET      = 0x00002000; // Selects a target to follow.
 const int BTN_AI_HEAL_OUT           = 0x00004000; // Increase minimum hp required before ai heals out of combat.
-//const int                           = 0x00008000; // Not used.
-const int BTN_AI_HEAL_IN       = 0x00010000; // Increase minimum hp required before ai heals in combat.
+const int BTN_AI_PERC_RANGE         = 0x00008000; // Adjust the perception range of the henchman.
+const int BTN_AI_HEAL_IN            = 0x00010000; // Increase minimum hp required before ai heals in combat.
 //const int                           = 0x00020000; // Not used.
 const int BTN_AI_STOP_SELF_HEALING  = 0x00040000; // Stops AI from using any healing on self.
 const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any healing on party.
@@ -335,6 +381,19 @@ const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any hea
 //const int BTN_AI                    = 0x02000000; // Not used.
 const int BTN_AI_BASH_LOCKS         = 0x04000000; // AI will attempt to bash any locks they can't get past.
 const int BTN_AI_REDUCE_SPEECH      = 0x08000000; // Reduce the associates speaking.
+// Variable name for DM widget buttons.
+const string sDMWidgetButtonVarname = "DM_WIDGET_BUTTONS";
+// DM Widget buttons states.
+const int BTN_DM_WIDGET_OFF     = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
+const int BTN_DM_WIDGET_LOCK    = 0x00000002; // Locks the widget to the current coordinates.
+const int BTN_DM_CMD_GROUP1     = 0x00000004; // Does all the group 1 commands.
+const int BTN_DM_CMD_GROUP2     = 0x00000008; // Does all the group 2 commands.
+const int BTN_DM_CMD_GROUP3     = 0x00000010; // Does all the group 3 commands.
+const int BTN_DM_CMD_GROUP4     = 0x00000020; // Does all the group 4 commands.
+const int BTN_DM_CMD_GROUP5     = 0x00000040; // Does all the group 5 commands.
+const int BTN_DM_CMD_GROUP6     = 0x00000080; // Does all the group 6 commands.
+const int BTN_DM_CMD_CAMERA     = 0x00000100; // Selects new object to hold the camera view.
+const int BTN_DM_CMD_INVENTORY  = 0x00000200; // Selects a creature to open the inventory of.
 // Bitwise constants for Associate loot options that are used with Get/SetAssociateLootMode().
 const string sLootFilterVarname = "ASSOCIATE_LOOT_MODES";
 const int AI_LOOT_PLOT              = 0x00000001;
@@ -381,6 +440,8 @@ const string AI_TRAP_CHECK_RANGE = "AI_TRAP_CHECK_RANGE";
 const string AI_FOLLOW_RANGE = "AI_FOLLOW_RANGE";
 // Variable that holds the target for an associate to follow.
 const string AI_FOLLOW_TARGET = "AI_FOLLOW_TARGET";
+// Variable that holds the perception range of the henchman.
+const string AI_PERCEPTION_RANGE = "AI_PERCEPTION_RANGE";
 // The number of Buff Groups
 const int AI_BUFF_GROUPS = -17;
 // Variable name used to keep track if we have set our talents.
@@ -400,6 +461,8 @@ const int AI_TALENT_TYPE_SPELL = 1;
 const int AI_TALENT_TYPE_SP_ABILITY = 2;
 const int AI_TALENT_TYPE_FEAT = 3;
 const int AI_TALENT_TYPE_ITEM = 4;
+// Variable name used to have associates fight the pc's selected target.
+const string AI_PC_LOCKED_TARGET = "AI_PC_LOCKED_TARGET";
 // Variable name of json talent immunity.
 const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
 // Variables that clips checking talent categories a creature does not have.
@@ -438,7 +501,6 @@ const string AI_RULE_SUMMON_COMPANIONS = "AI_RULE_SUMMON_COMPANIONS";
 const string AI_RULE_PRESUMMON = "AI_RULE_PRESUMMON";
 // Allow the AI move during combat base on the situation and action taking.
 const string AI_RULE_ADVANCED_MOVEMENT = "AI_RULE_ADVANCED_MOVEMENT";
-const int AI_ADVANCED_COMBAT_MOVEMENT = TRUE;
 // Follow Item Level Restrictions for monsters/associates.
 // Usually off in Single player and on in Multi player.
 const string AI_RULE_ILR = "AI_RULE_ILR";
@@ -453,7 +515,7 @@ const string AI_RULE_AI_DIFFICULTY = "AI_RULE_AI_DIFFICULTY";
 // Variable that can change the distance creatures will come and attack after
 // hearing a shout from an ally that sees or hears an enemy.
 // Or when searching for an invisible, heard enemy.
-// 10.0 short, 20.0 Medium, 35.0 long, 35.0 player.
+// 10.0 Short, 30.0 Average, 40.0 Long, 60.0 Huge.
 const string AI_RULE_PERCEPTION_DISTANCE = "AI_RULE_PERCEPTION_DISTANCE";
 // Enemy corpses remain on the floor instead of dissappearing.
 const string AI_RULE_CORPSES_STAY = "AI_RULE_CORPSES_STAY";
@@ -463,8 +525,10 @@ const string AI_RULE_WANDER = "AI_RULE_WANDER";
 const string AI_INCREASE_ENC_MONSTERS = "AI_INCREASE_ENC_MONSTERS";
 // Increase all monsters hitpoints by this percentage.
 const string AI_INCREASE_MONSTERS_HP = "AI_INCREASE_MONSTERS_HP";
-// Variable that can change the distance associates can hear and see.
-const string AI_RULE_ASSOC_PERC_DISTANCE = "AI_RULE_ASSOC_PERC_DISTANCE";
+// Variable that can change the distance monsters can hear and see.
+const string AI_RULE_MON_PERC_DISTANCE = "AI_RULE_MON_PERC_DISTANCE";
+// Variable name set to hold the maximum number of henchman the player wants.
+const string AI_RULE_MAX_HENCHMAN = "AI_RULE_MAX_HENCHMAN";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction

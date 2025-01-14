@@ -15,26 +15,37 @@ void main()
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     // If we are an associate and don't have a master then exit.
     object oMaster = GetMaster(oCreature);
-    if(oMaster == OBJECT_INVALID) return;
+    if(oMaster == OBJECT_INVALID)
+    {
+        if(ai_GetIsInCombat(oCreature))
+        {
+            ai_DoAssociateCombatRound(oCreature);
+            return;
+        }
+        ai_CheckForCombat(oCreature, FALSE);
+        return;
+    }
     // ***** Code for Henchman data and menus *****
     if(ai_GetIsCharacter(oMaster))
     {
         string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
-        // We need to have a master to setup our database and if our follow
-        // range is not set then we need to either initialize or pull our info.
-        if(JsonGetType(ai_GetAssociateDbJson(oMaster, sAssociateType, "locations")) == JSON_TYPE_NULL)
+        ai_CheckAssociateData(oMaster, oCreature, sAssociateType);
+        if(AI_HENCHMAN_WIDGET)
         {
-            // If the player doesn't have data saved on them then create or get.
-            // We do this here since they have to be an associate of the player.
-            ai_CheckDataAndInitialize(oMaster, sAssociateType);
-            ai_GetAssociateDataFromDB(oMaster, oCreature);
-        }
-        // Widget code.
-        if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
-        {
-            if(!NuiFindWindow(oMaster, sAssociateType + "_widget"))
+            // This keeps widgets from disappearing and reappearing.
+            int nUiToken = NuiFindWindow(oMaster, sAssociateType + "_widget");
+            if(nUiToken)
             {
-                ai_CreateWidgetNUI(oMaster, oCreature);
+                json jData = NuiGetUserData(oMaster, nUiToken);
+                object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
+                if(oAssociate != oCreature) NuiDestroy(oMaster, nUiToken);
+            }
+            if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
+            {
+                if(!NuiFindWindow(oMaster, sAssociateType + "_widget"))
+                {
+                    ai_CreateWidgetNUI(oMaster, oCreature);
+                }
             }
         }
     }

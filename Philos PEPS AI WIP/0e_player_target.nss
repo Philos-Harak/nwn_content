@@ -19,9 +19,9 @@ void main()
     string sPluginTargetScript = GetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT);
     if(sPluginTargetScript != "")
     {
+        DeleteLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT);
         ExecuteScript(sPluginTargetScript, oPC);
         // Remove the plugin script as it must be set each time the plugin uses the target event.
-        DeleteLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT);
     }
     else
     {
@@ -71,6 +71,11 @@ void main()
             {
                 ai_SendMessages(GetName(oAssociate) + " has exited placing the trap!", AI_COLOR_YELLOW, oPC);
             }
+            else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
+            {
+                AttachCamera(oPC, oPC);
+                ai_SendMessages(GetName(oPC) + " has defaulted camera view back to the player!", AI_COLOR_YELLOW, oPC);
+            }
             return;
         }
         // This action makes an associates move to vTarget.
@@ -93,6 +98,28 @@ void main()
         else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectTarget(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_PLACE_TRAP") AssignCommand(oAssociate, ai_PlaceTrap(oPC, lLocation));
+        else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
+        {
+            AttachCamera(oPC, oTarget);
+            ai_SendMessages(GetName(oPC) + " has changed the cavera view to " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+        }
+        else if(sTargetMode == "DM_SELECT_OPEN_INVENTORY")
+        {
+            if(LineOfSightObject(oPC, oTarget))
+            {
+                OpenInventory(oTarget, oPC);
+                ai_SendMessages("You have opened the inventory of "+ GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+            }
+            else ai_SendMessages(GetName(oTarget) + " is not in your line of sight!", AI_COLOR_YELLOW, oPC);
+        }
+        else if(GetStringLeft(sTargetMode, 15) == "DM_SELECT_GROUP")
+        {
+            ai_AddToGroup(oPC, oTarget, StringToInt(GetStringRight(sTargetMode, 1)));
+        }
+        else if(GetStringLeft(sTargetMode, 15) == "DM_ACTION_GROUP")
+        {
+            ai_DMAction(oPC, oTarget, lLocation, StringToInt(GetStringRight(sTargetMode, 1)));
+        }
         // Get saved module player target script and execute it for pass through compatibility.
         string sModuleTargetScript = GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT);
         ExecuteScript(sModuleTargetScript);

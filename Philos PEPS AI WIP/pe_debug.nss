@@ -6,6 +6,12 @@
 /*//////////////////////////////////////////////////////////////////////////////
 #include "0i_main"
 #include "0i_module"
+#include "0i_menus"
+// Gets a variable from oTarget, if oTarget is OBJECT_INVALID then
+// it will get the variable from the Module and Area.
+void debug_GetObjectVariable(object oPC, object oTarget, string sDesc = "");
+// Lists the variables from oTarget to the screen.
+void debug_ListObjectVariables(object oPC, object oTarget);
 void main()
 {
     // Get the last player to use targeting mode
@@ -17,7 +23,7 @@ void main()
         object oTarget = GetTargetingModeSelectedObject();
         vector vTarget = GetTargetingModeSelectedPosition();
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
-        object oAssociate = GetLocalObject(oPC, AI_TARGET_ASSOCIATE);
+        object oObject = GetLocalObject(oPC, "AI_TARGET_OBJECT");
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())
         {
@@ -39,6 +45,7 @@ void main()
         {
             if(GetMaster(oTarget) == oPC)
             {
+                    ai_SetListeningPatterns(oTarget);
                     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_ch_1_hb");
                     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_ch_2_percept");
                     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_ch_3_endround");
@@ -58,12 +65,19 @@ void main()
                 }
             else ai_SendMessages(GetName(oTarget) + " is not one of your associates!", AI_COLOR_RED, oPC);
         }
-        else if(sTargetMode == "DEBUG_EVENT_SCRIPTS")
+        else if(sTargetMode == "DEBUG_INFO")
         {
+            ai_SendMessages("Information for " + GetName(oTarget), AI_COLOR_WHITE, oPC);
+            ai_SendMessages("ResRef: " + GetResRef(oTarget), AI_COLOR_GREEN, oPC);
+            ai_SendMessages("Tag: " + GetTag(oTarget), AI_COLOR_ORANGE, oPC);
+            ai_SendMessages("UUID: " + GetObjectUUID(oTarget), AI_COLOR_LIGHT_MAGENTA, oPC);
             int nObjectType = GetObjectType(oTarget);
             if(nObjectType == OBJECT_TYPE_CREATURE)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " Event Scripts.");
+                json jObject = ObjectToJson(oTarget);
+                string sConversation = JsonGetString(GffGetResRef(jObject, "Conversation"));
+                ai_SendMessages("Conversation: " + sConversation, AI_COLOR_CYAN, oPC);
+                SendMessageToPC(oPC, "Creature Event Scripts:");
                 string sScript = GetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_HEARTBEAT SCRIPT: " + sScript);
@@ -112,7 +126,7 @@ void main()
             }
             else if(nObjectType == OBJECT_TYPE_DOOR)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " Event Scripts.");
+                SendMessageToPC(oPC, "Door Event Scripts:");
                 string sScript = GetEventScript(oTarget, EVENT_SCRIPT_DOOR_ON_CLICKED);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_CLICKED SCRIPT: " + sScript);
@@ -161,7 +175,7 @@ void main()
             }
             else if(nObjectType == OBJECT_TYPE_PLACEABLE)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " Event Scripts.");
+                SendMessageToPC(oPC, "Placeable Event Scripts:");
                 string sScript = GetEventScript(oTarget, EVENT_SCRIPT_PLACEABLE_ON_CLOSED);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_CLOSED SCRIPT: " + sScript);
@@ -213,7 +227,7 @@ void main()
             }
             else if(nObjectType == OBJECT_TYPE_TRIGGER)
             {
-                SendMessageToPC(oPC, GetName(oTarget) + " Event Scripts.");
+                SendMessageToPC(oPC, "Trigger Event Scripts:");
                 string sScript = GetEventScript(oTarget, EVENT_SCRIPT_TRIGGER_ON_CLICKED);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_CLICKED SCRIPT: " + sScript);
@@ -240,7 +254,7 @@ void main()
             {
                 // Area event scripts.
                 object oArea = GetArea(oPC);
-                SendMessageToPC(oPC, GetName(oArea) + " Area Event Scripts.");
+                SendMessageToPC(oPC, "Area Event Scripts:");
                 string sScript = GetEventScript(oArea, EVENT_SCRIPT_AREA_ON_ENTER);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_ENTER SCRIPT: " + sScript);
@@ -331,6 +345,99 @@ void main()
                 SendMessageToPC(oPC, "ON_USER_DEFINED_EVENT SCRIPT: " + sScript);
             }
         }
+        else if(sTargetMode == "DEBUG_JSON_DUMP")
+        {
+            json jObject = ObjectToJson(oTarget, TRUE);
+            WriteTimestampedLogEntry(GetName(oTarget) + " JsonDump: " + JsonDump(jObject, 1));
+            ai_SendMessages(GetName(oTarget) + " has been dumped to the log file!", AI_COLOR_YELLOW, oPC);
+        }
+        else if(sTargetMode == "DEBUG_LIST_VAR")
+        {
+            debug_ListObjectVariables(oPC, oTarget);
+        }
+        else if(sTargetMode == "DEBUG_SET_VARIABLE")
+        {
+            string sVarName = GetLocalString(oPC, "Debug_Var_Name");
+            int nVarType = GetLocalInt(oPC, "Debug_Var_Type");
+            if(nVarType == 0) // Int
+            {
+                string sVarValue = GetLocalString(oPC, "Debug_Var_Value");
+                int nVarValue = StringToInt(sVarValue);
+                SetLocalInt(oTarget, sVarName, nVarValue);
+                ai_SendMessages(sVarName + " [Int] has been set to " + IntToString(nVarValue) + " for " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+            }
+            else if(nVarType == 1) // Float
+            {
+                string sVarValue = GetLocalString(oPC, "Debug_Var_Value");
+                DeleteLocalString(oPC, "Debug_Var_Name");
+                float fVarValue = StringToFloat(sVarValue);
+                SetLocalFloat(oTarget, sVarName, fVarValue);
+                ai_SendMessages(sVarName + " [Float] has been set to " + FloatToString(fVarValue, 0, 2) + " for " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+            }
+            else if(nVarType == 2) // String
+            {
+                string sVarValue = GetLocalString(oPC, "Debug_Var_Value");
+                SetLocalString(oTarget, sVarName, sVarValue);
+                ai_SendMessages(sVarName + " [String] has been set to " + sVarValue + " for " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+            }
+            else if(nVarType == 3) // Object
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalObject(oPC, "AI_TARGET_OBJECT", oTarget);
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_OBJECT_VARIABLE");
+                ai_SendMessages("Select an object to save to " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE | OBJECT_TYPE_DOOR |
+                                   OBJECT_TYPE_ITEM | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(nVarType == 4) // Location
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalObject(oPC, "AI_TARGET_OBJECT", oTarget);
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_LOCATION_VARIABLE");
+                ai_SendMessages("Select a location to save to " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            DeleteLocalString(oPC, "Debug_Var_Name");
+            DeleteLocalInt(oPC, "Debug_Var_Type");
+            DeleteLocalString(oPC, "Debug_Var_Value");
+        }
+        else if(sTargetMode == "DEBUG_SET_OBJECT_VARIABLE")
+        {
+            string sVarName = GetLocalString(oPC, "Debug_Var_Name");
+            SetLocalObject(oObject, sVarName, oTarget);
+            DeleteLocalObject(oPC, "AI_TARGET_OBJECT");
+            DeleteLocalString(oPC, "Debug_Var_Name");
+            ai_SendMessages(sVarName + " [Object] has been set to " + GetName(oObject) + " for " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+        }
+        else if(sTargetMode == "DEBUG_SET_LOCATION_VARIABLE")
+        {
+            string sVarName = GetLocalString(oPC, "Debug_Var_Name");
+            SetLocalLocation(oObject, sVarName, lLocation);
+            DeleteLocalObject(oPC, "AI_TARGET_OBJECT");
+            DeleteLocalString(oPC, "Debug_Var_Name");
+            ai_SendMessages(sVarName + " [Location] has been set to " + LocationToString(lLocation) + " for " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+        }
+        else if(sTargetMode == "DEBUG_DELETE_VARIABLE")
+        {
+            string sVarName = GetLocalString(oPC, "Debug_Var_Name");
+            int nVarType = GetLocalInt(oPC, "Debug_Var_Type");
+            if(nVarType == 0) DeleteLocalInt(oTarget, sVarName);
+            else if(nVarType == 1) DeleteLocalFloat(oTarget, sVarName);
+            else if(nVarType == 2) DeleteLocalString(oTarget, sVarName);
+            else if(nVarType == 4) DeleteLocalObject(oTarget, sVarName);
+            else if(nVarType == 5) DeleteLocalLocation(oTarget, sVarName);
+            ai_SendMessages(sVarName + " has been deleted from " + GetName(oTarget), AI_COLOR_YELLOW, oPC);
+            DeleteLocalString(oPC, "Debug_Var_Name");
+            DeleteLocalInt(oPC, "Debug_Var_Type");
+        }
+        else if(sTargetMode == "DEBUG_GET_VARIABLE")
+        {
+            debug_GetObjectVariable(oPC, oTarget);
+        }
     }
     // Run all non-targeting code here, usually NUI events.
     else
@@ -345,14 +452,14 @@ void main()
         //if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
         if(sEvent == "click")
         {
-            if(sElem == "btn_event_scripts")
+            if(sElem == "btn_info")
             {
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
-                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
-                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_EVENT_SCRIPTS");
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_INFO");
                 NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an object to send it's information to the players screen.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_fix_associate")
@@ -360,10 +467,41 @@ void main()
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
-                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "FIX_ASSOCIATE_SCRIPTS");
                 NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an associate to reset it's event scripts for Philos' AI.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_fix_id_associate")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalString(oPC, AI_TARGET_MODE, "FIX_ID_ASSOCIATE_SCRIPTS");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an associate to reset it's event scripts in Infinite Dungeons for Philos' AI.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_obj_json")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_JSON_DUMP");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an object to dump it's json values to the log.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE | OBJECT_TYPE_DOOR |
+                                   OBJECT_TYPE_ITEM | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_obj_var")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_LIST_VAR");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an object to list it's variables to the player screen.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_debug_creature")
             {
@@ -373,6 +511,7 @@ void main()
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_CREATURE");
                 NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select a creature to start sending debug information to the log for.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_clear_debug")
@@ -387,8 +526,212 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ExecuteScript("pi_debug", oPC);
             }
+            else if(sElem == "btn_delete_var")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                string sVarName = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name"));
+                SetLocalString(oPC, "Debug_Var_Name", sVarName);
+                SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
+                SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_DELETE_VARIABLE");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select Object to delete (" + sVarName + ") variable from.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_get_var")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                string sVarName = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name"));
+                SetLocalString(oPC, "Debug_Var_Name", sVarName);
+                SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
+                SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_GET_VARIABLE");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select Object to get (" + sVarName + ") variable from.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_set_var")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                string sVarName = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name"));
+                SetLocalString(oPC, "Debug_Var_Name", sVarName);
+                SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
+                SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_VARIABLE");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select Object to set (" + sVarName + ") variable to.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+        }
+        if(sEvent == "watch")
+        {
+            if(sElem == "txt_var_name" || sElem == "txt_var_value" ||
+               sElem == "cmb_var_type_selected")
+            {
+                if(JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name")) != "")
+                {
+                    NuiSetBind(oPC, nToken, "btn_get_var_event", JsonBool(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_delete_var_event", JsonBool(TRUE));
+                    if(JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")) == 3 || // Objects
+                       JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")) == 4 || // Locations
+                       JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")) != "")
+                    {
+                        NuiSetBind(oPC, nToken, "btn_set_var_event", JsonBool(TRUE));
+                        return;
+                    }
+                }
+                else
+                {
+                    NuiSetBind(oPC, nToken, "btn_get_var_event", JsonBool(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_delete_var_event", JsonBool(FALSE));
+                }
+                NuiSetBind(oPC, nToken, "btn_set_var_event", JsonBool(FALSE));
+            }
+        }
+        if(sEvent == "mousedown")
+        {
+            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
+            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
+            {
+                if(sElem == "btn_delete_var")
+                {
+                    object oModule = GetModule();
+                    // Set Targeting variables.
+                    string sVarName = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name"));
+                    int nVarType = JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected"));
+                    if(nVarType == 0) DeleteLocalInt(oModule, sVarName);
+                    else if(nVarType == 1) DeleteLocalFloat(oModule, sVarName);
+                    else if(nVarType == 2) DeleteLocalString(oModule, sVarName);
+                    else if(nVarType == 4) DeleteLocalObject(oModule, sVarName);
+                    else if(nVarType == 5) DeleteLocalLocation(oModule, sVarName);
+                    ai_SendMessages(sVarName + " has been deleted from the Module", AI_COLOR_YELLOW, oPC);
+                }
+                else if(sElem == "btn_get_var")
+                {
+                    // Set Targeting variables.
+                    SetLocalString(oPC, "Debug_Var_Name", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name")));
+                    SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
+                    debug_GetObjectVariable(oPC, GetModule(), "(Module)");
+                }
+                else if(sElem == "btn_set_var")
+                {
+                    // Set Targeting variables.
+                    string sVarName = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_name"));
+                    string sVarValue = JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value"));
+                    int nVarType = JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected"));
+                    SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_VARIABLE");
+                    if(nVarType == 0) // Int
+                    {
+                        int nVarValue = StringToInt(sVarValue);
+                        SetLocalInt(GetModule(), sVarName, nVarValue);
+                        ai_SendMessages(sVarName + " [Int] has been set to " + IntToString(nVarValue) + " on the Module.", AI_COLOR_YELLOW, oPC);
+                    }
+                    else if(nVarType == 1) // Float
+                    {
+                        float fVarValue = StringToFloat(sVarValue);
+                        SetLocalFloat(GetModule(), sVarName, fVarValue);
+                        ai_SendMessages(sVarName + " [Float] has been set to " + FloatToString(fVarValue, 0, 2) + " on the Module.", AI_COLOR_YELLOW, oPC);
+                    }
+                    else if(nVarType == 2) // String
+                    {
+                        SetLocalString(GetModule(), sVarName, sVarValue);
+                        ai_SendMessages(sVarName + " [String] has been set to " + sVarValue + " on the Module.", AI_COLOR_YELLOW, oPC);
+                    }
+                    else if(nVarType == 3) // Object
+                    {
+                        object oModule = GetModule();
+                        // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                        SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                        // Set Targeting variables.
+                        SetLocalString(oPC, "Debug_Var_Name", sVarName);
+                        SetLocalObject(oPC, "AI_TARGET_OBJECT", oModule);
+                        SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_OBJECT_VARIABLE");
+                        ai_SendMessages("Select an object to save to " + GetName(oModule), AI_COLOR_YELLOW, oPC);
+                        EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE | OBJECT_TYPE_DOOR |
+                                           OBJECT_TYPE_ITEM | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+                    }
+                    else if(nVarType == 4) // Location
+                    {
+                        object oModule = GetModule();
+                        // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                        SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                        // Set Targeting variables.
+                        SetLocalString(oPC, "Debug_Var_Name", sVarName);
+                        SetLocalObject(oPC, "AI_TARGET_OBJECT", oModule);
+                        SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_LOCATION_VARIABLE");
+                        ai_SendMessages("Select a location to save to " + GetName(oModule), AI_COLOR_YELLOW, oPC);
+                        EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+                    }
+                }
+            }
         }
     }
 }
-
-
+void debug_GetObjectVariable(object oPC, object oTarget, string sDesc = "")
+{
+    string sVar, sVarName = GetLocalString(oPC, "Debug_Var_Name");
+    int nVarType = GetLocalInt(oPC, "Debug_Var_Type");
+    if(nVarType == 0) sVar = IntToString(GetLocalInt(oTarget, sVarName));
+    else if(nVarType == 1) sVar = FloatToString(GetLocalFloat(oTarget, sVarName), 0, 2);
+    else if(nVarType == 2) sVar = GetLocalString(oTarget, sVarName);
+    else if(nVarType == 4) sVar = GetName(GetLocalObject(oTarget, sVarName));
+    else if(nVarType == 5) sVar = LocationToString(GetLocalLocation(oTarget, sVarName));
+    ai_SendMessages(sVarName + " on " + GetName(oTarget) + sDesc + " is set to " + sVar, AI_COLOR_YELLOW, oPC);
+}
+void debug_ListObjectVariables(object oPC, object oTarget)
+{
+    string sName = GetName(oTarget);
+    if(GetStringRight(sName, 1) == "s") sName = sName + "'";
+    else sName = sName + "'s";
+    ai_SendMessages(sName + " variables:", AI_COLOR_GREEN, oPC);
+    json jObject = ObjectToJson(oTarget, TRUE);
+    json jVarTable = GffGetList(jObject, "VarTable");
+    string sVariable;
+    int nIndex, nVarType;
+    json jVar = JsonArrayGet(jVarTable, nIndex);
+    while(JsonGetType(jVar) != JSON_TYPE_NULL)
+    {
+        sVariable = JsonGetString(GffGetString(jVar, "Name"));
+        nVarType = JsonGetInt(GffGetDword(jVar, "Type"));
+        if(nVarType == 1)
+        {
+            sVariable += " [int] ";
+            sVariable += IntToString(JsonGetInt(GffGetInt(jVar, "Value")));
+        }
+        else if(nVarType == 2)
+        {
+            sVariable += " [float] ";
+            sVariable += FloatToString(JsonGetFloat(GffGetFloat(jVar, "Value")), 0, 2);
+        }
+        else if(nVarType == 3)
+        {
+            sVariable += " [string] ";
+            sVariable += JsonGetString(GffGetString(jVar, "Value"));
+        }
+        else if(nVarType == 4)
+        {
+            sName = GetName(GetLocalObject(oTarget, sVariable));
+            sVariable += " [object] " + sName;
+        }
+        else if(nVarType == 5)
+        {
+            sName = LocationToString(GetLocalLocation(oTarget, sVariable));
+            sVariable += " [location] " + sName;
+        }
+        else if(nVarType == 7)
+        {
+            sVariable += " [struct] ";
+            sVariable += JsonDump(GffGetStruct(jVar, "Value"));
+        }
+        sVariable += JsonGetString(JsonObjectGet(jVar, "Value"));
+        ai_SendMessages(sVariable, AI_COLOR_YELLOW, oPC);
+        jVar = JsonArrayGet(jVarTable, ++nIndex);
+    }
+    if(!nIndex) ai_SendMessages("No variables to list!", AI_COLOR_YELLOW, oPC);
+}

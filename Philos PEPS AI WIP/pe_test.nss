@@ -40,7 +40,7 @@ void main()
         else if(sTargetMode == "TEST_REST_TARGET")
         {
             ForceRest(oTarget);
-            ai_SendMessages(GetName(oTarget) + " has rested.", AI_COLOR_YELLOW, oPC);
+            ai_SendMessages(GetName(oTarget) + " has rested.", AI_COLOR_GREEN, oPC);
         }
         else if(sTargetMode == "TEST_HEAL_TARGET")
         {
@@ -49,14 +49,25 @@ void main()
             {
                 effect eHeal = EffectHeal(nHeal);
                 ApplyEffectToObject(DURATION_TYPE_INSTANT, eHeal, oTarget);
-                ai_SendMessages(GetName(oTarget) + " has been healed.", AI_COLOR_YELLOW, oPC);
+                ai_SendMessages(GetName(oTarget) + " has been healed.", AI_COLOR_GREEN, oPC);
             }
+        }
+        else if(sTargetMode == "TEST_ID_TARGET") SetIdentified(oTarget, !GetIdentified(oTarget));
+        else if(sTargetMode == "TEST_CLEAR_TARGET")
+        {
+            ClearAllActions(TRUE, oTarget);
         }
         else if(sTargetMode == "TEST_KILL_TARGET")
         {
             effect eDmg = EffectDamage(10000);
             ApplyEffectToObject(DURATION_TYPE_INSTANT, eDmg, oTarget);
-            ai_SendMessages(GetName(oTarget) + " has been killed.", AI_COLOR_YELLOW, oPC);
+            ai_SendMessages(GetName(oTarget) + " has been killed.", AI_COLOR_RED, oPC);
+        }
+        else if(sTargetMode == "TEST_REMOVE_TARGET")
+        {
+            SetIsDestroyable(TRUE, FALSE, FALSE, oTarget);
+            DestroyObject(oTarget);
+            ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
         }
     }
     // Run all non-targeting code here, usually NUI events.
@@ -88,7 +99,7 @@ void main()
                 // Set Targeting variables.
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_GOLD_TARGET");
-                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_USE, MOUSECURSOR_NOUSE);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
             }
             else if(sElem == "btn_rest")
             {
@@ -108,6 +119,24 @@ void main()
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_HEAL_TARGET");
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_HEAL, MOUSECURSOR_NOHEAL);
             }
+            else if(sElem == "btn_id_item")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_ID_TARGET");
+                EnterTargetingMode(oPC, OBJECT_TYPE_ITEM, MOUSECURSOR_HEAL, MOUSECURSOR_NOHEAL);
+            }
+            else if(sElem == "btn_clear")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_CLEAR_TARGET");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
+            }
             else if(sElem == "btn_kill")
             {
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
@@ -116,6 +145,17 @@ void main()
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_KILL_TARGET");
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+            }
+            else if(sElem == "btn_remove")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_REMOVE_TARGET");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE |
+                                 OBJECT_TYPE_DOOR | OBJECT_TYPE_ITEM |
+                                 OBJECT_TYPE_PLACEABLE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
             }
         }
         else if(sEvent == "watch")

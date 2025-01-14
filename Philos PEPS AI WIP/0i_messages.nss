@@ -83,6 +83,6 @@ void ai_Counter_End(string sMessage = "")
     int nTime = GetMicrosecondCounter();
     nTime = nTime - GetLocalInt(GetModule(), "0_MSCounter");
     float fTime = nTime / 1000000.0;
-    ai_Debug("MICROSECOND_COUNTER", "", "Seconds: " + FloatToString(fTime, 0, 10) +
+    if(AI_DEBUG) ai_Debug("MICROSECOND_COUNTER", "", "Seconds: " + FloatToString(fTime, 0, 10) +
              " Microseconds: " + IntToString(nTime) + " " + sMessage);
 }

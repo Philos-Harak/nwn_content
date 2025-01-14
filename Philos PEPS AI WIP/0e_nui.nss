@@ -21,6 +21,12 @@ void ai_SetLootFilterToCheckbox(object oPC, object oAssociate, int nFilterBit, i
 void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nCompanionType);
 // Sets an associates companion name. Cannot set companion for a player!
 void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nCompanionType);
+// Increments/Decrements the Perception Range use variable for the AI.
+void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken);
+// Saves an associates perception range changed on the button.
+void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateType);
+// Changes Perception Distance Rule for monsters.
+void ai_RulePercDistInc(object oPC, object oModule, int nIncrement, int nToken);
 // Turns on oAssociate AI, Setting all event scripts.
 void ai_TurnOn(object oPC, object oAssociate, string sAssociateType);
 // Turns off oAssociate AI, Setting all event scripts.
@@ -89,7 +95,11 @@ void main()
         //if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
         if(sEvent == "click")
         {
-            string sHenchman;
+            if(sElem == "btn_plugin_manager")
+            {
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+            }
             if(sElem == "btn_ghost_mode")
             {
                 // We set ghost mode differently for each AI.
@@ -202,65 +212,23 @@ void main()
                     }
                 }
             }
-            else if(sElem == "btn_add_plugin")
-            {
-                string sScript = JsonGetString(NuiGetBind (oPC, nToken, "txt_plugin"));
-                if(sScript == "") ai_SendMessages("You must type the name of the script!", AI_COLOR_RED, oPC);
-                else if(ResManGetAliasFor(sScript, RESTYPE_NCS) == "")
-                {
-                    ai_SendMessages("The script was not found by ResMan!", AI_COLOR_RED, oPC);
-                }
-                else
-                {
-                    json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
-                    if(JsonGetType(jPlugins) == JSON_TYPE_NULL) jPlugins = JsonArray();
-                    else
-                    {
-                        int nIndex;
-                        string sSavedScript = JsonGetString(JsonArrayGet(jPlugins, 0));
-                        while(sSavedScript != "")
-                        {
-                            if(sSavedScript == sScript)
-                            {
-                                ai_SendMessages("This plugin is already installed!", AI_COLOR_RED, oPC);
-                                return;
-                            }
-                            sSavedScript = JsonGetString(JsonArrayGet(jPlugins, ++nIndex));
-                        }
-                    }
-                    JsonArrayInsertInplace(jPlugins, JsonString(sScript));
-                    ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
-                    NuiDestroy(oPC, nToken);
-                    ai_CreateAIOptionsNUI(oPC);
-                    NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
-                    ai_CreateWidgetNUI(oPC, oPC);
-                }
-            }
-            else if(GetStringLeft(sElem, 18) == "btn_remove_plugin_")
-            {
-                int nIndex = StringToInt(GetStringRight(sElem, 1));
-                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
-                JsonArrayDelInplace(jPlugins, nIndex - 1);
-                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
-                NuiDestroy(oPC, nToken);
-                ai_CreateAIOptionsNUI(oPC);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
-                ai_CreateWidgetNUI(oPC, oPC);
-            }
         }
         if(sEvent == "watch")
         {
             if(sElem == "txt_max_henchman")
             {
-                int nMaxHenchman = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
-                if(nMaxHenchman < 1) nMaxHenchman = 1;
-                if(nMaxHenchman > 12)
+                int nMaxHenchmen = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                if(nMaxHenchmen < 1) nMaxHenchmen = 1;
+                if(nMaxHenchmen > 12)
                 {
-                    nMaxHenchman = 12;
-                    ai_SendMessages("The maximum henchman for this mod is 12!", AI_COLOR_RED, oPC);
+                    nMaxHenchmen = 12;
+                    ai_SendMessages("The maximum henchmen for this mod is 12!", AI_COLOR_RED, oPC);
                 }
-                SetMaxHenchmen(nMaxHenchman);
-                ai_SendMessages("Maximum henchman has been changed to " + IntToString(nMaxHenchman), AI_COLOR_YELLOW, oPC);
+                SetMaxHenchmen(nMaxHenchmen);
+                json jRules = ai_GetCampaignDbJson("rules");
+                JsonObjectSetInplace(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
+                ai_SetCampaignDbJson("rules", jRules);
+                ai_SendMessages("Maximum henchmen has been changed to " + IntToString(nMaxHenchmen), AI_COLOR_YELLOW, oPC);
             }
             else if(sElem == "txt_ai_difficulty")
             {
@@ -276,7 +244,7 @@ void main()
             {
                 float fDistance = StringToFloat(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
                 if(fDistance < 10.0) fDistance = 10.0;
-                else if(fDistance > 40.0) fDistance = 40.0;
+                else if(fDistance > 60.0) fDistance = 60.0;
                 SetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE, fDistance);
                 json jRules = ai_GetCampaignDbJson("rules");
                 JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(fDistance));
@@ -370,6 +338,20 @@ void main()
                 ai_SetCampaignDbJson("rules", jRules);
             }
         }
+        else if(sEvent == "mousescroll")
+        {
+            float nMouseScroll = JsonGetFloat(JsonObjectGet(JsonObjectGet(NuiGetEventPayload(), "mouse_scroll"), "y"));
+            if(nMouseScroll == 1.0) // Scroll up
+            {
+                // Follow range is only changed on non-pc's
+                if(sElem == "lbl_perc_dist") ai_RulePercDistInc(oPC, GetModule(), 1, nToken);
+            }
+            else if(nMouseScroll == -1.0) // Scroll down
+            {
+                // Follow range is only changed on non-pc's
+                if(sElem == "lbl_perc_dist") ai_RulePercDistInc(oPC, GetModule(), -1, nToken);
+            }
+        }
     }
     //**************************************************************************
     // Associate Command events.
@@ -381,7 +363,7 @@ void main()
             {
                 if(ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType))
                 {
-                    SendMessageToPC(oPC, GetName(oAssociate) + " AI widget unlocked.");
+                    ai_SendMessages(GetName(oAssociate) + " AI widget unlocked.", AI_COLOR_YELLOW, oPC);
                     ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, FALSE);
                     if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                     {
@@ -396,7 +378,7 @@ void main()
                     // Save the window location on the player using the sWndId.
                     SetLocalFloat(oPC, sWndId + "_X", JsonGetFloat (JsonObjectGet (jGeom, "x")));
                     SetLocalFloat(oPC, sWndId + "_Y", JsonGetFloat (JsonObjectGet (jGeom, "y")));
-                    SendMessageToPC(oPC, GetName(oAssociate) + " AI widget locked.");
+                    ai_SendMessages(GetName(oAssociate) + " AI widget locked.", AI_COLOR_YELLOW, oPC);
                     ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, TRUE);
                     if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                     {
@@ -444,6 +426,7 @@ void main()
             else if(sElem == "btn_inventory") ai_OpenInventory(oAssociate, oPC);
             else if(sElem == "btn_familiar_name") ai_SetCompanionName(oPC, oAssociate, nToken, ASSOCIATE_TYPE_FAMILIAR);
             else if(sElem == "btn_companion_name") ai_SetCompanionName(oPC, oAssociate, nToken, ASSOCIATE_TYPE_ANIMALCOMPANION);
+            else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oPC, sElem);
         }
         else if(sEvent == "watch")
         {
@@ -452,6 +435,16 @@ void main()
                 string sName = JsonGetString(NuiGetBind(oPC, nToken, sElem));
                 if(sName != "") NuiSetBind(oPC, nToken, "btn_familiar_name_event", JsonBool(TRUE));
                 else NuiSetBind(oPC, nToken, "btn_familiar_name_event", JsonBool(FALSE));
+            }
+            if(GetStringLeft(sElem, 12) == "chbx_plugin_" && GetStringRight(sElem, 6) == "_check")
+            {
+                int nIndex = ((StringToInt(GetSubString(sElem, 12, 1))- 1) * 2) + 1;
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                JsonArraySetInplace(jPlugins, nIndex, JsonBool(bCheck));
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                ai_CreateWidgetNUI(oPC, oPC);
             }
             else if(sElem == "chbx_buff_rest_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_BUFF_REST, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_cmd_action_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType, nToken, sElem);
@@ -525,6 +518,7 @@ void main()
             else if(sElem == "btn_heals_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 1);
             else if(sElem == "btn_healp_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 2);
             else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
             else if(sElem == "btn_ai_script") ai_SaveAIScript(oPC, oAssociate, nToken);
         }
         else if(sEvent == "watch")
@@ -549,6 +543,7 @@ void main()
             else if(sElem == "chbx_heals_onoff_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_STOP_SELF_HEALING, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_healp_onoff_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_STOP_PARTY_HEALING, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_loot_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_LOOT, oAssociate, sAssociateType, nToken, sElem);
+            else if(sElem == "chbx_perc_range_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_PERC_RANGE, oAssociate, sAssociateType, nToken, sElem);
             NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + "_widget"));
             ai_CreateWidgetNUI(oPC, oAssociate);
         }
@@ -564,6 +559,7 @@ void main()
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
+                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
@@ -574,6 +570,7 @@ void main()
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
             }
         }
     }
@@ -589,7 +586,11 @@ void main()
                 IsWindowClosed(oPC, sAssociateType + "_ai_menu");
                 IsWindowClosed(oPC, sAssociateType + "_loot_menu");
                 IsWindowClosed(oPC, sAssociateType + "_paste_menu");
-                if(ai_GetIsCharacter(oAssociate)) IsWindowClosed(oPC, "ai_main_nui");
+                if(ai_GetIsCharacter(oAssociate))
+                {
+                    IsWindowClosed(oPC, "ai_main_nui");
+                    IsWindowClosed(oPC, "ai_plugin_nui");
+                }
             }
             else
             {
@@ -612,6 +613,7 @@ void main()
                 else if(sElem == "btn_def_magic") ai_UseMagic(oPC, oAssociate, FALSE, TRUE, FALSE, sAssociateType);
                 else if(sElem == "btn_off_magic") ai_UseMagic(oPC, oAssociate, FALSE, FALSE, TRUE, sAssociateType);
                 else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
+                else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
                 else if(sElem == "btn_spontaneous") ai_Spontaneous(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_buff_short") ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
                 else if(sElem == "btn_buff_long") ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
@@ -635,10 +637,6 @@ void main()
                         SummonAnimalCompanion(oAssociate);
                     }
                 }
-                else if(sElem == "btn_heal_out_minus") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_out_plus") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in_minus") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in_plus") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_heals_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 1);
                 else if(sElem == "btn_healp_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 2);
                 else if(sElem == "btn_cmd_action") ai_Action(oPC, oAssociate);
@@ -651,25 +649,7 @@ void main()
                 else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
                 else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
-                else if(sElem == "btn_loot_range_minus") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_loot_range_plus") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_lock_range_minus") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_lock_range_plus") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_trap_range_minus") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_trap_range_plus") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_PlugIn_Execute(oPC, sElem);
-            }
-        }
-        if(sEvent == "mousedown")
-        {
-            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
-            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
-            {
-                if(sElem == "btn_open_main")
-                {
-                    if(IsWindowClosed(oPC, sAssociateType + "_ai_menu")) ai_CreateAssociateAINUI(oPC, oAssociate);
-                    if(sElem == "btn_follow_range") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                }
+                else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
             }
         }
         if(sEvent == "mousescroll")
@@ -682,11 +662,24 @@ void main()
                 else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
                 else if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
                 else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
+                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);                                                                                                                                                           if(sEvent == "mousedown")
+        {
+            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
+            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
+            {
+                if(sElem == "btn_open_main")
+                {
+                    if(IsWindowClosed(oPC, sAssociateType + "_ai_menu")) ai_CreateAssociateAINUI(oPC, oAssociate);
+                    if(sElem == "btn_follow_range") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                }
+            }
+        }
+
                 else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
+                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, 1, sAssociateType, -1);
             }
             if(nMouseScroll == -1.0) // Scroll down
             {
@@ -701,6 +694,7 @@ void main()
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, -1, sAssociateType, -1);
             }
         }
     }
@@ -823,7 +817,7 @@ void main()
                     {
                         SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                         SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                        ai_GetAssociateDataFromDB(oPC, oAssoc);
+                        ai_CheckAssociateData(oPC, oAssoc, "familiar", TRUE);
                         if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "familiar"))
                         {
                             NuiDestroy(oPC, NuiFindWindow(oPC, "familiar_widget"));
@@ -842,7 +836,7 @@ void main()
                     {
                         SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                         SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                        ai_GetAssociateDataFromDB(oPC, oAssoc);
+                        ai_CheckAssociateData(oPC, oAssoc, "companion", TRUE);
                         if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "companion"))
                         {
                             NuiDestroy(oPC, NuiFindWindow(oPC, "companion_widget"));
@@ -861,7 +855,7 @@ void main()
                     {
                         SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                         SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                        ai_GetAssociateDataFromDB(oPC, oAssoc);
+                        ai_CheckAssociateData(oPC, oAssoc, "summons", TRUE);
                         if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "summons"))
                         {
                             NuiDestroy(oPC, NuiFindWindow(oPC, "summons_widget"));
@@ -883,7 +877,7 @@ void main()
                         ai_SetAssociateDbJson(oPC, sTag, "lootfilters", jLootFilters);
                         SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                         SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                        ai_GetAssociateDataFromDB(oPC, oAssoc);
+                        ai_CheckAssociateData(oPC, oAssoc, sTag, TRUE);
                         if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sTag))
                         {
                             NuiDestroy(oPC, NuiFindWindow(oPC, sTag + "_widget"));
@@ -904,7 +898,7 @@ void main()
                 {
                     SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                     SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                    ai_GetAssociateDataFromDB(oPC, oAssoc);
+                    ai_CheckAssociateData(oPC, oAssoc, "familiar", TRUE);
                     if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "familiar"))
                     {
                         NuiDestroy(oPC, NuiFindWindow(oPC, "familiar_widget"));
@@ -924,7 +918,7 @@ void main()
                 {
                     SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                     SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                    ai_GetAssociateDataFromDB(oPC, oAssoc);
+                    ai_CheckAssociateData(oPC, oAssoc, "companion", TRUE);
                     if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "companion"))
                     {
                         NuiDestroy(oPC, NuiFindWindow(oPC, "companion_widget"));
@@ -945,7 +939,7 @@ void main()
                 {
                     SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                     SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                    ai_GetAssociateDataFromDB(oPC, oAssoc);
+                    ai_CheckAssociateData(oPC, oAssoc, "summons", TRUE);
                     if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "summons"))
                     {
                         NuiDestroy(oPC, NuiFindWindow(oPC, "companion_widget"));
@@ -965,13 +959,103 @@ void main()
                 ai_SetAssociateDbJson(oPC, sTag, "lootfilters", jLootFilters);
                 SetLocalInt(oAssoc, sWidgetButtonsVarname, nWidgetButtons);
                 SetLocalInt(oAssoc, sAIButtonsVarname, nAIButtons);
-                ai_GetAssociateDataFromDB(oPC, oAssoc);
+                ai_CheckAssociateData(oPC, oAssoc, sTag, TRUE);
                 if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sTag))
                 {
                     NuiDestroy(oPC, NuiFindWindow(oPC, sTag + "_widget"));
                     ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 ai_SendMessages(GetName(oAssociate) + "'s settings have been copied to " + GetName(oAssoc) + ".", AI_COLOR_GREEN, oPC);
+            }
+        }
+    }
+    //**************************************************************************
+    // Plugins events.
+    if(sWndId == "ai_plugin_nui")
+    {
+        if(sEvent == "click")
+        {
+            if(sElem == "btn_load_plugins")
+            {
+                string sScript = JsonGetString(NuiGetBind (oPC, nToken, "txt_plugin"));
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                if(JsonGetType(jPlugins) == JSON_TYPE_NULL) jPlugins = JsonArray();
+                ai_Plugin_Add(oPC, jPlugins, "pi_buffing");
+                ai_Plugin_Add(oPC, jPlugins, "pi_debug");
+                ai_Plugin_Add(oPC, jPlugins, "pi_test");
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+            }
+            if(sElem == "btn_check_plugins")
+            {
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                int nIndex = 1;
+                json jCheck = JsonArrayGet(jPlugins, nIndex);
+                while(JsonGetType(jCheck) != JSON_TYPE_NULL)
+                {
+                    JsonArraySetInplace(jPlugins, nIndex, JsonBool(TRUE));
+                    nIndex += 2;
+                    jCheck = JsonArrayGet(jPlugins, nIndex);
+                }
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                ai_CreateWidgetNUI(oPC, oPC);
+            }
+            if(sElem == "btn_clear_plugins")
+            {
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                int nIndex = 1;
+                json jCheck = JsonArrayGet(jPlugins, nIndex);
+                while(JsonGetType(jCheck) != JSON_TYPE_NULL)
+                {
+                    JsonArraySetInplace(jPlugins, nIndex, JsonBool(FALSE));
+                    nIndex += 2;
+                    jCheck = JsonArrayGet(jPlugins, nIndex);
+                }
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                ai_CreateWidgetNUI(oPC, oPC);
+            }
+            else if(sElem == "btn_add_plugin")
+            {
+                string sScript = JsonGetString(NuiGetBind (oPC, nToken, "txt_plugin"));
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                if(JsonGetType(jPlugins) == JSON_TYPE_NULL) jPlugins = JsonArray();
+                ai_Plugin_Add(oPC, jPlugins, sScript);
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+            }
+            else if(GetStringLeft(sElem, 18) == "btn_remove_plugin_")
+            {
+                int nIndex = (StringToInt(GetStringRight(sElem, 1)) - 1) * 2;
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                JsonArrayDelInplace(jPlugins, nIndex + 1);
+                JsonArrayDelInplace(jPlugins, nIndex);
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, nToken);
+                ai_CreatePluginNUI(oPC);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                ai_CreateWidgetNUI(oPC, oPC);
+            }
+            else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oPC, sElem);
+        }
+        else if(sEvent == "watch")
+        {
+            if(GetStringLeft(sElem, 12) == "chbx_plugin_" && GetStringRight(sElem, 6) == "_check")
+            {
+                int nIndex = ((StringToInt(GetSubString(sElem, 12, 1))- 1) * 2) + 1;
+                json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+                int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                JsonArraySetInplace(jPlugins, nIndex, JsonBool(bCheck));
+                ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                ai_CreateWidgetNUI(oPC, oPC);
             }
         }
     }
@@ -996,7 +1080,7 @@ void ai_SetLootFilterToCheckbox(object oPC, object oAssociate, int nFilterBit, i
     int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
     ai_SetLootFilter(oAssociate, nFilterBit, bCheck);
 }
-void ai_AddAssociate(object oPC, json jAssociate, location lLocation, int nToken)
+void ai_AddAssociate(object oPC, json jAssociate, location lLocation, int nFamiliar, int nCompanion)
 {
     object oAssociate = JsonToObject(jAssociate, lLocation, OBJECT_INVALID, TRUE);
     AddHenchman(oPC, oAssociate);
@@ -1027,11 +1111,14 @@ void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nAssocia
     //ai_Debug("0e_nui", "916", JsonDump(jAssociate, 1));
     location lLocation = GetLocation(oAssociate);
     ai_FireHenchman(oPC, oAssociate);
-    object oCompanion = GetAssociate(nAssociateType, oAssociate);
-    if(oCompanion != OBJECT_INVALID) DestroyObject(oCompanion);
+    int nFamiliar, nCompanion;
+    object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+    oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
     SetIsDestroyable(TRUE, FALSE, FALSE, oAssociate);
     DestroyObject(oAssociate);
-    DelayCommand(0.1, ai_AddAssociate(oPC, jAssociate, lLocation, nToken));
+    DelayCommand(0.1, ai_AddAssociate(oPC, jAssociate, lLocation, nFamiliar, nCompanion));
 }
 void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssociateType)
 {
@@ -1048,21 +1135,120 @@ void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssocia
     else if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION)
     {
         sAssociateType = "txt_companion_name";
-        sName = JsonGetString(NuiGetBind(oPC, nToken, "txt_familiar_name"));
+        sName = JsonGetString(NuiGetBind(oPC, nToken, "txt_companion_name"));
         jAssociate = GffReplaceString(jAssociate, "FamiliarName", sName);
     }
     location lLocation = GetLocation(oAssociate);
     ai_FireHenchman(oPC, oAssociate);
-    object oCompanion = GetAssociate(nAssociateType, oAssociate);
-    if(oCompanion != OBJECT_INVALID) DestroyObject(oCompanion);
+    int nFamiliar, nCompanion;
+    object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+    oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
     SetIsDestroyable(TRUE, FALSE, FALSE, oAssociate);
     DestroyObject(oAssociate);
-    DelayCommand(0.1, ai_AddAssociate(oPC, jAssociate, lLocation, nToken));
+    DelayCommand(0.1, ai_AddAssociate(oPC, jAssociate, lLocation, nFamiliar, nCompanion));
+}
+void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken)
+{
+    int nAdjustment = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE) + nIncrement;
+    if(nAdjustment < 8 || nAdjustment > 11) return;
+    SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nAdjustment);
+    json jAssociate = ObjectToJson(oAssociate, TRUE);
+    int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
+    string sText, sInfo;
+    if(nAdjustment == nHenchPercRange)
+    {
+        if(nAdjustment == 8) sText = "  Perception Range Short [10 meters Sight / 10 meters Listen]";
+        else if(nAdjustment == 9) sText = "  Perception Range Medium [20 meters Sight / 20 meters Listen]";
+        else if(nAdjustment == 10) sText = "  Perception Range Long [35 meters Sight / 20 meters Listen]";
+        else sText = "  Perception Range Default [20 meters Sight / 20 meters Listen]";
+        sInfo = " ";
+    }
+    else
+    {
+        if(nAdjustment == 8) sText = "  !!! Click the Perception Range button to set to short range !!!";
+        else if(nAdjustment == 9) sText = "  !!! Click the Perception Range button to set to medium range !!!";
+        else if(nAdjustment == 10) sText = "  !!! Click the Perception Range button to set to long range !!!";
+        else sText = "  !!! Click the Perception Range button to set to the default range !!!";
+        sInfo = sText;
+    }
+    ai_UpdateToolTipUI(oPC, sAssociateType + "_ai_menu", sAssociateType + "_widget", "btn_perc_range_tooltip", sText);
+    if(nToken > -1) NuiSetBind (oPC, nToken, "lbl_info_label", JsonString(sInfo));
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    JsonArraySetInplace(jAIData, 7, JsonInt(nAdjustment));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+}
+void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateType)
+{
+    if(ai_GetIsCharacter(oAssociate)) return;
+    SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
+    int nBtnPercRange = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE);
+    json jAssociate = ObjectToJson(oAssociate, TRUE);
+    int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
+    if(nBtnPercRange == nHenchPercRange)
+    {
+        ai_SendMessages(GetName(oAssociate) + " already has this perception set.", AI_COLOR_YELLOW, oPC);
+        return;
+    }
+    string sText, sText2;
+    if(nBtnPercRange == 8)
+    {
+        sText = "short";
+        sText2 = "  Perception Range Short [10 meters Sight / 10 meters Listen]";
+    }
+    else if(nBtnPercRange == 9)
+    {
+        sText = "medium";
+        sText2 = "  Perception Range Medium [20 meters Sight / 20 meters Listen]";
+    }
+    else if(nBtnPercRange == 10)
+    {
+        sText = "long";
+        sText2 = "  Perception Range Long [35 meters Sight / 20 meters Listen]";
+    }
+    else if(nBtnPercRange == 11)
+    {
+        sText = "default";
+        sText2 = "  Perception Range Default [20 meters Sight / 20 meters Listen]";
+    }
+    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + "_ai_menu"));
+    ai_UpdateToolTipUI(oPC, sAssociateType + "_ai_menu", sAssociateType + "_widget", "btn_perc_range_tooltip", sText);
+    ai_SendMessages(GetName(oAssociate) + " has updated his perception range to " + sText + ".", AI_COLOR_YELLOW, oPC);
+    location lLocation = GetLocation(oAssociate);
+    jAssociate = GffReplaceByte(jAssociate, "PerceptionRange", nBtnPercRange);
+    ai_FireHenchman(oPC, oAssociate);
+    int nFamiliar, nCompanion;
+    object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+    oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oAssociate);
+    if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
+    SetIsDestroyable(TRUE, FALSE, FALSE, oAssociate);
+    DestroyObject(oAssociate);
+    DelayCommand(0.1, ai_AddAssociate(oPC, jAssociate, lLocation, nFamiliar, nCompanion));
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    JsonArraySetInplace(jAIData, 11, JsonInt(nBtnPercRange));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+}
+void ai_RulePercDistInc(object oPC, object oModule, int nIncrement, int nToken)
+{
+    int nAdjustment = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE) + nIncrement;
+    if(nAdjustment < 8 || nAdjustment > 11) return;
+    SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, nAdjustment);
+    string sText;
+    if(nAdjustment == 8) sText = " Monster perception: Short [10 Sight / 10 Listen]";
+    else if(nAdjustment == 9) sText = " Monster perception: Medium [20 Sight / 20 Listen]";
+    else if(nAdjustment == 10) sText = " Monster perception: Long [35 Sight / 20 Listen]";
+    else sText = " Monster perception: Default [Monster's default values]";
+    NuiSetBind(oPC, nToken, "lbl_perc_dist_label", JsonString(sText));
+    json jRules = ai_GetCampaignDbJson("rules");
+    JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(11));
+    ai_SetCampaignDbJson("rules", jRules);
 }
 void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
 {
     ai_UpdateToolTipUI(oPC, sAssociateType + "_ai_menu", sAssociateType + "_widget", "btn_ai_tooltip", "  AI On");
-    SendMessageToPC(oPC, "AI turned on for " + GetName(oTarget) + ".");
+    ai_SendMessages("AI turned on for " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
     SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
@@ -1084,7 +1270,7 @@ void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
 void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
 {
     ai_UpdateToolTipUI(oPC, sAssociateType + "_ai_menu", sAssociateType + "_widget", "btn_ai_tooltip", "  AI Off");
-    SendMessageToPC(oPC, "  AI Turned off for " + GetName(oAssociate) + ".");
+    ai_SendMessages("AI Turned off for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "");
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_NOTICE, "");
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "");
@@ -1098,6 +1284,7 @@ void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
     SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
     //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    DeleteLocalInt(oAssociate, "AI_I_AM_BEING_HEALED");
     DeleteLocalString(oAssociate, "AIScript");
     ai_ClearCreatureActions();
 }

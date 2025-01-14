@@ -292,7 +292,7 @@ void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, floa
 }
 void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
-    json jTextBox = NuiText(NuiBind (sId));
+    json jTextBox = NuiEnabled(NuiText(NuiBind(sId)), NuiBind(sId + "_event"));
     jTextBox = NuiWidth(jTextBox, fWidth);
     jTextBox = NuiHeight(jTextBox, fHeight);
     if(sTooltip != "") jTextBox = NuiTooltip(jTextBox, NuiBind (sTooltip));
@@ -300,7 +300,7 @@ void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, string sT
 }
 void CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, int nMaxLength, int bMultiline, float fWidth, float fHeight, string sTooltip = "")
 {
-    json jObject = NuiTextEdit(NuiBind(sPlaceHolderBind), NuiBind(sValueBind), nMaxLength, bMultiline);
+    json jObject = NuiEnabled(NuiTextEdit(NuiBind(sPlaceHolderBind), NuiBind(sValueBind), nMaxLength, bMultiline), NuiBind(sValueBind + "_event"));
     jObject = NuiWidth(jObject, fWidth);
     jObject = NuiHeight(jObject, fHeight);
     if(sTooltip != "") jObject = NuiTooltip(jObject, NuiBind (sTooltip));

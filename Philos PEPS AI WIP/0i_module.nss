@@ -58,7 +58,6 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     ai_SetCreatureAIScript(oCreature);
     ai_SetNormalAppearance(oCreature);
     ai_SetAura(oCreature);
-    ai_SetNormalAppearance(oCreature);
     SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
     SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
     int nMonsterHpIncrease = GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP);
@@ -83,16 +82,16 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     }
     // If we have already seen an enemy then we need to begin combat!
     object oEnemy = GetNearestEnemy(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_single_player", "62", GetName(oCreature) + " nearest enemy: " + GetName(oEnemy) +
+    if(AI_DEBUG) ai_Debug("0i_module", "62", GetName(oCreature) + " nearest enemy: " + GetName(oEnemy) +
                  " Distance: " + FloatToString(GetDistanceBetween(oCreature, oEnemy), 0, 2) +
                  " Talents set? " + IntToString(GetLocalInt(oCreature, AI_TALENTS_SET)));
     if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oCreature, oEnemy) < AI_RANGE_PERCEPTION)
     {
         ai_SetupMonsterBuffTargets(oCreature);
-        // To save steps and time we set the talenst while we buff!
+        // To save steps and time we set the talents while we buff!
         ai_SetCreatureTalents(oCreature, TRUE);
         ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
-        ai_Debug("0i_single_player", "65", GetName(oCreature) + " is starting combat!");
+        if(AI_DEBUG) ai_Debug("0i_module", "65", GetName(oCreature) + " is starting combat!");
         ai_DoMonsterCombatRound(oCreature);
     }
 }
@@ -112,22 +111,35 @@ json ai_SetCompanionSummoning(object oCreature, json jCreature)
     if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE))
     {
         jCreature = GffReplaceInt(jCreature, "FamiliarType", Random(11));
+        jCreature = GffReplaceString(jCreature, "FamiliarName", "Summoned Familiar");
     }
     if(GetHasFeat(FEAT_ANIMAL_COMPANION , oCreature, TRUE))
     {
         jCreature = GffReplaceInt(jCreature, "CompanionType", Random(9));
+        jCreature = GffReplaceString(jCreature, "CompanionName", "Summoned Companion");
     }
     return jCreature;
 }
 object ai_ChangeMonster(object oCreature, object oModule)
 {
-    if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY) || GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS))
+    object oPC = GetFirstPC();
+    // Lets not mess up the cutscenes with silly RULES.
+    if(GetCutsceneMode(oPC)) return oCreature;
+    // Looks bad to see creatures wink in and out plus could cause module errors.
+    if(GetDistanceBetween(oCreature, oPC) < AI_RANGE_PERCEPTION) return oCreature;
+    if(IsInConversation(oCreature)) return oCreature;
+    int nStay = GetLocalInt(oModule, AI_RULE_CORPSES_STAY);
+    int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS);
+    int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE);
+    if(nStay || nSummon || nPercDist != 11)
     {
         location lLocation = GetLocation(oCreature);
         json jCreature = ObjectToJson(oCreature, TRUE);
         //ai_Debug("0i_single_player", "116", GetName(oCreature) + " " + JsonDump(jCreature, 1));
-        if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY)) jCreature = GffReplaceDword(jCreature, "DecayTime", 600000);
-        if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS)) jCreature = ai_SetCompanionSummoning(oCreature, jCreature);
+        if(nPercDist != 11) jCreature = GffReplaceByte(jCreature, "PerceptionRange", nPercDist);
+        if(nStay) jCreature = GffReplaceDword(jCreature, "DecayTime", 600000);
+        if(nSummon) jCreature = ai_SetCompanionSummoning(oCreature, jCreature);
+        SetIsDestroyable(TRUE, FALSE, FALSE, oCreature);
         DestroyObject(oCreature);
         return ai_CreateMonster(jCreature, lLocation, oModule);
     }
@@ -135,55 +147,23 @@ object ai_ChangeMonster(object oCreature, object oModule)
 }
 void ai_OnAssociateSpawn(object oCreature)
 {
-    // Change the associate via Json.
-    //oCreature = ai_ChangeAssociate(oCreature, GetModule());
-    // Initialize Associate modes for basic use.
-    SetLocalFloat(oCreature, AI_FOLLOW_RANGE, 3.0);
-    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 50);
-    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
-    SetLocalFloat(oCreature, AI_LOOT_CHECK_RANGE, 20.0);
-    SetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE, 20.0);
-    SetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE, 20.0);
-    ai_SetMagicMode(oCreature, AI_MAGIC_NORMAL_MAGIC_USE);
-    ai_SetListeningPatterns(oCreature);
     // Do PRC check.
     if(ResManGetAliasFor("prc_ai_fam_heart", RESTYPE_NCS) != "")
     {
         ai_SetPRCAssociateEventScripts(oCreature);
     }
     else ai_SetAssociateEventScripts(oCreature);
+    // Initialize Associate modes for basic use.
+    ai_SetListeningPatterns(oCreature);
     ai_SetNormalAppearance(oCreature);
     ai_SetAssociateAIScript(oCreature, FALSE);
     ai_SetAura(oCreature);
-    ai_SetNormalAppearance(oCreature);
     // Bioware summoned shadows are not incorporeal, also set the ai code.
     if (GetTag(OBJECT_SELF) == "NW_S_SHADOW")
     {
         SetLocalInt(OBJECT_SELF, "X2_L_IS_INCORPOREAL", TRUE);
         SetLocalString(OBJECT_SELF, AI_DEFAULT_SCRIPT, "ai_shadow");
     }
-}
-object ai_CreateAssociate(json jCreature, location lLocation, object oModule)
-{
-    WriteTimestampedLogEntry("0i_module [168] " + JsonDump(jCreature, 1));
-    if(AI_DEBUG) ai_Debug("0i_Module", "168", JsonDump(jCreature, 1));
-    object oCreature = JsonToObject(jCreature, lLocation, OBJECT_INVALID, TRUE);
-    return oCreature;
-}
-object ai_ChangeAssociate(object oCreature, object oModule)
-{
-    json jCreature = ObjectToJson(oCreature, TRUE);
-    WriteTimestampedLogEntry("0i_module [176] " + GetName(oCreature) + " " + JsonDump(jCreature, 1));
-    //if(GetLocalFloat(oModule, AI_RULE_ASSOC_PERC_DISTANCE))
-    //{
-        location lLocation = GetLocation(oCreature);
-        //json jCreature = ObjectToJson(oCreature, TRUE);
-        jCreature = GffReplaceByte(jCreature, "PerceptionRange", 12);
-        //if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS)) jCreature = ai_SetCompanionSummoning(oCreature, jCreature);
-        DestroyObject(oCreature);
-        return ai_CreateAssociate(jCreature, lLocation, oModule);
-    //}
-    //return oCreature;
 }
 void ai_SetMonsterEventScripts(object oCreature)
 {
@@ -269,7 +249,7 @@ void ai_SetMonsterEventScripts(object oCreature)
 }
 void ai_SetAssociateEventScripts(object oCreature)
 {
-    if(AI_DEBUG) ai_Debug("0i_module", "276", "Changing " + GetName(oCreature) + "'s associate event scripts.");
+    //if(AI_DEBUG) ai_Debug("0i_module", "276", "Changing " + GetName(oCreature) + "'s associate event scripts.");
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
     if(sScript == "nw_ch_ac1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_ch_1_hb");
@@ -334,45 +314,45 @@ void ai_FixEventScriptsForMonster(object oCreature)
     if(AI_DEBUG) ai_Debug("0i_module", "338", "Reverting " + GetName(oCreature) + "'s event scripts.");
     string sScript = GetLocalString(oCreature, "AI_ON_HEARTBEAT");
     if(sScript == "") sScript = "nw_c2_default1";
-    ai_Debug("0i_main", "404", "Reverting ON_HEARTBEAT: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_HEARTBEAT: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_NOTICE");
     if(sScript == "") sScript = "nw_c2_default2";
-    ai_Debug("0i_main", "404", "Reverting ON_NOTICE: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_NOTICE: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_END_COMBATROUND");
     if(sScript == "") sScript = "nw_c2_default3";
-    ai_Debug("0i_main", "404", "Reverting ON_END_COMBATROUND: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_END_COMBATROUND: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_DIALOGUE");
     if(sScript == "") sScript = "nw_c2_default4";
-    ai_Debug("0i_main", "404", "Reverting ON_DIALOGUE: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DIALOGUE: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_MELEE_ATTACKED");
     if(sScript == "") sScript = "nw_c2_default5";
-    ai_Debug("0i_main", "404", "Reverting ON_MELEE_ATTACKED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_MELEE_ATTACKED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_DAMAGED");
     if(sScript == "") sScript = "nw_c2_default6";
-    ai_Debug("0i_main", "404", "Reverting ON_DAMAGED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DAMAGED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
     sScript = GetLocalString(oCreature, "AI_ON_DISTURBED");
     if(sScript == "") sScript = "nw_c2_default8";
-    ai_Debug("0i_main", "404", "Reverting ON_DISTURBED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DISTURBED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     sScript = GetLocalString(oCreature, "AI_ON_RESTED");
     if(sScript == "") sScript = "nw_c2_defaulta";
-    ai_Debug("0i_main", "404", "Reverting ON_RESTED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_RESTED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_SPELLCASTAT");
     if(sScript == "") sScript = "nw_c2_defaultb";
-    ai_Debug("0i_main", "404", "Reverting ON_SPELLCASTAT: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_SPELLCASTAT: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR");
     if(sScript == "") sScript = "nw_c2_defaulte";
-    ai_Debug("0i_main", "404", "Reverting ON_BLOCKED_BY_DOOR: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_BLOCKED_BY_DOOR: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }
@@ -381,45 +361,45 @@ void ai_FixEventScriptsForAssociate(object oCreature)
     if(AI_DEBUG) ai_Debug("0i_module", "385", "Reverting " + GetName(oCreature) + "'s event scripts.");
     string sScript = GetLocalString(oCreature, "AI_ON_HEARTBEAT");
     if(sScript == "") sScript = "nw_ch_ac1";
-    ai_Debug("0i_main", "404", "Reverting ON_HEARTBEAT: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_HEARTBEAT: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_NOTICE");
     if(sScript == "") sScript = "nw_ch_ac2";
-    ai_Debug("0i_main", "404", "Reverting ON_NOTICE: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_NOTICE: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_END_COMBATROUND");
     if(sScript == "") sScript = "nw_ch_ac3";
-    ai_Debug("0i_main", "404", "Reverting ON_END_COMBATROUND: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_END_COMBATROUND: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_DIALOGUE");
     if(sScript == "") sScript = "nw_ch_ac4";
-    ai_Debug("0i_main", "404", "Reverting ON_DIALOGUE: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DIALOGUE: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_MELEE_ATTACKED");
     if(sScript == "") sScript = "nw_ch_ac5";
-    ai_Debug("0i_main", "404", "Reverting ON_MELEE_ATTACKED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_MELEE_ATTACKED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_DAMAGED");
     if(sScript == "") sScript = "nw_ch_ac6";
-    ai_Debug("0i_main", "404", "Reverting ON_DAMAGED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DAMAGED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
     sScript = GetLocalString(oCreature, "AI_ON_DISTURBED");
     if(sScript == "") sScript = "nw_ch_ac8";
-    ai_Debug("0i_main", "404", "Reverting ON_DISTURBED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_DISTURBED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     sScript = GetLocalString(oCreature, "AI_ON_RESTED");
     if(sScript == "") sScript = "nw_ch_aca";
-    ai_Debug("0i_main", "404", "Reverting ON_RESTED: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_RESTED: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_SPELLCASTAT");
     if(sScript == "") sScript = "nw_ch_acb";
-    ai_Debug("0i_main", "404", "Reverting ON_SPELLCASTAT: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_SPELLCASTAT: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
     sScript = GetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR");
     if(sScript == "") sScript = "nw_ch_ace";
-    ai_Debug("0i_main", "404", "Reverting ON_BLOCKED_BY_DOOR: " + sScript);
+    if(AI_DEBUG) ai_Debug("0i_module", "404", "Reverting ON_BLOCKED_BY_DOOR: " + sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, sScript);
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }
@@ -476,7 +456,7 @@ void ai_SetIDMonsterEventScripts(object oCreature)
 }
 void ai_SetPRCAssociateEventScripts(object oCreature)
 {
-    if(AI_DEBUG) ai_Debug("0i_module", "483", "Changing " + GetName(oCreature) + "'s PRC event scripts.");
+    //if(AI_DEBUG) ai_Debug("0i_module", "483", "Changing " + GetName(oCreature) + "'s PRC event scripts.");
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
     if(sScript == "prc_ai_fam_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_fam_event");

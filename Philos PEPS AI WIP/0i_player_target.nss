@@ -18,6 +18,10 @@ void ai_RemoveAllActionMode(object oPC);
 void ai_SelectTrap(object oPC, object oAssociate, object oItem);
 // Place the selected trap at the location selected by the player for OBJECT_SELF.
 void ai_PlaceTrap(object oPC, location lLocation);
+// Adds a creature to nGroup for oDM
+void ai_AddToGroup(object oDM, object oTarget, int nGroup);
+// Has nGroup perform an action based on the selected target or location.
+void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup);
 
 void ai_SetupPlayerTarget(object oCreature)
 {
@@ -161,7 +165,14 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         SetLocalInt(oAssociate, sGhostModeVarname, TRUE);
     }
     int nObjectType = GetObjectType(oTarget);
-    ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, TRUE);
+    if(!ai_GetAIMode(oAssociate, AI_MODE_COMMANDED))
+    {
+        ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, TRUE);
+        ai_SetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD, FALSE);
+        ai_SetAIMode(oAssociate, AI_MODE_DEFEND_MASTER, FALSE);
+        ai_SetAIMode(oAssociate, AI_MODE_STAND_GROUND, FALSE);
+        ai_SetAIMode(oAssociate, AI_MODE_FOLLOW, FALSE);
+    }
     ai_ClearCreatureActions(TRUE);
     if(oTarget == GetArea(oPC))
     {
@@ -178,14 +189,25 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
     }
     else if(nObjectType == OBJECT_TYPE_CREATURE)
     {
-        if(GetIsEnemy(oTarget, oAssociate))
+        if(GetIsDead(oTarget))
         {
+            AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE)));
+        }
+        else if(GetIsEnemy(oTarget, oAssociate))
+        {
+            // Lock them into attacking this target only.
+            SetLocalObject(oAssociate, AI_PC_LOCKED_TARGET, oTarget);
             // This resets a henchmens failed Moral save in combat.
-            ai_SetAssociateAIScript(oAssociate);
-            if(!ai_GetIsBusy(oAssociate))
+            if(GetLocalString(oAssociate, AI_COMBAT_SCRIPT) == "ai_coward")
+            {
+                SetLocalString(oAssociate, AI_COMBAT_SCRIPT, GetLocalString(oAssociate, AI_DEFAULT_SCRIPT));
+            }
+            if(ai_GetIsInCombat(oAssociate)) ai_DoAssociateCombatRound(oAssociate, oTarget);
+            else
             {
                 ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
                 ai_SetCreatureTalents(oAssociate, FALSE);
+                // Lock them into attacking this target only.
                 ai_DoAssociateCombatRound(oAssociate, oTarget);
             }
             ai_SendMessages(GetName(oAssociate) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
@@ -193,6 +215,9 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         else
         {
             ActionMoveToObject(oTarget, TRUE);
+            // Player will be stuck with this variable if they are not using the AI.
+            DeleteLocalInt(oTarget, "AI_I_AM_BEING_HEALED");
+            ActionDoCommand(ai_ActionTryHealing(oAssociate, oTarget));
         }
     }
     else if(nObjectType == OBJECT_TYPE_DOOR)
@@ -257,7 +282,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE)));
+            ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE));
         }
         DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
@@ -395,4 +420,152 @@ void ai_PlaceTrap(object oPC, location lLocation)
     }
     else ai_SendMessages("This trap kit does not have a trap property!", AI_COLOR_YELLOW, oPC);
 }
-
+void ai_AddToGroup(object oDM, object oTarget, int nGroup)
+{
+    string sGroup = IntToString(nGroup);
+    if(oDM == oTarget)
+    {
+        ai_SendMessages("Group" + sGroup + " has been cleared.", AI_COLOR_YELLOW, oDM);
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm_widget"), "btn_cmd_group" + sGroup + "_tooltip", JsonString("Group" + sGroup));
+        DeleteLocalJson(oDM, "DM_GROUP" + sGroup);
+        return;
+    }
+    string sName = GetName(oTarget);
+    json jGroup = GetLocalJson(oDM, "DM_GROUP" + sGroup);
+    if(JsonGetType(jGroup) == JSON_TYPE_NULL)
+    {
+        string sText = sName + "'s group";
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm_widget"), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText));
+        jGroup = JsonArray();
+    }
+    string sUUID = GetObjectUUID(oTarget);
+    JsonArrayInsertInplace(jGroup, JsonString(sUUID));
+    ai_SendMessages(sName + " has been saved to group" + sGroup, AI_COLOR_YELLOW, oDM);
+    SetLocalJson(oDM, "DM_GROUP" + sGroup, jGroup);
+    EnterTargetingMode(oDM, OBJECT_TYPE_CREATURE, MOUSECURSOR_PICKUP, MOUSECURSOR_PICKUP_DOWN);
+}
+void ai_MonsterAction(object oPC, object oTarget, location lLocation)
+{
+    object oCreature = OBJECT_SELF;
+    int nObjectType = GetObjectType(oTarget);
+    ai_ClearCreatureActions(TRUE);
+    if(oTarget == GetArea(oPC))
+    {
+        ActionMoveToLocation(lLocation, FALSE);
+    }
+    else if(nObjectType == OBJECT_TYPE_CREATURE)
+    {
+        if(GetIsDead(oTarget)) return;
+        else if(GetIsEnemy(oTarget, oCreature))
+        {
+            // Lock them into attacking this target only.
+            SetLocalObject(oCreature, AI_PC_LOCKED_TARGET, oTarget);
+            // This resets a creatures failed Moral save in combat.
+            if(GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward")
+            {
+                SetLocalString(oCreature, AI_COMBAT_SCRIPT, GetLocalString(oCreature, AI_DEFAULT_SCRIPT));
+            }
+            if(ai_GetIsInCombat(oCreature)) ai_DoMonsterCombatRound(oCreature);
+            else
+            {
+                ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+                ai_SetCreatureTalents(oCreature, FALSE);
+                ai_DoAssociateCombatRound(oCreature, oTarget);
+            }
+            ai_SendMessages(GetName(oCreature) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
+        }
+        else
+        {
+            ActionMoveToObject(oTarget, TRUE);
+            // Player will be stuck with this variable if they are not using the AI.
+            DeleteLocalInt(oTarget, "AI_I_AM_BEING_HEALED");
+            ActionDoCommand(ai_ActionTryHealing(oCreature, oTarget));
+        }
+    }
+    else if(nObjectType == OBJECT_TYPE_DOOR)
+    {
+        if(GetIsTrapped(oTarget))
+        {
+            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+            if(GetTrapDetectedBy(oTarget, oCreature))
+            {
+                ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                return;
+            }
+            else if(GetLocked(oTarget)) ai_AttemptToByPassLock(oCreature, oTarget);
+        }
+        else if(GetLocked(oTarget)) ai_AttemptToByPassLock(oCreature, oTarget);
+        else if(GetIsOpen(oTarget))
+        {
+            ActionCloseDoor(oTarget, TRUE);
+        }
+        else ActionOpenDoor(oTarget, TRUE);
+    }
+    else if(nObjectType == OBJECT_TYPE_ITEM)
+    {
+        ActionPickUpItem(oTarget);
+    }
+    else if(nObjectType == OBJECT_TYPE_PLACEABLE)
+    {
+        ActionMoveToObject(oTarget, TRUE);
+        if(GetHasInventory(oTarget))
+        {
+            if(GetIsTrapped(oTarget))
+            {
+                if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+                if(GetTrapDetectedBy(oTarget, oCreature))
+                {
+                    ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                    return;
+                }
+                if(GetLocked(oTarget))
+                {
+                    if(!ai_AttemptToByPassLock(oCreature, oTarget))
+                    {
+                        AssignCommand(oCreature, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                    }
+                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                    return;
+                }
+                DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
+            }
+            else if(GetLocked(oTarget))
+            {
+                if(ai_AttemptToByPassLock(oCreature, oTarget))
+                {
+                    AssignCommand(oCreature, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                }
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                return;
+            }
+            ActionDoCommand(ai_SearchObject(oCreature, oTarget, oPC, GetAssociateType(oCreature), TRUE));
+        }
+        DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
+    }
+    else if(nObjectType == OBJECT_TYPE_TRIGGER)
+    {
+        if(GetIsTrapped(oTarget))
+        {
+            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+            if(GetTrapDetectedBy(oTarget, oCreature)) ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+        }
+    }
+    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+}
+void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup)
+{
+    string sGroup = IntToString(nGroup);
+    json jGroup = GetLocalJson(oDM, "DM_GROUP" + sGroup);
+    int nIndex;
+    string sUUID = JsonGetString(JsonArrayGet(jGroup, nIndex));
+    object oCreature;
+    while(sUUID != "")
+    {
+        oCreature = GetObjectByUUID(sUUID);
+        AssignCommand(oCreature, ai_MonsterAction(oDM, oTarget, lLocation));
+        sUUID = JsonGetString(JsonArrayGet(jGroup, ++nIndex));
+    }
+    if(nIndex == 0) ai_SendMessages("Group" + sGroup + " is empty!", AI_COLOR_RED, oDM);
+}

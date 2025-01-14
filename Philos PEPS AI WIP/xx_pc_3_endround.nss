@@ -41,7 +41,7 @@ void main()
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            ai_Debug("xx_pc_3_endround", "47", "nCombatWait: " + IntToString(nCombatWait));
+            if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "47", "nCombatWait: " + IntToString(nCombatWait));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return;

@@ -19,6 +19,8 @@ void main()
         SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_DAMAGED));
     }
     if(ai_Disabled(oCreature)) return;
+    // Make sure to clear wounded shout limit if we take damage. See ai_TryHealing.
+    DeleteLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT");
     object oDamager = GetLastDamager(oCreature);
     if(AI_DEBUG) ai_Debug("0e_c2_6_damaged", "23", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;

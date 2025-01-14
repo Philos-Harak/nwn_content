@@ -15,7 +15,6 @@ void SpawnMonk(object oSac, location lLoc, object oPC)
 {
     SetLocalInt(oSac, "DO_MUMMY_ONCE", 1);
     object oMonk = CreateObject(OBJECT_TYPE_CREATURE, "undeadmonk", lLoc);
-    WriteTimestampedLogEntry(GetName(oMonk) + " oPC: " + GetName(oPC));
     AssignCommand(oMonk, SetFacingPoint(GetPosition(oPC)));
     // This is removed as Philos' AI will start the combat.
     //AssignCommand(oMonk, DetermineCombatRound(oPC));
@@ -28,7 +27,6 @@ void main()
 // ********************* ADD AI CODE FOR LOOTING *******************************
 // *************** SHOULD NOT CHANGE ORIGINAL BEHAVIOR *************************
     object oPC = GetLocalObject(OBJECT_SELF, "AI_GET_LAST_OPENED_BY");
-    WriteTimestampedLogEntry(GetName(OBJECT_SELF) + " oPC: " + GetName(oPC));
     if(GetIsObjectValid(oPC)) oOpener = oPC;
 // ********************* ADD AI CODE FOR LOOTING *******************************
     CTG_CreateTreasure(TREASURE_TYPE_MED, oOpener, OBJECT_SELF);

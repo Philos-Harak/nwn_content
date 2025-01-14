@@ -19,7 +19,6 @@ void main()
 // ********************* ADD AI CODE FOR LOOTING *******************************
 // *************** SHOULD NOT CHANGE ORIGINAL BEHAVIOR *************************
     object oPC = GetLocalObject(OBJECT_SELF, "AI_GET_LAST_OPENED_BY");
-    WriteTimestampedLogEntry(GetName(OBJECT_SELF) + " oPC: " + GetName(oPC));
     if(GetIsObjectValid(oPC)) oOpener = oPC;
 // ********************* ADD AI CODE FOR LOOTING *******************************
     CTG_CreateTreasure(TREASURE_TYPE_MED, oOpener, OBJECT_SELF);

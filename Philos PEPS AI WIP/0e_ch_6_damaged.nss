@@ -14,6 +14,8 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     if(ai_Disabled(oCreature)) return;
+    // Make sure to clear wounded shout limit if we take damage. See ai_TryHealing.
+    DeleteLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT");
     object oDamager = GetLastDamager(oCreature);
     if(AI_DEBUG) ai_Debug("0e_ch_6_damaged", "18", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)

@@ -74,55 +74,16 @@ int ai_GetIsProficientWith(object oCreature, object oWeapon);
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1);
 // Returns the highest bonus Lock Picks needed to unlock nLockDC in oCreatures inventory.
 object ai_GetBestPicks(object oCreature, int nLockDC);
+// Removes all items from oCreature.
+void ai_RemoveInventory(object oCreature);
+// Copies all equiped and inventory items from oOldHenchman to oNewHenchman.
+void ai_MoveInventory(object oOldHenchman, object oNewHenchman);
 
 int ai_GetIsWeapon(object oItem)
 {
-   int iType = GetBaseItemType(oItem);
-   switch(iType)
-   {
-      case BASE_ITEM_LONGSWORD: return TRUE;
-      case BASE_ITEM_LONGBOW: return TRUE;
-      case BASE_ITEM_RAPIER: return TRUE;
-      case BASE_ITEM_DAGGER: return TRUE;
-      case BASE_ITEM_GREATAXE: return TRUE;
-      case BASE_ITEM_SHORTBOW: return TRUE;
-      case BASE_ITEM_GREATSWORD: return TRUE;
-      case BASE_ITEM_SHORTSWORD: return TRUE;
-      case BASE_ITEM_MORNINGSTAR: return TRUE;
-      case BASE_ITEM_LIGHTMACE: return TRUE;
-      case BASE_ITEM_BATTLEAXE: return TRUE;
-      case BASE_ITEM_BASTARDSWORD: return TRUE;
-      case BASE_ITEM_SCIMITAR: return TRUE;
-      case BASE_ITEM_SHORTSPEAR: return TRUE;
-      case BASE_ITEM_QUARTERSTAFF: return TRUE;
-      case BASE_ITEM_WARHAMMER: return TRUE;
-      case BASE_ITEM_HALBERD: return TRUE;
-      case BASE_ITEM_SICKLE: return TRUE;
-      case BASE_ITEM_HANDAXE: return TRUE;
-      case BASE_ITEM_THROWINGAXE: return TRUE;
-      case BASE_ITEM_DWARVENWARAXE: return TRUE;
-      case BASE_ITEM_HEAVYFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTHAMMER: return TRUE;
-      case BASE_ITEM_LIGHTCROSSBOW: return TRUE;
-      case BASE_ITEM_HEAVYCROSSBOW: return TRUE;
-      case BASE_ITEM_SLING: return TRUE;
-      case BASE_ITEM_KATANA: return TRUE;
-      case BASE_ITEM_BOLT: return TRUE;
-      case BASE_ITEM_ARROW: return TRUE;
-      case BASE_ITEM_BULLET: return TRUE;
-      case BASE_ITEM_CLUB: return TRUE;
-      case BASE_ITEM_DART: return TRUE;
-      case BASE_ITEM_DOUBLEAXE: return TRUE;
-      case BASE_ITEM_TWOBLADEDSWORD: return TRUE;
-      case BASE_ITEM_DIREMACE: return TRUE;
-      case BASE_ITEM_KAMA: return TRUE;
-      case BASE_ITEM_KUKRI: return TRUE;
-      case BASE_ITEM_SCYTHE: return TRUE;
-      case BASE_ITEM_SHURIKEN: return TRUE;
-      case BASE_ITEM_TRIDENT: return TRUE;
-      case BASE_ITEM_WHIP: return TRUE;
-   }
+   int nType = GetBaseItemType(oItem);
+   int nWeaponType = StringToInt(Get2DAString("baseitems", "WeaponType", nType));
+   if(nWeaponType) return TRUE;
    return FALSE;
 }
 int ai_GetIsMeleeWeapon(object oItem)
@@ -398,8 +359,7 @@ object ai_GetCreatureHasItem(object oCreature, string sTag, int bCheckEquiped = 
 int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJECT_INVALID)
 {
     if(GetIdentified(oItem)) return FALSE;
-    // SkillVsItemCost 2da starts 1 at 0 ... go figure!
-    int nKnowledge = GetSkillRank(SKILL_LORE, oCreature) - 1;
+    int nKnowledge = GetSkillRank(SKILL_LORE, oCreature);
     int nItemValue; // gold value of item
     string sBaseName;
     string sMaxValue = Get2DAString("SkillVsItemCost", "DeviceCostMax", nKnowledge);
@@ -412,8 +372,11 @@ int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJE
     if(nMaxValue <= nItemValue)
     {
         SetIdentified(oItem, FALSE);
-        sBaseName = GetStringByStrRef(StringToInt(Get2DAString("baseitems", "name", GetBaseItemType(oItem))));
-        if(oPC != OBJECT_INVALID) ai_SendMessages(GetName(oCreature) + " cannot identify " + sBaseName, AI_COLOR_RED, oPC);
+        if(oPC != OBJECT_INVALID)
+        {
+            sBaseName = GetStringByStrRef(StringToInt(Get2DAString("baseitems", "name", GetBaseItemType(oItem))));
+            ai_SendMessages(GetName(oCreature) + " cannot identify " + sBaseName, AI_COLOR_RED, oPC);
+        }
     }
     else
     {
@@ -664,4 +627,42 @@ object ai_GetBestPicks(object oCreature, int nLockDC)
         oItem = GetNextItemInInventory(oCreature);
     }
     return oBestItem;
+}
+void ai_RemoveInventory(object oCreature)
+{
+    object oItem = GetFirstItemInInventory(oCreature);
+    while(oItem != OBJECT_INVALID)
+    {
+        DestroyObject(oItem);
+        oItem = GetNextItemInInventory(oCreature);
+    }
+    int nIndex;
+    for(nIndex = 0; nIndex <= 13; nIndex++)
+    {
+        oItem = GetItemInSlot(nIndex, oCreature);
+        DestroyObject(oItem);
+    }
+}
+void ai_MoveInventory(object oOldHenchman, object oNewHenchman)
+{
+    // Move all inventory items.
+    object oItem = GetFirstItemInInventory(oOldHenchman);
+    while(oItem != OBJECT_INVALID)
+    {
+        CopyItem(oItem, oNewHenchman, TRUE);
+        oItem = GetNextItemInInventory(oOldHenchman);
+    }
+    // Move all equiped items and equip on oNewHenchman.
+    int nIndex;
+    object oNewItem;
+    for(nIndex = 0; nIndex <= 13; nIndex++)
+    {
+        oItem = GetItemInSlot(nIndex, oOldHenchman);
+        if(oItem != OBJECT_INVALID)
+        {
+            oNewItem = CopyItem(oItem, oNewHenchman, TRUE);
+            if(!GetIdentified(oNewItem)) SetIdentified(oNewItem, TRUE);
+            ActionEquipItem(oNewItem, nIndex);
+        }
+    }
 }

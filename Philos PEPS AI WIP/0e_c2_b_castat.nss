@@ -35,7 +35,7 @@ void main()
     if(ai_CheckForCombat(oCreature, TRUE)) return;
     // We have been attacked out of combat, so let our allies know.
     SetLocalObject(oCreature, AI_MY_TARGET, oCaster);
-    SpeakString(AI_ATKED_BY_SPELL, TALKVOLUME_SILENT_TALK);
+    SpeakString(AI_ATKED_BY_SPELL, TALKVOLUME_SILENT_SHOUT);
     if(GetDistanceBetween(oCreature, oCaster) < AI_RANGE_CLOSE)
     {
         if(ai_GetBehaviorState(NW_FLAG_BEHAVIOR_SPECIAL)) ai_DetermineSpecialBehavior(oCreature);

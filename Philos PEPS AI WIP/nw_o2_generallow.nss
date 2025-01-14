@@ -20,7 +20,6 @@ void main()
     object oPC = GetLocalObject(OBJECT_SELF, "AI_GET_LAST_OPENED_BY");
     if(GetIsObjectValid(oPC)) oLastOpener = oPC;
 // ********************* ADD AI CODE FOR LOOTING *******************************
-    SendMessageToPC(GetFirstPC(), "oLastOpener: " + GetName(oLastOpener));
     GenerateLowTreasure(oLastOpener, OBJECT_SELF);
     SetLocalInt(OBJECT_SELF,"NW_DO_ONCE",1);
     ShoutDisturbed();

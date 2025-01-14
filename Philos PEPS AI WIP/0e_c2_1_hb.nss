@@ -10,7 +10,7 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     // * if not runnning normal or better AI then exit for performance reasons
-    if (GetAILevel(oCreature) == AI_LEVEL_VERY_LOW) return;
+    //if (GetAILevel(oCreature) == AI_LEVEL_VERY_LOW) return;
     if(AI_DEBUG) ai_Debug("0e_c2_1_hb", "14", GetName(oCreature) + " Heartbeat." +
              " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
@@ -26,6 +26,11 @@ void main()
                 ApplyEffectToObject(DURATION_TYPE_INSTANT, eVis, oCreature);
             }
         }
+    }
+    // Send the user-defined event signal if specified here so it doesn't get skipped.
+    if(GetSpawnInCondition(NW_FLAG_HEARTBEAT_EVENT))
+    {
+        SignalEvent(oCreature, EventUserDefined(EVENT_HEARTBEAT));
     }
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature) ||
        GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
@@ -44,7 +49,7 @@ void main()
                 }
             }
         }
-        ai_DoMonsterCombatRound (oCreature);
+        ai_DoMonsterCombatRound(oCreature);
         return;
     }
     if(ai_CheckForCombat(oCreature, TRUE)) return;
@@ -83,10 +88,4 @@ void main()
         }
     }
     if(ai_TryHealing(oCreature, oCreature)) return;
-    // Send the user-defined event signal if specified
-    if(GetSpawnInCondition(NW_FLAG_HEARTBEAT_EVENT))
-    {
-        SignalEvent(oCreature, EventUserDefined(EVENT_HEARTBEAT));
-        return;
-    }
 }
