@@ -2482,13 +2482,14 @@ void ai_CreateSpellSelectionNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 (Widget)*********************************************************** 414 / 469
+    // Row 5 (Widget)*********************************************************** 414 / 469
     jRow = JsonArray();
     for(nIndex = 0; nIndex < 10; nIndex++)
     {
         sIndex = IntToString(nIndex);
         json jButton = NuiButtonImage(NuiBind("btn_widget_" + sIndex + "_image"));
-        jButton = NuiId(jButton, "btn_widget_" + sIndex + "_event");
+        jButton = NuiEnabled(jButton, NuiBind("btn_widget_" + sIndex + "_enabled"));
+        jButton = NuiId(jButton, "btn_widget_" + sIndex);
         jButton = NuiWidth(NuiHeight(jButton, 35.0), 35.0);
         jButton = NuiMargin(jButton, 0.0);
         jButton = NuiTooltip(jButton, NuiBind("btn_widget_" + sIndex + "_tooltip"));
@@ -2665,12 +2666,15 @@ void ai_CreateSpellSelectionNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "icon_spell", jSpell_Icon);
     NuiSetBind(oPC, nToken, "text_spell", jSpell_Text);
     NuiSetBind(oPC, nToken, "metamagic_text", jMetaMagic_Text);
+    // Row 4 Spell widget list label.
+    // Row 5 Spell widget List
     int nMetaMagic, nDomain;
     nIndex = 0;
     while(nIndex < 10)
     {
         jSpell = JsonArrayGet(jWidget, nIndex);
         sIndex = IntToString(nIndex);
+        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_enabled", JsonBool(TRUE));
         if(JsonGetType(jSpell) != JSON_TYPE_NULL)
         {
             nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
@@ -2681,7 +2685,6 @@ void ai_CreateSpellSelectionNUI(object oPC, object oAssociate)
             nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
             nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
             sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
-            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
             NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
             sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
@@ -2690,10 +2693,9 @@ void ai_CreateSpellSelectionNUI(object oPC, object oAssociate)
         }
         else
         {
-            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString("ctl_cg_btn_splvl"));
             NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(""));
-            jMetaMagic_Text = JsonArrayInsert(jMetaMagic_Text, JsonString(""));
+            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_enabled", JsonBool(FALSE));
         }
         ++nIndex;
     }
