@@ -82,7 +82,7 @@ void main()
         if(GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS)) PlayMobileAmbientAnimations_NonAvian();
         else if(GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS_AVIAN)) PlayMobileAmbientAnimations_Avian();
         else if(GetSpawnInCondition(NW_FLAG_IMMOBILE_AMBIENT_ANIMATIONS)) PlayImmobileAmbientAnimations();
-        else if(GetLocalInt(GetModule(), AI_RULE_WANDER) && GetStandardFactionReputation(STANDARD_FACTION_HOSTILE, oCreature) < 11)
+        else if(GetLocalInt(GetModule(), AI_RULE_WANDER) && GetStandardFactionReputation(STANDARD_FACTION_HOSTILE, oCreature) > 89)
         {
             ai_AmbientAnimations(DISTANCE_LARGE);
         }

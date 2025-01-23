@@ -20,25 +20,9 @@ void main()
     if(IsInConversation(oCreature)) return;
     if(ai_TryHealing(oCreature, oCreature)) return;
     // When picking up items we also check for traps and locks so if
-    // we are not in pickup mode we need to do that here.
+    // we are not in pickup mode we need to check the nearby objects.
     if(ai_AssociateRetrievingItems(oCreature)) return;
-    // Seek out and disable traps.
-    if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
-    {
-        object oTrap = GetNearestTrapToObject(oCreature);
-        if(oTrap != OBJECT_INVALID &&
-           GetDistanceBetween(oCreature, oTrap) < GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE) &&
-           ai_AttemptToDisarmTrap(oCreature, oTrap)) return;
-    }
-    // Seek out and disable locks.
-    if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
-       ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
-    {
-        object oLock = ai_GetNearestLockedObject(oCreature);
-        if(oLock != OBJECT_INVALID &&
-           GetDistanceBetween(oCreature, oLock) < GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE) &&
-           ai_AttemptToByPassLock(oCreature, oLock)) return;
-    }
+    if(ai_CheckNearbyObjects(oCreature)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
     {
         if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "47", "Going into stealth mode!");

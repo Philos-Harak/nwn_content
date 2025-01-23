@@ -10,6 +10,7 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
 #include "0i_items"
+const string CRAFT_JSON = "CRAFT_JSON";
 const string CRAFT_COOL_DOWN = "CRAFT_COOL_DOWN";
 const string CRAFT_ITEM_SELECTION = "CRAFT_ITEM_SELECTION";
 const string CRAFT_MATERIAL_SELECTION = "CRAFT_MATERIAL_SELECTION";
@@ -17,7 +18,7 @@ const string CRAFT_MODEL_SELECTION = "CRAFT_MODEL_SELECTION";
 const string CRAFT_MODEL = "CRAFT_MODEL";
 const string CRAFT_COLOR_PALLET = "CRAFT_COLOR_PALLET";
 const string CRAFT_LEFT_PART_COLOR = "CRAFT_LEFT_PART_COLOR";
-const string CRAFT_ALL_PART_COLOR = "CRAFT_ALL_PART_COLOR";
+const string CRAFT_ALL_COLOR = "CRAFT_ALL_COLOR";
 const string CRAFT_RIGHT_PART_COLOR = "CRAFT_RIGHT_PART_COLOR";
 
 void CreateItemCombo(object oPC, json jRow, string sComboBind);
@@ -29,6 +30,7 @@ int GetArmorModelSelected(object oPC);
 void main()
 {
     object oPC = OBJECT_SELF;
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     // Row 1 (Object Name)****************************************************** 400 / 73
     json jRow = JsonArray();
     CreateTextEditBox(jRow, "plc_hold_bind", "txt_item_name", 50, FALSE, 400.0f, 20.0f);
@@ -110,18 +112,18 @@ void main()
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Row 5l (groups)********************************************************** 400 / 377 / 230
     jGroupRow = JsonArray();
-    CreateButtonSelect(jGroupRow, "Left Part", "btn_left_part_color", 90.0, 20.0);
-    CreateButtonSelect(jGroupRow, "All Parts", "btn_all_part_color", 77.0, 20.0);
     CreateButtonSelect(jGroupRow, "Right Part", "btn_right_part_color", 90.0, 20.0);
+    CreateButtonSelect(jGroupRow, "All Parts", "btn_all_color", 77.0, 20.0);
+    CreateButtonSelect(jGroupRow, "Left Part", "btn_left_part_color", 90.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Row 5m (groups)********************************************************** 400 / 405 /258
     jGroupRow = JsonArray();
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateTextEditBox(jGroupRow, "plc_hold_bind", "txt_color_l", 3, FALSE, 40.0f, 20.0f, "txt_color_l_tooltip");
+    CreateTextEditBox(jGroupRow, "plc_hold_bind", "txt_color_r", 3, FALSE, 40.0f, 20.0f, "txt_color_r_tooltip");
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     CreateTextEditBox(jGroupRow, "plc_hold_bind", "txt_color_a", 3, FALSE, 40.0f, 20.0f, "txt_color_a_tooltip");
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateTextEditBox(jGroupRow, "plc_hold_bind", "txt_color_r", 3, FALSE, 40.0f, 20.0f, "txt_color_r_tooltip");
+    CreateTextEditBox(jGroupRow, "plc_hold_bind", "txt_color_l", 3, FALSE, 40.0f, 20.0f, "txt_color_l_tooltip");
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Row 5n (groups)********************************************************** 400 / 438 / 291
@@ -135,15 +137,15 @@ void main()
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     json jLayout = NuiCol(jCol);
     // Get the window location to restore it from the database.
-    json jGeom = GetLocalJson(oPC, "PI_CRAFTING_POS");
-    float fX = JsonGetFloat(JsonObjectGet(jGeom, "x"));
-    float fY = JsonGetFloat(JsonObjectGet(jGeom, "y"));
+    json jGeometry = JsonObjectGet(jCraft, "Geometry");
+    float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
+    float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
     string sPCWindow;
     int nToken = SetWindow(oPC, jLayout, "plcraftwin", "Crafting",
                  fX, fY, 428.0, 454.0, FALSE, FALSE, FALSE, FALSE, TRUE, "pe_crafting");
     // Set all binds, events, and watches.
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
-    int nItem = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    int nItem = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     object oItem = GetSelectedItem(oPC, nItem);
     // Row 1
     NuiSetBind(oPC, nToken, "txt_item_name", JsonString(GetName(oItem)));
@@ -171,7 +173,7 @@ void main()
     NuiSetBindWatch(oPC, nToken, "item_combo_selected", TRUE);
     // Row 5c title.
     // Row 5d
-    int nSelected = GetLocalInt(oPC, CRAFT_MODEL_SELECTION);
+    int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
     NuiSetBind(oPC, nToken, "model_combo_selected", JsonInt (nSelected));
     NuiSetBind(oPC, nToken, "model_combo_event", JsonBool (TRUE));
     NuiSetBindWatch(oPC, nToken, "model_combo_selected", TRUE);
@@ -289,7 +291,7 @@ void main()
         NuiSetBind(oPC, nToken, "color_pallet_image_event", JsonBool(FALSE));
         // Row 5l
         NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
-        NuiSetBind(oPC, nToken, "btn_all_part_color_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
         // Row 5m
         NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
@@ -310,39 +312,70 @@ void main()
         NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
         NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
-        // Row 5l
-        nSelected = GetLocalInt (oPC, CRAFT_LEFT_PART_COLOR);
-        NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nSelected));
-        NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(TRUE));
-        nSelected = GetLocalInt (oPC, CRAFT_ALL_PART_COLOR);
-        NuiSetBind(oPC, nToken, "btn_all_part_color", JsonBool(nSelected));
-        NuiSetBind(oPC, nToken, "btn_all_part_color_event", JsonBool(TRUE));
-        nSelected = GetLocalInt (oPC, CRAFT_RIGHT_PART_COLOR);
-        NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelected));
-        NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
         // Row 5m
         NuiSetBindWatch(oPC, nToken, "txt_color_l", TRUE);
         int nModelSelected = GetArmorModelSelected(oPC);
-        int nMaterialSelected = GetLocalInt(oPC, CRAFT_MATERIAL_SELECTION);
+        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
         string sColorAll = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected));
-        int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-        string sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
-        if(sColor == "255") sColor = sColorAll;
-        NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "txt_color_l", JsonString(sColor));
-        NuiSetBind(oPC, nToken, "txt_color_l_tooltip", JsonString("  Choose color for left model 0 to 175"));
-        NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "txt_color_a", JsonString(sColorAll));
-        NuiSetBindWatch(oPC, nToken, "txt_color_a", TRUE);
-        NuiSetBind(oPC, nToken, "txt_color_a_tooltip", JsonString("  Choose color for all models 0 to 175"));
-        sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
-        if(sColor == "255") sColor = sColorAll;
-        NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "txt_color_r", JsonString(sColor));
-        NuiSetBindWatch(oPC, nToken, "txt_color_r", TRUE);
-        NuiSetBind(oPC, nToken, "txt_color_r_tooltip", JsonString("  Choose color for right model 0 to 175"));
+        // These models only have one side so make sure we are not linked.
+        if (nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+        {
+            // Row 5l
+            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
+            // Row 5m
+            NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
+            NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_a", JsonString(sColorAll));
+            NuiSetBindWatch(oPC, nToken, "txt_color_a", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_a_tooltip", JsonString("  Choose color for all models 0 to 175"));
+            NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "txt_color_r", JsonString(""));
+        }
+        else
+        {
+            // Row 5l
+            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
+            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(TRUE));
+            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
+            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
+            // Row 5m
+            int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+            string sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
+            if(sColor == "255") sColor = sColorAll;
+            NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_l", JsonString(sColor));
+            NuiSetBind(oPC, nToken, "txt_color_l_tooltip", JsonString("  Choose color for left model 0 to 175"));
+            NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_a", JsonString(sColorAll));
+            NuiSetBindWatch(oPC, nToken, "txt_color_a", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_a_tooltip", JsonString("  Choose color for all models 0 to 175"));
+            if(nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
+            else nModelSelected++;
+            nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+            sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
+            if(sColor == "255") sColor = sColorAll;
+            NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_r", JsonString(sColor));
+            NuiSetBindWatch(oPC, nToken, "txt_color_r", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_r_tooltip", JsonString("  Choose color for right model 0 to 175"));
+        }
         // Row 5n
-        nSelected = GetLocalInt (oPC, CRAFT_MATERIAL_SELECTION);
+        nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
         NuiSetBind(oPC, nToken, "material_combo_selected", JsonInt(nSelected));
         NuiSetBind(oPC, nToken, "material_combo_event", JsonBool(TRUE));
         NuiSetBindWatch(oPC, nToken, "material_combo_selected", TRUE);
@@ -358,11 +391,11 @@ void main()
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
         // Row 5l
         NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
-        NuiSetBind(oPC, nToken, "btn_all_part_color_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
         // Row 5m
         int nModelSelected = GetArmorModelSelected(oPC);
-        int nMaterialSelected = GetLocalInt(oPC, CRAFT_MATERIAL_SELECTION);
+        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
         string sColorAll = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected));
         NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
@@ -371,8 +404,7 @@ void main()
         NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "txt_color_r", JsonString(""));
         // Row 5n
-        nSelected = GetLocalInt (oPC, CRAFT_MATERIAL_SELECTION);
-        NuiSetBind(oPC, nToken, "material_combo_selected", JsonInt(nSelected));
+        NuiSetBind(oPC, nToken, "material_combo_selected", JsonInt(nMaterialSelected));
         NuiSetBind(oPC, nToken, "material_combo_event", JsonBool(TRUE));
         NuiSetBindWatch(oPC, nToken, "material_combo_selected", TRUE);
     }
@@ -395,7 +427,8 @@ void CreateModelCombo(object oPC, json jRow, string sComboBind)
 {
     float fFacing = GetFacing(oPC);
     json jCombo = JsonArray();
-    int nSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     // Create the list.
     // Armor.
     if(nSelected == 0)
@@ -465,7 +498,8 @@ void CreateMaterialCombo(object oPC, json jRow, string sComboBind)
 {
     int nCnt;
     json jCombo = JsonArray();
-    int nSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     // Create the list.
     // Armor, Cloak, Headgear.
     if(nSelected == 0 || nSelected == 1 || nSelected == 2)
@@ -491,7 +525,8 @@ object GetSelectedItem(object oTarget, int nItemSelected)
 }
 int GetArmorModelSelected(object oPC)
 {
-    int nModelSelected = GetLocalInt(oPC, CRAFT_MODEL_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nModelSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
     if(nModelSelected == 0) return ITEM_APPR_ARMOR_MODEL_NECK;
     if(nModelSelected == 1) return ITEM_APPR_ARMOR_MODEL_RSHOULDER;
     if(nModelSelected == 2) return ITEM_APPR_ARMOR_MODEL_RBICEP;

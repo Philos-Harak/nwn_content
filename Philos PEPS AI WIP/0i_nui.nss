@@ -288,6 +288,7 @@ void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, floa
     jButton = NuiHeight(jButton, fHeight);
     if(fMargin > -1.0) jButton = NuiMargin(jButton, fMargin);
     if(sTooltip != "") jButton = NuiTooltip(jButton, NuiBind (sTooltip));
+    jButton = NuiEncouraged(jButton, NuiBind(sId + "_encouraged"));
     JsonArrayInsertInplace(jRow, jButton);
 }
 void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, string sTooltip = "")

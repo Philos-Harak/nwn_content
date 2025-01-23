@@ -95,9 +95,15 @@ void main()
             }
             else AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
         }
-        else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectTarget(oPC, oAssociate, oTarget);
+        else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectFollowTarget(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_PLACE_TRAP") AssignCommand(oAssociate, ai_PlaceTrap(oPC, lLocation));
+        else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
+        {
+            if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
+            ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
+            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+        }
         else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
         {
             AttachCamera(oPC, oTarget);

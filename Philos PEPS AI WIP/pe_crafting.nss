@@ -13,6 +13,7 @@ const int CRAFT_MAX_MODEL_NUMBER = 99;
 // Maximum model number for weapons. Note this will be the 100s and 10s places.
 // The color number uses the ones place. Thus 25 is actually 250.
 const int CRAFT_MAX_WEAPON_MODEL_NUMBER = 99;
+const string CRAFT_JSON = "CRAFT_JSON";
 const string CRAFT_ORIGINAL_ITEM = "CRAFT_ORIGINAL_ITEM";
 const string CRAFT_COOL_DOWN = "CRAFT_COOL_DOWN";
 const string CRAFT_ITEM_SELECTION = "CRAFT_ITEM_SELECTION";
@@ -34,7 +35,9 @@ const string CRAFT_COPY_COLOR = "CRAFT_COPY_COLOR";
 const string CRAFT_COPY_PART_COLOR = "CRAFT_COPY_PART_COLOR";
 const string CRAFT_ARMOR_AC = "CRAFT_ARMOR_AC";
 const string CRAFT_COLOR_PALLET = "CRAFT_COLOR_PALLET";
-const string CRAFT_PART_COLOR = "CRAFT_PART_COLOR";
+const string CRAFT_LEFT_PART_COLOR = "CRAFT_LEFT_PART_COLOR";
+const string CRAFT_ALL_COLOR = "CRAFT_ALL_COLOR";
+const string CRAFT_RIGHT_PART_COLOR = "CRAFT_RIGHT_PART_COLOR";
 // Tag used in effects to freeze player.
 const string CRAFT_FREEZE = "CRAFT_FREEZE";
 // The tags for containers used to do some crafting.
@@ -89,6 +92,7 @@ void main()
     string sElem = NuiGetEventElement();
     int nIndex = NuiGetEventArrayIndex();
     string sWndId = NuiGetWindowId (oPC, nToken);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     //SendMessageToPC(oPC, "0e_crafting, 95, sElem: " + sElem + " sEvent: " + sEvent);
     //**************************************************************************
     // Watch to see if the window moves and save.
@@ -96,9 +100,12 @@ void main()
     {
         if(!GetLocalInt (oPC, AI_NO_NUI_SAVE))
         {
+            json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+            if(JsonGetType(jCraft) == JSON_TYPE_NULL) jCraft = JsonObject();
             // Get the height, width, x, and y of the window.
-            json jGeom = NuiGetBind(oPC, nToken, "window_geometry");
-            SetLocalJson(oPC, "PI_CRAFTING_POS", jGeom);
+            json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
+            JsonObjectSetInplace(jCraft, "Geometry", jGeometry);
+            SetLocalJson(oPC, CRAFT_JSON, jCraft);
         }
         return;
     }
@@ -108,7 +115,7 @@ void main()
     {
         object oTarget = oPC;
         // Get the item we are crafting.
-        int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+        int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
         object oItem = GetSelectedItem(oTarget, nItemSelected);
         // Changing the name needs to be before the cooldown.
         if(sEvent == "watch" && sElem == "txt_item_name")
@@ -145,16 +152,17 @@ void main()
                 return;
             }
             if(!CanCraftItem(oPC, oItem, nToken)) return;
-            int nMaterialSelected = GetLocalInt(oPC, CRAFT_MATERIAL_SELECTION);
+            int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
             object oNewItem;
             int nBaseItemType = GetBaseItemType(oItem);
-            if(GetLocalInt(oPC, CRAFT_PART_COLOR) && nBaseItemType == BASE_ITEM_ARMOR)
+            int nAllColor = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+            if(!nAllColor && nBaseItemType == BASE_ITEM_ARMOR)
             {
                 int nIndex;
                 int nModelSelected = GetArmorModelSelected(oPC);
-                int nModelSide = GetLocalInt(oPC, CRAFT_MODEL_SPECIAL);
-                if(nModelSide == 1 ||
-                   nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+                int nLeftColor = JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
+                int nRightColor = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+                if(nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
                    nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
                    nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
                    nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
@@ -166,42 +174,48 @@ void main()
                     oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
                     DestroyObject(oItem);
                 }
-                else if(nModelSide == 0)
-                {
-                    // Color Right side.
-                    nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                    if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
-                    NuiSetBind(oPC, nToken, "txt_color_number", JsonString(IntToString(nColorId)));
-                    oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
-                    DestroyObject(oItem);
-                    // If we are doing the left side then add one to get the left side.
-                    // Note: Right Thigh and Left Thigh are backwards so this fixes that!
-                    if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
-                    else nModelSelected = nModelSelected + 1;
-                    nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                    if(nChange) nColorId = GetColorIDChange(oNewItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
-                    NuiSetBind(oPC, nToken, "txt_color_number", JsonString(IntToString(nColorId)));
-                    oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
-                    DestroyObject(oNewItem);
-                    oNewItem = oItem;
-                }
                 else
                 {
-                    // If we are doing the left side then add one to get the left side.
-                    // Note: Right Thigh and Left Thigh are backwards so this fixes that!
-                    if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
-                    else nModelSelected = nModelSelected + 1;
-                    nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                    if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
-                    NuiSetBind(oPC, nToken, "txt_color_number", JsonString(IntToString(nColorId)));
-                    oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
-                    DestroyObject(oItem);
+                    if(nRightColor)
+                    {
+                        // Color Right side.
+                        nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                        if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
+                        NuiSetBind(oPC, nToken, "txt_color_r", JsonString(IntToString(nColorId)));
+                        oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
+                        DestroyObject(oItem);
+                        if(nLeftColor)
+                        {
+                            // If we are doing the left side then add one to get the left side.
+                            // Note: Right Thigh and Left Thigh are backwards so this fixes that!
+                            if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
+                            else nModelSelected = nModelSelected + 1;
+                            nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                            if(nChange) nColorId = GetColorIDChange(oNewItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
+                            NuiSetBind(oPC, nToken, "txt_color_l", JsonString(IntToString(nColorId)));
+                            oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
+                            DestroyObject(oNewItem);
+                            oNewItem = oItem;
+                        }
+                    }
+                    if(nLeftColor)
+                    {
+                        // If we are doing the left side then add one to get the left side.
+                        // Note: Right Thigh and Left Thigh are backwards so this fixes that!
+                        if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
+                        else nModelSelected = nModelSelected + 1;
+                        nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                        if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nChange);
+                        NuiSetBind(oPC, nToken, "txt_color_l", JsonString(IntToString(nColorId)));
+                        oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, nColorId, TRUE);
+                        DestroyObject(oItem);
+                    }
                 }
             }
             else
             {
                 if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected, nChange);
-                NuiSetBind(oPC, nToken, "txt_color_number", JsonString(IntToString(nColorId)));
+                NuiSetBind(oPC, nToken, "txt_color_a", JsonString(IntToString(nColorId)));
                 oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected, nColorId, TRUE);
                 DestroyObject(oItem);
             }
@@ -218,15 +232,15 @@ void main()
             if(sElem == "item_combo_selected")
             {
                 int nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
-                SetLocalInt(oPC, CRAFT_ITEM_SELECTION, nSelected);
+                JsonObjectSetInplace(jCraft, CRAFT_ITEM_SELECTION, JsonInt(nSelected));
                 // Set button for cloak and helms.
                 if(nSelected == 1 || nSelected == 2)
                 {
                     int nHidden = GetHiddenWhenEquipped(oItem);
-                    if(nHidden) SetLocalInt(oPC, CRAFT_MODEL_SELECTION, 1);
-                    else SetLocalInt(oPC, CRAFT_MODEL_SELECTION, 0);
+                    if(nHidden) JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(1));
+                    else JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
                 }
-                else SetLocalInt(oPC, CRAFT_MODEL_SELECTION, 0);
+                else JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
                 NuiDestroy(oPC, nToken);
                 ExecuteScript("pi_crafting", oPC);
             }
@@ -234,14 +248,14 @@ void main()
             else if(sElem == "model_combo_selected")
             {
                 int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
-                SetLocalInt(oPC, CRAFT_MODEL_SELECTION, nSelected);
+                JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(nSelected));
                 SetModelNumberText(oPC, nToken);
             }
             // They have changed the material (color item) for the item.
             else if(sElem == "material_combo_selected")
             {
                 int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
-                SetLocalInt(oPC, CRAFT_MATERIAL_SELECTION, nSelected);
+                JsonObjectSetInplace(jCraft, CRAFT_MATERIAL_SELECTION, JsonInt(nSelected));
                 // Change the pallet for the correct material.
                 string sColorPallet;
                 if(nSelected >= 0 && nSelected < 4)
@@ -265,28 +279,8 @@ void main()
         }
         else if(sEvent == "click")
         {
-            // Copy the item they have selected.
-            if(sElem == "btn_copy")
-            {
-                if(!GetLocalInt (oPC, CRAFT_COPY_ITEM))
-                {
-                    CopyCraftingItem (oPC, oItem);
-                    NuiSetBind (oPC, nToken, "btn_paste_event", JsonBool (TRUE));
-                }
-                NuiSetBind (oPC, nToken, "btn_copy", JsonBool (TRUE));
-            }
-            // Paste the copy item with the current item.
-            else if(sElem == "btn_paste")
-            {
-                if(CanCraftItem(oPC, oItem, nToken, TRUE))
-                {
-                    oItem = PasteCraftingItem(oPC, oTarget, oItem);
-                    LockItemInCraftingWindow(oPC, oItem, nToken);
-                    NuiSetBind(oPC, nToken, "btn_paste_event", JsonBool (FALSE));
-                }
-            }
             // Random button to change items looks randomly.
-            else if(sElem == "btn_rand")
+            if(sElem == "btn_rand")
             {
                 if(CanCraftItem(oPC, oItem, nToken))
                 {
@@ -334,19 +328,47 @@ void main()
                     NuiDestroy(oPC, nToken);
                 }
             }
-            else if(sElem == "btn_part_color")
+            else if(sElem == "btn_left_part_color")
             {
-                if(!GetLocalInt(oPC, CRAFT_PART_COLOR))
-                {
-                    SetLocalInt(oPC, CRAFT_PART_COLOR, TRUE);
-                    NuiSetBind(oPC, nToken, "btn_part_color", JsonBool (TRUE));
-                }
-                else
-                {
-                    SetLocalInt(oPC, CRAFT_PART_COLOR, FALSE);
-                    NuiSetBind(oPC, nToken, "btn_part_color", JsonBool (FALSE));
-                }
+                int nBool = !JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
+                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(nBool));
+                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nBool));
+                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(FALSE));
+                NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(TRUE));
+                NuiSetBind(oPC, nToken, "txt_color_1", JsonString("44"));
+                NuiSetBind(oPC, nToken, "txt_color_a", JsonString(""));
+                NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(FALSE));
             }
+            else if(sElem == "btn_all_color")
+            {
+                int nBool = !JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(nBool));
+                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nBool));
+                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
+                NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
+                NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(FALSE));
+                NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
+                NuiSetBind(oPC, nToken, "txt_color_a", JsonString("44"));
+                NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(FALSE));
+                NuiSetBind(oPC, nToken, "txt_color_r", JsonString(""));
+            }
+            else if(sElem == "btn_right_part_color")
+            {
+                int nBool = !JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(nBool));
+                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool (nBool));
+                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool (FALSE));
+                NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(TRUE));
+                NuiSetBind(oPC, nToken, "txt_color_r", JsonString("44"));
+                NuiSetBind(oPC, nToken, "txt_color_a", JsonString(""));
+                NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(FALSE));
+            }
+            // Allows saving the item as a UTC!
             else if(sElem == "btn_save_template")
             {
                 json jItem = ObjectToJson(oItem, TRUE);
@@ -361,11 +383,13 @@ void main()
             }
         }
     }
+    SetLocalJson(oPC, CRAFT_JSON, jCraft);
 }
-void CopyCraftingItem(object oPC, object oItem)
+/*void CopyCraftingItem(object oPC, object oItem)
 {
     //ai_Debug("pe_crafting", "295", JsonDump(ObjectToJson(oItem), 2));
     json jItem = ObjectToJson(oItem);
+
     SetLocalInt(oPC, CRAFT_COPY_ITEM, TRUE);
     int nSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
     if (ai_GetIsWeapon(oItem))
@@ -601,7 +625,7 @@ object PasteCraftingItem (object oPC, object oTarget, object oItem)
     AssignCommand(oPC, ai_SendMessages (GetName (oItem) + " appearance has been changed!", AI_COLOR_GREEN, oPC));
     DestroyObject(oChestItem);
     return oItem;
-}
+} */
 int GetItemSelectedEquipSlot (int nItemSelected)
 {
     if (nItemSelected == 0) return INVENTORY_SLOT_CHEST;
@@ -613,7 +637,8 @@ int GetItemSelectedEquipSlot (int nItemSelected)
 }
 int GetArmorModelSelected (object oPC)
 {
-    int nModelSelected = GetLocalInt (oPC, CRAFT_MODEL_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nModelSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
     if(nModelSelected == 0) return ITEM_APPR_ARMOR_MODEL_NECK;
     if(nModelSelected == 1) return ITEM_APPR_ARMOR_MODEL_RSHOULDER;
     if(nModelSelected == 2) return ITEM_APPR_ARMOR_MODEL_RBICEP;
@@ -629,21 +654,20 @@ int GetArmorModelSelected (object oPC)
 }
 object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oItem, int nDirection, string sPart)
 {
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     // Get the item we are changing.
     int nModelSelected;
-    int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     string sModelName, sModelNumber;
     object oNewItem;
     // Weapons.
-    if (ai_GetIsWeapon (oItem))
+    if(ai_GetIsWeapon (oItem))
     {
-        string sColumn, sComponent;
-        // Get the column so we can get the max model.
-        if(sPart == "t") sColumn = "TopModel";
-        else if(sPart == "m") sColumn = "MiddleModel";
-        else if(sPart == "b") sColumn = "BottomModel";
+        if(sPart == "t") nModelSelected = 2;
+        else if(sPart == "m") nModelSelected = 1;
+        else if(sPart == "b") nModelSelected = 0;
         sModelName = Get2DAString("baseitems", "ItemClass", GetBaseItemType(oItem)) + "_" + sPart + "_";
-        // Get the model and color of the weapon model.
+        // Get the model and color of the weapon.
         int nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, nModelSelected);
         int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, nModelSelected);
         // Get next/previous color/model.
@@ -664,8 +688,6 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
         else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
         else sModelNumber = IntToString(nModelNumber);
-        SendMessageToPC(oPC, "pe_crafting, 587, sModel: " + sModelName + sModelNumber +
-                 " nModel: " + IntToString(nModel) + " nColor: " + IntToString(nColor));
         //ai_Debug("pe_crafting", "587", "sModel: " + sModelName + sModelNumber +
         //         " nModel: " + IntToString(nModel) + " nColor: " + IntToString(nColor));
         while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "")
@@ -871,11 +893,12 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
     SetLocalString(oPC, CRAFT_MODEL, sModelName + sModelNumber);
     return oNewItem;
 }
-object RandomizeItemsCraftAppearance(object oPlayer, object oTarget, int nToken, object oItem)
+object RandomizeItemsCraftAppearance(object oPC, object oTarget, int nToken, object oItem)
 {
     // Get the item we are changing.
     int nModelSelected, nModel, nMaxModel, nColor, nMaxColor;
-    int nItemSelected = GetLocalInt(oPlayer, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     int iBaseItemType, iType, iIndex, iDie, iMod, iRoll, iColor, iRtop, iRmid, iRbottom;
     int iColorT, iColorM, iColorB;
     object oItem1, oItem2, oItem3, oItem4, oItem5, oItem6, oItem7, oItemFinal, oItemDone;
@@ -995,11 +1018,12 @@ object GetSelectedItem(object oTarget, int nItemSelected)
     else if(nItemSelected == 4) return GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oTarget);
     return OBJECT_INVALID;
 }
-void CancelCraftedItem(object oPlayer, object oTarget)
+void CancelCraftedItem(object oPC, object oTarget)
 {
-    int nItemSelected = GetLocalInt(oPlayer, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     object oItem = GetSelectedItem(oTarget, nItemSelected);
-    object oOriginalItem = GetLocalObject(oPlayer, CRAFT_ORIGINAL_ITEM);
+    object oOriginalItem = GetLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
     if(oOriginalItem != OBJECT_INVALID)
     {
         DestroyObject(oItem);
@@ -1007,7 +1031,7 @@ void CancelCraftedItem(object oPlayer, object oTarget)
         // Give item Backup to Player
         oOriginalItem = CopyItem(oOriginalItem, oTarget, TRUE);
         DelayCommand(0.2f, AssignCommand (oTarget, ActionEquipItem(oOriginalItem, nSlot)));
-        DeleteLocalObject(oPlayer, CRAFT_ORIGINAL_ITEM);
+        DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
     }
 }
 // Gets the colorId from a image of the color pallet.
@@ -1048,7 +1072,8 @@ void ClearItemInCraftingWindow(object oPC, object oItem, int nToken)
 }
 void SaveCraftedItem(object oPC, object oTarget, int nToken)
 {
-    int nItemSelected = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     object oItem = GetSelectedItem(oTarget, nItemSelected);
     ClearItemInCraftingWindow(oPC, oItem, nToken);
     DestroyObject(GetLocalObject(oPC, CRAFT_ORIGINAL_ITEM));
@@ -1137,10 +1162,12 @@ int CheckForTemporaryItemProperty (object oItem)
 }
 void SetModelNumberText(object oPC, int nToken)
 {
-    int nItem = GetLocalInt(oPC, CRAFT_ITEM_SELECTION);
+    json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    int nItem = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     object oItem = GetSelectedItem(oPC, nItem);
-    int nSelected = GetLocalInt(oPC, CRAFT_MODEL_SELECTION);
+    int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
     string sModelTop, sModelMiddle, sModelBottom;
+    // Model Group
     if (ai_GetIsWeapon (oItem))
     {
         int nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, 0);
@@ -1174,6 +1201,7 @@ void SetModelNumberText(object oPC, int nToken)
         NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(TRUE));
     }
+    // Armor and clothing
     if(nItem == 0)
     {
         nSelected = GetArmorModelSelected(oPC);
@@ -1224,6 +1252,7 @@ void SetModelNumberText(object oPC, int nToken)
             NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(TRUE));
         }
     }
+    // Cloaks and Helmets.
     else
     {
         sModelMiddle = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0));
@@ -1242,6 +1271,104 @@ void SetModelNumberText(object oPC, int nToken)
         NuiSetBind(oPC, nToken, "bottom_title_label", JsonString(""));
         NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(FALSE));
+    }
+    // Color Group
+    if(ai_GetIsWeapon(oItem) || ai_GetIsShield(oItem))
+    {
+        // Need to disable the color widgets.
+        // Row 5k
+        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString("gui_pal_tattoo"));
+        NuiSetBind(oPC, nToken, "color_pallet_image_event", JsonBool(FALSE));
+        // Row 5l
+        NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
+        // Row 5m
+        NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
+        NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "txt_color_a", JsonString(""));
+        NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "txt_color_r", JsonString(""));
+        NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(FALSE));
+        // Row 5n
+        NuiSetBind(oPC, nToken, "material_combo_event", JsonBool(FALSE));
+    }
+    // Armor and clothing
+    else if(nItem == 0)
+    {
+        // Row 5k
+        string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
+        if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
+        NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
+        // Row 5m
+        NuiSetBindWatch(oPC, nToken, "txt_color_l", TRUE);
+        int nModelSelected = GetArmorModelSelected(oPC);
+        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+        string sColorAll = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected));
+        // These models only have one side so make sure we are not linked.
+        if (nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
+            nModelSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+        {
+            // Row 5l
+            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
+            // Row 5m
+            NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "txt_color_l", JsonString(""));
+            NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_a", JsonString(sColorAll));
+            NuiSetBindWatch(oPC, nToken, "txt_color_a", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_a_tooltip", JsonString("  Choose color for all models 0 to 175"));
+            NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(FALSE));
+            NuiSetBind(oPC, nToken, "txt_color_r", JsonString(""));
+        }
+        else
+        {
+            // Row 5l
+            int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
+            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(TRUE));
+            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
+            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
+            // Row 5m
+            int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+            string sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
+            if(sColor == "255") sColor = sColorAll;
+            NuiSetBind(oPC, nToken, "txt_color_l_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_l", JsonString(sColor));
+            NuiSetBind(oPC, nToken, "txt_color_l_tooltip", JsonString("  Choose color for left model 0 to 175"));
+            NuiSetBind(oPC, nToken, "txt_color_a_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_a", JsonString(sColorAll));
+            NuiSetBindWatch(oPC, nToken, "txt_color_a", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_a_tooltip", JsonString("  Choose color for all models 0 to 175"));
+            if(nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
+            else nModelSelected++;
+            nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+            sColor = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex));
+            if(sColor == "255") sColor = sColorAll;
+            NuiSetBind(oPC, nToken, "txt_color_r_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "txt_color_r", JsonString(sColor));
+            NuiSetBindWatch(oPC, nToken, "txt_color_r", TRUE);
+            NuiSetBind(oPC, nToken, "txt_color_r_tooltip", JsonString("  Choose color for right model 0 to 175"));
+        }
+        // Row 5n
+        nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+        NuiSetBind(oPC, nToken, "material_combo_selected", JsonInt(nSelected));
+        NuiSetBind(oPC, nToken, "material_combo_event", JsonBool(TRUE));
+        NuiSetBindWatch(oPC, nToken, "material_combo_selected", TRUE);
     }
 }
 

@@ -124,18 +124,15 @@ void ai_CreateDMWidgetNUI(object oPC)
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Get the window location to restore it from the database.
-    json jGeometry = ai_GetCampaignDbJson("location", sName, AI_DM_TABLE);
-    float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
-    float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
-    float fGUI_Scale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0;
-    if(fGUI_Scale == 0.0) fGUI_Scale = 1.0;
+    json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
+    jLocations = JsonObjectGet(jLocations, AI_WIDGET_NUI);
+    float fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
+    float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     if(bAIWidgetLock)
     {
         fX = fX + 4.0f;
         fY = fY + 37.0f;
     }
-    else if(fY == 1.0 && fX == 1.0) fY = 1.0;
-    //fY = fY * fGUI_Scale;
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     int nToken;
@@ -143,8 +140,8 @@ void ai_CreateDMWidgetNUI(object oPC)
     string sDisplayName = GetName(oPC);
     if(GetStringRight(sDisplayName, 1) == "s") sDisplayName = sDisplayName + "'";
     else sDisplayName = sDisplayName + "'s";
-    if(bAIWidgetLock) nToken = SetWindow(oPC, jLayout, "dm_widget", sDisplayName + " Widget", fX, fY, fWidth + 8.0f, fHeight, FALSE, FALSE, FALSE, TRUE, FALSE, "0e_nui_dm");
-    else nToken = SetWindow(oPC, jLayout, "dm_widget", sDisplayName + " Widget", fX, fY, fWidth + 12.0f, fHeight, FALSE, FALSE, FALSE, TRUE, TRUE, "0e_nui_dm");
+    if(bAIWidgetLock) nToken = SetWindow(oPC, jLayout, "dm" + AI_WIDGET_NUI, sDisplayName + " Widget", fX, fY, fWidth + 8.0f, fHeight, FALSE, FALSE, FALSE, TRUE, FALSE, "0e_nui_dm");
+    else nToken = SetWindow(oPC, jLayout, "dm" + AI_WIDGET_NUI, sDisplayName + " Widget", fX, fY, fWidth + 12.0f, fHeight, FALSE, FALSE, FALSE, TRUE, TRUE, "0e_nui_dm");
     // Set event watches for window inspector and save window location.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events.
@@ -247,6 +244,7 @@ void ai_CreateDMOptionsNUI(object oPC)
 {
     int nMonsterAI = (ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) != "");
     int nAssociateAI = (ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "");
+    string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     // ************************************************************************* Width / Height
     string sText = " [Single player]";
     if(AI_SERVER) sText = " [Server]";
@@ -348,18 +346,21 @@ void ai_CreateDMOptionsNUI(object oPC)
     JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Get the window location to restore it from the database.
+    json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
+    jLocations = JsonObjectGet(jLocations, AI_MAIN_NUI);
+    float fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
+    float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sName = GetName(oPC);
-    if(GetStringRight(sName, 1) == "s") sName = sName + "'";
-    else sName = sName + "'s";
-    int nToken = SetWindow(oPC, jLayout, "dm_main_nui", sName + " PEPS Main Menu",
-                             -1.0, -1.0, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
-    // Save the associate to the nui for use in 0e_nui
-    json jData = JsonArray();
-    JsonArrayInsertInplace(jData, JsonString(ObjectToString(oPC)));
-    NuiSetUserData(oPC, nToken, jData);
+    string sMenuName = GetName(oPC);
+    if(GetStringRight(sMenuName, 1) == "s") sMenuName = sMenuName + "'";
+    else sMenuName = sMenuName + "'s";
+    int nToken = SetWindow(oPC, jLayout, "dm_main_nui", sMenuName + " PEPS Main Menu",
+                             fX, fY, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
     object oModule = GetModule();
+    // Set event watches for save window location.
+    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
     // Row 1 - Version label.
     // Row 2
@@ -382,11 +383,13 @@ void ai_CreateDMOptionsNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_plugin_manager_tooltip", JsonString("  Manages external executable scripts."));
     // Row 3 Label for AI RULES
     // Row 4
+    NuiSetBind(oPC, nToken, "txt_max_henchman_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_MAX_HENCHMAN))));
     NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
     NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-12)."));
     if(nMonsterAI)
     {
+    NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
         NuiSetBindWatch (oPC, nToken, "txt_ai_difficulty", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
@@ -399,6 +402,7 @@ void ai_CreateDMOptionsNUI(object oPC)
         NuiSetBindWatch (oPC, nToken, "chbx_companions_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_perm_assoc_check", JsonBool(GetLocalInt(oModule, AI_RULE_PERM_ASSOC)));
         NuiSetBindWatch (oPC, nToken, "chbx_perm_assoc_check", TRUE);
+        NuiSetBind(oPC, nToken, "txt_perception_distance_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE), 0, 0)));
         NuiSetBindWatch (oPC, nToken, "txt_perception_distance", TRUE);
         NuiSetBind(oPC, nToken, "txt_perception_distance_tooltip", JsonString("  Range [10 to 60 meters] from the player."));
@@ -419,6 +423,7 @@ void ai_CreateDMOptionsNUI(object oPC)
         NuiSetBindWatch (oPC, nToken, "chbx_corpses_stay_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_wander_check", JsonBool(GetLocalInt(oModule, AI_RULE_WANDER)));
         NuiSetBindWatch (oPC, nToken, "chbx_wander_check", TRUE);
+        NuiSetBind(oPC, nToken, "txt_inc_hp_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP))));
         NuiSetBindWatch (oPC, nToken, "txt_inc_hp", TRUE);
     }
@@ -438,6 +443,7 @@ void ai_CreateDMOptionsNUI(object oPC)
 }
 void ai_CreateDMCommandNUI(object oPC)
 {
+    string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
     json jRow = JsonArray();
@@ -524,13 +530,18 @@ void ai_CreateDMCommandNUI(object oPC)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
+    // Get the window location to restore it from the database.
+    json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
+    jLocations = JsonObjectGet(jLocations, AI_COMMAND_NUI);
+    float fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
+    float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sDMName = GetName(oPC);
     if(GetStringRight(sDMName, 1) == "s") sDMName = sDMName + "'";
     else sDMName = sDMName + "'s";
-    int nToken = SetWindow(oPC, jLayout, "dm_cmd_menu", sDMName + " Command Menu",
-                           -1.0, -1.0, 500.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
+    int nToken = SetWindow(oPC, jLayout, "dm" + AI_COMMAND_NUI, sDMName + " Command Menu",
+                           fX, fY, 500.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
     // Get which buttons are activated.
     int bAIWidgetLock = ai_GetDMWidgetButton(oPC, BTN_DM_WIDGET_LOCK);
     int bCmdGroup1 = ai_GetDMWidgetButton(oPC, BTN_DM_CMD_GROUP1);
@@ -541,6 +552,8 @@ void ai_CreateDMCommandNUI(object oPC)
     int bCmdGroup6 = ai_GetDMWidgetButton(oPC, BTN_DM_CMD_GROUP6);
     int bCmdCamera = ai_GetDMWidgetButton(oPC, BTN_DM_CMD_CAMERA);
     int bCmdInventory = ai_GetDMWidgetButton(oPC, BTN_DM_CMD_INVENTORY);
+    // Set event watches for save window location.
+    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
     // Row 1
     NuiSetBind(oPC, nToken, "btn_widget_lock_event", JsonBool(TRUE));
@@ -687,13 +700,20 @@ void ai_CreateDMPluginNUI(object oPC)
         nIndex += 2;
         jScript = JsonArrayGet(jPlugins, nIndex);
     }
+    // Get the window location to restore it from the database.
+    json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
+    jLocations = JsonObjectGet(jLocations, AI_PLUGIN_NUI);
+    float fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
+    float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     sName = GetName(oPC);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
-    int nToken = SetWindow(oPC, jLayout, "dm_plugin_nui", sName + " PEPS Plugin Manager",
-                             -1.0, -1.0, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
+    int nToken = SetWindow(oPC, jLayout, AI_PLUGIN_NUI, sName + " PEPS Plugin Manager",
+                             fX, fY, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
+    // Set event watches for save window location.
+    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Row 1
     NuiSetBind(oPC, nToken, "btn_load_plugins_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_load_plugins_tooltip", JsonString("  Load all known PEPS plugins that are in the game files."));

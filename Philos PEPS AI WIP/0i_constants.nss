@@ -12,11 +12,11 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:01
 // differently based on what a developer wants.
 //***************************  ADJUSTABLE CONSTANTS  ***************************
 // Turn On/Off Debug.
-const int AI_DEBUG = FALSE;
+const int AI_DEBUG = TRUE;
 // Defines if we are building for single player or a server.
-const int AI_SERVER = TRUE;
+const int AI_SERVER = FALSE;
 // Allows Henchman to have a widget.
-const int AI_HENCHMAN_WIDGET = FALSE;
+const int AI_HENCHMAN_WIDGET = TRUE;
 // The number of classes allowed for a character to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 3;
 // Taunts cool down time before the AI attemps another Taunt.
@@ -92,6 +92,16 @@ const int AI_HEALTH_BLOODY = 25;
 const int AI_WOUNDED_MORAL_DC = 5;
 // Once a creature goes below AI_HEALTHY_BLOODY then it uses this moral DC. Default: 15
 const int AI_BLOODY_MORAL_DC = 15;
+//******************************* WINDOW CONSTANTS *****************************
+const string AI_MAIN_NUI = "ai_main_nui";
+const string AI_COMMAND_NUI = "_command_nui";
+const string AI_NUI = "_ai_nui";
+const string AI_WIDGET_NUI = "_widget_nui";
+const string AI_LOOTFILTER_NUI = "_lootfilter_nui";
+const string AI_COPY_NUI = "_copy_nui";
+const string AI_PLUGIN_NUI = "ai_plugin_nui";
+const string AI_SPELL_WIDGET_NUI = "_spell_widget_nui";
+const string AI_SPELL_DESCRIPTION_NUI = "ai_spell_desc_nui";
 //******************************* CORE CONSTANTS *******************************
 // The following constants are core constants and changing any of these without
 // understanding the whole system could cause unforseen results.
@@ -187,6 +197,8 @@ const int AI_LAST_ACTION_USED_SKILL = -7;
 const int AI_LAST_ACTION_MOVE = -8;
 // Variable name used to keep track of Action Modes.
 const string AI_CURRENT_ACTION_MODE = "AI_CURRENT_ACTION_MODE";
+// Variable name used to keep track of object usage by the AI.
+const string AI_OBJECT_IN_USE = "AI_OBJECT_IN_USE";
 // Variable name used to keep a creatures attacked targets.
 const string AI_ATTACKED_PHYSICAL = "AI_ATTACKED_PHYSICAL";
 const string AI_ATTACKED_SPELL = "AI_ATTACKED_SPELL";
@@ -267,7 +279,7 @@ const int AI_MODE_DISTANCE_LONG =       0x00000004; // Stays within AI_DISTANCE_
 const int AI_MODE_SELF_HEALING_OFF =    0x00000008; // Creature will not use healing items or spells on self.
 const int AI_MODE_PARTY_HEALING_OFF =   0x00000010; // Creature will not use healing items or spells on party.
 const int AI_MODE_GHOST =               0x00000020; // Creature can move through other creatures.
-//const int AI_MODE_ =                  0x00000040; // Not used.
+const int AI_MODE_OPEN_DOORS =          0x00000040; // Creature will attempted to open all doors.
 //const int AI_MODE_ =                  0x00000080; // Not used.
 const int AI_MODE_BASH_LOCKS =          0x00000100; // Will bash locks if cannot open door/placeable.
 const int AI_MODE_AGGRESSIVE_SEARCH =   0x00000200; // Sets associate to continuous search mode.
@@ -331,26 +343,28 @@ const int AI_MAGIC_NO_SPONTANEOUS_CURE = 0x00000800; // Caster will stop using s
 const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Bitwise menu constants for Widget buttons that are used with Get/SetAssociateWidgetButtons().
 const string sWidgetButtonsVarname = "ASSOCIATE_WIDGET_BUTTONS";
-const int BTN_WIDGET_OFF     = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
-const int BTN_WIDGET_LOCK    = 0x00000002; // Locks the widget to the current coordinates.
-const int BTN_CMD_GUARD      = 0x00000004; // Command associates to Guard Me. PC widget only.
-const int BTN_CMD_FOLLOW     = 0x00000008; // Command associates to Follow. PC widget only.
-const int BTN_CMD_HOLD       = 0x00000010; // Command associates to Stand Ground. PC widget only.
-const int BTN_CMD_ATTACK     = 0x00000020; // Command associates to Attack Nearest. PC widget only.
-const int BTN_BUFF_REST      = 0x00000040; // Buffs with long duration spells after resting. Associate widget only.
-const int BTN_BUFF_SHORT     = 0x00000080; // Buffs with short duration spells.
-const int BTN_BUFF_LONG      = 0x00000100; // Buffs with long duration spells.
-const int BTN_BUFF_ALL       = 0x00000200; // Buffs with all spells.
-const int BTN_CMD_ACTION     = 0x00000400; // Command associate to do an action.
-const int BTN_CMD_GHOST_MODE = 0x00000800; // Toggle's associates ghost mode.
-const int BTN_CMD_AI_SCRIPT  = 0x00001000; // Toggle's special tactics ai scripts.
-const int BTN_CMD_PLACE_TRAP = 0x00002000; // A trapper may place traps.
-const int BTN_CMD_CAMERA     = 0x00004000; // Places camera view on associate.
-const int BTN_CMD_INVENTORY  = 0x00008000; // Opens inventory of associate.
-const int BTN_CMD_FAMILIAR   = 0x00010000; // Summons familiar.
-const int BTN_CMD_COMPANION  = 0x00020000; // Summons Companion.
-const int BTN_CMD_SEARCH     = 0x00040000; // Command all associates to use search mode. PC widget only.
-const int BTN_CMD_STEALTH    = 0x00080000; // Command all associates to use stealth mode. PC widget only.
+const int BTN_WIDGET_OFF       = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
+const int BTN_WIDGET_LOCK      = 0x00000002; // Locks the widget to the current coordinates.
+const int BTN_CMD_GUARD        = 0x00000004; // Command associates to Guard Me. PC widget only.
+const int BTN_CMD_FOLLOW       = 0x00000008; // Command associates to Follow. PC widget only.
+const int BTN_CMD_HOLD         = 0x00000010; // Command associates to Stand Ground. PC widget only.
+const int BTN_CMD_ATTACK       = 0x00000020; // Command associates to Attack Nearest. PC widget only.
+const int BTN_BUFF_REST        = 0x00000040; // Buffs with long duration spells after resting. Associate widget only.
+const int BTN_BUFF_SHORT       = 0x00000080; // Buffs with short duration spells.
+const int BTN_BUFF_LONG        = 0x00000100; // Buffs with long duration spells.
+const int BTN_BUFF_ALL         = 0x00000200; // Buffs with all spells.
+const int BTN_CMD_ACTION       = 0x00000400; // Command associate to do an action.
+const int BTN_CMD_GHOST_MODE   = 0x00000800; // Toggle's associates ghost mode.
+const int BTN_CMD_AI_SCRIPT    = 0x00001000; // Toggle's special tactics ai scripts.
+const int BTN_CMD_PLACE_TRAP   = 0x00002000; // A trapper may place traps.
+const int BTN_CMD_CAMERA       = 0x00004000; // Places camera view on associate.
+const int BTN_CMD_INVENTORY    = 0x00008000; // Opens inventory of associate.
+const int BTN_CMD_FAMILIAR     = 0x00010000; // Summons familiar.
+const int BTN_CMD_COMPANION    = 0x00020000; // Summons Companion.
+const int BTN_CMD_SEARCH       = 0x00040000; // Command all associates to use search mode. PC widget only.
+const int BTN_CMD_STEALTH      = 0x00080000; // Command all associates to use stealth mode. PC widget only.
+const int BTN_CMD_SCOUT        = 0x00100000; // Command associate to scout ahead of the part.
+const int BTN_CMD_SPELL_WIDGET = 0x00200000; // Allows adding or removing spells from Spell Widget.
 // Bitwise menu constants for Associate AI buttons that are used with Get/SetAssociateAIButtons().
 const string sAIButtonsVarname = "ASSOCIATE_AI_BUTTONS";
 const int BTN_AI_FOR_PC             = 0x00000001; // PC use AI. PC widget only.
@@ -370,10 +384,10 @@ const int BTN_AI_FOLLOW_TARGET      = 0x00002000; // Selects a target to follow.
 const int BTN_AI_HEAL_OUT           = 0x00004000; // Increase minimum hp required before ai heals out of combat.
 const int BTN_AI_PERC_RANGE         = 0x00008000; // Adjust the perception range of the henchman.
 const int BTN_AI_HEAL_IN            = 0x00010000; // Increase minimum hp required before ai heals in combat.
-//const int                           = 0x00020000; // Not used.
+const int BTN_AI_OPEN_DOORS         = 0x00020000; // AI will open all closed doors.
 const int BTN_AI_STOP_SELF_HEALING  = 0x00040000; // Stops AI from using any healing on self.
 const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any healing on party.
-//const int BTN_AI                    = 0x00100000; // Not used.
+const int BTN_AI_IGNORE_ASSOCIATES  = 0x00100000; // AI will deprioritize enemy associates.
 //const int BTN_AI                    = 0x00200000; // Not used.
 //const int BTN_AI                    = 0x00400000; // Not used.
 //const int BTN_AI                    = 0x00800000; // Not used.
@@ -442,6 +456,10 @@ const string AI_FOLLOW_RANGE = "AI_FOLLOW_RANGE";
 const string AI_FOLLOW_TARGET = "AI_FOLLOW_TARGET";
 // Variable that holds the perception range of the henchman.
 const string AI_PERCEPTION_RANGE = "AI_PERCEPTION_RANGE";
+// Variable that holds the open doors range of the henchman.
+const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";
+// Variable that holds the Spell widgets json data.
+const string AI_SPELLS_WIDGET = "AI_SPELLS_WIDGET";
 // The number of Buff Groups
 const int AI_BUFF_GROUPS = -17;
 // Variable name used to keep track if we have set our talents.

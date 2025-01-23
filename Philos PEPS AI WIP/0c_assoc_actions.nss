@@ -142,8 +142,7 @@ void main()
     }
     else if(sAction == "Identify")
     {
-        ai_IdentifyAllVsKnowledge(oPC, oPC);
-        ai_IdentifyAllVsKnowledge(oAssociate, oPC);
+        ai_IdentifyAllVsKnowledge(oAssociate, oPC, oPC);
         return;
     }
     else if(sAction == "GiveUnIdentifiedItems")
@@ -170,5 +169,5 @@ void main()
         }
         return;
     }
-    aiSaveAssociateAIModesToDb(oPC, oAssociate);
+    aiSaveAssociateModesToDb(oPC, oAssociate);
 }

@@ -28,6 +28,6 @@ void main()
     }
     // Remove the widget!
     object oPC = GetMaster(oCreature);
-    if(ai_GetIsCharacter(oPC)) NuiDestroy(oPC, NuiFindWindow(oPC, GetTag(oCreature) + "_widget"));
+    if(ai_GetIsCharacter(oPC)) NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oCreature) + AI_WIDGET_NUI));
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

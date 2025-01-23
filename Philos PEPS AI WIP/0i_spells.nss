@@ -145,6 +145,8 @@ int ai_CastInMelee(object oCreature, int nSpell, int nInMelee);
 float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell);
 // Returns TRUE if nSpell is a cure spell and will not over heal for nDamage.
 int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage);
+// Casts the spell on the current target.
+void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location lLocation);
 
 int ai_GetKnownSpell(object oCreature, int nSpell)
 {
@@ -314,14 +316,14 @@ int ai_GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMe
                 nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
                 nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
                 if(nMmSpell == nMetamagic &&
-                 ((nDomain > 0 && nDSpell == TRUE) || nDomain == 0 && nDSpell == FALSE))
+                 ((nDomain > 0 && nDSpell == TRUE) || (nDomain == 0 && nDSpell == FALSE)))
                 {
-                    return GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex);
+                    if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex)) return TRUE;
                 }
             }
-            nIndex ++;
+            nIndex++;
         }
-        return -1;
+        return FALSE;
     }
     else
     {
@@ -1912,3 +1914,24 @@ int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage)
     else if(nSpell == SPELL_CURE_MINOR_WOUNDS) return TRUE;
     return FALSE;
 }
+void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location lLocation)
+{
+    int nIndex = GetLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    DeleteLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    json jWidget = JsonArrayGet(jSpells, 2);
+    json jSpell = JsonArrayGet(jWidget, nIndex);
+    int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+    int nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+    int nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
+    int nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+    if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+    if(!GetIsObjectValid(oTarget))
+    {
+        AssignCommand(oAssociate, ActionCastSpellAtLocation(nSpell, lLocation, nMetaMagic, FALSE, 0, FALSE, -1, FALSE, nDomain));
+    }
+    else AssignCommand(oAssociate, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain));
+}
+

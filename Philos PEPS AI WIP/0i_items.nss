@@ -52,7 +52,7 @@ int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJE
 // Identifies all items on oObject based on the file SkillVsItemCost.2da
 // Reports the findings to oPC unless oPC = OBJECT_INVALID
 // bIdentifyAll ignores the chart and does what it says!
-void ai_IdentifyAllVsKnowledge(object oCreature, object oPC = OBJECT_INVALID);
+void ai_IdentifyAllVsKnowledge(object oCreature, object oContainer, object oPC = OBJECT_INVALID);
 // Will (Un)Identify all items on oCreature.
 // If bIdentify is TRUE they will all be Identified, FALSE Unidentifies them.
 void ai_SetIdentifyAllItems(object oCreature, int bIdentify = TRUE);
@@ -67,8 +67,8 @@ int ai_GetCreatureAttackBonus(object oCreature);
 // Returns TRUE if oCreature can use oItem based on Class, Race, and Alignment
 // restrictions. Also checks UseMagicDevice of oCreature.
 int ai_CheckIfCanUseItem(object oCreature, object oItem);
-// Returns TRUE if oCreature can use oWeapon due to feats.
-int ai_GetIsProficientWith(object oCreature, object oWeapon);
+// Returns TRUE if oCreature can use oItem due to feats.
+int ai_GetIsProficientWith(object oCreature, object oItem);
 // Returns TRUE if oItem has nItemPropertyType.
 // nItemPropertySubType will not be used if its below 0.
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1);
@@ -147,7 +147,6 @@ int ai_GetIsTwoHandedWeapon(object oItem, object oCreature)
   int nWeaponMelee = StringToInt(Get2DAString("baseitems", "RangedWeapon", nBaseItemType));
   // Creature size is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
   int nCreatureSize = GetCreatureSize(oCreature);
-  if(nWeaponSize > nCreatureSize) return TRUE;
   return (nWeaponMelee == 0 && nWeaponSize > nCreatureSize);
 }
 int ai_GetIsSlashingWeapon(object oItem)
@@ -385,7 +384,7 @@ int ai_IdentifyItemVsKnowledge(object oCreature, object oItem, object oPC = OBJE
     }
     return FALSE;
 }
-void ai_IdentifyAllVsKnowledge(object oCreature, object oPC = OBJECT_INVALID)
+void ai_IdentifyAllVsKnowledge(object oCreature, object oContainer, object oPC = OBJECT_INVALID)
 {
     // SkillVsItemCost 2da starts 1 at 0 ... go figure!
     int nKnowledge = GetSkillRank(SKILL_LORE, oCreature) - 1;
@@ -395,7 +394,7 @@ void ai_IdentifyAllVsKnowledge(object oCreature, object oPC = OBJECT_INVALID)
     int nMaxValue = StringToInt(sMaxValue);
     // * Handle overflow(November 2003 - BK)
     if(sMaxValue == "") nMaxValue = 0;
-    object oItem = GetFirstItemInInventory(oCreature);
+    object oItem = GetFirstItemInInventory(oContainer);
     while(oItem != OBJECT_INVALID)
     {
         if(!GetIdentified(oItem))
@@ -411,7 +410,7 @@ void ai_IdentifyAllVsKnowledge(object oCreature, object oPC = OBJECT_INVALID)
             }
             else if(oPC != OBJECT_INVALID) ai_SendMessages(GetName(oCreature) + " has identified " + GetName(oItem), AI_COLOR_GREEN, oPC);
         }
-        oItem = GetNextItemInInventory(oCreature);
+        oItem = GetNextItemInInventory(oContainer);
     }
 }
 void ai_SetIdentifyAllItems(object oCreature, int bIdentify = TRUE)
@@ -566,14 +565,26 @@ int ai_CheckIfCanUseItem(object oCreature, object oItem)
     if(bAlignLimit && !bAlign && !ai_CheckUseMagicDevice(oCreature, "SkillReq_Align", oItem)) return FALSE;
     return TRUE;
 }
-int ai_GetIsProficientWith(object oCreature, object oWeapon)
+int ai_GetIsProficientWith(object oCreature, object oItem)
 {
-    int nWeaponType = GetBaseItemType(oWeapon);
-    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "ReqFeat0", nWeaponType)), oCreature)) return TRUE;
-    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "ReqFeat1", nWeaponType)), oCreature)) return TRUE;
-    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "ReqFeat2", nWeaponType)), oCreature)) return TRUE;
-    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "ReqFeat3", nWeaponType)), oCreature)) return TRUE;
-    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "ReqFeat4", nWeaponType)), oCreature)) return TRUE;
+    int nWeaponType = GetBaseItemType(oItem);
+    int nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat0", nWeaponType));
+    // If it is 0 then it doesn't require a feat or we are at the end of the
+    // feat requirements.
+    if(nFeat == 0) return FALSE;
+    if(GetHasFeat(nFeat, oCreature)) return TRUE;
+    nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat1", nWeaponType));
+    if(nFeat == 0) return FALSE;
+    if(GetHasFeat(nFeat, oCreature)) return TRUE;
+    nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat2", nWeaponType));
+    if(nFeat == 0) return FALSE;
+    if(GetHasFeat(nFeat, oCreature)) return TRUE;
+    nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat3", nWeaponType));
+    if(nFeat == 0) return FALSE;
+    if(GetHasFeat(nFeat, oCreature)) return TRUE;
+    nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat4", nWeaponType));
+    if(nFeat == 0) return FALSE;
+    if(GetHasFeat(nFeat, oCreature)) return TRUE;
     return FALSE;
 }
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1)

@@ -37,6 +37,8 @@ int ai_GetPercHPLoss(object oCreature);
 // Returns a rolled result from sDice string.
 // Example: "1d6" will be 1-6 or "3d6" will be 3-18 or 1d6+5 will be 6-11.
 int ai_RollDiceString(string sDice);
+// Returns the int number of a encoded 0x00000000 hex number from a string.
+int ai_HexStringToInt(string sString);
 // Returns cosine of the angle between oObject1 and oObject2
 float ai_GetCosAngleBetween(object oObject1, object oObject2);
 // Returns a string from sString with only characters in sLegal.
@@ -100,7 +102,7 @@ void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
 // Returns a string of the data stored.
 json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, string sTable = AI_TABLE);
 // Saves Associate AIModes and MagicModes to the database.
-void aiSaveAssociateAIModesToDb(object oPlayer, object oAssociate);
+void aiSaveAssociateModesToDb(object oPlayer, object oAssociate);
 // Checks Associate local data and if none is found will initialize or load the
 // correct data for oAssociate.
 void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateType, int bLoad = FALSE);
@@ -113,7 +115,6 @@ json ai_UpdatePluginsForPC(object oPC, string sAssociateType);
 json ai_UpdatePluginsForDM (object oPC);
 // Runs all plugins that are loaded into the database.
 void ai_StartupPlugins(object oPC);
-
 void ai_CheckAIRules()
 {
     object oModule = GetModule();
@@ -296,6 +297,20 @@ int ai_RollDiceString(string sDice)
         nNumOfDie --;
     }
     return nResult + nBonus;
+}
+int ai_HexStringToInt(string sString)
+{
+    sString = GetStringLowerCase(sString);
+    int nInt = 0;
+    int nLength = GetStringLength(sString);
+    int i;
+    for(i = nLength - 1; i >= 0; i--)
+    {
+        int n = FindSubString("0123456789abcdef", GetSubString(sString, i, 1));
+        if(n == -1) return nInt;
+        nInt |= n << ((nLength - i - 1) * 4);
+    }
+    return nInt;
 }
 float ai_GetCosAngleBetween(object oObject1, object oObject2)
 {
@@ -515,7 +530,7 @@ void ai_CreateDMDataTable()
         "name              TEXT, " +
         "buttons           TEXT, " +
         "plugins           TEXT, " +
-        "location          TEXT, " +
+        "locations          TEXT, " +
         "options           TEXT, " +
         "saveslots         TEXT, " +
        "PRIMARY KEY(name));");
@@ -709,14 +724,14 @@ json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
     }
     else return JsonNull();
 }
-void aiSaveAssociateAIModesToDb(object oPlayer, object oAssociate)
+void aiSaveAssociateModesToDb(object oPlayer, object oAssociate)
 {
     string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
     json jModes = ai_GetAssociateDbJson(oPlayer, sAssociateType, "modes");
     int nAIMode = GetLocalInt(oAssociate, sAIModeVarname);
-    JsonArraySetInplace(jModes, 0, JsonInt(nAIMode));
+    jModes = JsonArraySet(jModes, 0, JsonInt(nAIMode));
     int nMagicMode = GetLocalInt(oAssociate, sMagicModeVarname);
-    JsonArraySetInplace(jModes, 1, JsonInt(nMagicMode));
+    jModes = JsonArraySet(jModes, 1, JsonInt(nMagicMode));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes);
 }
 void ai_CheckPlayerForData(object oPlayer)
@@ -729,110 +744,140 @@ void ai_CheckPlayerForData(object oPlayer)
     if(!SqlStep(sql)) ai_CheckDataAndInitialize(oPlayer, "pc");
     ai_CheckAssociateData(oPlayer, oPlayer, "pc");
 }
-void ai_GetButtons(object oPC, object oAssociate, string sAssociateType)
+void ai_SetupModes(object oPlayer, object oAssociate, string sAssociateType)
 {
-    json jButtons = ai_GetAssociateDbJson(oPC, sAssociateType, "buttons");
-    // ********** Associate Command Buttons **********
-    int nWidgetButtons = JsonGetInt(JsonArrayGet(jButtons, 0));
-    string sWidgetButtonName = sWidgetButtonsVarname + sAssociateType;
-    if(nWidgetButtons) SetLocalInt(oAssociate, sWidgetButtonName, nWidgetButtons);
-    // ********** Associate AI Buttons **********
-    int nAIButtons = JsonGetInt(JsonArrayGet(jButtons, 1));
-    string sAIButtonName = sAIButtonsVarname + sAssociateType;
-    if(nAIButtons) SetLocalInt(oAssociate, sAIButtonName, nAIButtons);
-}
-void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateType)
-{
-    //ai_Debug("0i_main", "744", GetName(oAssociate) + " is initializing associate data.");
     json jModes = JsonArray();
-    json jButtons = JsonArray();
-    json jAIData = JsonArray();
-    json jLootFilters = JsonArray();
-    json jPlugins = JsonArray();
-    json jLocation = JsonObject();
-    // Default behavior for associates at start.
-    // ********** Modes **********
-    JsonArrayInsertInplace(jModes, JsonInt(0)); // AI Modes.
+    jModes = JsonArrayInsert(jModes, JsonInt(0)); // AI Modes.
     // Set magic modes to use Normal magic, Bit 256.
-    JsonArrayInsertInplace(jModes, JsonInt(256)); // Magic Modes.
+    jModes = JsonArrayInsert(jModes, JsonInt(256)); // Magic Modes.
     SetLocalInt(oAssociate, sMagicModeVarname, 256);
-    // ********** Buttons **********
-    JsonArrayInsertInplace(jButtons, JsonInt(0)); // Command buttons.
-    JsonArrayInsertInplace(jButtons, JsonInt(0)); // AI buttons.
-    JsonArrayInsertInplace(jButtons, JsonInt(0)); // AI buttons 2.
-    // ********** AI Data **********
-    JsonArrayInsertInplace(jAIData, JsonInt(0)); // Difficulty adjustment.
-    JsonArrayInsertInplace(jAIData, JsonInt(70)); // Heal out of combat.
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes, AI_TABLE);
+}
+void ai_SetupButtons(object oPlayer, object oAssociate, string sAssociateType)
+{
+    json jButtons = JsonArray();
+    jButtons = JsonArrayInsert(jButtons, JsonInt(0)); // Command buttons.
+    jButtons = JsonArrayInsert(jButtons, JsonInt(0)); // AI buttons.
+    jButtons = JsonArrayInsert(jButtons, JsonInt(0)); // AI buttons 2.
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_TABLE);
+}
+void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
+{
+    json jAIData = JsonArray();
+    jAIData = JsonArrayInsert(jAIData, JsonInt(0));      // 0 - Difficulty adjustment.
+    jAIData = JsonArrayInsert(jAIData, JsonInt(70));     // 1 - Heal out of combat.
     SetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
-    JsonArrayInsertInplace(jAIData, JsonInt(50)); // Heal in combat.
+    jAIData = JsonArrayInsert(jAIData, JsonInt(50));     // 2 - Heal in combat.
     SetLocalInt(oAssociate, AI_HEAL_IN_COMBAT_LIMIT, 50);
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Loot check range.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 3 - Loot check range.
     SetLocalFloat(oAssociate, AI_LOOT_CHECK_RANGE, 20.0);
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Lock check range.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 4 - Lock check range.
     SetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE, 20.0);
-    JsonArrayInsertInplace(jAIData, JsonFloat(20.0)); // Trap check range.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 5 - Trap check range.
     SetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE, 20.0);
-    JsonArrayInsertInplace(jAIData, JsonFloat(3.0)); // Associate Distance.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(3.0));  // 6 - Associate Distance.
     SetLocalFloat(oAssociate, AI_FOLLOW_RANGE, 3.0);
-    JsonArrayInsertInplace(jAIData, JsonInt(11)); // Associate Perception DistanceDistance.
+    jAIData = JsonArrayInsert(jAIData, JsonInt(11));     // 7 - Associate Perception DistanceDistance.
     SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, 11);
-    JsonArrayInsertInplace(jAIData, JsonString("")); // Associate Combat Tactics.
-    // ********** LootFilters **********
+    jAIData = JsonArrayInsert(jAIData, JsonString(""));  // 8 - Associate Combat Tactics.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
+    SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
+    json jSpells = JsonArray();
+    jAIData = JsonArrayInsert(jAIData, jSpells);         // 10 - Castable spells.
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
+}
+void ai_SetupLootFilters(object oPlayer, object oAssociate, string sAssociateType)
+{
+    json jLootFilters = JsonArray();
     // Maximum weight to pickup an item.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(200));
+    jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(200));
     SetLocalInt(oAssociate, AI_MAX_LOOT_WEIGHT, 200);
-    // Bitwise int for time pickup filter.
-    JsonArrayInsertInplace(jLootFilters, JsonInt(AI_LOOT_ALL_ON));
+    // Bitwise int for checkbox pickup filter.
+    jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(AI_LOOT_ALL_ON));
     SetLocalInt(oAssociate, sLootFilterVarname, AI_LOOT_ALL_ON);
     // Minimum gold value to pickup.
     int nIndex;
     for(nIndex = 2; nIndex < 20; nIndex++)
     {
-        JsonArrayInsertInplace(jLootFilters, JsonInt(0));
+        jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(0));
     }
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters, AI_TABLE);
+}
+void ai_SetupLocations(object oPlayer, object oAssociate, string sAssociateType)
+{
+    json jLocations = JsonObject();
+    json jNUI = JsonObject();
+    jNUI = JsonObjectSet(jNUI, "x", JsonFloat(-1.0));
+    jNUI = JsonObjectSet(jNUI, "y", JsonFloat(-1.0));
+    jLocations = JsonObjectSet(jLocations, AI_MAIN_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, AI_COMMAND_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, AI_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, AI_LOOTFILTER_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, AI_COPY_NUI, jNUI);
+    if(ai_GetIsCharacter(oAssociate)) jLocations = JsonObjectSet(jLocations, AI_PLUGIN_NUI, jNUI);
+    jNUI = JsonObjectSet(jLocations, "x", JsonFloat(1.0));
+    jNUI = JsonObjectSet(jLocations, "y", JsonFloat(1.0));
+    jLocations = JsonObjectSet(jLocations, AI_WIDGET_NUI, jNUI);
+    WriteTimestampedLogEntry("0i_main, 802 " + GetName(oAssociate) + "jLocations: " + JsonDump(jLocations));
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_TABLE);
+}
+void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateType)
+{
+    //ai_Debug("0i_main", "744", GetName(oAssociate) + " is initializing associate data.");
+    // Default behavior for associates at start.
+    ai_SetupModes(oPlayer, oAssociate, sAssociateType);
+    ai_SetupButtons(oPlayer, oAssociate, sAssociateType);
+    ai_SetupAIData(oPlayer, oAssociate, sAssociateType);
+    ai_SetupLootFilters(oPlayer, oAssociate, sAssociateType);
     // ********** Plugins ************
     // These are pulled straight from the database.
-    // ********** Locations **********
-    JsonObjectSetInplace(jLocation, "h", JsonFloat(92.0));
-    JsonObjectSetInplace(jLocation, "w", JsonFloat(98.0));
-    JsonObjectSetInplace(jLocation, "x", JsonFloat(1.0));
-    JsonObjectSetInplace(jLocation, "y", JsonFloat(1.0));
-    // ********** Save data to new database **********
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes, AI_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters, AI_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "plugins", jPlugins, AI_TABLE);
-    ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocation, AI_TABLE);
+    ai_SetupLocations(oPlayer, oAssociate, sAssociateType);
 }
 void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateType, int bLoad = FALSE)
 {
     //ai_Debug("0i_main", "810", "Checking data for oAssociate: " + GetName(oAssociate));
     // Do quick check to see if they have a variable saved if so then exit.
-    if(!bLoad && GetLocalFloat(oAssociate, AI_FOLLOW_RANGE) != 0.0) return;
+    if(!bLoad && GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE) != 0.0) return;
     ai_CheckDataAndInitialize(oPlayer, sAssociateType);
-    // ********** AI Modes **********
+    // ********** Modes **********
     json jModes = ai_GetAssociateDbJson(oPlayer, sAssociateType, "modes");
-    // if there is no saved AImodes then set the defaults.
+    WriteTimestampedLogEntry("0i_main, 826 jModes: " + JsonDump(jModes));
     if(JsonGetType(JsonArrayGet(jModes, 0)) == JSON_TYPE_NULL)
     {
-        ai_SetupAssociateData(oPlayer, oAssociate, sAssociateType);
+        ai_SetupModes(oPlayer, oAssociate, sAssociateType);
     }
     else
     {
-        //ai_Debug("0i_main", "823", GetName(oAssociate) + " is loading data from " + GetName(oPlayer) + ".");
-        // Get data from the database and place on to the associates and player.
-        // ********** Modes **********
         SetLocalInt(oAssociate, sAIModeVarname, JsonGetInt(JsonArrayGet(jModes, 0)));
         SetLocalInt(oAssociate, sMagicModeVarname, JsonGetInt(JsonArrayGet(jModes, 1)));
-        // ********** Buttons **********
-        ai_GetButtons(oPlayer, oAssociate, sAssociateType);
-        // ********** AI Data **********
-        json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
-        if(JsonGetType(JsonArrayGet(jAIData, 0)) == JSON_TYPE_NULL)
-        {
-            ai_SetupAssociateData(oPlayer, oAssociate, sAssociateType);
-        }
+    }
+    // ********** Buttons **********
+    json jButtons = ai_GetAssociateDbJson(oPlayer, sAssociateType, "buttons");
+    WriteTimestampedLogEntry("0i_main, 837 jButtons: " + JsonDump(jButtons));
+    if(JsonGetType(JsonArrayGet(jButtons, 0)) == JSON_TYPE_NULL)
+    {
+        ai_SetupButtons(oPlayer, oAssociate, sAssociateType);
+    }
+    else
+    {
+        // ********** Associate Command Buttons **********
+        int nWidgetButtons = JsonGetInt(JsonArrayGet(jButtons, 0));
+        string sWidgetButtonName = sWidgetButtonsVarname + sAssociateType;
+        if(nWidgetButtons) SetLocalInt(oAssociate, sWidgetButtonName, nWidgetButtons);
+        // ********** Associate AI Buttons **********
+        int nAIButtons = JsonGetInt(JsonArrayGet(jButtons, 1));
+        string sAIButtonName = sAIButtonsVarname + sAssociateType;
+        if(nAIButtons) SetLocalInt(oAssociate, sAIButtonName, nAIButtons);
+    }
+    // ********** AI Data **********
+    json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
+    WriteTimestampedLogEntry("0i_main, 855 jAIData: " + JsonDump(jAIData));
+    if(JsonGetType(JsonArrayGet(jAIData, 0)) == JSON_TYPE_NULL)
+    {
+        ai_SetupAIData(oPlayer, oAssociate, sAssociateType);
+    }
+    else
+    {
         SetLocalInt(oAssociate, AI_DIFFICULTY_ADJUSTMENT, JsonGetInt(JsonArrayGet(jAIData, 0)));
         SetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT, JsonGetInt(JsonArrayGet(jAIData, 1)));
         SetLocalInt(oAssociate, AI_HEAL_IN_COMBAT_LIMIT, JsonGetInt(JsonArrayGet(jAIData, 2)));
@@ -845,12 +890,34 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
         SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nPercRange);
         string sScript = JsonGetString(JsonArrayGet(jAIData, 8));
         if(sScript != "") SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
-        // ********** LootFilters **********
-        json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");
-        if(JsonGetType(JsonArrayGet(jLootFilters, 0)) == JSON_TYPE_NULL)
+        json jDoorRange = JsonArrayGet(jAIData, 9);
+        if(JsonGetType(jDoorRange) == JSON_TYPE_NULL)
         {
-            ai_SetupAssociateData(oPlayer, oAssociate, sAssociateType);
+            jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0));
+            ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+            SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
         }
+        else SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, JsonGetFloat(jDoorRange));
+        json jSpells = JsonArrayGet(jAIData, 10);
+        if(JsonGetType(jSpells) == JSON_TYPE_NULL)
+        {
+            json jSpellsWidget = JsonArray();
+            jSpellsWidget = JsonArrayInsert(jSpellsWidget, JsonInt(0)); // 0 - Class selected.
+            jSpellsWidget = JsonArrayInsert(jSpellsWidget, JsonInt(0)); // 1 - Level selected.
+            jAIData = JsonArrayInsert(jAIData, jSpellsWidget);
+            ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+            SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jSpellsWidget);
+        }
+    }
+    // ********** LootFilters **********
+    json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");
+    WriteTimestampedLogEntry("0i_main, 885 jLootfilters: " + JsonDump(jLootFilters));
+    if(JsonGetType(JsonArrayGet(jLootFilters, 0)) == JSON_TYPE_NULL)
+    {
+        ai_SetupLootFilters(oPlayer, oAssociate, sAssociateType);
+    }
+    else
+    {
         SetLocalInt(oAssociate, AI_MAX_LOOT_WEIGHT, JsonGetInt(JsonArrayGet(jLootFilters, 0)));
         SetLocalInt(oAssociate, sLootFilterVarname, JsonGetInt(JsonArrayGet(jLootFilters, 1)));
         int nIndex;
@@ -858,37 +925,46 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
         {
             SetLocalInt(oAssociate, AI_MIN_GOLD_ + IntToString(nIndex), JsonGetInt(JsonArrayGet(jLootFilters, nIndex)));
         }
-        // ********** Plugins ************
-        // These are pulled straight from the database.
-        // ********** Locations **********
-        // These are pulled straight from the database.
     }
+    // ********** Plugins ************
+    // These are pulled straight from the database.
+    // ********** Locations **********
+    json jLocations = ai_GetAssociateDbJson(oPlayer, sAssociateType, "locations");
+    WriteTimestampedLogEntry("0i_main, 875 jLocations: " + JsonDump(jLocations));
+    if(JsonGetType(JsonObjectGet(jLocations, AI_WIDGET_NUI)) == JSON_TYPE_NULL)
+    {
+        ai_SetupLocations(oPlayer, oAssociate, sAssociateType);
+    }
+    // They are always pulled from the database, so no copies to local variables.
 }
 void ai_SetupDMData(object oPlayer, string sName)
 {
     //ai_Debug("0i_main", "870", GetName(oPlayer) + " is initializing DM data.");
-    json jButtons = JsonArray();
-    json jPlugins = JsonArray();
-    json jLocation = JsonObject();
-    json jOptions = JsonArray();
-    json jSaveSlots = JsonObject();
-    // Default behavior for associates at start.
     // ********** Buttons **********
-    JsonArrayInsertInplace(jButtons, JsonInt(0)); // DM Widget Buttons.
+    json jButtons = JsonArray();
+    jButtons = JsonArrayInsert(jButtons, JsonInt(0)); // DM Widget Buttons.
+    ai_SetCampaignDbJson("buttons", jButtons, sName, AI_DM_TABLE);
     // ********** Plugins ************
     // These are pulled straight from the database.
-    // ********** Locations **********
-    JsonObjectSetInplace(jLocation, "h", JsonFloat(92.0));
-    JsonObjectSetInplace(jLocation, "w", JsonFloat(98.0));
-    JsonObjectSetInplace(jLocation, "x", JsonFloat(1.0));
-    JsonObjectSetInplace(jLocation, "y", JsonFloat(1.0));
-    // ********** Options **********
-    // ********** SaveSlots **********
-    // ********** Save data to new database **********
-    ai_SetCampaignDbJson("buttons", jButtons, sName, AI_DM_TABLE);
+    json jPlugins = JsonArray();
     ai_SetCampaignDbJson("plugins", jPlugins, sName, AI_DM_TABLE);
-    ai_SetCampaignDbJson("location", jLocation, sName, AI_DM_TABLE);
+    // ********** Locations **********
+    json jLocations = JsonObject();
+    json jNUI = JsonObject();
+    jNUI = JsonObjectSet(jNUI, "x", JsonFloat(-1.0));
+    jNUI = JsonObjectSet(jNUI, "y", JsonFloat(-1.0));
+    jLocations = JsonObjectSet(jLocations, AI_MAIN_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, AI_PLUGIN_NUI, jNUI);
+    jNUI = JsonObjectSet(jLocations, "x", JsonFloat(1.0));
+    jNUI = JsonObjectSet(jLocations, "y", JsonFloat(1.0));
+    jLocations = JsonObjectSet(jLocations, AI_WIDGET_NUI, jNUI);
+    WriteTimestampedLogEntry("0i_main, 936 " + GetName(oPlayer) + "jLocations: " + JsonDump(jLocations));
+    ai_SetCampaignDbJson("locations", jLocations, sName, AI_DM_TABLE);
+    // ********** Options **********
+    json jOptions = JsonArray();
     ai_SetCampaignDbJson("options", jOptions, sName, AI_DM_TABLE);
+    // ********** SaveSlots **********
+    json jSaveSlots = JsonObject();
     ai_SetCampaignDbJson("saveslots", jSaveSlots, sName, AI_DM_TABLE);
 }
 void ai_CheckDMData(object oPlayer)

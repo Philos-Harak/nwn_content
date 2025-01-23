@@ -5,6 +5,7 @@
 
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_associates"
+#include "0i_menus"
 // Setup an AI OnPlayerTarget Event script while allowing any module onplayer
 // target event script to still work.
 void ai_SetupPlayerTarget(object oCreature);
@@ -22,6 +23,10 @@ void ai_PlaceTrap(object oPC, location lLocation);
 void ai_AddToGroup(object oDM, object oTarget, int nGroup);
 // Has nGroup perform an action based on the selected target or location.
 void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup);
+// Get oPC to select a spell target for oAssociate.
+void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem);
+// Updates oAssociates widget by destroying the current one and rebuilding.
+void ai_UpdateAssociateWidget(object oPC, object oAssociate);
 
 void ai_SetupPlayerTarget(object oCreature)
 {
@@ -172,6 +177,8 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         ai_SetAIMode(oAssociate, AI_MODE_DEFEND_MASTER, FALSE);
         ai_SetAIMode(oAssociate, AI_MODE_STAND_GROUND, FALSE);
         ai_SetAIMode(oAssociate, AI_MODE_FOLLOW, FALSE);
+        int nToken = NuiFindWindow(oPC, ai_GetAssociateType(oPC, oAssociate) + AI_WIDGET_NUI);
+        ai_HighlightWidgetMode(oPC, oAssociate, nToken);
     }
     ai_ClearCreatureActions(TRUE);
     if(oTarget == GetArea(oPC))
@@ -227,7 +234,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
             if(GetTrapDetectedBy(oTarget, oAssociate))
             {
-                ai_AttemptToDisarmTrap(oAssociate, oTarget, TRUE);
+                ai_ReactToTrap(oAssociate, oTarget, TRUE);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
@@ -254,7 +261,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                 if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
                 if(GetTrapDetectedBy(oTarget, oAssociate))
                 {
-                    ai_AttemptToDisarmTrap(oAssociate, oTarget, TRUE);
+                    ai_ReactToTrap(oAssociate, oTarget, TRUE);
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
@@ -291,7 +298,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         if(GetIsTrapped(oTarget) && ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS))
         {
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
-            if(GetTrapDetectedBy(oTarget, oAssociate)) ai_AttemptToDisarmTrap(oAssociate, oTarget, TRUE);
+            if(GetTrapDetectedBy(oTarget, oAssociate)) ai_ReactToTrap(oAssociate, oTarget, TRUE);
         }
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -311,10 +318,10 @@ void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
         if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
     }
 }
-void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
+void ai_SelectFollowTarget(object oPC, object oAssociate, object oTarget)
 {
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
-    int nToken = NuiFindWindow(oPC, sAssociateType + "_widget");
+    int nToken = NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI);
     float fRange = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE) +
                    StringToFloat(Get2DAString("appearance", "PREFATCKDIST", GetAppearanceType(oAssociate)));
     string sRange = FloatToString(fRange, 0, 0);
@@ -333,7 +340,7 @@ void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
             sTarget = GetName(oPC);
             ai_SendMessages(GetName(oAssociate) + " is now following " + sTarget + "!", AI_COLOR_YELLOW, oPC);
         }
-        ai_UpdateToolTipUI(oPC, sAssociateType + "_cmd_menu", sAssociateType + "_widget", "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
     }
     else
     {
@@ -341,9 +348,9 @@ void ai_SelectTarget(object oPC, object oAssociate, object oTarget)
         SetLocalObject(oAssociate, AI_FOLLOW_TARGET, oTarget);
         ai_SendMessages(GetName(oAssociate) + " is now following " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
         AssignCommand(oAssociate, ActionMoveToObject(oTarget, TRUE, ai_GetFollowDistance(oAssociate)));
-        ai_UpdateToolTipUI(oPC, sAssociateType + "_cmd_menu", sAssociateType + "_widget", "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + GetName(oTarget) + " [" + sRange + " meters]");
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + GetName(oTarget) + " [" + sRange + " meters]");
     }
-    aiSaveAssociateAIModesToDb(oPC, oAssociate);
+    aiSaveAssociateModesToDb(oPC, oAssociate);
 }
 void ai_OriginalRemoveAllActionMode(object oPC)
 {
@@ -426,7 +433,7 @@ void ai_AddToGroup(object oDM, object oTarget, int nGroup)
     if(oDM == oTarget)
     {
         ai_SendMessages("Group" + sGroup + " has been cleared.", AI_COLOR_YELLOW, oDM);
-        NuiSetBind(oDM, NuiFindWindow(oDM, "dm_widget"), "btn_cmd_group" + sGroup + "_tooltip", JsonString("Group" + sGroup));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString("Group" + sGroup));
         DeleteLocalJson(oDM, "DM_GROUP" + sGroup);
         return;
     }
@@ -435,7 +442,7 @@ void ai_AddToGroup(object oDM, object oTarget, int nGroup)
     if(JsonGetType(jGroup) == JSON_TYPE_NULL)
     {
         string sText = sName + "'s group";
-        NuiSetBind(oDM, NuiFindWindow(oDM, "dm_widget"), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText));
         jGroup = JsonArray();
     }
     string sUUID = GetObjectUUID(oTarget);
@@ -489,7 +496,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
             if(GetTrapDetectedBy(oTarget, oCreature))
             {
-                ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+                ai_ReactToTrap(oCreature, oTarget, TRUE);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
@@ -516,7 +523,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
                 if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
                 if(GetTrapDetectedBy(oTarget, oCreature))
                 {
-                    ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+                    ai_ReactToTrap(oCreature, oTarget, TRUE);
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
@@ -549,7 +556,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
         if(GetIsTrapped(oTarget))
         {
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
-            if(GetTrapDetectedBy(oTarget, oCreature)) ai_AttemptToDisarmTrap(oCreature, oTarget, TRUE);
+            if(GetTrapDetectedBy(oTarget, oCreature)) ai_ReactToTrap(oCreature, oTarget, TRUE);
         }
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -568,4 +575,39 @@ void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup)
         sUUID = JsonGetString(JsonArrayGet(jGroup, ++nIndex));
     }
     if(nIndex == 0) ai_SendMessages("Group" + sGroup + " is empty!", AI_COLOR_RED, oDM);
+}
+void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
+{
+    int nIndex = StringToInt(GetStringRight(sElem, 1));
+    SetLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX", nIndex);
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    json jWidget = JsonArrayGet(jSpells, 2);
+    json jSpell = JsonArrayGet(jWidget, nIndex);
+    int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+    if(Get2DAString("spells", "Range", nSpell) == "P") // Self
+    {
+        ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
+        DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+        return;
+    }
+    string sTarget = Get2DAString("spells", "TargetType", nSpell);
+    int nTarget = ai_HexStringToInt(sTarget);
+    int nObjectType;
+    if(nTarget & 2) nObjectType += OBJECT_TYPE_CREATURE;
+    if(nTarget & 4) nObjectType += OBJECT_TYPE_TILE;
+    if(nTarget & 8) nObjectType += OBJECT_TYPE_ITEM;
+    if(nTarget & 16) nObjectType += OBJECT_TYPE_DOOR;
+    if(nTarget & 32) nObjectType += OBJECT_TYPE_PLACEABLE;
+    if(nTarget & 64) nObjectType += OBJECT_TYPE_TRIGGER;
+    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
+    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
+    EnterTargetingMode(oPC, nObjectType, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
+}
+void ai_UpdateAssociateWidget(object oPC, object oAssociate)
+{
+    int nUIToken = NuiFindWindow(oPC, ai_GetAssociateType(oPC, oAssociate) + AI_WIDGET_NUI);
+    NuiDestroy(oPC, nUIToken);
+    ai_CreateWidgetNUI(oPC, oAssociate);
 }

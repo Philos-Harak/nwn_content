@@ -79,6 +79,8 @@ int ai_GetIsInLineOfSight(object oCreature, object oObject);
 void ai_SetBehaviorState(int nCondition, int bValid = TRUE);
 // Returns TRUE if the specified behavior flag is set on the caller
 int ai_GetBehaviorState(int nCondition);
+// Highlights the current mode for the widget passed.
+void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken);
 
 void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 {
@@ -230,6 +232,8 @@ void ai_SetAIMode(object oAssociate, int nBit, int bOn = TRUE)
     if(bOn) nAIModes = nAIModes | nBit;
     else nAIModes = nAIModes & ~nBit;
     SetLocalInt(oAssociate, sAIModeVarname, nAIModes);
+    // Set widget to show the mode they are in.
+
 }
 int ai_GetAIMode(object oAssociate, int nBit)
 {
@@ -346,4 +350,22 @@ int ai_GetBehaviorState(int nCondition)
     int nPlot = GetLocalInt(OBJECT_SELF, "NW_BEHAVIOR_MASTER");
     if(nPlot & nCondition) return TRUE;
     return FALSE;
+}
+void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken)
+{
+    int bBool;
+    bBool = ai_GetAIMode(oAssociate,AI_MODE_COMMANDED);
+    NuiSetBind(oPC, nToken, "btn_cmd_action_encouraged", JsonBool(bBool));
+    bBool = ai_GetAIMode(oAssociate,AI_MODE_DEFEND_MASTER);
+    NuiSetBind(oPC, nToken, "btn_cmd_guard_encouraged", JsonBool(bBool));
+    bBool = ai_GetAIMode(oAssociate,AI_MODE_STAND_GROUND);
+    NuiSetBind(oPC, nToken, "btn_cmd_hold_encouraged", JsonBool(bBool));
+    bBool = ai_GetAIMode(oAssociate,AI_MODE_FOLLOW);
+    NuiSetBind(oPC, nToken, "btn_cmd_follow_encouraged", JsonBool(bBool));
+    if(!ai_GetAIMode(oAssociate, AI_MODE_COMMANDED) &&
+       !ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER) &&
+       !ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND) &&
+       !ai_GetAIMode(oAssociate, AI_MODE_FOLLOW)) bBool = TRUE;
+    else bBool = FALSE;
+    NuiSetBind(oPC, nToken, "btn_cmd_attack_encouraged", JsonBool(bBool));
 }

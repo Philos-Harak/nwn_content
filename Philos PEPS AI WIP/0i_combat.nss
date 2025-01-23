@@ -2944,7 +2944,7 @@ void ai_EquipBestWeapons(object oCreature, object oTarget = OBJECT_INVALID)
 }
 int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
 {
-    if(AI_DEBUG) ai_Debug("0i_combat", "2724", GetName(OBJECT_SELF) + " is equiping best melee weapon!");
+    if(AI_DEBUG) ai_Debug("0i_combat", "2947", GetName(OBJECT_SELF) + " is equiping best melee weapon!");
     int nValue, nRightValue, nLeftValue, n2HandValue, nShieldValue, nWeaponSize;
     int nMaxItemValue = ai_GetMaxItemValueThatCanBeEquiped(GetHitDice(oCreature));
     int nCreatureSize = GetCreatureSize(oCreature);
@@ -2974,9 +2974,11 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
     {
         nValue = GetGoldPieceValue(oItem);
         // Non-Identified items have a goldpiecevalue of 1. So they will not be selected.
+        if(AI_DEBUG) ai_Debug("0i_combat", "2977", GetName(oItem) + " nValue: " + IntToString(nValue) +
+                              " Proficient: " + IntToString(ai_GetIsProficientWith(oCreature, oItem)) +
+                              " nMaxItemValue: " + IntToString(nMaxItemValue));
         if(nValue > 1 && ai_GetIsProficientWith(oCreature, oItem) &&
-           StringToInt(Get2DAString("baseitems", "WeaponSize", GetBaseItemType(oItem))) <= nCreatureSize &&
-           (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
+          (!GetLocalInt(GetModule(), AI_RULE_ILR) || nMaxItemValue >= nValue))
         {
             // Is it a single handed weapon?
             if(ai_GetIsSingleHandedWeapon(oItem, oCreature))
@@ -3001,11 +3003,14 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
         }
         oItem = GetNextItemInInventory();
     }
+    if(AI_DEBUG) ai_Debug("0i_combat", "3004", "oRight: " + GetName(oRight) + " oLeft:" +
+                          GetName(oLeft) + " oTwoHand: " + GetName(oTwoHand) +
+                          " oShield: " + GetName(oShield));
     // Lets check to equip two weapons first.
     if(oLeft != OBJECT_INVALID &&
       (GetHasFeat(374/*FEAT_DUAL_WIELD*/, oCreature) || GetHasFeat(FEAT_TWO_WEAPON_FIGHTING, oCreature)))
     {
-        if(AI_DEBUG) ai_Debug("0i_combat", "2783", GetName(oCreature) + " is equiping " +
+        if(AI_DEBUG) ai_Debug("0i_combat", "3008", GetName(oCreature) + " is equiping " +
                  GetName(oRight) + " in the right hand. " +
                  GetName(oLeft) + " in the left hand.");
         ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
@@ -3018,7 +3023,7 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
     else if(oTwoHand != OBJECT_INVALID &&
            (GetAbilityModifier(ABILITY_STRENGTH, oCreature) > 1 || oRight == OBJECT_INVALID))
     {
-        if(AI_DEBUG) ai_Debug("0i_combat", "2796", GetName(oCreature) + " is equiping " +
+        if(AI_DEBUG) ai_Debug("0i_combat", "3021", GetName(oCreature) + " is equiping " +
                  GetName(oTwoHand) + " in both hands. ");
         ActionEquipItem(oTwoHand, INVENTORY_SLOT_RIGHTHAND);
         return TRUE;
@@ -3026,35 +3031,42 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
     // Lets equip a weapon and a shield.
     else if(oRight != OBJECT_INVALID && oShield != OBJECT_INVALID && GetHasFeat(FEAT_SHIELD_PROFICIENCY, oCreature))
     {
-        if(AI_DEBUG) ai_Debug("0i_combat", "2804", GetName(oCreature) + " is equiping " +
+        if(AI_DEBUG) ai_Debug("0i_combat", "3029", GetName(oCreature) + " is equiping " +
                  GetName(oRight) + " in the right hand. " +
                  GetName(oShield) + " in the left hand.");
         ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
         ActionEquipItem(oShield, INVENTORY_SLOT_LEFTHAND);
         return TRUE;
     }
-    // Finally lets just equip a weapon since we must not have a shield.
+    // Just equip a weapon since we must not or cannot have a shield.
+    else if(oRight != OBJECT_INVALID)
+    {
+        if(AI_DEBUG) ai_Debug("0i_combat", "3039", GetName(oCreature) + " is equiping " +
+                 GetName(oRight) + " in the right hand only. ");
+        ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
+    }
+    // Finally if we don't have a weapon then remove your bow to fight with your hands!
     else if(oRight == OBJECT_INVALID)
     {
-        if(AI_DEBUG) ai_Debug("0i_combat", "2814", GetName(oCreature) + " did not equip a melee weapon");
+        if(AI_DEBUG) ai_Debug("0i_combat", "3047", GetName(oCreature) + " did not equip a melee weapon");
         // We couldn't find a melee weapon but we are looking to go into melee
         // I'm holding a ranged weapon! Put it up.
         if(GetWeaponRanged(oRightHand))
         {
-            if(AI_DEBUG) ai_Debug("0i_combat", "2819", GetName(oCreature) + " is unequiping " + GetName(oRightHand));
+            if(AI_DEBUG) ai_Debug("0i_combat", "3052", GetName(oCreature) + " is unequiping " + GetName(oRightHand));
             ActionUnequipItem(oRightHand);
             return TRUE;
         }
         return FALSE;
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2817", GetName(oCreature) + " is equiping " +
+    if(AI_DEBUG) ai_Debug("0i_combat", "3058", GetName(oCreature) + " is equiping " +
              GetName(oRight) + " in the right hand.");
     ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
     return TRUE;
 }
 int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
 {
-    if(AI_DEBUG) ai_Debug("0i_combat", "2824", GetName(oCreature) + " is looking for best ranged weapon!");
+    if(AI_DEBUG) ai_Debug("0i_combat", "3065", GetName(oCreature) + " is looking for best ranged weapon!");
     int nAmmo, nAmmoSlot, nBestType1, nBestType2, nType, nFeat, nValue, nRangedValue;
     int nMaxItemValue = ai_GetMaxItemValueThatCanBeEquiped(GetHitDice(oCreature));
     string sAmmo;
@@ -3107,7 +3119,7 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
             if(Get2DAString("baseitems", "RangedWeapon", nType) != "")
             {
                 nValue = GetGoldPieceValue(oItem);
-                if(AI_DEBUG) ai_Debug("0i_combat", "2949", "nValue: " + IntToString(nValue) +
+                if(AI_DEBUG) ai_Debug("0i_combat", "3124", "nValue: " + IntToString(nValue) +
                          " Proficient: " + IntToString(ai_GetIsProficientWith(oCreature, oItem)) +
                          " nMaxItemValue: " + IntToString(nMaxItemValue));
                 if(ai_GetIsProficientWith(oCreature, oItem) &&

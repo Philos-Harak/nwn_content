@@ -250,7 +250,7 @@ void ai_hen_id1_castat(object oCreature)
             ai_SetAIMode(oCreature, AI_MODE_COMMANDED, FALSE);
             // Oct 30 - If player previously hired this hench
             // then just have them rejoin automatically
-            if (GetPlayerHasHired(oCaster, oCreature))
+            if(GetPlayerHasHired(oCaster, oCreature))
             {
                 // Feb 11, 2004 - Jon: Don't fire the HireHenchman function if the
                 // henchman is already oCaster's associate. Fixes a silly little problem

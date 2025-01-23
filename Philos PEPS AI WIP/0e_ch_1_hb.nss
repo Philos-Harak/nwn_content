@@ -33,16 +33,16 @@ void main()
         if(AI_HENCHMAN_WIDGET)
         {
             // This keeps widgets from disappearing and reappearing.
-            int nUiToken = NuiFindWindow(oMaster, sAssociateType + "_widget");
+            int nUiToken = NuiFindWindow(oMaster, sAssociateType + AI_WIDGET_NUI);
             if(nUiToken)
             {
                 json jData = NuiGetUserData(oMaster, nUiToken);
                 object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
                 if(oAssociate != oCreature) NuiDestroy(oMaster, nUiToken);
             }
-            if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
+            else
             {
-                if(!NuiFindWindow(oMaster, sAssociateType + "_widget"))
+                if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
                 {
                     ai_CreateWidgetNUI(oMaster, oCreature);
                 }
@@ -52,7 +52,11 @@ void main()
     // If follow mode we do not want the NPC doing anything but follow.
     if(!ai_GetAIMode(oCreature, AI_MODE_FOLLOW))
     {
-        if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND)) return;
+        if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND))
+        {
+            if(ai_TryHealing(oCreature, oCreature)) return;
+            return;
+        }
         if(ai_GetIsInCombat(oCreature))
         {
             ai_DoAssociateCombatRound(oCreature);
@@ -65,25 +69,9 @@ void main()
         {
             if(ai_TryHealing(oCreature, oCreature)) return;
             // When picking up items we also check for traps and locks so if
-            // we are not in pickup mode we need to do that here.
+            // we are not in pickup mode we need to check the nearby objects.
             if(ai_AssociateRetrievingItems(oCreature)) return;
-            // Seek out and disable traps.
-            if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
-            {
-                object oTrap = GetNearestTrapToObject(oCreature);
-                if(oTrap != OBJECT_INVALID &&
-                   GetDistanceBetween(oMaster, oTrap) < GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE) &&
-                   ai_AttemptToDisarmTrap(oCreature, oTrap)) return;
-            }
-            // Seek out and disable locks.
-            if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
-               ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
-            {
-                object oLock = ai_GetNearestLockedObject(oCreature);
-                if(oLock != OBJECT_INVALID &&
-                   GetDistanceBetween(oMaster, oLock) < GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE) &&
-                   ai_AttemptToByPassLock(oCreature, oLock)) return;
-            }
+            if(ai_CheckNearbyObjects(oCreature)) return;
             if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
             {
                 ai_ScoutAhead(oCreature);

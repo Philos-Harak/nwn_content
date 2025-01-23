@@ -24,7 +24,26 @@ void main()
     //             " nToken: " + IntToString(nToken) + " oPC: " + GetName(oPC));
     //**************************************************************************
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
-    if(sWndId == "dm_widget")
+    // Watch to see if the window moves and save.
+    if(sElem == "window_geometry" && sEvent == "watch")
+    {
+        if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
+        json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
+        float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
+        float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
+        string sNUI;
+        if(sWndId == "dm" + AI_WIDGET_NUI) sNUI = AI_WIDGET_NUI;
+        else if(sWndId == AI_MAIN_NUI) sNUI = AI_MAIN_NUI;
+        else if(sWndId == AI_PLUGIN_NUI) sNUI = AI_PLUGIN_NUI;
+        json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
+        json jNUI = JsonObjectGet(jLocations, sNUI);
+        if(JsonGetType(jNUI) == JSON_TYPE_NULL) jNUI = JsonObject();
+        jNUI = JsonObjectSet(jNUI, "x", JsonFloat(fX));
+        jNUI = JsonObjectSet(jNUI, "y", JsonFloat(fY));
+        jLocations = JsonObjectSet(jLocations, sNUI, jNUI);
+        ai_SetCampaignDbJson("locations", jLocations, sName, AI_DM_TABLE);
+    }
+    if(sWndId == "dm" + AI_WIDGET_NUI)
     {
         // Watch to see if the window moves and save.
         if(sElem == "window_geometry" && sEvent == "watch")
@@ -36,15 +55,15 @@ void main()
     }
     //**************************************************************************
     // Widget events.
-    if(sWndId == "dm_widget")
+    if(sWndId == "dm" + AI_WIDGET_NUI)
     {
         //if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
         if(sEvent == "click")
         {
             if(sElem == "btn_open_main")
             {
-                if(IsWindowClosed(oPC, "dm_cmd_menu")) ai_CreateDMCommandNUI(oPC);
-                IsWindowClosed(oPC, "dm_main_nui");
+                if(IsWindowClosed(oPC, "dm" + AI_COMMAND_NUI)) ai_CreateDMCommandNUI(oPC);
+                IsWindowClosed(oPC, "dm" + AI_MAIN_NUI);
             }
             else if(sElem == "btn_camera") ai_SelectCameraView(oPC);
             else if(sElem == "btn_inventory") ai_SelectOpenInventory(oPC);
@@ -61,7 +80,7 @@ void main()
             {
                 if(sElem == "btn_open_main")
                 {
-                    if(IsWindowClosed(oPC, "dm_main_nui")) ai_CreateDMOptionsNUI(oPC);
+                    if(IsWindowClosed(oPC, "dm" + AI_MAIN_NUI)) ai_CreateDMOptionsNUI(oPC);
                 }
                 else if(GetStringLeft(sElem, 13) == "btn_cmd_group")
                 {
@@ -70,7 +89,7 @@ void main()
             }
         }
     }
-    else if(sWndId == "dm_cmd_menu")
+    else if(sWndId == "dm" + AI_COMMAND_NUI)
     {
         if(sEvent == "click")
         {
@@ -84,14 +103,14 @@ void main()
                 else
                 {
                     // Get the height, width, x, and y of the window.
-                    json jGeom = NuiGetBind(oPC, NuiFindWindow(oPC, "dm_widget"), "window_geometry");
+                    json jGeom = NuiGetBind(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI), "window_geometry");
                     // Save the window location on the player using the sWndId.
                     SetLocalFloat(oPC, sWndId + "_X", JsonGetFloat (JsonObjectGet (jGeom, "x")));
                     SetLocalFloat(oPC, sWndId + "_Y", JsonGetFloat (JsonObjectGet (jGeom, "y")));
                     ai_SendMessages(GetName(oPC) + " AI widget locked.", AI_COLOR_YELLOW, oPC);
                     ai_SetDMWidgetButton(oPC, BTN_DM_WIDGET_LOCK, TRUE);
                 }
-                NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
             else if(sElem == "btn_options")
@@ -125,10 +144,8 @@ void main()
                 int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
                 JsonArraySetInplace(jPlugins, nIndex, JsonBool(bCheck));
                 ai_SetCampaignDbJson("plugins", jPlugins, sName, AI_DM_TABLE);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
-                ai_CreateDMWidgetNUI(oPC);
             }
-            NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+            NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
             ai_CreateDMWidgetNUI(oPC);
         }
         if(sEvent == "mousedown")
@@ -313,7 +330,7 @@ void main()
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
             if(sElem == "btn_check_plugins")
@@ -329,7 +346,7 @@ void main()
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
             if(sElem == "btn_clear_plugins")
@@ -345,7 +362,7 @@ void main()
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
             else if(sElem == "btn_add_plugin")
@@ -365,7 +382,7 @@ void main()
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "dm_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
             else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oPC, sElem, 2);
@@ -378,7 +395,7 @@ void main()
                 int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
                 JsonArraySetInplace(jPlugins, nIndex, JsonBool(bCheck));
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);
             }
         }

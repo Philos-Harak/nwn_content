@@ -71,12 +71,17 @@ void ai_ScoutAhead(object oCreature);
 void ai_SearchObject(object oCreature, object oObject, object oMaster, int nAssociateType, int bOnce = FALSE);
 // Have oCreature search through nearby placeables for items to pickup.
 int ai_AssociateRetrievingItems(object oCreature);
+// Returns TRUE if oCreature disarms oTrap.
+// bForce if TRUE oCreature will try to disarm the trap even if they have before.
+int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE);
 // Returns TRUE if oCreature opens oLocked object.
 // This will make oCreature open oLocked either by picking or casting a spell.
 int ai_AttemptToByPassLock(object oCreature, object oLocked);
-// Returns TRUE if oCreature disarms oTrap.
-// bForce if TRUE oCreature will try to disarm the trap even if they have before.
-int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bForce = FALSE);
+// oCreature will check nearby doors to see if they should open one.
+int ai_CheckDoors(object oCreature, object oMaster);
+// oCreature will check nearby objects and see what they should do based upon
+// selected actions by the player.
+int ai_CheckNearbyObjects(object oCreature);
 // Used to determine special behaviors for oCeature.
 void ai_DetermineSpecialBehavior(object oCreature);
 // The target object flees to the specified way point and then destroys itself,
@@ -129,12 +134,8 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
     // In command mode we let the player tell us what to do.
     if(!ai_GetAIMode(oCreature, AI_MODE_COMMANDED))
     {
-        // Seek out and disable traps.
-        object oTrap = GetNearestTrapToObject(oCreature);
-        if(oTrap != OBJECT_INVALID &&
-           ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS) &&
-           ai_AttemptToDisarmTrap(oCreature, oTrap)) return;
         if(ai_AssociateRetrievingItems(oCreature)) return;
+        if(ai_CheckNearbyObjects(oCreature)) return;
         if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
         {
             ai_ScoutAhead(oCreature);
@@ -419,8 +420,8 @@ int ai_MoralCheck(object oCreature)
             else if(nRoll == 2) PlayVoiceChat(VOICE_CHAT_BADIDEA, oCreature);
             else if(nRoll == 3) PlayVoiceChat(VOICE_CHAT_ENEMIES, oCreature);
         }
-        //SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
-        //ai_Debug("0i_actions", "420", GetName(oCreature) + " starting debug mode to test Moral checks!");
+        SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
+        ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
     }
     return FALSE;
 }
@@ -1317,7 +1318,7 @@ int ai_IsContainerLootable(object oCreature, object oObject, object oMaster)
     {
         if(AI_DEBUG) ai_Debug("0i_actions", "1118", GetName(oObject) + " is trapped!");
         if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS) &&
-           ai_AttemptToDisarmTrap(oCreature, oObject)) return 2;
+           ai_ReactToTrap(oCreature, oObject)) return 2;
         return FALSE;
     }
     if(GetLocked(oObject))
@@ -1346,22 +1347,16 @@ int ai_AssociateRetrievingItems(object oCreature)
 {
     if(!ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS)) return FALSE;
     int nObjectType, nAction, nAssociateType = GetAssociateType(oCreature);
-    object oMaster = GetMaster();
-    // Added for PC AI system.
-    if(ai_GetIsCharacter(oCreature))
-    {
-        oMaster = oCreature;
-        // We define the player as a henchman so they pick up the item.
-        // Other associates "give" the item to the player.
-        nAssociateType = ASSOCIATE_TYPE_HENCHMAN;
-    }
+    object oMaster = ai_GetPlayerMaster(oCreature);
+    float fLootRange = GetLocalFloat(oCreature, AI_LOOT_CHECK_RANGE);
+    if(AI_DEBUG) ai_Debug("0i_actions", "1356", " Checking " + FloatToString(fLootRange, 0, 0) + " foot area for lootable items.");
     int nIndex = 1;
     object oObject = GetNearestObject(OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_ITEM, oCreature, nIndex);
     // We limit the loot search from the master so the henchman stays close to the master.
-    while(oObject != OBJECT_INVALID && GetDistanceBetween(oMaster, oObject) < GetLocalFloat(oCreature, AI_LOOT_CHECK_RANGE))
+    while(oObject != OBJECT_INVALID && GetDistanceBetween(oMaster, oObject) < fLootRange)
     {
         nObjectType = GetObjectType(oObject);
-        if(AI_DEBUG) ai_Debug("0i_actions", "1163", " Retrieving Items from: " + GetName(oObject));
+        if(AI_DEBUG) ai_Debug("0i_actions", "1362", " Check object to loot: " + GetName(oObject));
         if(nObjectType == OBJECT_TYPE_ITEM)
         {
             ActionPickUpItem(oObject);
@@ -1370,7 +1365,7 @@ int ai_AssociateRetrievingItems(object oCreature)
         else
         {
             nAction = ai_IsContainerLootable(oCreature, oObject, oMaster);
-            if(AI_DEBUG) ai_Debug("0i_actions", "1172", " Can we open this container: " + IntToString(nAction));
+            if(AI_DEBUG) ai_Debug("0i_actions", "1371", " Is it Lootable (0 = No, 1 = Yes, 2 = Trap/Locked)? " + IntToString(nAction));
             if(nAction == TRUE)
             {
                 ai_ClearCreatureActions();
@@ -1393,20 +1388,78 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
        GetIsPlaceableObjectActionPossible(oLocked, PLACEABLE_ACTION_KNOCK)) &&
        ai_GetIsInLineOfSight(oCreature, oLocked))
     {
+        SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
+        DelayCommand(6.0, DeleteLocalInt(oLocked, AI_OBJECT_IN_USE));
         AssignCommand(oCreature, ai_ClearCreatureActions());
         AssignCommand(oCreature, ActionWait(1.0));
         AssignCommand(oCreature, ActionCastSpellAtObject(SPELL_KNOCK, oLocked));
         AssignCommand(oCreature, ActionWait(1.0));
+        AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oLocked, AI_OBJECT_IN_USE)));
         return TRUE;
     }
     return FALSE;
 }
+int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
+{
+    if(AI_DEBUG) ai_Debug("0i_actions", "1407", "Reacting to trap on " +
+                          GetName(oTrap) + " [AI_OBJECT_IN_USE: " +
+                          IntToString(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) + "].");
+    // Adding checks to stop AI from walking over a trap!
+    string sID = ObjectToString(oCreature);
+    if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sID) && !bForce) return FALSE;
+    if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
+    {
+        if(GetTrapDisarmable(oTrap))
+        {
+            if(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) return FALSE;
+            int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
+            int nTrapDC = GetTrapDisarmDC(oTrap);
+            if(AI_DEBUG) ai_Debug("0i_actions", "1416", "nSkill: " + IntToString(nSkill) +
+                     " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
+            if(nSkill + 20 >= nTrapDC)
+            {
+                SetLocalInt(oTrap, AI_OBJECT_IN_USE, TRUE);
+                DelayCommand(18.0, DeleteLocalInt(oTrap, AI_OBJECT_IN_USE));
+                AssignCommand(oCreature, ai_ClearCreatureActions());
+                AssignCommand(oCreature, ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0));
+                // Let them know we did it!
+                AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:")));
+                AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oTrap, AI_OBJECT_IN_USE)));
+                return TRUE;
+            }
+            if(GetHasSpell(SPELL_FIND_TRAPS, oCreature))
+            {
+                AssignCommand(oCreature, ai_ClearCreatureActions());
+                AssignCommand(oCreature, ActionCastSpellAtObject(SPELL_FIND_TRAPS, oTrap));
+                return TRUE;
+            }
+        }
+        //StrRef(40551) "This trap can never be disarmed!"
+        AssignCommand(oCreature, ActionDoCommand(SpeakStringByStrRef(40551)));
+        // Let them know we can't get this done!.
+        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:")));
+    }
+    if(GetObjectType(oTrap) == OBJECT_TYPE_TRIGGER)
+    {
+        object oMaster = ai_GetPlayerMaster(oCreature);
+        if(oMaster != OBJECT_INVALID)
+        {
+            ai_SetAIMode(oCreature, AI_MODE_COMMANDED);
+            ai_SendMessages(GetName(oCreature) + " has went into command mode after seeing a trap!", AI_COLOR_YELLOW, oMaster);
+            ai_HighlightWidgetMode(oMaster, oCreature, NuiFindWindow(oMaster, ai_GetAssociateType(oMaster, oCreature) + AI_WIDGET_NUI));
+            ai_ClearCreatureActions();
+        }
+    }
+    SetLocalInt(oTrap, "AI_SAW_TRAP_" + sID, TRUE);
+    return FALSE;
+}
 int ai_AttemptToByPassLock(object oCreature, object oLocked)
 {
+    if(AI_DEBUG) ai_Debug("0i_actions", "1446", "Attempting to bypass lock on " +
+                          GetName(oLocked) + " [AI_OBJECT_IN_USE: " +
+                          IntToString(GetLocalInt(oLocked, AI_OBJECT_IN_USE)) + "].");
+    if(GetLocalInt(oLocked, AI_OBJECT_IN_USE)) return FALSE;
     string sID = ObjectToString(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_actions", "1121", "oCreature: " + GetName(oCreature) + " oLocked:" + GetName(oLocked));
-    if(AI_DEBUG) ai_Debug("0i_actions", "1122", " AI_LOCKED_: " + IntToString(GetLocalInt(oLocked, "AI_LOCKED_" + sID)) +
-             " AI_STATED_LOCKED_: " + IntToString(GetLocalInt(oLocked, "AI_STATED_LOCKED_" + sID)));
     if(GetLocalInt(oLocked, "AI_LOCKED_" + sID)) return FALSE;
     // Attempt to cast knock because its always safe to cast it, even on a trapped object.
     if(ai_AttempToCastKnockSpell(oLocked, oCreature)) return TRUE;
@@ -1414,23 +1467,26 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
     if(GetTrapDetectedBy(oCreature, oLocked))
     {
         // Ick! Try and disarm the trap first
-        if(ai_AttemptToDisarmTrap(oCreature, oLocked)) return TRUE;
+        if(ai_ReactToTrap(oCreature, oLocked)) return TRUE;
     }
-    if(AI_DEBUG) ai_Debug("0i_actions", "1133", "bNeedKey:" + IntToString(GetLockKeyRequired(oLocked)));
     if(GetLockKeyRequired(oLocked))
     {
         // We might be able to open this.
         string sKeyTag = GetLockKeyTag(oLocked);
         // Do we have the key?
-        object oItem = ai_GetCreatureHasItem(oCreature, sKeyTag, FALSE);
-        if(AI_DEBUG) ai_Debug("0i_actions", "1140", "sKeyTag: " + sKeyTag + " oItem: " + GetName(oItem));
-        if(oItem != OBJECT_INVALID)
+        object oKey = ai_GetCreatureHasItem(oCreature, sKeyTag, FALSE);
+        if(AI_DEBUG) ai_Debug("0i_actions", "1466", "Requires a Key! sKeyTag: " +
+                              sKeyTag + " Has key oKey: " + GetName(oKey));
+        if(oKey != OBJECT_INVALID)
         {
+            SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
+            DelayCommand(18.0, DeleteLocalInt(oLocked, AI_OBJECT_IN_USE));
             int nObjectType = GetObjectType(oLocked);
             if(nObjectType == OBJECT_TYPE_DOOR) AssignCommand(oCreature, ActionOpenDoor(oLocked));
             else if (nObjectType == OBJECT_TYPE_PLACEABLE) AssignCommand(oCreature, ActionUnlockObject(oLocked));
             // Let them know we did it!
             AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:")));
+            AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oLocked, AI_OBJECT_IN_USE)));
             return TRUE;
         }
         else
@@ -1450,11 +1506,15 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
         int nLockDC = GetLockUnlockDC(oLocked);
         object oPicks = ai_GetBestPicks(oCreature, nLockDC);
         int nPickBonus = GetLocalInt(oPicks, "AI_BONUS");
-        if(AI_DEBUG) ai_Debug("0i_actions", "1167", GetName(oPicks) + " nSkill :" + IntToString(nSkill) +
-                 " nPickBonus: " + IntToString(nPickBonus) +
-                 " + 20 = " + IntToString(nSkill + nPickBonus + 20) + " nLockDC: " + IntToString(nLockDC));
+        if(AI_DEBUG) ai_Debug("0i_actions", "1497", "I have picks: " + GetName(oPicks) +
+                              " nSkill :" + IntToString(nSkill) + " nPickBonus: " +
+                              IntToString(nPickBonus) + " + 20 = " +
+                              IntToString(nSkill + nPickBonus + 20) +
+                              " nLockDC: " + IntToString(nLockDC));
         if(nSkill + 20 + nPickBonus >= nLockDC)
         {
+            SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
+            DelayCommand(18.0, DeleteLocalInt(oLocked, AI_OBJECT_IN_USE));
             AssignCommand(oCreature, ai_ClearCreatureActions());
             AssignCommand(oCreature, ActionWait(1.0));
             AssignCommand(oCreature, ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oPicks));
@@ -1463,6 +1523,7 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
             AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":44:42:26:31:35:")));
             // Are we looting? If so then speedup our actions by checking here.
             AssignCommand(oCreature, ActionDoCommand(ai_ActionAssociateRetrievingItems(oCreature)));
+            AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oLocked, AI_OBJECT_IN_USE)));
             return TRUE;
         }
         else
@@ -1488,37 +1549,75 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
     AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:")));
     return FALSE;
 }
-int ai_AttemptToDisarmTrap(object oCreature, object oTrap, int bForce = FALSE)
+int ai_AttemptToOpenDoor(object oCreature, object oDoor)
 {
-    if(AI_DEBUG) ai_Debug("0i_actions", "1291", "Attempting to disarm trap.");
-    string sID = ObjectToString(oCreature);
-    if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sID) && !bForce) return FALSE;
-    int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
-    int nTrapDC = GetTrapDisarmDC(oTrap);
-    if(GetTrapDisarmable(oTrap))
+    if(AI_DEBUG) ai_Debug("0i_actions", "1542", "Attempting to open " +
+                          GetName(oDoor) + " [AI_OBJECT_IN_USE: " +
+                          IntToString(GetLocalInt(oDoor, AI_OBJECT_IN_USE)) + "].");
+    if(GetLocalInt(oDoor, AI_OBJECT_IN_USE)) return FALSE;
+    if(GetIsOpen(oDoor)) return FALSE;
+    ActionOpenDoor(oDoor);
+    return TRUE;
+}
+int ai_CheckNearbyObjects(object oCreature)
+{
+    object oMaster = ai_GetPlayerMaster(oCreature);
+    int nObjectType;
+    float fLockRange, fDoorRange;
+    float fTrapRange = GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE);
+    if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS)) fLockRange = GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE);
+    else if(ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS)) fLockRange = GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE);
+    if(ai_GetAIMode(oCreature, AI_MODE_OPEN_DOORS)) fDoorRange = GetLocalFloat(oCreature, AI_OPEN_DOORS_RANGE);
+    if(AI_DEBUG && fTrapRange != 0.0) ai_Debug("0i_actions", "1561", " Checking " + FloatToString(fTrapRange, 0, 0) + " foot area for traps.");
+    if(AI_DEBUG && fLockRange != 0.0) ai_Debug("0i_actions", "1562", " Checking " + FloatToString(fLockRange, 0, 0) + " foot area for locks.");
+    if(AI_DEBUG && fDoorRange != 0.0) ai_Debug("0i_actions", "1563", " Checking " + FloatToString(fDoorRange, 0, 0) + " foot area for doors.");
+    float fLongestRange = fTrapRange;
+    if(fLongestRange < fLockRange) fLongestRange = fLockRange;
+    if(fLongestRange < fDoorRange) fLongestRange = fDoorRange;
+    int nIndex = 1;
+    object oObject = GetNearestObject(OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, oMaster, nIndex);
+    float fObjectDistance = GetDistanceBetween(oMaster, oObject);
+    while(oObject != OBJECT_INVALID && fLongestRange >= fObjectDistance)
     {
-        if(AI_DEBUG) ai_Debug("0i_actions", "1298", "nSkill: " + IntToString(nSkill) +
-                 " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
-        if(nSkill + 20 >= nTrapDC)
+        nObjectType = GetObjectType(oObject);
+        if(AI_DEBUG) ai_Debug("0i_actions", "1583", " Checking object: " + GetName(oObject));
+        if(fTrapRange >= fObjectDistance)
         {
-            AssignCommand(oCreature, ai_ClearCreatureActions());
-            AssignCommand(oCreature, ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0));
-            // Let them know we did it!
-            AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:")));
-            return TRUE;
+            if(GetTrapDetectedBy(oObject, oCreature) && LineOfSightObject(oCreature, oObject))
+            {
+                if(ai_ReactToTrap(oCreature, oObject)) return TRUE;
+            }
         }
-        if(GetHasSpell(SPELL_FIND_TRAPS, oCreature))
+        if(nObjectType == OBJECT_TYPE_DOOR)
         {
-            AssignCommand(oCreature, ai_ClearCreatureActions());
-            AssignCommand(oCreature, ActionCastSpellAtObject(SPELL_FIND_TRAPS, oTrap));
-            return TRUE;
+            if(fLockRange >= fObjectDistance)
+            {
+                if(GetLocked(oObject) && LineOfSightObject(oCreature, oObject))
+                {
+                    if(ai_AttemptToByPassLock(oCreature, oObject)) return TRUE;
+                }
+            }
+            if(fDoorRange >= fObjectDistance)
+            {
+                if(LineOfSightObject(oCreature, oObject))
+                {
+                    if(ai_AttemptToOpenDoor(oCreature, oObject)) return TRUE;
+                }
+            }
         }
+        else if(nObjectType == OBJECT_TYPE_PLACEABLE)
+        {
+            if(fLockRange >= fObjectDistance)
+            {
+                if(GetLocked(oObject) && LineOfSightObject(oCreature, oObject))
+                {
+                    if(ai_AttemptToByPassLock(oCreature, oObject)) return TRUE;
+                }
+            }
+        }
+        oObject = GetNearestObject(OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, oMaster, ++nIndex);
+        fObjectDistance = GetDistanceBetween(oMaster, oObject);
     }
-    SetLocalInt(oTrap, "AI_SAW_TRAP_" + sID, TRUE);
-    //StrRef(40551) "This trap can never be disarmed!"
-    AssignCommand(oCreature, ActionDoCommand(SpeakStringByStrRef(40551)));
-    // Let them know we can't get this done!.
-    AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:")));
     return FALSE;
 }
 void ai_DetermineSpecialBehavior(object oCreature)
@@ -1720,11 +1819,6 @@ void ai_AnimationInteraction(float fMaxDistance)
         else AnimActionPlayRandomInteractAnimation(GetCurrentInteractionTarget());
         return;
     }
-    // If we got here, we're not busy at the moment.
-    // Clean out the action queue
-    ClearAllActions();
-    if(nRoll <= 9 && ai_AnimationFindFriend(fMaxDistance)) return;
-    if(nRoll > 9 && ai_AnimationFindPlaceable(fMaxDistance)) return;
     if(nRoll < 5) AnimActionTurnAround();
     else AnimActionPlayRandomAnimation();
 }
