@@ -78,10 +78,9 @@ void main()
     else if(sAction == "Bash") ai_Locks(oPC, oAssociate, sAssociateType, 2);
     else if(sAction == "Search") ai_Search(oPC, oAssociate, sAssociateType);
     else if(sAction == "Stealth") ai_Stealth(oPC, oAssociate, sAssociateType);
-    else if(sAction == "NoMagic") ai_UseMagic(oPC, oAssociate, TRUE, FALSE, FALSE, sAssociateType);
-    else if(sAction == "UseMagic")ai_UseMagic(oPC, oAssociate, FALSE, FALSE, FALSE, sAssociateType);
-    else if(sAction == "DefensiveCasting") ai_UseMagic(oPC, oAssociate, FALSE, TRUE, FALSE, sAssociateType);
-    else if(sAction == "OffensiveCasting") ai_UseMagic(oPC, oAssociate, FALSE, FALSE, TRUE, sAssociateType);
+    else if(sAction == "NoMagic") ai_UseMagic(oPC, oAssociate, sAssociateType);
+    else if(sAction == "DefensiveCasting") ai_UseOffensiveMagic(oPC, oAssociate, TRUE, FALSE, sAssociateType);
+    else if(sAction == "OffensiveCasting") ai_UseOffensiveMagic(oPC, oAssociate, FALSE, TRUE, sAssociateType);
     else if(sAction == "MagicMinus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
     else if(sAction == "MagicPlus") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
     else if(sAction == "Speaking")

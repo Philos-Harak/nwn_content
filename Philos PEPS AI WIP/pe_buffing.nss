@@ -378,7 +378,8 @@ void CastSavedBuffSpells(object oPC)
 }
 int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetamagic, int nDomain)
 {
-    int nIndex, nMaxIndex, nMSpell, nMmSpell, nDSpell;
+    int nIndex, nMaxIndex, nMSpell, nMmSpell, nDSpell, nSubRadSpell, nSubSpell;
+    string sSubRadSpell;
     if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
         nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
@@ -406,6 +407,21 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
                     }
                 }
             }
+            for(nSubRadSpell = 1; nSubRadSpell < 5; nSubRadSpell++)
+            {
+                sSubRadSpell = "SubRadSpell" + IntToString(nSubRadSpell);
+                if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell)))
+                nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
+                nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
+                if(nMmSpell == nMetamagic)
+                {
+                    if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
+                    {
+                        if(nDSpell) return nLevel;
+                        return 0;
+                    }
+                }
+            }
             nIndex ++;
         }
         return -2;
@@ -419,6 +435,11 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             if(nSpell == nMSpell)
             {
                 if(GetSpellUsesLeft(oCaster, nClass, nSpell)) return 0;
+            }
+            for(nSubRadSpell = 1; nSubRadSpell < 5; nSubRadSpell++)
+            {
+                sSubRadSpell = "SubRadSpell" + IntToString(nSubRadSpell);
+                if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell))) return 0;
             }
             nIndex ++;
         }

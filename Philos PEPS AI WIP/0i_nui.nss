@@ -239,6 +239,12 @@ int SetWindow(object oPC, json jLayout, string sWinID, string sTitle, float fX, 
     else NuiSetBind (oPC, nToken, "window_title", JsonString (sTitle));
     if (fX == -1.0) fX = GetGUIWidthMiddle (oPC, fWidth);
     if (fY == -1.0) fY = GetGUIHeightMiddle (oPC, fHeight);
+    int nScale = GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE);
+    if(nScale != 100)
+    {
+        fHeight = fHeight * (IntToFloat(1050 - nScale) / 1000.0);
+        //fWidth = fWidth * (IntToFloat(1120 - nScale) / 1000.0);
+    }
     NuiSetBind (oPC, nToken, "window_geometry", NuiRect (fX,
                 fY, fWidth, fHeight));
     NuiSetBind (oPC, nToken, "window_resizable", JsonBool (bResize));
@@ -331,8 +337,8 @@ void CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign
 void CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
     json jCheckBox;
-    if(sLabel == "") jCheckBox = NuiId(NuiCheck(NuiBind(sId + "_label"), NuiBind(sId + "_check")), sId);
-    else jCheckBox = NuiId(NuiCheck(JsonString(sLabel), NuiBind(sId + "_check")), sId);
+    if(sLabel == "") jCheckBox = NuiEnabled(NuiId(NuiCheck(NuiBind(sId + "_label"), NuiBind(sId + "_check")), sId), NuiBind(sId + "_event"));
+    else jCheckBox = NuiEnabled(NuiId(NuiCheck(JsonString(sLabel), NuiBind(sId + "_check")), sId), NuiBind(sId + "_event"));
     jCheckBox = NuiWidth(jCheckBox, fWidth);
     jCheckBox = NuiHeight(jCheckBox, fHeight);
     if (sTooltip != "") jCheckBox = NuiTooltip (jCheckBox, NuiBind (sTooltip));

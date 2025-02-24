@@ -74,7 +74,19 @@ void main()
 }
 int StartingUp(object oPC)
 {
+    if(GetLocalInt(oPC, AI_ADD_PLUGIN))
+    {
+        json jPlugin = JsonArray();
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_test"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("Testing Menu"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("ir_charsheet"));
+        json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);
+        jPlugins = JsonArrayInsert(jPlugins, jPlugin);
+        SetLocalJson(oPC, AI_JSON_PLUGINS, jPlugin);
+        SetLocalInt(oPC, AI_PLUGIN_SET, TRUE);
+        return TRUE;
+    }
     if(!GetLocalInt(oPC, AI_STARTING_UP)) return FALSE;
     return TRUE;
 }
-

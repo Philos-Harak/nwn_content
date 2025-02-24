@@ -6,6 +6,24 @@
   This will usually fire every 6 seconds (1 game round).
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_menus"
+void ai_ActionFollow(object oCreature, object oTarget)
+{
+    if(GetLocalInt(OBJECT_SELF, AI_CURRENT_ACTION_MODE) == AI_LAST_ACTION_MOVE)
+    {
+        float fDistance = GetDistanceBetween(oCreature, oTarget);
+        float fFollowDistance = ai_GetFollowDistance(oCreature);
+        if(fDistance > fFollowDistance)
+        {
+            if(fDistance > fFollowDistance * 5.0) AssignCommand(oCreature, JumpToObject(oTarget));
+            else
+            {
+                ClearAllActions();
+                ActionMoveToObject(oTarget, TRUE, fFollowDistance);
+            }
+        }
+        DelayCommand(1.0, ai_ActionFollow(oCreature, oTarget));
+    }
+}
 void main()
 {
     object oCreature = OBJECT_SELF;
@@ -19,9 +37,6 @@ void main()
     if(ai_CheckForCombat(oCreature, FALSE)) return;
     if(IsInConversation(oCreature)) return;
     if(ai_TryHealing(oCreature, oCreature)) return;
-    // When picking up items we also check for traps and locks so if
-    // we are not in pickup mode we need to check the nearby objects.
-    if(ai_AssociateRetrievingItems(oCreature)) return;
     if(ai_CheckNearbyObjects(oCreature)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
     {
@@ -56,7 +71,9 @@ void main()
             if(AI_DEBUG) ai_Debug("XX_pc_1_hb", "75", "Follow master: " +
                          " Stealth: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
                          " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
-            ActionMoveToObject(oAssociate, TRUE, ai_GetFollowDistance(oCreature));
+            SetLocalInt(oCreature, AI_CURRENT_ACTION_MODE, AI_LAST_ACTION_MOVE);
+            ai_ActionFollow(oCreature, oAssociate);
+            //ActionMoveToObject(oAssociate, TRUE, ai_GetFollowDistance(oCreature));
         }
     }
 }

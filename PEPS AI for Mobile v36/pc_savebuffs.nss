@@ -91,10 +91,7 @@ void main()
     int nDomain;
     int nMetaMagic = GetMetaMagicFeat();
     string sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-    //ai_Debug("pc_savebuffs", "32", "oCaster: " + GetName(oCaster) + " oTarget: " + GetName(oTarget) +
-    //         " Spell: " + sName + " nClass: " + IntToString(nClass) +
-    //         " nLevel: " + IntToString(nLevel) + " nMetaMagic: " + IntToString(nMetaMagic));
-    if(nMetaMagic > 0)
+    if(nMetaMagic > 0 && StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
         // We must add the level of the metamagic to the spells level to get the spells correct level.
         if(nMetaMagic == METAMAGIC_EMPOWER) { sName += " (Empowered)"; nLevel += 2; }

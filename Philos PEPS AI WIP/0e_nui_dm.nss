@@ -50,7 +50,7 @@ void main()
         {
             if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
             json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
-            ai_SetCampaignDbJson("location", jGeometry, sName, AI_DM_TABLE);
+            ai_SetCampaignDbJson("locations", jGeometry, sName, AI_DM_TABLE);
         }
     }
     //**************************************************************************
@@ -324,9 +324,9 @@ void main()
             {
                 string sScript = JsonGetString(NuiGetBind (oPC, nToken, "txt_plugin"));
                 if(JsonGetType(JsonArrayGet(jPlugins, 0)) == JSON_TYPE_NULL) jPlugins = JsonArray();
-                ai_Plugin_Add(oPC, jPlugins, "pi_buffing");
-                ai_Plugin_Add(oPC, jPlugins, "pi_debug");
-                ai_Plugin_Add(oPC, jPlugins, "pi_test");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_buffing");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_debug");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_test");
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
@@ -335,13 +335,13 @@ void main()
             }
             if(sElem == "btn_check_plugins")
             {
-                int nIndex = 1;
-                json jCheck = JsonArrayGet(jPlugins, nIndex);
-                while(JsonGetType(jCheck) != JSON_TYPE_NULL)
+                int nIndex;
+                json jPlugin = JsonArrayGet(jPlugins, nIndex);
+                while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
                 {
-                    JsonArraySetInplace(jPlugins, nIndex, JsonBool(TRUE));
-                    nIndex += 2;
-                    jCheck = JsonArrayGet(jPlugins, nIndex);
+                    jPlugin = JsonArraySet(jPlugin, 1, JsonBool(TRUE));
+                    jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
+                    jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
@@ -351,13 +351,13 @@ void main()
             }
             if(sElem == "btn_clear_plugins")
             {
-                int nIndex = 1;
-                json jCheck = JsonArrayGet(jPlugins, nIndex);
-                while(JsonGetType(jCheck) != JSON_TYPE_NULL)
+                int nIndex;
+                json jPlugin = JsonArrayGet(jPlugins, nIndex);
+                while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
                 {
-                    JsonArraySetInplace(jPlugins, nIndex, JsonBool(FALSE));
-                    nIndex += 2;
-                    jCheck = JsonArrayGet(jPlugins, nIndex);
+                    jPlugin = JsonArraySet(jPlugin, 1, JsonBool(FALSE));
+                    jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
+                    jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
@@ -369,16 +369,15 @@ void main()
             {
                 string sScript = JsonGetString(NuiGetBind (oPC, nToken, "txt_plugin"));
                 if(JsonGetType(JsonArrayGet(jPlugins, 0)) == JSON_TYPE_NULL) jPlugins = JsonArray();
-                ai_Plugin_Add(oPC, jPlugins, sScript);
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, sScript);
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
             }
             else if(GetStringLeft(sElem, 18) == "btn_remove_plugin_")
             {
-                int nIndex = (StringToInt(GetStringRight(sElem, 1)) - 1) * 2;
-                JsonArrayDelInplace(jPlugins, nIndex + 1);
-                JsonArrayDelInplace(jPlugins, nIndex);
+                int nIndex = StringToInt(GetStringRight(sElem, 1));
+                jPlugins = JsonArrayDel(jPlugins, nIndex);
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, nToken);
                 ai_CreateDMPluginNUI(oPC);
@@ -391,9 +390,11 @@ void main()
         {
             if(GetStringLeft(sElem, 12) == "chbx_plugin_" && GetStringRight(sElem, 6) == "_check")
             {
-                int nIndex = ((StringToInt(GetSubString(sElem, 12, 1))- 1) * 2) + 1;
+                int nIndex = StringToInt(GetSubString(sElem, 12, 1));
+                json jPlugin = JsonArrayGet(jPlugins, nIndex);
                 int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
-                JsonArraySetInplace(jPlugins, nIndex, JsonBool(bCheck));
+                jPlugin = JsonArraySet(jPlugin, 1, JsonBool(bCheck));
+                jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetCampaignDbJson("plugins", jPlugins);
                 NuiDestroy(oPC, NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oPC);

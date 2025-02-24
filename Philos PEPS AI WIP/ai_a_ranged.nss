@@ -95,7 +95,7 @@ void main()
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
     if(ai_TryWhirlwindFeat(oCreature)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION);
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, ai_GetPerceptionRange(oCreature));
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {

@@ -30,7 +30,7 @@ void main()
     if(ai_CheckForCombat(oCreature, FALSE)) return;
     // We were attacked by an enemy out of combat, so let our allies know.
     SetLocalObject(oCreature, AI_MY_TARGET, oCaster);
-    SpeakString(AI_ATKED_BY_SPELL, TALKVOLUME_SILENT_SHOUT);
+    SpeakString(AI_ATKED_BY_SPELL, TALKVOLUME_SILENT_TALK);
     if(!ai_CanIAttack(oCreature)) return;
     if(GetDistanceBetween(oCreature, oCaster) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
     else ActionMoveToObject(oCaster, TRUE, AI_RANGE_CLOSE - 1.0);

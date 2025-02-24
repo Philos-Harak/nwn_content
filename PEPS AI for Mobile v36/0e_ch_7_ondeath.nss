@@ -16,18 +16,27 @@ void main()
     {
         object oAssociate;
         int nIndex;
-        for(nIndex = 1; nIndex < 5; nIndex++)
+        for(nIndex = 2; nIndex < 5; nIndex++)
         {
             oAssociate = GetAssociate(nIndex, oCreature);
             if(oAssociate != OBJECT_INVALID)
             {
-                AssignCommand(oAssociate, SetIsDestroyable(FALSE, FALSE, FALSE));
+                SetIsDestroyable(FALSE, FALSE, FALSE);
                 ChangeFaction(oAssociate, oCreature);
             }
         }
     }
     // Remove the widget!
     object oPC = GetMaster(oCreature);
-    if(ai_GetIsCharacter(oPC)) NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oCreature) + AI_WIDGET_NUI));
+    NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oCreature) + AI_WIDGET_NUI));
+    DelayCommand(0.5, ai_CheckXPPartyScale(oCreature));
+    DelayCommand(2.0, ai_ClearCreatureActions(TRUE));
+    DelayCommand(2.0, ai_ClearCombatState(oCreature));
+    // Temp code to fix issues from previous versions.
+    ChangeToStandardFaction(oCreature, STANDARD_FACTION_MERCHANT);
+    SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 50, oCreature);
+    SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 50, oCreature);
+    SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 50, oCreature);
+    SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 0, oCreature);
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

@@ -1,0 +1,41 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script: nw_ch_ac5
+ Programmer: Philos
+////////////////////////////////////////////////////////////////////////////////
+  Associates (Summons, Familiars, Companions) OnPhysicalAttacked event script;
+  Fires for all physical attacks, claws, weapons, fists, bow, etc.
+  Fires for taunt skill, animal empathy skill.
+*///////////////////////////////////////////////////////////////////////////////
+#include "0i_associates"
+void main()
+{
+    object oCreature = OBJECT_SELF;
+    object oAttacker = GetLastAttacker();
+    if(AI_DEBUG) ai_Debug("nw_ch_ac5", "14", GetName(oCreature) + " was attacked by " +
+                 GetName(oAttacker) + ".");
+    SetLocalObject(oAttacker, AI_ATTACKED_PHYSICAL, oCreature);
+    if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
+    if(ai_GetIsInCombat(oCreature)) return;
+    // We only inform others if attacked when not busy, not disabled, & not in combat.
+    SetLocalObject(oCreature, AI_MY_TARGET, oAttacker);
+    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
+    // If they are using a melee weapon then make sure we are using our perception range.
+    // Don't go running towards them just yet, but if its a ranged weapon then react.
+    if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oAttacker)))
+    {
+        float fPerceptionDistance;
+        float fDistance = GetDistanceBetween(oCreature, oAttacker);
+        int nPerceptionRange = GetLocalInt(oCreature, AI_PERCEPTION_RANGE);
+        if(nPerceptionRange == 8) fPerceptionDistance = 10.0;
+        else if(nPerceptionRange == 10) fPerceptionDistance = 35.0;
+        else fPerceptionDistance = 20.0;
+        if(fDistance > fPerceptionDistance) return;
+    }
+    if(!ai_CanIAttack(oCreature)) return;
+    // The only way to get here is to not be in combat thus we have not
+    // perceived them so lets look for them.
+    if(GetDistanceBetween(oCreature, oAttacker) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
+    else ActionMoveToObject(oAttacker, TRUE, AI_RANGE_CLOSE - 1.0);
+}
+
+

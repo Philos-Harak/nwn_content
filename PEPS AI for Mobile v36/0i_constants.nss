@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) Mobile ver:01.30.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:02.24.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 //***************************  ADJUSTABLE CONSTANTS  ***************************
@@ -39,17 +39,17 @@ const int AI_PRESUMMONS = TRUE;
 // Allows monsters to use tactical AI scripts.
 const int AI_TACTICAL = TRUE;
 // Enemies may summon familiars and Animal companions and will be randomized.
-const int AI_SUMMON_COMPANIONS = TRUE;
+const int AI_SUMMON_COMPANIONS = FALSE;
 // Allow the AI to move during combat base on the situation and action taking.
 const int AI_ADVANCED_MOVEMENT = TRUE;
 // Follow Item Level Restrictions for monsters/associates.
-const int AI_ITEM_LEVEL_RESTRICTIONS = TRUE;
+const int AI_ITEM_LEVEL_RESTRICTIONS = FALSE;
 // Allow the AI to use Use Magic Device.
 const int AI_USE_MAGIC_DEVICE = TRUE;
 // Allow the AI to use healing kits.
 const int AI_HEALING_KITS = TRUE;
 // Associates are permanent and don't get removed when the master dies.
-const int AI_COMPANIONS_PERMANENT = TRUE;
+const int AI_COMPANIONS_PERMANENT = FALSE;
 // Monster AI's chance (0 to 100) to attack the weakest target instead of the nearest.
 const int AI_TARGET_WEAKEST = 0;
 // Variable that can change the distance creatures will come and attack after
@@ -67,7 +67,10 @@ const float AI_WANDER_DISTANCE = 0.0;
 const int AI_OPEN_DOORS = FALSE;
 // Monster's actual perception distance.
 // 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
+// 11 Default(Based on appearance.2da Most creatures use 9, bosses use 10).
 const int AI_PERCEPTION_DISTANCE = 11;
+// Should the AI auto adjust the XP scale to remove party size penalty?
+const int AI_PARTY_SCALE = FALSE;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -104,7 +107,7 @@ const string AI_WIDGET_NUI = "_widget_nui";
 const string AI_LOOTFILTER_NUI = "_lootfilter_nui";
 const string AI_COPY_NUI = "_copy_nui";
 const string AI_PLUGIN_NUI = "ai_plugin_nui";
-const string AI_SPELL_WIDGET_NUI = "_spell_widget_nui";
+const string AI_QUICK_WIDGET_NUI = "_quick_widget_nui";
 const string AI_SPELL_MEMORIZE_NUI = "_spell_memorize_nui";
 const string AI_SPELL_DESCRIPTION_NUI = "ai_spell_desc_nui";
 //******************************* CORE CONSTANTS *******************************
@@ -113,6 +116,12 @@ const string AI_SPELL_DESCRIPTION_NUI = "ai_spell_desc_nui";
 //                            CHANGE AT YOUR OWN RISK.
 // Startup variable to tell plugins that we have started.
 const string AI_STARTING_UP = "AI_STARTING_UP";
+// Add plugin variable to tell plugins that we are adding them to PEPS.
+const string AI_ADD_PLUGIN = "AI_ADD_PLUGIN";
+// Startup variable to tell plugins what json array to add their plugin to.
+const string AI_JSON_PLUGINS = "AI_JSON_PLUGINS";
+// Plugin variable to have plugins return if they setup the plugin in the json for PEPS.
+const string AI_PLUGIN_SET = "AI_PLUGIN_SET";
 // The maximum number of henchman the code works with.
 const int AI_MAX_HENCHMAN = 12;
 // Delay between Henchman casting Healing spells. Must be minimum of 0.5 seconds.
@@ -370,6 +379,7 @@ const int BTN_CMD_SEARCH       = 0x00040000; // Command all associates to use se
 const int BTN_CMD_STEALTH      = 0x00080000; // Command all associates to use stealth mode. PC widget only.
 const int BTN_CMD_SCOUT        = 0x00100000; // Command associate to scout ahead of the part.
 const int BTN_CMD_SPELL_WIDGET = 0x00200000; // Allows adding or removing spells from Spell Widget.
+const int BTN_CMD_JUMP_TO      = 0x00400000; // Player can make associates jump to them.
 // Bitwise menu constants for Associate AI buttons that are used with Get/SetAssociateAIButtons().
 const string sAIButtonsVarname = "ASSOCIATE_AI_BUTTONS";
 const int BTN_AI_FOR_PC             = 0x00000001; // PC use AI. PC widget only.
@@ -381,7 +391,7 @@ const int BTN_AI_PICK_LOCKS         = 0x00000020; // AI will attempt to pick loc
 const int BTN_AI_MAGIC_LEVEL        = 0x00000040; // Increase chance to use magic in battle.
 const int BTN_AI_NO_SPONTANEOUS     = 0x00000080; // Stops the use of spontaneous spells.
 const int BTN_AI_NO_MAGIC_USE       = 0x00000100; // Will not use magic in battle.
-const int BTN_AI_ALL_MAGIC_USE      = 0x00000200; // Will use all types of magic in battle.
+const int BTN_AI_NO_MAGIC_ITEM_USE  = 0x00000200; // Will not use magic items in battle.
 const int BTN_AI_DEF_MAGIC_USE      = 0x00000400; // Will use Defensive spells only in battle.
 const int BTN_AI_OFF_MAGIC_USE      = 0x00000800; // Will use Offensive spells only in battle.
 const int BTN_AI_LOOT               = 0x00001000; // Auto picking up loot on/off.
@@ -433,6 +443,7 @@ const int AI_LOOT_MISC              = 0x00004000;
 const int AI_LOOT_ARROWS            = 0x00008000;
 const int AI_LOOT_BOLTS             = 0x00010000;
 const int AI_LOOT_BULLETS           = 0x00020000;
+const int AI_LOOT_GIVE_TO_PC        = 0x80000000;
 // Default value for all loot filters to be on.
 const int AI_LOOT_ALL_ON = 262143;
 // Variable to keep track of who is in ghost mode.
@@ -493,6 +504,8 @@ const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
 const string AI_NO_TALENTS = "AI_NO_TALENTS_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
+// Variable that tells us that oCreature has run our OnSpawn event.
+const string AI_ONSPAWN_EVENT = "AI_ONSPAWN_EVENT";
 // Variable that saves any module target event script so we can pass it along.
 const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
 // Variable for plugins to inject Targeting mode code into PEPS.
@@ -509,6 +522,8 @@ const string sIPResistVarname = "AI_IP_RESIST";
 const string sIPReducedVarname = "AI_IP_REDUCED";
 // Variable name for the Int (Bool) constant for the haste item property.
 const string sIPHasHasteVarname = "AI_IP_HAS_HASTE";
+// Variable name used to hold the party xp base needed to adjust party xp.
+const string AI_BASE_PARTY_SCALE_XP = "AI_BASE_PARTY_SCALE_XP";
 //***************************** AI RULES CONSTANTS *****************************
 // Variable name set to a creatures full name to set debugging on.
 const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
@@ -556,6 +571,10 @@ const string AI_RULE_MAX_HENCHMAN = "AI_RULE_MAX_HENCHMAN";
 const string AI_RULE_WANDER_DISTANCE = "AI_RULE_WANDER_DISTANCE";
 // Variable name set to allow wandering monsters to open doors.
 const string AI_RULE_OPEN_DOORS = "AI_RULE_OPEN_DOORS";
+// Variable name set to hold the modules default xp scale for use later.
+const string AI_RULE_DEFAULT_XP_SCALE = "AI_RULE_DEFAULT_XP_SCALE";
+// Variable name set to allow the game to regulate experience based on party size.
+const string AI_RULE_PARTY_SCALE = "AI_RULE_PARTY_SCALE";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction
@@ -590,5 +609,6 @@ const int NW_WALK_FLAG_CONSTANT                    = 0x00000002;
 const int NW_WALK_FLAG_IS_DAY                      = 0x00000004;
 // Set when the creature is walking back
 const int NW_WALK_FLAG_BACKWARDS                   = 0x00000008;
+
 
 

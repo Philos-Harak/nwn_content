@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
-// Script Name: 0e_fam_event
+// Script Name: 0e_prc_fam_event
 ////////////////////////////////////////////////////////////////////////////////
     PRC Familiar/Companion event handler.
 *///////////////////////////////////////////////////////////////////////////////
@@ -27,8 +27,7 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     int nEvent = GetCurrentlyRunningEvent();
-    int bFollower = GetLocalInt(oCreature, "bFollower");
-    //WriteTimestampedLogEntry("0e_prc_sum_event [24] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
+    //WriteTimestampedLogEntry("0e_prc_fam_event [29] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
     //                         " bFollower: " + IntToString(bFollower));
     switch (nEvent)
     {

@@ -14,8 +14,8 @@ void main()
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     if(AI_DEBUG) ai_Debug("ai_a_ambusher", "15", GetName(oCreature) + " is using ambusher tactics: " +
              " oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " +
-             FloatToString(GetDistanceBetween(oNearestEnemy, oCreature)));
-    if(GetDistanceBetween(oNearestEnemy, oCreature) > AI_RANGE_LONG)
+             FloatToString(GetDistanceBetween(oNearestEnemy, oCreature), 0, 2));
+    if(GetDistanceBetween(oNearestEnemy, oCreature) > AI_RANGE_CLOSE)
     {
         // Has our master told us to not use magic?
         if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
@@ -64,7 +64,7 @@ void main()
                 string sEnemyIndex = IntToString(nEnemyIndex);
                 float fEnemyDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sEnemyIndex);
                 if(AI_DEBUG) ai_Debug("ai_a_ambusher", "66", "fDistance: " + FloatToString(fEnemyDistance, 0, 2));
-                if(fEnemyDistance >= AI_RANGE_CLOSE)
+                if(fEnemyDistance > 20.0)
                 {
                     int bTried = GetLocalInt(oCreature, AI_TRIED_TO_HIDE);
                     if(!bTried)
@@ -101,3 +101,4 @@ void main()
     if(AI_DEBUG) ai_Debug("ai_a_ambusher", "101", "Executing Script: " + sScript);
     ExecuteScript(sScript, oCreature);
 }
+

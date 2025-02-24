@@ -67,6 +67,8 @@ void main()
         }
         else if(sTargetMode == "CLEAR_REPUTATION")
         {
+            int nReputation = GetFactionAverageReputation(oTarget, oPC);
+            int nAdjustment = 50 - nReputation;
             object oPCMember = GetFirstFactionMember(oPC, FALSE);
             while(GetIsObjectValid(oPCMember))
             {
@@ -81,6 +83,10 @@ void main()
             ai_SendMessages("ResRef: " + GetResRef(oTarget), AI_COLOR_GREEN, oPC);
             ai_SendMessages("Tag: " + GetTag(oTarget), AI_COLOR_ORANGE, oPC);
             ai_SendMessages("UUID: " + GetObjectUUID(oTarget), AI_COLOR_LIGHT_MAGENTA, oPC);
+            ai_SendMessages("Faction Commoner: " + IntToString(GetStandardFactionReputation(STANDARD_FACTION_COMMONER, oTarget)), AI_COLOR_GREEN, oPC);
+            ai_SendMessages("Faction Defender: " + IntToString(GetStandardFactionReputation(STANDARD_FACTION_DEFENDER, oTarget)), AI_COLOR_GREEN, oPC);
+            ai_SendMessages("Faction Merchant: " + IntToString(GetStandardFactionReputation(STANDARD_FACTION_MERCHANT, oTarget)), AI_COLOR_GREEN, oPC);
+            ai_SendMessages("Faction Hostile: " + IntToString(GetStandardFactionReputation(STANDARD_FACTION_HOSTILE, oTarget)), AI_COLOR_RED, oPC);
             int nObjectType = GetObjectType(oTarget);
             if(nObjectType == OBJECT_TYPE_CREATURE)
             {
@@ -577,6 +583,34 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_SendMessages("Select Object to set (" + sVarName + ") variable to.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(GetStringLeft(sElem, 11) == "btn_create_")
+            {
+                // * override level of henchman for chapters 2e and 4
+                int nLevel;
+                string sLevel;
+                if(GetTag(GetModule()) == "ENDMODULE2") sLevel = "07";
+                else if(GetTag(GetModule()) == "ENDMODULE3") sLevel = "10";
+                int nCharLevel = ai_GetCharacterLevels(oPC);
+                if(nLevel > StringToInt(sLevel)) sLevel = IntToString(nLevel);
+                if(nLevel < 3) nLevel = 3;
+                if(nLevel > 11) nLevel = 11;
+                if(nLevel < 10) sLevel == "0" + IntToString(nLevel);
+                else sLevel == IntToString(nLevel);
+                string sResRef;
+                string sBtn = GetStringRight(sElem, GetStringLength(sElem) - 11);
+                if(sBtn == "tomi") sResRef = "NW_HEN_GAL_";
+                if(sBtn == "linu") sResRef = "NW_HEN_LIN_";
+                if(sBtn == "daelan") sResRef = "NW_HEN_DAE_";
+                if(sBtn == "boddy") sResRef = "NW_HEN_BOD_";
+                if(sBtn == "grim") sResRef = "NW_HEN_GRI_";
+                if(sBtn == "shar") sResRef = "NW_HEN_SHA_";
+                SendMessageToPC(oPC, "sResRef: " + sResRef + sLevel + " nLevel: " + IntToString(nLevel));
+                object oHenchman = CreateObject(OBJECT_TYPE_CREATURE, sResRef + sLevel, GetLocation(oPC));
+                SetLocalObject(oHenchman,"NW_L_FORMERMASTER", oPC);
+                if(GetIsObjectValid(GetItemPossessedBy(oPC, GetTag(oHenchman) + "PERS")) == FALSE)
+                   CreateItemOnObject(GetTag(oHenchman) + "PERS", oPC);
+                NuiDestroy(oPC, nToken);
             }
         }
         if(sEvent == "watch")

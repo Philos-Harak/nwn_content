@@ -36,7 +36,7 @@ void main()
         {
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
-                ai_SendMessages("Party has exited action mode!", AI_COLOR_YELLOW, oPC);
+                ai_SendMessages("You have exited selecting an action for the party.", AI_COLOR_YELLOW, oPC);
                 if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname)) ai_OriginalRemoveAllActionMode(oPC);
@@ -45,7 +45,7 @@ void main()
             }
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
-                ai_SendMessages(GetName(oAssociate) + " has exited action mode!", AI_COLOR_YELLOW, oPC);
+                ai_SendMessages("You have exited selecting an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
                 if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
@@ -56,11 +56,13 @@ void main()
                 }
                 else
                 {
+                    ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
                     if(ai_GetAIMode(oPC, AI_MODE_GHOST))
                     {
                         ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                         DeleteLocalInt(oAssociate, sGhostModeVarname);
                     }
+                    ExecuteScript("nw_ch_ac1", oAssociate);
                 }
             }
             else if(sTargetMode == "ASSOCIATE_GET_TRAP")
@@ -98,11 +100,17 @@ void main()
         else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectFollowTarget(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);
         else if(sTargetMode == "ASSOCIATE_PLACE_TRAP") AssignCommand(oAssociate, ai_PlaceTrap(oPC, lLocation));
+        else if(sTargetMode == "ASSOCIATE_USE_FEAT")
+        {
+            if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
+            ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
+            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+        }
         else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
         {
             if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
             ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
-            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
         }
         else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
         {
@@ -131,3 +139,4 @@ void main()
         ExecuteScript(sModuleTargetScript);
     }
 }
+

@@ -41,7 +41,7 @@ void main()
 {
    object oPC = OBJECT_SELF;
    //*********** Philos Player Setup *********
-   ai_CheckAIRules();
+   ai_SetAIRules();
    ai_StartupPlugins(oPC);
    ai_CheckAssociateData(oPC, oPC, "pc");
    ai_CreateWidgetNUI(oPC, oPC);

@@ -1,26 +1,17 @@
 /*//////////////////////////////////////////////////////////////////////////////
 // Script Name: 0i_time
 ////////////////////////////////////////////////////////////////////////////////
- Include script for handling all time functions for the server.
+ Include script for handling all time functions.
 
  Lokey's functions:
 int GetPosixTimestamp();
 string GetCurrentDateTime();
 
 *///////////////////////////////////////////////////////////////////////////////
-const string SERVER_SHUTDOWN_TIME = "SERVER_SHUTDOWN_TIME";
-const string SERVER_MESSAGE_COUNT = "SERVER_MESSAGE_COUNT";
-const string SERVER_SHUTDOWN_MESSAGE_1 = "The server will restart in half an hour! Please log off!";
-const string SERVER_SHUTDOWN_MESSAGE_2 = "The server will restart in 15 minutes! Please log off!";
-const string SERVER_SHUTDOWN_MESSAGE_3 = "The server will restart in 5 minutes! Please log off!";
 // RETURNS a Timestamp in seconds since 1970-01-01.
 int GetCurrentTimeInSeconds();
 // RETURNS a formated date, good for timestamping logs and text.
 string GetCurrentDateTime();
-// Sends a server shutdown message 1800 seconds i.e 30 minutes before.
-// nDuration is in seconds. i.e. one hours is 3600 defaults to 24 hours (86400).
-// Should be put into the servers OnHeartBeat.
-void CheckServerShutdownMessage(int nDuration = 86400);
 
 int GetCurrentTimeInSeconds()
 {
@@ -35,38 +26,6 @@ string GetCurrentDateTime()
     sqlquery sqlQuery = SqlPrepareQueryObject(GetModule(), stmt);
     SqlStep(sqlQuery);
     return SqlGetString(sqlQuery, 0);
-}
-void CheckServerShutdownMessage(int nDuration = 86400)
-{
-    object oModule = GetModule();
-    int nServerShutDownTime = GetLocalInt(oModule, SERVER_SHUTDOWN_TIME);
-    int nCurrentTime = GetCurrentTimeInSeconds();
-    if(nServerShutDownTime > nCurrentTime) return;
-    // The server has just started, so lets save the time.
-    if(nServerShutDownTime == 0)
-    {
-        SetLocalInt(oModule, SERVER_SHUTDOWN_TIME, nCurrentTime + nDuration - 1800); // Removes half an hour
-        return;
-    }
-    // Check our message count and then send the next one.
-    int nMessageCount = GetLocalInt(oModule, SERVER_MESSAGE_COUNT);
-    if(nMessageCount == 0)
-    {
-        SetLocalInt(oModule, SERVER_MESSAGE_COUNT, ++nMessageCount);
-        SetLocalInt(oModule, SERVER_SHUTDOWN_TIME, nCurrentTime + 900); // Adds 15 minutes.
-        SpeakString(SERVER_SHUTDOWN_MESSAGE_1, TALKVOLUME_SHOUT);
-    }
-    else if(nMessageCount == 1)
-    {
-        SetLocalInt(oModule, SERVER_MESSAGE_COUNT, ++nMessageCount);
-        SetLocalInt(oModule, SERVER_SHUTDOWN_TIME, nCurrentTime + 600); // Adds 10 minutes.
-        SpeakString(SERVER_SHUTDOWN_MESSAGE_2, TALKVOLUME_SHOUT);
-    }
-    else if(nMessageCount == 2)
-    {
-        SetLocalInt(oModule, SERVER_MESSAGE_COUNT, ++nMessageCount);
-        SpeakString(SERVER_SHUTDOWN_MESSAGE_3, TALKVOLUME_SHOUT);
-    }
 }
 /// @addtogroup time Time
 /// @brief Provides various time related functions.

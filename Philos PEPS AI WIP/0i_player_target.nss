@@ -115,7 +115,7 @@ void ai_OriginalActionAssociate(object oPC, object oTarget, location lLocation)
                     {
                         bkAttemptToOpenLock(oTarget);
                     }
-                    else AssignCommand(oAssociate, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                    else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
@@ -127,7 +127,7 @@ void ai_OriginalActionAssociate(object oPC, object oTarget, location lLocation)
                 {
                     bkAttemptToOpenLock(oTarget);
                 }
-                else AssignCommand(oAssociate, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
@@ -170,16 +170,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         SetLocalInt(oAssociate, sGhostModeVarname, TRUE);
     }
     int nObjectType = GetObjectType(oTarget);
-    if(!ai_GetAIMode(oAssociate, AI_MODE_COMMANDED))
-    {
-        ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, TRUE);
-        ai_SetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD, FALSE);
-        ai_SetAIMode(oAssociate, AI_MODE_DEFEND_MASTER, FALSE);
-        ai_SetAIMode(oAssociate, AI_MODE_STAND_GROUND, FALSE);
-        ai_SetAIMode(oAssociate, AI_MODE_FOLLOW, FALSE);
-        int nToken = NuiFindWindow(oPC, ai_GetAssociateType(oPC, oAssociate) + AI_WIDGET_NUI);
-        ai_HighlightWidgetMode(oPC, oAssociate, nToken);
-    }
+    ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, TRUE);
     ai_ClearCreatureActions(TRUE);
     if(oTarget == GetArea(oPC))
     {
@@ -198,7 +189,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
     {
         if(GetIsDead(oTarget))
         {
-            AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE)));
+            AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE)));
         }
         else if(GetIsEnemy(oTarget, oAssociate))
         {
@@ -272,7 +263,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                     {
                         ai_AttemptToByPassLock(oAssociate, oTarget);
                     }
-                    else AssignCommand(oAssociate, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                    else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
@@ -285,11 +276,11 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                 {
                     ai_AttemptToByPassLock(oAssociate, oTarget);
                 }
-                else AssignCommand(oAssociate, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, GetAssociateType(oAssociate), TRUE));
+            ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE));
         }
         DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
@@ -384,11 +375,13 @@ void ai_RemoveAllActionMode(object oPC)
         oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
         if(oAssociate != OBJECT_INVALID)
         {
+            ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
             if(ai_GetAIMode(oPC, AI_MODE_GHOST))
             {
                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                 DeleteLocalInt(oAssociate, sGhostModeVarname);
             }
+            ExecuteScript("nw_ch_ac1", oAssociate);
         }
     }
     for(nIndex = 2; nIndex < 6; nIndex++)
@@ -396,11 +389,13 @@ void ai_RemoveAllActionMode(object oPC)
         oAssociate = GetAssociate(nIndex, oPC);
         if(oAssociate != OBJECT_INVALID)
         {
+            ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
             if(ai_GetAIMode(oPC, AI_MODE_GHOST))
             {
                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                 DeleteLocalInt(oAssociate, sGhostModeVarname);
             }
+            ExecuteScript("nw_ch_ac1", oAssociate);
         }
     }
 }
@@ -531,7 +526,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
                 {
                     if(!ai_AttemptToByPassLock(oCreature, oTarget))
                     {
-                        AssignCommand(oCreature, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                        AssignCommand(oCreature, ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTarget) + " is locked!"));
                     }
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
@@ -542,12 +537,12 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
             {
                 if(ai_AttemptToByPassLock(oCreature, oTarget))
                 {
-                    AssignCommand(oCreature, SpeakString("This " + GetName(oTarget) + " is locked!"));
+                    AssignCommand(oCreature, ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTarget) + " is locked!"));
                 }
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            ActionDoCommand(ai_SearchObject(oCreature, oTarget, oPC, GetAssociateType(oCreature), TRUE));
+            ActionDoCommand(ai_SearchObject(oCreature, oTarget, oPC, TRUE));
         }
         DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
@@ -578,7 +573,9 @@ void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup)
 }
 void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
 {
-    int nIndex = StringToInt(GetStringRight(sElem, 1));
+    int nIndex;
+    if(GetStringLength(sElem) == 13) nIndex = StringToInt(GetStringRight(sElem, 2));
+    else nIndex = StringToInt(GetStringRight(sElem, 1));
     SetLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX", nIndex);
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
@@ -586,12 +583,32 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     json jWidget = JsonArrayGet(jSpells, 2);
     json jSpell = JsonArrayGet(jWidget, nIndex);
     int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-    if(Get2DAString("spells", "Range", nSpell) == "P") // Self
+    int nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+    if(nDomain == -1)
     {
-        ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
-        DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-        return;
+        int nSpellID = StringToInt(Get2DAString("feat", "SPELLID", nSpell));
+        if(Get2DAString("spells", "Range", nSpellID) == "P" || // Self
+           nSpell == FEAT_SUMMON_FAMILIAR || nSpell == FEAT_ANIMAL_COMPANION)
+        {
+            if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+            AssignCommand(oAssociate, ActionUseFeat(nSpell, oAssociate));
+            return;
+        }
+        SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_FEAT");
+        nSpell = nSpellID;
     }
+    else
+    {
+        if(Get2DAString("spells", "Range", nSpell) == "P") // Self
+        {
+            if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+            ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
+            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            return;
+        }
+        SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
+    }
+    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     string sTarget = Get2DAString("spells", "TargetType", nSpell);
     int nTarget = ai_HexStringToInt(sTarget);
     int nObjectType;
@@ -601,8 +618,39 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     if(nTarget & 16) nObjectType += OBJECT_TYPE_DOOR;
     if(nTarget & 32) nObjectType += OBJECT_TYPE_PLACEABLE;
     if(nTarget & 64) nObjectType += OBJECT_TYPE_TRIGGER;
-    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
-    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
+    string sShape = Get2DAString("spells", "TargetShape", nSpell);
+    int nShape, nSetData;
+    float fRange;
+    if(oPC == oAssociate)
+    {
+        nSetData = TRUE;
+        fRange = ai_GetSpellRange(nSpell);
+        if(fRange == 0.1) fRange = 0.0;
+    }
+    if(sShape == "sphere")
+    {
+        nShape = SPELL_TARGETING_SHAPE_SPHERE;
+        nSetData = TRUE;
+    }
+    else if(sShape == "rectangle")
+    {
+        nShape = SPELL_TARGETING_SHAPE_RECT;
+        nSetData = TRUE;
+    }
+    else if(sShape == "hsphere")
+    {
+        nShape = SPELL_TARGETING_SHAPE_HSPHERE;
+        nSetData = TRUE;
+    }
+    else if(sShape == "cone") nShape = SPELL_TARGETING_SHAPE_CONE;
+    else nShape = SPELL_TARGETING_SHAPE_NONE;
+    if(nSetData)
+    {
+        float fSizeX = StringToFloat(Get2DAString("spells", "TargetSizeX", nSpell));
+        float fSizeY = StringToFloat(Get2DAString("spells", "TargetSizeY", nSpell));
+        int nFlags = StringToInt(Get2DAString("spells", "TargetFlags", nSpell));
+        SetEnterTargetingModeData(oPC, nShape, fSizeX, fSizeY, nFlags, fRange);
+    }
     EnterTargetingMode(oPC, nObjectType, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
 }
 void ai_UpdateAssociateWidget(object oPC, object oAssociate)

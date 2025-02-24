@@ -90,7 +90,7 @@ void main()
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     // Our master may have setup to check difficulty before we move into melee.
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, ai_GetPerceptionRange(oCreature), !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {

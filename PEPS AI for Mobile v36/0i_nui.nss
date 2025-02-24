@@ -239,6 +239,12 @@ int SetWindow(object oPC, json jLayout, string sWinID, string sTitle, float fX, 
     else NuiSetBind (oPC, nToken, "window_title", JsonString (sTitle));
     if (fX == -1.0) fX = GetGUIWidthMiddle (oPC, fWidth);
     if (fY == -1.0) fY = GetGUIHeightMiddle (oPC, fHeight);
+    int nScale = GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE);
+    if(nScale != 100)
+    {
+        fHeight = fHeight * (IntToFloat(1050 - nScale) / 1000.0);
+        //fWidth = fWidth * (IntToFloat(1120 - nScale) / 1000.0);
+    }
     NuiSetBind (oPC, nToken, "window_geometry", NuiRect (fX,
                 fY, fWidth, fHeight));
     NuiSetBind (oPC, nToken, "window_resizable", JsonBool (bResize));

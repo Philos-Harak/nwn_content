@@ -248,7 +248,7 @@ int ai_TryHealingTalent(object oCreature, int nInMelee, object oTarget = OBJECT_
         {
             // Lets not run past an enemy to heal unless we have the feats, bad tactics!
             float fRange;
-            if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
+            if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
             else
             {
                 fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -322,6 +322,12 @@ int ai_CheckTargetVsConditions(object oTarget, json jTalent, int nConditions)
             break;
         case SPELL_REMOVE_PARALYSIS :
             if(ai_GetHasNegativeCondition(AI_CONDITION_PARALYZE, nConditions)) return TRUE;
+            break;
+        case SPELL_CLARITY :
+            if(ai_GetHasNegativeCondition(AI_CONDITION_DAZED, nConditions)) return TRUE;
+            if(ai_GetHasNegativeCondition(AI_CONDITION_CHARMED, nConditions)) return TRUE;
+            if(ai_GetHasNegativeCondition(AI_CONDITION_CONFUSED, nConditions)) return TRUE;
+            if(ai_GetHasNegativeCondition(AI_CONDITION_STUNNED, nConditions)) return TRUE;
             break;
         case SPELL_GREATER_RESTORATION :
             if(ai_GetHasNegativeCondition(AI_CONDITION_DAZED, nConditions)) return TRUE;
@@ -545,6 +551,7 @@ void ai_SetAura(object oCreature)
 void ai_UseSkill(object oCreature, int nSkill, object oTarget)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_SKILL);
+    if(GetIsEnemy(oTarget)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     if(AI_DEBUG) ai_Debug("0i_talents", "498", GetName(oCreature) + " is using skill: " +
              GetStringByStrRef(StringToInt(Get2DAString("skills", "Name", nSkill))) +
              " on " + GetName(oTarget));
@@ -615,6 +622,7 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
         oTarget = ai_GetNearestRacialTarget(oCreature, AI_RACIAL_TYPE_ANIMAL_BEAST);
         if(oTarget == OBJECT_INVALID) return FALSE;
     }
+    if(!GetObjectSeen(oCreature, oTarget)) return FALSE;
     if(ai_GetHasEffectType(oTarget, EFFECT_TYPE_DOMINATED) ||
        GetIsImmune(oTarget, IMMUNITY_TYPE_MIND_SPELLS) ||
        GetIsImmune(oTarget, IMMUNITY_TYPE_DOMINATE) ||
@@ -623,14 +631,13 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
     int nRace = GetRacialType(oTarget);
     int nDC;
     if(nRace == RACIAL_TYPE_ANIMAL) nDC = 5;
-    if(nRace == RACIAL_TYPE_BEAST || nRace == RACIAL_TYPE_MAGICAL_BEAST) nDC = 9;
-    if(nDC <= 0) return FALSE;
+    else if(nRace == RACIAL_TYPE_BEAST || nRace == RACIAL_TYPE_MAGICAL_BEAST) nDC = 9;
+    else return FALSE;
      // Check to see if we have a good chance for it to work.
     int nEmpathyRnk = GetSkillRank(SKILL_ANIMAL_EMPATHY, oCreature);
-    if(AI_DEBUG) ai_Debug("0i_talents", "582", "Check Animal Empathy: Rnk: " + IntToString(nEmpathyRnk) +
-              " HitDice + 1: " + IntToString(GetHitDice(oCreature) + 1) +
-              " Concentration: " + IntToString(GetSkillRank(SKILL_CONCENTRATION, oTarget)) + ".");
-     nDC += GetHitDice(oTarget);
+    nDC += GetHitDice(oTarget);
+    if(AI_DEBUG) ai_Debug("0i_talents", "632", "Check Animal Empathy: Rnk: " + IntToString(nEmpathyRnk) +
+              " nDC: " + IntToString(nDC) + ".");
     // Our chance is greater than 50%.
     if(nEmpathyRnk <= nDC) return FALSE;
     ai_UseSkill(oCreature, SKILL_ANIMAL_EMPATHY, oTarget);
@@ -1025,7 +1032,7 @@ int ai_TryLayOnHands(object oCreature)
     if(!GetHasFeat(FEAT_LAY_ON_HANDS, oCreature)) return FALSE;
     // Lets not run past an enemy to use touch atk unless we have the feats, bad tactics!
     float fRange;
-    if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
+    if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
     else
     {
         fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -1503,7 +1510,7 @@ int ai_TrySneakAttack(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
         string sIndex;
         // Check if we have Mobility, Spring Attack or a good tumble.
         // if we do then look for other targets besides who we are in melee with.
-        if(!nInMelee) sIndex = IntToString(ai_GetBestSneakAttackIndex(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk));
+        if(!nInMelee) sIndex = IntToString(ai_GetBestSneakAttackIndex(oCreature, ai_GetPerceptionRange(oCreature), bAlwaysAtk));
         // If there are few enemies then we can safely move around.
         else if(nInMelee < 3 || ai_CanIMoveInCombat(oCreature))
         {
@@ -1890,8 +1897,8 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bE
     // Check for cast spell property and add them to the talent list.
     while(GetIsItemPropertyValid(ipProp))
     {
-        if(AI_DEBUG) ai_Debug("0i_talents", "1519", "ItempropertyType(15/80/53): " + IntToString(GetItemPropertyType(ipProp)));
         nIPType = GetItemPropertyType(ipProp);
+        if(AI_DEBUG) ai_Debug("0i_talents", "1895", "ItempropertyType(15/80/53): " + IntToString(nIPType));
         if(bMagicItemUse)
         {
             if(nIPType == ITEM_PROPERTY_CAST_SPELL)
@@ -1946,13 +1953,14 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bE
                 bHasItemImmunity = TRUE;
                 nSpellImmunity = GetItemPropertyCostTableValue(ipProp);
                 nSpellImmunity = StringToInt(Get2DAString("iprp_spellcost", "SpellIndex", nSpellImmunity));
-                //ai_Debug("0i_talents", "1707", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
+                //if(AI_DEBUG) ai_Debug("0i_talents", "1950", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
                 JsonArrayInsertInplace(jImmunity, JsonInt(nSpellImmunity));
             }
             else if(nIPType == ITEM_PROPERTY_HASTE) SetLocalInt(oCreature, sIPHasHasteVarname, TRUE);
             else if(nIPType == ITEM_PROPERTY_IMMUNITY_DAMAGE_TYPE)
             {
                 int nBit, nIpSubType = GetItemPropertySubType(ipProp);
+                if(AI_DEBUG) ai_Debug("0i_talents", "1957", "nIPSubType: " + IntToString(nIpSubType));
                 if(nIpSubType == 0) nBit = DAMAGE_TYPE_BLUDGEONING;
                 else if(nIpSubType == 1) nBit = DAMAGE_TYPE_PIERCING;
                 else if(nIpSubType == 2) nBit = DAMAGE_TYPE_SLASHING;
@@ -2028,6 +2036,7 @@ void ai_SetCreatureTalents(object oCreature, int bMonster)
 {
     if(GetLocalInt(oCreature, AI_TALENTS_SET)) return;
     SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
+    object oModule = GetModule();
     ai_Counter_Start();
     ai_SetCreatureSpellTalents(oCreature, bMonster);
     ai_Counter_End(GetName(oCreature) + ": Spell Talents");
@@ -2036,7 +2045,6 @@ void ai_SetCreatureTalents(object oCreature, int bMonster)
     DeleteLocalJson(oCreature, AI_TALENT_IMMUNITY);
     ai_SetCreatureItemTalents(oCreature, bMonster);
     ai_Counter_End(GetName(oCreature) + ": Item Talents");
-    object oModule = GetModule();
     if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) && GetLocalInt(oModule, AI_RULE_PRESUMMON) && bMonster)
     {
         if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature))
@@ -2205,7 +2213,8 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
     else if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)) return FALSE;
     else if(nItemType == BASE_ITEM_HEALERSKIT)
     {
-        if(!GetLocalInt(GetModule(), AI_RULE_HEALERSKITS)) return FALSE;
+        if(!GetLocalInt(GetModule(), AI_RULE_HEALERSKITS) ||
+           ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF)) return FALSE;
         if(AI_DEBUG) ai_Debug("0i_talents", "1724", "Using " + GetName(oItem) + " nInMelee: " + IntToString(nInMelee) +
                  " targeting: " + GetName(oTarget));
         ActionUseItemOnObject(oItem, GetFirstItemProperty(oItem), oTarget);
@@ -2576,7 +2585,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             float fRange;
             if(nInMelee) fRange = AI_RANGE_MELEE;
             else fRange = ai_GetOffensiveSpellSearchRange(oCreature, nSpell);
-            // Getting lowest fortitude save since most caster would have the lowest.
+            // Get the biggest group we can.
             string sIndex = IntToString(ai_GetHighestMeleeIndexNotInAOE(oCreature));
             oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
             if(!ai_CreatureHasDispelableEffect(oCreature, oTarget)) return FALSE;
@@ -2689,14 +2698,17 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             float fRange;
             if(nInMelee) fRange = AI_RANGE_MELEE;
             else fRange = ai_GetOffensiveSpellSearchRange(oCreature, nSpell);
-            // Getting lowest fortitude save since most caster would have the lowest.
-            oTarget == ai_GetLowestFortitudeSaveTarget(oCreature, fRange);
-            if(!ai_CreatureHasDispelableEffect(oCreature, oTarget)) return FALSE;
-            // Maybe we should do an area of effect instead?
-            int nEnemies = ai_GetNumOfEnemiesInRange(oTarget, 5.0);
-            if(nEnemies > 2)
+            // Lets get a cast as they should have more buffs.
+            oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER, fRange);
+            if(oTarget != OBJECT_INVALID)
             {
-                if(ai_UseTalentAtLocation(oCreature, jTalent, oTarget, nInMelee)) return TRUE;
+                if(!ai_CreatureHasDispelableEffect(oCreature, oTarget)) return FALSE;
+                // Maybe we should do an area of effect instead?
+                int nEnemies = ai_GetNumOfEnemiesInRange(oTarget, 5.0);
+                if(nEnemies > 2)
+                {
+                    if(ai_UseTalentAtLocation(oCreature, jTalent, oTarget, nInMelee)) return TRUE;
+                }
             }
         }
         // Make sure the spell will work on the target.
@@ -2823,7 +2835,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             // Lets not run past an enemy to cast an enhancement unless we have
             // the ability to move in combat, bad tactics!
             float fRange;
-            if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
+            if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
             else
             {
                 fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -2855,7 +2867,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             int nCnt = 1, bCastSpell;
             string sAOEType;
             object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
-            while(oAOE != OBJECT_INVALID && GetDistanceBetween(oCreature, oAOE) <= AI_RANGE_PERCEPTION)
+            while(oAOE != OBJECT_INVALID && GetDistanceBetween(oCreature, oAOE) <= ai_GetPerceptionRange(oCreature))
             {
                 // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
                 sAOEType = GetTag(oAOE);

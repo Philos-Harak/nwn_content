@@ -13,7 +13,7 @@ void main()
 {
     object oPC = GetFirstPC();
     ai_SetupPlayerTarget(oPC);
-    ai_CheckAIRules();
+    ai_SetAIRules();
     ai_StartupPlugins(oPC);
     if(ai_GetIsCharacter(oPC))
     {

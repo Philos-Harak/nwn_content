@@ -4,8 +4,9 @@
 ////////////////////////////////////////////////////////////////////////////////
   Monster OnSpawn script;
   This fires when the creature spawns.
-  Philos AI does not use this in override versions.
-  Included for servers as an example to help add Philos AI to a server.
+  Philos AI does not use this event.
+  Included for servers that want to add Philos AI to the OnSpawn script instead
+  of using the OnHeartbeat to setup the monster.
 ////////////////////////////////////////////////////////////////////////////////
  * Default OnSpawn handler with XP1 revisions.
  * This corresponds to and produces the same results
@@ -33,7 +34,6 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_module"
 #include "x0_i0_anims"
-//#include "x0_i0_walkway" - in x0_i0_anims
 #include "x0_i0_treasure"
 #include "x2_inc_switches"
 void main()
@@ -232,6 +232,14 @@ void main()
     // * attacking anew.
     // SetLocalString(oCreature, AI_DEFAULT_SCRIPT, "ai_ambusher");
 
+    // Philos AI - This is valid to use.
+    // *
+    // * Cowardly
+    // * Cowardly creatures will attempt to flee
+    // * attackers.
+    // SetLocalString(oCreature, AI_DEFAULT_SCRIPT, "ai_coward");
+
+
     // * Philos AI - This does not work.
     // *
     // **** Escape Commands ***** //
@@ -374,12 +382,55 @@ void main()
         SetName(oCreature,sName);
     }
 //****************************  ADDED AI CODE  *********************************
+    object oModule = GetModule();
+    SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
+    // We change this script so we can setup permanent summons on/off.
+    // If you don't use this you may remove the next 3 lines 389 - 391.
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    // Do changes before we adjust anything on the creature via Json!
+    // If you don't use perception change, permanent corpses, permanent summons
+    // you may remove the next line 395.
+    oCreature = ai_ChangeMonster(oCreature, oModule);
     ai_SetListeningPatterns(oCreature);
     ai_SetCreatureAIScript(oCreature);
-    ai_SetMonsterEventScripts(oCreature);
-    ai_SetAura(oCreature);
     ai_SetNormalAppearance(oCreature);
-    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
-    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
+    ai_SetAura(oCreature);
+    // Used to setup healing in & out of combat for monsters. See 0i_constants.
+    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, AI_MONSTER_HEAL_IN_COMBAT_CHANCE);
+    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, AI_MONSTER_HEAL_OUT_COMBAT_CHANCE);
+    // If you don't use increased hitpoints you may remove the next 9 lines 404 - 412.
+    int nMonsterHpIncrease = GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP);
+    if(nMonsterHpIncrease)
+    {
+        int nHp = GetMaxHitPoints(oCreature);
+        nHp = (nHp * nMonsterHpIncrease) / 100;
+        effect eHp = EffectTemporaryHitpoints(nHp);
+        eHp = SupernaturalEffect(eHp);
+        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eHp, oCreature);
+    }
+    // After setting the monster lets see if we should copy it.
+    // If you don't use increased monsters you may remove the next 18 lines 415 - 433.
+    float fMonsterIncrease = GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS);
+    if(GetIsEncounterCreature(oCreature) && fMonsterIncrease > 0.0)
+    {
+        object oNewCreature;
+        int nMonsterIncrease;
+        float fMonsterCounter = GetLocalFloat(oModule, "AI_MONSTER_COUNTER");
+        fMonsterCounter += fMonsterIncrease;
+        if(fMonsterCounter >= 1.0)
+        {
+           nMonsterIncrease = FloatToInt(fMonsterCounter);
+           fMonsterCounter = fMonsterCounter - IntToFloat(nMonsterIncrease);
+        }
+        SetLocalFloat(oModule, "AI_MONSTER_COUNTER", fMonsterCounter);
+        while(nMonsterIncrease > 0)
+        {
+            CopyObject(oCreature, GetLocation(oCreature), OBJECT_INVALID, "", TRUE);
+            nMonsterIncrease --;
+        }
+    }
 //****************************  ADDED AI CODE  *********************************
 }
+

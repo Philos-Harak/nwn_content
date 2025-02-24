@@ -19,7 +19,7 @@ void main()
             oAssociate = GetAssociate(nIndex, oCreature);
             if(oAssociate != OBJECT_INVALID)
             {
-                SetIsDestroyable(FALSE, FALSE, FALSE, oAssociate);
+                SetIsDestroyable(FALSE, FALSE, FALSE);
                 DelayCommand(0.1, ChangeToStandardFaction(oAssociate, STANDARD_FACTION_HOSTILE));
             }
         }
@@ -27,3 +27,4 @@ void main()
     ai_ClearCombatState(oCreature);
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }
+

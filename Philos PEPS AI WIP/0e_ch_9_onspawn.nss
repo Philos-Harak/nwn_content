@@ -19,6 +19,7 @@
 // Created On: Nov 19, 2001
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_module"
+#include "0i_menus"
 //#include "X0_INC_HENAI"
 void main()
 {
@@ -114,29 +115,51 @@ void main()
 
 //****************************  ADDED AI CODE  *****************************
     object oCreature = OBJECT_SELF;
-    object oMaster = GetMaster(oCreature);
-    // Added code to allow for permanent associates in the battle!
-    int nAssociateType = GetAssociateType(oCreature);
-    if((nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION ||
-       nAssociateType == ASSOCIATE_TYPE_FAMILIAR ||
-       nAssociateType == ASSOCIATE_TYPE_SUMMONED) &&
-       !ai_GetIsCharacter(oMaster) && GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
-    {
-        SetIsDestroyable (FALSE, FALSE, TRUE);
-    }
+    SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
+    // We change this script so we can setup permanent summons on/off.
+    // If you don't use this you may remove the next 3 lines 122 - 124.
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+    // Initialize Associate modes for basic use.
     ai_SetListeningPatterns(oCreature);
-    ai_SetAssociateEventScripts(oCreature);
-    ai_SetAssociateAIScript(oCreature, TRUE);
+    ai_SetNormalAppearance(oCreature);
+    ai_SetAssociateAIScript(oCreature, FALSE);
     ai_SetAura(oCreature);
-    // Lets make sure they don't start patrolling. That should be selected each time.
-    ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
+    if(GetLocalInt(GetModule(), AI_RULE_PARTY_SCALE)) ai_CheckXPPartyScale(oCreature);
     // Bioware summoned shadows are not incorporeal, also set the ai code.
     if (GetTag(OBJECT_SELF) == "NW_S_SHADOW")
     {
         SetLocalInt(OBJECT_SELF, "X2_L_IS_INCORPOREAL", TRUE);
         SetLocalString(OBJECT_SELF, AI_DEFAULT_SCRIPT, "ai_shadow");
     }
+    // ***** Code for Henchman data and menus *****
+    object oMaster = GetMaster(oCreature);
+    if(ai_GetIsCharacter(oMaster))
+    {
+        string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
+        ai_CheckAssociateData(oMaster, oCreature, sAssociateType);
+        if(AI_HENCHMAN_WIDGET)
+        {
+            // This keeps widgets from disappearing and reappearing.
+            int nUiToken = NuiFindWindow(oMaster, sAssociateType + AI_WIDGET_NUI);
+            if(nUiToken)
+            {
+                json jData = NuiGetUserData(oMaster, nUiToken);
+                object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
+                if(oAssociate != oCreature) NuiDestroy(oMaster, nUiToken);
+            }
+            else
+            {
+                if(!ai_GetWidgetButton(oMaster, BTN_WIDGET_OFF, oCreature, sAssociateType))
+                {
+                    ai_CreateWidgetNUI(oMaster, oCreature);
+                }
+            }
+        }
+    }
 //****************************  ADDED AI CODE  *****************************
 }
+
 
 

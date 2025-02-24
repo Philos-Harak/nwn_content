@@ -44,13 +44,9 @@ int ai_IsCureSpell(int nSpell);
 int ai_IsInflictSpell(int nSpell);
 // Returns TRUE if nSpell is an area of effect spell.
 int ai_IsAreaOfEffectSpell(int nSpell);
-// Returns TRUE if nSpell is ready to cast.
-// nSpell is the spell to find.
-// nClass is the class that the spell was readied by.
-// nLevel the level of the spell.
-// nMetamagic is if it has metamagic on it.
-// nDomain is if it is a domain spell.
-int ai_GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetamagic, int nDomain);
+// Returns 1(TRUE) if oAssociate is a spellcaster.
+// Rturns 2(TRUE) if oAssociate is a memorizing spellcaster.
+int ai_GetIsSpellCaster(object oAssociate);
 // Returns TRUE if oCreature is immune to nSpells effects.
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell);
 // Returns the ranged of nSpell from the spells.2da(Column "Range").
@@ -302,34 +298,20 @@ int ai_IsAreaOfEffectSpell(int nSpell)
     }
     return FALSE;
 }
-int ai_GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetamagic, int nDomain)
+int ai_GetIsSpellCaster(object oAssociate)
 {
-    int nIndex, nMaxIndex, nMSpell, nMmSpell, nDSpell;
-    if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
+    int nIndex, nSpellCaster, nClass;
+    for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
     {
-        nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
-        while(nIndex < nMaxIndex)
+        nClass = GetClassByPosition(nIndex, oAssociate);
+        if(nClass == CLASS_TYPE_INVALID) return nSpellCaster;
+        if(Get2DAString("classes", "SpellCaster", nClass) == "1")
         {
-            nMSpell = GetMemorizedSpellId(oCaster, nClass, nLevel, nIndex);
-            if(nSpell == nMSpell)
-            {
-                nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
-                nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
-                if(nMmSpell == nMetamagic &&
-                 ((nDomain > 0 && nDSpell == TRUE) || (nDomain == 0 && nDSpell == FALSE)))
-                {
-                    if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex)) return TRUE;
-                }
-            }
-            nIndex++;
+            if(Get2DAString("classes", "MemorizesSpells", nClass) == "1") return 2;
+            else nSpellCaster = 1;
         }
-        return FALSE;
     }
-    else
-    {
-        if(GetKnownSpellCount(oCaster, nClass, nLevel) > 0) return TRUE;
-    }
-    return FALSE;
+    return nSpellCaster;
 }
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
@@ -338,40 +320,40 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     {
         if(AI_DEBUG) ai_Debug("0i_spells", "290", "Checking spell immunity type(" + sIType + ").");
         if(sIType == "Death" && GetIsImmune(oCreature, IMMUNITY_TYPE_DEATH)) return TRUE;
-        if(sIType == "Level_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_NEGATIVE_LEVEL)) return TRUE;
-        if(sIType == "Ability_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_ABILITY_DECREASE)) return TRUE;
-        if(sIType == "Poison" && GetIsImmune(oCreature, IMMUNITY_TYPE_POISON)) return TRUE;
-        if(sIType == "Disease" && GetIsImmune(oCreature, IMMUNITY_TYPE_DISEASE)) return TRUE;
-        if(sIType == "Curse" && GetIsImmune(oCreature, IMMUNITY_TYPE_CURSED)) return TRUE;
-        if(sIType == "Mind_Affecting" && GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS)) return TRUE;
-        if(sIType == "Petrification" && ai_IsImmuneToPetrification(oCaster, oCreature)) return TRUE;
-        if(sIType == "Fear" &&
+        else if(sIType == "Level_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_NEGATIVE_LEVEL)) return TRUE;
+        else if(sIType == "Ability_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_ABILITY_DECREASE)) return TRUE;
+        else if(sIType == "Poison" && GetIsImmune(oCreature, IMMUNITY_TYPE_POISON)) return TRUE;
+        else if(sIType == "Disease" && GetIsImmune(oCreature, IMMUNITY_TYPE_DISEASE)) return TRUE;
+        else if(sIType == "Curse" && GetIsImmune(oCreature, IMMUNITY_TYPE_CURSED)) return TRUE;
+        else if(sIType == "Mind_Affecting" && GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS)) return TRUE;
+        else if(sIType == "Petrification" && ai_IsImmuneToPetrification(oCaster, oCreature)) return TRUE;
+        else if(sIType == "Fear" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_FEAR) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Sleep" &&
+        else if(sIType == "Sleep" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_SLEEP) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Paralysis" &&
+        else if(sIType == "Paralysis" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_PARALYSIS) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Domination" &&
+        else if(sIType == "Domination" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DOMINATE) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Confusion" &&
+        else if(sIType == "Confusion" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CONFUSED) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Blindness" &&
+        else if(sIType == "Blindness" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_BLINDNESS) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Dazed" &&
+        else if(sIType == "Dazed" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DAZED) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
-        if(sIType == "Charm" &&
+        else if(sIType == "Charm" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CHARM) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
         // Check for damage immunities.
         // Negative damage does not work on undead!
-        if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
+        else if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
         {
             if(AI_DEBUG) ai_Debug("0i_spell", "325", "Undead are immune to Negative energy!");
             return TRUE;
@@ -387,7 +369,9 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
             }
             // Check for resistances and immunities. Treat resistance as immune.
             int nIPResist = GetLocalInt(oCreature, sIPResistVarname);
-            int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) & nIPResist;
+            if(AI_DEBUG) ai_Debug("0i_spell", "372", "nIPResist:" + IntToString(nIPResist));
+            int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) | nIPResist;
+            if(AI_DEBUG) ai_Debug("0i_spell", "374", "nIPImmune:" + IntToString(nIPImmune));
             if(nIPImmune > 0)
             {
                 if(AI_DEBUG) ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
@@ -399,7 +383,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
             }
         }
     }
-    int nLevel = StringToInt(Get2DAString("ai_spells", "Innate", nSpell));
+    int nLevel = StringToInt(Get2DAString("spells", "Innate", nSpell));
     // Globe spells should be checked...
     if((GetHasSpellEffect(SPELL_MINOR_GLOBE_OF_INVULNERABILITY, oCreature) ||
         GetHasSpellEffect(SPELL_GREATER_SHADOW_CONJURATION_MINOR_GLOBE, oCreature)) &&
@@ -424,7 +408,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 }
 float ai_GetSpellRange(int nSpell)
 {
-    string sRange = Get2DAString("ai_spells", "Range", nSpell);
+    string sRange = Get2DAString("spells", "Range", nSpell);
     if(sRange == "S") return AI_SHORT_DISTANCE;
     else if(sRange == "M") return AI_MEDIUM_DISTANCE;
     else if(sRange == "L") return AI_LONG_DISTANCE;
@@ -433,22 +417,25 @@ float ai_GetSpellRange(int nSpell)
 }
 int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
 {
-    int bSpell, nDispelChance;
+    int nSpellID, nLastSpellID, bSpell, nDispelChance;
     // Cycle through the targets effects.
     effect eEffect = GetFirstEffect(oCreature);
+    if(AI_DEBUG) ai_Debug("0i_spells", "423", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", GetEffectSpellId(eEffect)))) +
+                     " oCreature: " + GetName(oCreature));
     while(GetIsEffectValid(eEffect))
     {
-        int nEffectID = GetEffectSpellId(eEffect);
-        // If the effects originated from me(i.e., I cast
-        // a disabling effect on you. Then I will not chance using dispel.
-        if(GetEffectCreator(eEffect) == oCaster) return FALSE;
+        nSpellID = GetEffectSpellId(eEffect);
         // -1 is not a spell.
-        else if(nEffectID > -1)
+        if(AI_DEBUG) ai_Debug("0i_spells", "429", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpellID))));
+        if(nSpellID > -1 && nLastSpellID != nSpellID)
         {
             // We check if the spell is Hostile(-1) or Helpful(+1).
-            if(Get2DAString("ai_spells", "HostileSetting", nEffectID) == "1") nDispelChance--;
+            if(Get2DAString("ai_spells", "HostileSetting", nSpellID) == "1") nDispelChance--;
             else nDispelChance++;
+            if(AI_DEBUG) ai_Debug("0i_spells", "435", "HostileSetting: " + Get2DAString("ai_spells", "HostileSetting", nSpellID) +
+                                   " nDispelChance: " + IntToString(nDispelChance));
         }
+        nLastSpellID = nSpellID;
         eEffect = GetNextEffect(oCreature);
     }
     // if the target has more Helpful spells than harmful spells effecting them
@@ -576,7 +563,7 @@ void ai_CheckCreatureSpecialAbilities(object oCreature)
 }
 int ai_IsNotSilenced(object oCreature, int nSpell)
 {
-    string sComponents = Get2DAString("ai_spells", "VS", nSpell);
+    string sComponents = Get2DAString("spells", "VS", nSpell);
     return (sComponents == "s" || !ai_GetHasEffectType(oCreature, EFFECT_TYPE_SILENCE));
 }
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot)
@@ -735,6 +722,13 @@ int ai_CanItemBeBuffed(int nSpell, object oTarget)
 // In "Buff_Target" column this is value 1-6(STR, DEX, CON, INT, WIS, CHA) in the "ai_spells.2da".
 object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbilityScore, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, nAbilityScore + 1)) return oMaster;
+    }
     int nCntr = 1, nAB, nHighAB, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -754,6 +748,13 @@ object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbility
 // In "Buff_Target" column this is value 7 in the "ai_spells.2da".
 object ai_BuffLowestACTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    object oMaster = GetMaster();
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 7)) return oMaster;
+    }
     int nCntr = 1, nAC, nLowAC = 100, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -774,6 +775,13 @@ object ai_BuffLowestACTarget(object oCaster, int nSpell, string sBuffGroup, floa
 // In "Buff_Target" column this is value 8 in the "ai_spells.2da".
 object ai_BuffLowestACWithOutACBonus(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 8)) return oMaster;
+    }
     int nCntr = 1, nAC, nLowAC = 50, nTarget;
     object oItem, oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -798,6 +806,13 @@ object ai_BuffLowestACWithOutACBonus(object oCaster, int nSpell, string sBuffGro
 // In "Buff_Target" column this is value 9 in the "ai_spells.2da".
 object ai_BuffHighestAttackTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 9)) return oMaster;
+    }
     int nCntr = 1, nAtk, nHighAtk, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -818,6 +833,12 @@ object ai_BuffHighestAttackTarget(object oCaster, int nSpell, string sBuffGroup,
 // In "Buff_Target" column this is value 10 in the "ai_spells.2da".
 object ai_BuffMostWoundedTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup)) return oMaster;
+    }
     int nCntr = 1, nDmg, nMostDmg, nHp, nLowHp = 10000, nTarget, nHpTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -840,6 +861,13 @@ object ai_BuffMostWoundedTarget(object oCaster, int nSpell, string sBuffGroup, f
 // In "Buff_Target" column this is value 11 in the "ai_spells.2da".
 object ai_BuffLowestFortitudeSaveTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 11)) return oMaster;
+    }
     int nCntr = 1, nSave, nLowSave = 100, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -859,6 +887,13 @@ object ai_BuffLowestFortitudeSaveTarget(object oCaster, int nSpell, string sBuff
 // In "Buff_Target" column this is value 12 in the "ai_spells.2da".
 object ai_BuffLowestReflexSaveTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 12)) return oMaster;
+    }
     int nCntr = 1, nSave, nLowSave = 100, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -878,6 +913,13 @@ object ai_BuffLowestReflexSaveTarget(object oCaster, int nSpell, string sBuffGro
 // In "Buff_Target" column this is value 13 in the "ai_spells.2da".
 object ai_BuffLowestWillSaveTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 13)) return oMaster;
+    }
     int nCntr = 1, nSave, nLowSave = 100, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -897,6 +939,13 @@ object ai_BuffLowestWillSaveTarget(object oCaster, int nSpell, string sBuffGroup
 // In "Buff_Target" column this is value 14 in the "ai_spells.2da".
 object ai_BuffLowestSaveTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(!GetHasSpellEffect(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 14)) return oMaster;
+    }
     int nCntr = 1, nSave, nLowSave = 200, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -916,6 +965,12 @@ object ai_BuffLowestSaveTarget(object oCaster, int nSpell, string sBuffGroup, fl
 // In "Buff_Target" column this is value 15 in the "ai_spells.2da".
 object ai_BuffItemTarget(object oCaster, int nSpell, string sBuffGroup, float fRange, string sTargetType = "AI_ALLY_TARGET_")
 {
+    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER))
+    {
+        object oMaster = GetMaster();
+        if(ai_CanItemBeBuffed(nSpell, oMaster) &&
+           ai_SpellGroupNotCast(oMaster, sBuffGroup)) return oMaster;
+    }
     int nCntr = 1, nAtk, nHighAtk = -9999, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
@@ -936,7 +991,6 @@ object ai_BuffItemTarget(object oCaster, int nSpell, string sBuffGroup, float fR
 object ai_GetBuffTarget(object oCaster, int nSpell)
 {
     object oTarget = OBJECT_INVALID;
-    if(ai_GetMagicMode(oCaster, AI_MAGIC_BUFF_MASTER)) return GetMaster(oCaster);
     string sGroup = Get2DAString("ai_spells", "Buff_Group", nSpell);
     if(sGroup == "") sGroup = IntToString(nSpell);
     string sBuffGroup = "AI_USED_SPELL_GROUP_" + sGroup;
@@ -1098,6 +1152,7 @@ void ai_SetupAllyTargets(object oCaster, object oPC)
     SetLocalObject(oCaster, "AI_ALLY_TARGET_7", GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC));
     SetLocalObject(oCaster, "AI_ALLY_TARGET_8", GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC));
     SetLocalObject(oCaster, "AI_ALLY_TARGET_9", GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC));
+    SetLocalObject(oCaster, "AI_ALLY_TARGET_10", GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC));
     nCntr = 1;
     //while(nCntr < 10)
     //{
@@ -1138,6 +1193,8 @@ void ai_SetupAllyHealingTargets(object oCaster, object oPC)
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+        if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
     }
     int nCntr = 1;
     while(nCntr <= 10)
@@ -1150,7 +1207,7 @@ void ai_ClearBuffTargets(object oCaster, string sVariable)
 {
     if(AI_DEBUG) ai_Debug("0i_spells", "1106", GetName(oCaster) + " is clearing " + sVariable + " targets.");
     int nIndex;
-    for(nIndex = 1; nIndex < 10; nIndex++)
+    for(nIndex = 1; nIndex < 11; nIndex++)
     {
         DeleteLocalObject (oCaster, sVariable + IntToString(nIndex));
     }
@@ -1241,7 +1298,7 @@ void ai_CheckForPerDayItems(object oCreature, object oPC, int nBuffType)
     // Clean up our variables. Must be done here since these are actions!
     int nCntr;
     object oTarget;
-    while(nCntr < 10)
+    while(nCntr < 11)
     {
         oTarget = GetLocalObject(oCreature, "AI_ALLY_TARGET_" + IntToString(nCntr));
         if(oTarget != OBJECT_INVALID)
@@ -1642,6 +1699,7 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
 }
 int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
 {
+    if(ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE)) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_spells", "1643", GetName(oCreature) + " is looking to cast a spontaneous cure spell.");
     if(!GetLevelByClass(CLASS_TYPE_CLERIC, oCreature)) return FALSE;
     int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
@@ -1841,7 +1899,7 @@ int ai_CastInMelee(object oCreature, int nSpell, int nInMelee)
     if(nInMelee > 0 && !GetHasFeat(FEAT_EPIC_IMPROVED_COMBAT_CASTING, oCreature))
     {
         // Using DC 19 so we will use with up to a 50% failure.
-        int nSpellLevel = StringToInt(Get2DAString("ai_spells", "Innate", nSpell));
+        int nSpellLevel = StringToInt(Get2DAString("spells", "Innate", nSpell));
         int nDC = AI_DEFENSIVE_CASTING_DC + nSpellLevel;
         int nRoll = Random(AI_DEFENSIVE_CASTING_DIE) + 1;
         int nConcentration = GetSkillRank(SKILL_CONCENTRATION, oCreature);
@@ -1933,5 +1991,22 @@ void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location 
         AssignCommand(oAssociate, ActionCastSpellAtLocation(nSpell, lLocation, nMetaMagic, FALSE, 0, FALSE, -1, FALSE, nDomain));
     }
     else AssignCommand(oAssociate, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain));
+}
+void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lLocation)
+{
+    int nIndex = GetLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    DeleteLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    json jWidget = JsonArrayGet(jSpells, 2);
+    json jFeat = JsonArrayGet(jWidget, nIndex);
+    int nFeat = JsonGetInt(JsonArrayGet(jFeat, 0));
+    if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+    if(!GetIsObjectValid(oTarget))
+    {
+        AssignCommand(oAssociate, ActionUseFeat(nFeat, OBJECT_INVALID, 0, lLocation));
+    }
+    else AssignCommand(oAssociate, ActionUseFeat(nFeat, oTarget));
 }
 

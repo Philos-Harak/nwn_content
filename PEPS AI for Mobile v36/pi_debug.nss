@@ -102,7 +102,25 @@ void main()
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 11 ******************************************************************* 500 / 385
+    // Row 11 ****************************************************************** 500 / 385
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Create Tomi", "btn_create_tomi", 130.0f, 20.0f, -1.0, "btn_create_tomi_tooltip");
+    CreateButton(jRow, "Create Linu", "btn_create_linu", 130.0f, 20.0f, -1.0, "btn_create_linu_tooltip");
+    CreateButton(jRow, "Create Daelan", "btn_create_daelan", 130.0f, 20.0f, -1.0, "btn_create_daelan_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add group row to the group column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 12 ****************************************************************** 500 / 385
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Create Boddy", "btn_create_boddy", 130.0f, 20.0f, -1.0, "btn_create_boddy_tooltip");
+    CreateButton(jRow, "Create Grimgnaw", "btn_create_grim", 130.0f, 20.0f, -1.0, "btn_create_grim_tooltip");
+    CreateButton(jRow, "Create Sharwynn", "btn_create_shar", 130.0f, 20.0f, -1.0, "btn_create_shar_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add group row to the group column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 13 ******************************************************************* 500 / 385
     jRow = JsonArray();
     // Make the debug creature group.
     json jGroupRow = JsonArray();
@@ -113,7 +131,7 @@ void main()
     CreateButton(jGroupRow, "Clear Debug", "btn_clear_debug", 120.0f, 20.0f, -1.0, "btn_clear_debug_tooltip");
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    float fHeight = 385.0;
+    float fHeight = 431.0;
     // Group Row 2 ******************************************************************* 500 / ---
     object oDebugCreature = GetLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT");
     if(GetIsObjectValid(oDebugCreature))
@@ -172,12 +190,28 @@ void main()
     NuiSetBind(oPC, nToken, "cmb_var_type_event", JsonBool(TRUE));
     NuiSetBindWatch(oPC, nToken, "cmb_var_type_selected", TRUE);
     // Row 9
+    NuiSetBind(oPC, nToken, "txt_var_name_event", JsonBool(TRUE));
     NuiSetBindWatch (oPC, nToken, "txt_var_name", TRUE);
     NuiSetBind(oPC, nToken, "txt_var_name_tooltip", JsonString("  Name of the variable we are setting."));
     // Row 10
+    NuiSetBind(oPC, nToken, "txt_var_value_event", JsonBool(TRUE));
     NuiSetBindWatch (oPC, nToken, "txt_var_value", TRUE);
     NuiSetBind(oPC, nToken, "txt_var_value_tooltip", JsonString("  The value to set on the variable, Objects/Locations will need to be selected."));
     // Row 11
+    NuiSetBind(oPC, nToken, "btn_create_tomi_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_tomi_tooltip", JsonString("  Creates Tomi Undergallows."));
+    NuiSetBind(oPC, nToken, "btn_create_linu_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_linu_tooltip", JsonString("  Creates Linu La'neral."));
+    NuiSetBind(oPC, nToken, "btn_create_daelan_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_daelan_tooltip", JsonString("  Creates Daelan Red Tiger."));
+    // Row 12
+    NuiSetBind(oPC, nToken, "btn_create_boddy_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_boddy_tooltip", JsonString("  Creates Boddyknock Glinckle."));
+    NuiSetBind(oPC, nToken, "btn_create_grim_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_grim_tooltip", JsonString("  Creates Grimgnaw."));
+    NuiSetBind(oPC, nToken, "btn_create_shar_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_create_shar_tooltip", JsonString("  Creates Sharwynn."));
+    // Row 13
     NuiSetBind(oPC, nToken, "btn_debug_creature_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_debug_creature_tooltip", JsonString("  Sets target creature to send AI debug to the log file."));
     NuiSetBind(oPC, nToken, "btn_clear_debug_event", JsonBool(TRUE));
@@ -185,8 +219,19 @@ void main()
 }
 int StartingUp(object oPC)
 {
+    if(GetLocalInt(oPC, AI_ADD_PLUGIN))
+    {
+        json jPlugin = JsonArray();
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_debug"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("Debug Menu"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_tagsearch"));
+        json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);
+        jPlugins = JsonArrayInsert(jPlugins, jPlugin);
+        SetLocalJson(oPC, AI_JSON_PLUGINS, jPlugin);
+        SetLocalInt(oPC, AI_PLUGIN_SET, TRUE);
+        return TRUE;
+    }
     if(!GetLocalInt(oPC, AI_STARTING_UP)) return FALSE;
     return TRUE;
 }
-
-

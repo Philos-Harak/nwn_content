@@ -24,7 +24,7 @@ const string AI_DM_TABLE = "DM_TABLE";
 #include "0i_messages"
 // Sets PEPS RULES from the database to the module.
 // Creates default rules if they do not exist.
-void ai_CheckAIRules();
+void ai_SetAIRules();
 // Returns TRUE if oCreature is controlled by a player.
 int ai_GetIsCharacter(object oCreature);
 // Returns TRUE if oCreature is controlled by a dungeon master.
@@ -109,15 +109,18 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
 // Checks DM's local data and if none is found will initizlize or load the
 // correct data for oPlayer.
 void ai_CheckDMData(object oPlayer);
+// Adds to jPlugins via "inplace" functions after checking if the plugin can be installed.
+json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript);
 // Updates the players Plugin list and saves to the database.
 json ai_UpdatePluginsForPC(object oPC, string sAssociateType);
 // Updates the DM's Plugin list and saves to the database.
 json ai_UpdatePluginsForDM (object oPC);
 // Runs all plugins that are loaded into the database.
 void ai_StartupPlugins(object oPC);
-void ai_CheckAIRules()
+void ai_SetAIRules()
 {
     object oModule = GetModule();
+    SetLocalInt(oModule, AI_RULES_SET, TRUE);
     ai_CheckCampaignDataAndInitialize();
     json jRules = ai_GetCampaignDbJson("rules");
     if(JsonGetType(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS)) == JSON_TYPE_NULL)
@@ -168,12 +171,11 @@ void ai_CheckAIRules()
         SetLocalInt(oModule, AI_RULE_WANDER, AI_WANDER);
         JsonObjectSetInplace(jRules, AI_RULE_WANDER, JsonInt(AI_WANDER));
         // Increase the number of encounter creatures.
-        SetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS, 0);
-        JsonObjectSetInplace(jRules, AI_INCREASE_ENC_MONSTERS, JsonInt(0));
+        SetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS, 0.0);
+        JsonObjectSetInplace(jRules, AI_INCREASE_ENC_MONSTERS, JsonFloat(0.0));
         // Increase all monsters hitpoints by this percentage.
         SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, 0);
         JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(0));
-        ai_SetCampaignDbJson("rules", jRules);
         // Monster's perception distance.
         SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, AI_PERCEPTION_DISTANCE);
         JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_PERCEPTION_DISTANCE));
@@ -181,6 +183,22 @@ void ai_CheckAIRules()
         int nMaxHenchmen = GetMaxHenchmen();
         SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nMaxHenchmen);
         JsonObjectSetInplace(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
+        // Monster AI's distance they can wander away from their spawn point.
+        SetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE, AI_WANDER_DISTANCE);
+        JsonObjectSetInplace(jRules, AI_RULE_WANDER_DISTANCE, JsonFloat(AI_WANDER_DISTANCE));
+        // Monsters will open doors when wandering around and not in combat.
+        SetLocalInt(oModule, AI_RULE_OPEN_DOORS, AI_WANDER);
+        JsonObjectSetInplace(jRules, AI_RULE_OPEN_DOORS, JsonInt(AI_OPEN_DOORS));
+        // If the modules default XP has not been set then we do it here.
+        int nDefaultXP = GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE);
+        if(nDefaultXP == 0)
+        {
+            int nValue = GetModuleXPScale();
+            if(nValue != 0) SetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE, nValue);
+        }
+        // Variable name set to allow the game to regulate experience based on party size.
+        SetLocalInt(oModule, AI_RULE_PARTY_SCALE, AI_PARTY_SCALE);
+        JsonObjectSetInplace(jRules, AI_RULE_PARTY_SCALE, JsonInt(AI_PARTY_SCALE));
         ai_SetCampaignDbJson("rules", jRules);
     }
     else
@@ -230,10 +248,10 @@ void ai_CheckAIRules()
         // Monsters will wander around when not in combat.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_WANDER));
         SetLocalInt(oModule, AI_RULE_WANDER, bValue);
-        // Monsters will wander around when not in combat.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_ENC_MONSTERS));
-        SetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS, bValue);
-        // Monsters will wander around when not in combat.
+        // Increase the number of encounter creatures.
+        fValue = JsonGetFloat(JsonObjectGet(jRules, AI_INCREASE_ENC_MONSTERS));
+        SetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS, fValue);
+        // Increase all monsters hitpoints by this percentage.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_MONSTERS_HP));
         SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, bValue);
         // Monster's perception distance.
@@ -245,6 +263,31 @@ void ai_CheckAIRules()
         if(bValue == 0) bValue = GetMaxHenchmen();
         else SetMaxHenchmen(bValue);
         SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, bValue);
+        // Monster AI's wander distance from their spawn point.
+        fValue = JsonGetFloat(JsonObjectGet(jRules, AI_RULE_WANDER_DISTANCE));
+        SetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE, fValue);
+        // Monsters will open doors while wandering around and not in combat.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_OPEN_DOORS));
+        SetLocalInt(oModule, AI_RULE_OPEN_DOORS, bValue);
+        // If the modules default XP has not been set then we do it here.
+        int nDefaultXP = GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE);
+        if(nDefaultXP == 0)
+        {
+            bValue = GetModuleXPScale();
+            if(bValue != 0) SetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE, bValue);
+        }
+        // Variable name set to allow the game to regulate experience based on party size.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PARTY_SCALE));
+        if(bValue)
+        {
+            int nBasePartyXP = GetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP);
+            if(nBasePartyXP == 0)
+            {
+                nDefaultXP = GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE);
+                SetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP, nDefaultXP);
+            }
+        }
+        SetLocalInt(oModule, AI_RULE_PARTY_SCALE, bValue);
    }
 }
 int ai_GetIsCharacter(object oCreature)
@@ -547,13 +590,13 @@ void ai_CheckDMDataTableAndCreateTable()
 void ai_InitializeDMData(string sName)
 {
     string sQuery = "INSERT INTO " + AI_DM_TABLE + "(name, buttons, plugins, " +
-                    "location, options, saveslots) " +
-                    "VALUES(@name, @buttons, @plugins, @location, @options, @saveslots);";
+                    "locations, options, saveslots) " +
+                    "VALUES(@name, @buttons, @plugins, @locations, @options, @saveslots);";
     sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
     SqlBindString(sql, "@name", sName);
     SqlBindJson(sql, "@buttons", JsonArray());
     SqlBindJson(sql, "@plugins", JsonArray());
-    SqlBindJson(sql, "@location", JsonObject());
+    SqlBindJson(sql, "@locations", JsonObject());
     SqlBindJson(sql, "@options", JsonObject());
     SqlBindJson(sql, "@saveslots", JsonObject());
     SqlStep(sql);
@@ -645,6 +688,7 @@ object ai_GetAssociateByStringType(object oPlayer, string sAssociateType)
     else if (sAssociateType == "familiar") return GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPlayer);
     else if (sAssociateType == "companion") return GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPlayer);
     else if (sAssociateType == "summons") return GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPlayer);
+    else if (sAssociateType == "dominated") return GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPlayer);
     else return GetNearestObjectByTag(sAssociateType, oPlayer);
     return OBJECT_INVALID;
 }
@@ -655,6 +699,7 @@ string ai_GetAssociateType(object oPlayer, object oAssociate)
     if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) return "companion";
     else if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) return "familiar";
     else if(nAssociateType == ASSOCIATE_TYPE_SUMMONED) return "summons";
+    else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) return "dominated";
     else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN) return GetTag(oAssociate);
     return "";
 }
@@ -720,6 +765,7 @@ json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
     {
         json jReturn = SqlGetJson(sql, 0);
         //ai_Debug("0i_main", "646", JsonDump(jReturn, 1));
+        if(JsonGetType(jReturn) == JSON_TYPE_NULL) return JsonArray();
         return jReturn;
     }
     else return JsonNull();
@@ -777,8 +823,11 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     SetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE, 20.0);
     jAIData = JsonArrayInsert(jAIData, JsonFloat(3.0));  // 6 - Associate Distance.
     SetLocalFloat(oAssociate, AI_FOLLOW_RANGE, 3.0);
+    // This can be replaced as it is not used in the database.
+    // We keep it for now as we don't want to move other data.
     jAIData = JsonArrayInsert(jAIData, JsonInt(11));     // 7 - Associate Perception DistanceDistance.
     SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, 11);
+    SetLocalFloat(oAssociate, AI_PERCEPTION_RANGE, 20.0);
     jAIData = JsonArrayInsert(jAIData, JsonString(""));  // 8 - Associate Combat Tactics.
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
@@ -818,7 +867,6 @@ void ai_SetupLocations(object oPlayer, object oAssociate, string sAssociateType)
     jNUI = JsonObjectSet(jLocations, "x", JsonFloat(1.0));
     jNUI = JsonObjectSet(jLocations, "y", JsonFloat(1.0));
     jLocations = JsonObjectSet(jLocations, AI_WIDGET_NUI, jNUI);
-    WriteTimestampedLogEntry("0i_main, 802 " + GetName(oAssociate) + "jLocations: " + JsonDump(jLocations));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_TABLE);
 }
 void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateType)
@@ -833,15 +881,91 @@ void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateT
     // These are pulled straight from the database.
     ai_SetupLocations(oPlayer, oAssociate, sAssociateType);
 }
+void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType)
+{
+    // ********** Modes **********
+    json jModes = JsonArray();
+    // AI Modes (0).
+    int nValue = GetLocalInt(oAssociate, sAIModeVarname);
+    jModes = JsonArrayInsert(jModes, JsonInt(nValue));
+    // Magic Modes (1).
+    nValue = GetLocalInt(oAssociate, sMagicModeVarname);
+    jModes = JsonArrayInsert(jModes, JsonInt(nValue));
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes, AI_TABLE);
+    // ********** Buttons **********
+    json jButtons = JsonArray();
+    // Command buttons (0).
+    nValue = GetLocalInt(oAssociate, sWidgetButtonsVarname + sAssociateType);
+    jButtons = JsonArrayInsert(jButtons, JsonInt(nValue));
+    // AI buttons Group 1 (1).
+    nValue = GetLocalInt(oAssociate, sAIButtonsVarname + sAssociateType);
+    jButtons = JsonArrayInsert(jButtons, JsonInt(nValue));
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_TABLE);
+    // ********** AI Data **********
+    json jAIData = JsonArray();
+    nValue = GetLocalInt(oAssociate, AI_DIFFICULTY_ADJUSTMENT);
+    jAIData = JsonArrayInsert(jAIData, JsonInt(nValue));
+    nValue = GetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT);
+    jAIData = JsonArrayInsert(jAIData, JsonInt(nValue));
+    nValue = GetLocalInt(oAssociate, AI_HEAL_IN_COMBAT_LIMIT);
+    jAIData = JsonArrayInsert(jAIData, JsonInt(nValue));
+    float fValue = GetLocalFloat(oAssociate, AI_LOOT_CHECK_RANGE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
+    fValue = GetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
+    fValue = GetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
+    fValue = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
+    // No need to keep in the database AI_PERCEPTION_RANGE!
+    jAIData = JsonArrayInsert(jAIData, JsonInt(11));
+    string sValue = GetLocalString(oAssociate, AI_DEFAULT_SCRIPT);
+    jAIData = JsonArrayInsert(jAIData, JsonString(sValue));
+    fValue = GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
+    json jValue = GetLocalJson(oPlayer, AI_SPELLS_WIDGET);
+    if(JsonGetType(jValue) == JSON_TYPE_NULL)
+    {
+        jValue = JsonArray();
+        jValue = JsonArrayInsert(jValue, JsonInt(1)); // 0 - Class selected.
+        jValue = JsonArrayInsert(jValue, JsonInt(10)); // 1 - Level selected.
+        jValue = JsonArrayInsert(jValue, JsonArray()); // Spell list for widget.
+        SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jValue);
+    }
+    jAIData = JsonArrayInsert(jAIData, jValue);
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+    // ********** LootFilters **********
+    json jLootFilters = JsonArray();
+    nValue = GetLocalInt(oAssociate, AI_MAX_LOOT_WEIGHT);
+    jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(nValue));
+    nValue = GetLocalInt(oAssociate, sLootFilterVarname);
+    jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(nValue));
+    int nIndex;
+    for(nIndex = 2; nIndex < 20; nIndex++)
+    {
+       nValue = GetLocalInt(oAssociate, AI_MIN_GOLD_ + IntToString(nIndex));
+       jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(nValue));
+    }
+    ai_SetAssociateDbJson(oPlayer, sAssociateType, "lootfilters", jLootFilters, AI_TABLE);
+    // ********** Plugins ************
+    // These are pulled straight from the database.
+    // ********** Locations **********
+    // These are only in the database.
+}
 void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateType, int bLoad = FALSE)
 {
     //ai_Debug("0i_main", "810", "Checking data for oAssociate: " + GetName(oAssociate));
     // Do quick check to see if they have a variable saved if so then exit.
-    if(!bLoad && GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE) != 0.0) return;
+    if(GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE) != 0.0)
+    {
+        if(!bLoad) return;
+        // If the database gets destroyed lets drop an error and restore values
+        // From the locals.
+        ai_RestoreDatabase(oPlayer, oAssociate, sAssociateType);
+    }
     ai_CheckDataAndInitialize(oPlayer, sAssociateType);
     // ********** Modes **********
     json jModes = ai_GetAssociateDbJson(oPlayer, sAssociateType, "modes");
-    WriteTimestampedLogEntry("0i_main, 826 jModes: " + JsonDump(jModes));
     if(JsonGetType(JsonArrayGet(jModes, 0)) == JSON_TYPE_NULL)
     {
         ai_SetupModes(oPlayer, oAssociate, sAssociateType);
@@ -853,7 +977,6 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     }
     // ********** Buttons **********
     json jButtons = ai_GetAssociateDbJson(oPlayer, sAssociateType, "buttons");
-    WriteTimestampedLogEntry("0i_main, 837 jButtons: " + JsonDump(jButtons));
     if(JsonGetType(JsonArrayGet(jButtons, 0)) == JSON_TYPE_NULL)
     {
         ai_SetupButtons(oPlayer, oAssociate, sAssociateType);
@@ -871,7 +994,6 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     }
     // ********** AI Data **********
     json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
-    WriteTimestampedLogEntry("0i_main, 855 jAIData: " + JsonDump(jAIData));
     if(JsonGetType(JsonArrayGet(jAIData, 0)) == JSON_TYPE_NULL)
     {
         ai_SetupAIData(oPlayer, oAssociate, sAssociateType);
@@ -888,6 +1010,10 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
         int nPercRange = JsonGetInt(JsonArrayGet(jAIData, 7));
         if(nPercRange != 8 || nPercRange != 9 || nPercRange != 10 || nPercRange != 11) nPercRange = 11;
         SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nPercRange);
+        float fRange = 20.0;
+        if(nPercRange == 8) fRange = 10.0;
+        else if(nPercRange == 10) fRange = 35.0;
+        SetLocalFloat(oAssociate, AI_PERCEPTION_RANGE, fRange);
         string sScript = JsonGetString(JsonArrayGet(jAIData, 8));
         if(sScript != "") SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
         json jDoorRange = JsonArrayGet(jAIData, 9);
@@ -898,10 +1024,10 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
             SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
         }
         else SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, JsonGetFloat(jDoorRange));
-        json jSpells = JsonArrayGet(jAIData, 10);
-        if(JsonGetType(jSpells) == JSON_TYPE_NULL)
+        json jSpellsWidget = JsonArrayGet(jAIData, 10);
+        if(JsonGetType(jSpellsWidget) == JSON_TYPE_NULL)
         {
-            json jSpellsWidget = JsonArray();
+            jSpellsWidget = JsonArray();
             jSpellsWidget = JsonArrayInsert(jSpellsWidget, JsonInt(0)); // 0 - Class selected.
             jSpellsWidget = JsonArrayInsert(jSpellsWidget, JsonInt(0)); // 1 - Level selected.
             jAIData = JsonArrayInsert(jAIData, jSpellsWidget);
@@ -911,7 +1037,6 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     }
     // ********** LootFilters **********
     json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");
-    WriteTimestampedLogEntry("0i_main, 885 jLootfilters: " + JsonDump(jLootFilters));
     if(JsonGetType(JsonArrayGet(jLootFilters, 0)) == JSON_TYPE_NULL)
     {
         ai_SetupLootFilters(oPlayer, oAssociate, sAssociateType);
@@ -930,7 +1055,6 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     // These are pulled straight from the database.
     // ********** Locations **********
     json jLocations = ai_GetAssociateDbJson(oPlayer, sAssociateType, "locations");
-    WriteTimestampedLogEntry("0i_main, 875 jLocations: " + JsonDump(jLocations));
     if(JsonGetType(JsonObjectGet(jLocations, AI_WIDGET_NUI)) == JSON_TYPE_NULL)
     {
         ai_SetupLocations(oPlayer, oAssociate, sAssociateType);
@@ -940,6 +1064,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
 void ai_SetupDMData(object oPlayer, string sName)
 {
     //ai_Debug("0i_main", "870", GetName(oPlayer) + " is initializing DM data.");
+    ai_CheckDMDataAndInitialize(oPlayer);
     // ********** Buttons **********
     json jButtons = JsonArray();
     jButtons = JsonArrayInsert(jButtons, JsonInt(0)); // DM Widget Buttons.
@@ -958,7 +1083,6 @@ void ai_SetupDMData(object oPlayer, string sName)
     jNUI = JsonObjectSet(jLocations, "x", JsonFloat(1.0));
     jNUI = JsonObjectSet(jLocations, "y", JsonFloat(1.0));
     jLocations = JsonObjectSet(jLocations, AI_WIDGET_NUI, jNUI);
-    WriteTimestampedLogEntry("0i_main, 936 " + GetName(oPlayer) + "jLocations: " + JsonDump(jLocations));
     ai_SetCampaignDbJson("locations", jLocations, sName, AI_DM_TABLE);
     // ********** Options **********
     json jOptions = JsonArray();
@@ -1000,46 +1124,112 @@ void ai_CheckDMData(object oPlayer)
         // ********** SaveSltos **********
     }
 }
+json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript)
+{
+    if(ResManGetAliasFor(sPluginScript, RESTYPE_NCS) == "")
+    {
+        ai_SendMessages("The script (" + sPluginScript + ") was not found by ResMan!", AI_COLOR_RED, oPC);
+        return jPlugins;
+    }
+    int nIndex;
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
+    {
+        if(JsonGetString(JsonArrayGet(jPlugin, 0)) == sPluginScript)
+        {
+            ai_SendMessages("Plugin (" + sPluginScript + ") is already installed!", AI_COLOR_RED, oPC);
+            return jPlugins;
+        }
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
+    }
+    SetLocalInt(oPC, AI_ADD_PLUGIN, TRUE);
+    SetLocalJson(oPC, AI_JSON_PLUGINS, jPlugins);
+    ExecuteScript(sPluginScript, oPC);
+    if(GetLocalInt(oPC, AI_PLUGIN_SET))
+    {
+        jPlugin = GetLocalJson(oPC, AI_JSON_PLUGINS);
+        jPlugins = JsonArrayInsert(jPlugins, jPlugin);
+    }
+    else
+    {
+        jPlugin = JsonArray();
+        jPlugin = JsonArrayInsert(jPlugin, JsonString(sPluginScript));
+        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString(sPluginScript));
+        int nCount = JsonGetLength(jPlugins) + 1;
+        string sIcon = "is_summon" + IntToString(nCount);
+        jPlugin = JsonArrayInsert(jPlugin, JsonString(sIcon));
+        jPlugins = JsonArrayInsert(jPlugins, jPlugin);
+    }
+    DeleteLocalInt(oPC, AI_ADD_PLUGIN);
+    DeleteLocalInt(oPC, AI_PLUGIN_SET);
+    DeleteLocalJson(oPC, AI_JSON_PLUGINS);
+    return jPlugins;
+}
+// Temporary function to addapt old plugin json to new plugin json.
+void ai_CheckOldPluginJson(object oPC)
+{
+    json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+    int nIndex;
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    // If the first array is not an array then this is the old version.
+    if(JsonGetType(jPlugin) != JSON_TYPE_ARRAY)
+    {
+        string sScript;
+        json jNewPlugins = JsonArray();
+        while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
+        {
+            sScript = JsonGetString(jPlugin);
+            if(sScript != "") jNewPlugins = ai_Plugin_Add(oPC, jNewPlugins, sScript);
+            jPlugin = JsonArrayGet(jPlugins, ++nIndex);
+
+        }
+        ai_SetAssociateDbJson(oPC, "pc", "plugins", jNewPlugins);
+    }
+}
 json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
 {
     // Check if the server is running or single player.
     ai_CheckDataAndInitialize(oPC, "pc");
-    if(!AI_SERVER) return ai_GetAssociateDbJson(oPC, "pc", "plugins");
-    int nJsonType, nCounter, nIndex, bWidget, bAllow;
-    string sText;
-    json jPlugins = ai_GetCampaignDbJson("plugins");
-    json jPCPlugins = ai_GetAssociateDbJson(oPC, sAssociateType, "plugins");
-    json jPCPlugin, jNewPCPlugins = JsonArray();
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    if(!AI_SERVER)
     {
-        bAllow = JsonGetInt(JsonArrayGet(jPlugins, nIndex + 1));
+        ai_CheckOldPluginJson(oPC);
+        return ai_GetAssociateDbJson(oPC, "pc", "plugins");
+    }
+    int nJsonType, nCounter, nIndex, bWidget, bAllow;
+    string sScript, sName, sIcon;
+    json jServerPlugins = ai_GetCampaignDbJson("plugins");
+    json jPCPlugin, jPCPlugins = ai_GetAssociateDbJson(oPC, sAssociateType, "plugins");
+    json jNewPCPlugins = JsonArray();
+    json jServerPlugin = JsonArrayGet(jServerPlugins, nIndex);
+    while(JsonGetType(jServerPlugin) != JSON_TYPE_NULL)
+    {
+        bAllow = JsonGetInt(JsonArrayGet(jServerPlugin, 1));
         if(bAllow)
         {
-            JsonArrayInsertInplace(jNewPCPlugins, jScript);
-            sText = JsonGetString(jScript);
+            sName = JsonGetString(JsonArrayGet(jServerPlugin, 0));
             nCounter = 0;
             jPCPlugin = JsonArrayGet(jPCPlugins, nCounter);
             nJsonType = JsonGetType(jPCPlugin);
             while(nJsonType != JSON_TYPE_NULL)
             {
-                if(sText == JsonGetString(jPCPlugin))
+                if(sName == JsonGetString(JsonArrayGet(jPCPlugin, 0)))
                 {
-                    bWidget = JsonGetInt(JsonArrayGet(jPCPlugins, nCounter + 1));
-                    JsonArrayInsertInplace(jNewPCPlugins, JsonBool(bWidget));
+                    // Boolean - Add to widget.
+                    bWidget = JsonGetInt(JsonArrayGet(jPCPlugin, 1));
+                    JsonArraySetInplace(jServerPlugin, 1, JsonBool(bWidget));
                     break;
                 }
-                nCounter += 2;
-                jPCPlugin = JsonArrayGet(jPCPlugins, nCounter);
+                jPCPlugin = JsonArrayGet(jPCPlugins, ++nCounter);
                 nJsonType = JsonGetType(jPCPlugin);
             }
             if(nJsonType == JSON_TYPE_NULL)
             {
-                JsonArrayInsertInplace(jNewPCPlugins, JsonBool(FALSE));
+                JsonArraySetInplace(jServerPlugin, 1, JsonBool(FALSE));
             }
+            JsonArrayInsertInplace(jNewPCPlugins, jServerPlugin);
         }
-        nIndex += 2;
-        jScript = JsonArrayGet(jPlugins, nIndex);
+        jServerPlugin = JsonArrayGet(jServerPlugins, ++nIndex);
     }
     ai_SetAssociateDbJson(oPC, sAssociateType, "plugins", jNewPCPlugins);
     return jNewPCPlugins;
@@ -1047,37 +1237,36 @@ json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
 json ai_UpdatePluginsForDM(object oPC)
 {
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
-    string sText, sDbName = ai_RemoveIllegalCharacters(GetName(oPC));
-    json jPlugins = ai_GetCampaignDbJson("plugins");
+    string sName, sIcon, sDbName = ai_RemoveIllegalCharacters(GetName(oPC));
+    json jServerPlugins = ai_GetCampaignDbJson("plugins");
     ai_CheckDMDataAndInitialize(oPC);
-    json jDMPlugins = ai_GetCampaignDbJson("plugins", sDbName, AI_DM_TABLE);
-    json jDMPlugin, jNewDMPlugins = JsonArray();
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    json jDMPlugin, jDMPlugins = ai_GetCampaignDbJson("plugins", sDbName, AI_DM_TABLE);
+    json jNewDMPlugins = JsonArray();
+    json jServerPlugin = JsonArrayGet(jServerPlugins, nIndex);
+    while(JsonGetType(jServerPlugin) != JSON_TYPE_NULL)
     {
-        JsonArrayInsertInplace(jNewDMPlugins, jScript);
-        sText = JsonGetString(jScript);
+        sName = JsonGetString(JsonArrayGet(jServerPlugin, 0));
         nCounter = 0;
         jDMPlugin = JsonArrayGet(jDMPlugins, nCounter);
         nJsonType = JsonGetType(jDMPlugin);
         while(nJsonType != JSON_TYPE_NULL)
         {
-            if(sText == JsonGetString(jDMPlugin))
+            if(sName == JsonGetString(JsonArrayGet(jDMPlugin, 0)))
             {
-                bWidget = JsonGetInt(JsonArrayGet(jDMPlugins, nCounter + 1));
-                JsonArrayInsertInplace(jNewDMPlugins, JsonBool(bWidget));
+                // Boolean - Add to widget.
+                bWidget = JsonGetInt(JsonArrayGet(jDMPlugin, 1));
+                JsonArraySetInplace(jServerPlugin, 1, JsonBool(bWidget));
                 break;
             }
-            nCounter += 2;
-            jDMPlugin = JsonArrayGet(jDMPlugins, nCounter);
+            jDMPlugin = JsonArrayGet(jDMPlugins, ++nCounter);
             nJsonType = JsonGetType(jDMPlugin);
         }
         if(nJsonType == JSON_TYPE_NULL)
         {
-            JsonArrayInsertInplace(jNewDMPlugins, JsonBool(FALSE));
+            JsonArraySetInplace(jServerPlugin, 1, JsonBool(FALSE));
         }
-        nIndex += 2;
-        jScript = JsonArrayGet(jPlugins, nIndex);
+        JsonArrayInsertInplace(jNewDMPlugins, jServerPlugin);
+        jServerPlugin = JsonArrayGet(jServerPlugins, ++nIndex);
     }
     ai_SetCampaignDbJson("plugins", jNewDMPlugins, sDbName, AI_DM_TABLE);
     return jNewDMPlugins;
@@ -1089,12 +1278,11 @@ void ai_StartupPlugins(object oPC)
     if(GetIsDM(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
     else jPlugins = ai_UpdatePluginsForPC(oPC, "pc");
     int nIndex;
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        ExecuteScript(JsonGetString(jScript), oPC);
-        nIndex += 2;
-        jScript = JsonArrayGet(jPlugins, nIndex);
+        ExecuteScript(JsonGetString(JsonArrayGet(jPlugin, 0)), oPC);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     DeleteLocalInt(oPC, AI_STARTING_UP);
 }

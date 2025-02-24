@@ -81,7 +81,7 @@ void main()
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION);
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, ai_GetPerceptionRange(oCreature));
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {

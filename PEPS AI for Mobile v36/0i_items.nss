@@ -22,14 +22,16 @@ int ai_GetIsAmmo(object oItem);
 int ai_GetIsThrownWeapon(object oItem);
 // Returns TRUE if oItem is able to be used single handed by oCreature.
 int ai_GetIsSingleHandedWeapon(object oItem, object oCreature);
+// Returns TRUE if oItem is a light weapon for oCreature.
+int ai_GetIsLightWeapon(object oItem, object oCreature);
 // Returns TRUE if oItem is able to be used two handed by oCreature.
 int ai_GetIsTwoHandedWeapon(object oItem, object oCreature);
+// Returns TRUE if oItem is a double weapon.
+int ai_GetIsDoubleWeapon(object oItem);
 // Returns TRUE if oCreature has a ranged weapon equiped and has ammo for it.
 int ai_HasRangedWeaponWithAmmo(object oCreature);
 // Returns TRUE if oItem is a ranged weapon.
 int ai_GetIsRangeWeapon(object oItem);
-// Returns TRUE if oItem is a finesse weapon.
-int ai_GetIsFinesseWeapon(object oItem);
 // Returns the amount of damage the weapon oCreature is holding.
 // nDamageAmount tells the function the amount of damage to return;
 //      1 - Minimum, 2- Average, 3 Maximum.
@@ -69,6 +71,17 @@ int ai_GetCreatureAttackBonus(object oCreature);
 int ai_CheckIfCanUseItem(object oCreature, object oItem);
 // Returns TRUE if oCreature can use oItem due to feats.
 int ai_GetIsProficientWith(object oCreature, object oItem);
+// Gets the Average Damage on the weapon for Main and Off Hand to allow
+// us to check which weapon is better for oCreature to equip.
+// b2Handed set to TRUE returns only checks main avg damage.
+// bOffHand set to TRUE returns the OffHand avg damage.
+// if b2Handed & bOffHand are set to TRUE it returns main & offhand added together.
+// if oOffWeapon is Set then it will return the Avg Damage assuming oItem is
+// the Main weapon and oOffWeapon is in the Offhand.
+float ai_GetMeleeWeaponAvgDmg(object oCreature, object oItem, int b2Handed = FALSE, int bOffHand = FALSE, object oOffWeapon = OBJECT_INVALID);
+// Sets shield AC on the shield to allow us to check which shield is better
+// for oCreature to equip.
+int ai_SetShieldAC(object oCreature, object oItem);
 // Returns TRUE if oItem has nItemPropertyType.
 // nItemPropertySubType will not be used if its below 0.
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1);
@@ -81,49 +94,19 @@ void ai_MoveInventory(object oOldHenchman, object oNewHenchman);
 
 int ai_GetIsWeapon(object oItem)
 {
-   int nType = GetBaseItemType(oItem);
-   int nWeaponType = StringToInt(Get2DAString("baseitems", "WeaponType", nType));
-   if(nWeaponType) return TRUE;
-   return FALSE;
+    int nType = GetBaseItemType(oItem);
+    int nWeaponType = StringToInt(Get2DAString("baseitems", "WeaponType", nType));
+    if(nWeaponType) return TRUE;
+    return FALSE;
 }
 int ai_GetIsMeleeWeapon(object oItem)
 {
-    int iType = GetBaseItemType(oItem);
-    switch(iType)
+    int nType = GetBaseItemType(oItem);
+    if(StringToInt(Get2DAString("baseitems", "WeaponType", nType)) > 0)
     {
-      case BASE_ITEM_LONGSWORD: return TRUE;
-      case BASE_ITEM_RAPIER: return TRUE;
-      case BASE_ITEM_DAGGER: return TRUE;
-      case BASE_ITEM_GREATAXE: return TRUE;
-      case BASE_ITEM_GREATSWORD: return TRUE;
-      case BASE_ITEM_SHORTSWORD: return TRUE;
-      case BASE_ITEM_MORNINGSTAR: return TRUE;
-      case BASE_ITEM_LIGHTMACE: return TRUE;
-      case BASE_ITEM_BATTLEAXE: return TRUE;
-      case BASE_ITEM_BASTARDSWORD: return TRUE;
-      case BASE_ITEM_SCIMITAR: return TRUE;
-      case BASE_ITEM_SHORTSPEAR: return TRUE;
-      case BASE_ITEM_QUARTERSTAFF: return TRUE;
-      case BASE_ITEM_WARHAMMER: return TRUE;
-      case BASE_ITEM_HALBERD: return TRUE;
-      case BASE_ITEM_SICKLE: return TRUE;
-      case BASE_ITEM_HANDAXE: return TRUE;
-      case BASE_ITEM_DWARVENWARAXE: return TRUE;
-      case BASE_ITEM_HEAVYFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTHAMMER: return TRUE;
-      case BASE_ITEM_KATANA: return TRUE;
-      case BASE_ITEM_CLUB: return TRUE;
-      case BASE_ITEM_DOUBLEAXE: return TRUE;
-      case BASE_ITEM_TWOBLADEDSWORD: return TRUE;
-      case BASE_ITEM_DIREMACE: return TRUE;
-      case BASE_ITEM_KAMA: return TRUE;
-      case BASE_ITEM_KUKRI: return TRUE;
-      case BASE_ITEM_SCYTHE: return TRUE;
-      case BASE_ITEM_TRIDENT: return TRUE;
-      case BASE_ITEM_WHIP: return TRUE;
-   }
-   return FALSE;
+        if(StringToInt(Get2DAString("baseitems", "RangedWeapon", nType)) == 0) return TRUE;
+    }
+    return FALSE;
 }
 int ai_GetIsSingleHandedWeapon(object oItem, object oCreature)
 {
@@ -131,11 +114,19 @@ int ai_GetIsSingleHandedWeapon(object oItem, object oCreature)
   int nBaseItemType = GetBaseItemType(oItem);
   // Weapon Size in the baseitems.2da is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
   int nWeaponSize = StringToInt(Get2DAString("baseitems", "WeaponSize", nBaseItemType));
-  // Ranged weapons have a value greater than 0 in this field. So melee weapons have 0.
-  int nWeaponMelee = StringToInt(Get2DAString("baseitems", "RangedWeapon", nBaseItemType));
   // Creature size is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
   int nCreatureSize = GetCreatureSize(oCreature);
-  return (nWeaponMelee == 0 && nWeaponSize <= nCreatureSize);
+  return nWeaponSize <= nCreatureSize;
+}
+int ai_GetIsLightWeapon(object oItem, object oCreature)
+{
+  if(!ai_GetIsMeleeWeapon(oItem)) return FALSE;
+  int nBaseItemType = GetBaseItemType(oItem);
+  // Weapon Size in the baseitems.2da is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
+  int nWeaponSize = StringToInt(Get2DAString("baseitems", "WeaponSize", nBaseItemType));
+  // Creature size is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
+  int nCreatureSize = GetCreatureSize(oCreature);
+  return nWeaponSize < nCreatureSize;
 }
 int ai_GetIsTwoHandedWeapon(object oItem, object oCreature)
 {
@@ -148,6 +139,17 @@ int ai_GetIsTwoHandedWeapon(object oItem, object oCreature)
   // Creature size is 1 = Tiny, 2 = Small, 3 = Medium, 4 = Large.
   int nCreatureSize = GetCreatureSize(oCreature);
   return (nWeaponMelee == 0 && nWeaponSize > nCreatureSize);
+}
+int ai_GetIsDoubleWeapon(object oItem)
+{
+    int iType = GetBaseItemType(oItem);
+    switch(iType)
+    {
+        case BASE_ITEM_DIREMACE:
+        case BASE_ITEM_DOUBLEAXE:
+        case BASE_ITEM_TWOBLADEDSWORD: return TRUE;
+    }
+    return FALSE;
 }
 int ai_GetIsSlashingWeapon(object oItem)
 {
@@ -248,20 +250,24 @@ int ai_GetIsRangeWeapon(object oItem)
    }
    return FALSE;
 }
-int ai_GetIsFinesseWeapon(object oItem)
+int ai_GetIsFinesseWeapon(object oCreature, object oItem)
 {
    switch(GetBaseItemType(oItem))
    {
-      case BASE_ITEM_DAGGER: return TRUE;
-      case BASE_ITEM_HANDAXE: return TRUE;
-      case BASE_ITEM_KAMA: return TRUE;
-      case BASE_ITEM_KUKRI: return TRUE;
-      case BASE_ITEM_LIGHTHAMMER: return TRUE;
-      case BASE_ITEM_LIGHTMACE: return TRUE;
-      case BASE_ITEM_RAPIER: return TRUE;
-      case BASE_ITEM_SHORTSWORD: return TRUE;
-      case BASE_ITEM_SICKLE: return TRUE;
-      case BASE_ITEM_WHIP: return TRUE;
+       case BASE_ITEM_DAGGER: return TRUE;
+       case BASE_ITEM_HANDAXE: return TRUE;
+       case BASE_ITEM_KAMA: return TRUE;
+       case BASE_ITEM_KUKRI: return TRUE;
+       case BASE_ITEM_LIGHTHAMMER: return TRUE;
+       case BASE_ITEM_LIGHTMACE: return TRUE;
+       case BASE_ITEM_RAPIER:
+       {
+           if(GetCreatureSize(oCreature) > CREATURE_SIZE_SMALL) return TRUE;
+           return FALSE;
+       }
+       case BASE_ITEM_SHORTSWORD: return TRUE;
+       case BASE_ITEM_SICKLE: return TRUE;
+       case BASE_ITEM_WHIP: return TRUE;
    }
    return FALSE;
 }
@@ -463,7 +469,7 @@ int ai_GetCreatureAttackBonus(object oCreature)
 {
     object oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oCreature);
     int nAtkBonus = GetBaseAttackBonus(oCreature);
-    if((GetHasFeat(FEAT_WEAPON_FINESSE, oCreature) && ai_GetIsFinesseWeapon(oWeapon)) ||
+    if((GetHasFeat(FEAT_WEAPON_FINESSE, oCreature) && ai_GetIsFinesseWeapon(oCreature, oWeapon)) ||
        ai_GetIsRangeWeapon(oWeapon))
     {
         nAtkBonus += GetAbilityModifier(ABILITY_DEXTERITY, oCreature);
@@ -587,6 +593,271 @@ int ai_GetIsProficientWith(object oCreature, object oItem)
     if(GetHasFeat(nFeat, oCreature)) return TRUE;
     return FALSE;
 }
+float ai_GetMeleeWeaponAvgDmg(object oCreature, object oItem, int b2Handed = FALSE, int bOffHand = FALSE, object oOffWeapon = OBJECT_INVALID)
+{
+    // Has this weapon already been calculated for this creature?
+    if(oCreature == GetLocalObject(oItem, "AI_CREATURE_POSSESSION"))
+    {
+        // Return the Main weapons Avg Damage while using a weapon in the off hand.
+        if(oOffWeapon != OBJECT_INVALID)
+        {
+            // We recalculate all OffWeapon avg damage unless its a double weapon.
+            if(oOffWeapon == oItem)
+            {
+                float fMain2WDmg = GetLocalFloat(oItem, "AI_MAIN_2W_HAND_AVG_DMG");
+                // If they passed that this is a 2handed weapon then return the total
+                // Avg Dmg for oItem. Used for double weapons.
+                if(b2Handed)
+                {
+                    fMain2WDmg += ai_GetMeleeWeaponAvgDmg(oCreature, oItem, FALSE, TRUE);
+                }
+                if(AI_DEBUG) ai_Debug("0i_items", "611", GetName(oItem) + " avg dmg with Offhand weapon (" + GetName(oOffWeapon) + ") " + FloatToString(fMain2WDmg, 0, 2));
+                return fMain2WDmg;
+            }
+        }
+        // Return the avg dmg for oItem assuming it is in the OffHand.
+        else if(bOffHand)
+        {
+            float fOffHandDmg = GetLocalFloat(oItem, "AI_OFFHAND_AVG_DMG");
+            if(AI_DEBUG) ai_Debug("0i_items", "618", GetName(oItem) + " fOffHandAvgDmg: " + FloatToString(fOffHandDmg, 0, 2));
+            return fOffHandDmg;
+        }
+        // If we get here then Return the avg dmg for oItem assuming its in the main hand.
+        else
+        {
+            float fMainDmg = GetLocalFloat(oItem, "AI_AVG_DMG");
+            if(AI_DEBUG)ai_Debug("0i_items", "623", GetName(oItem) + " fMainDmg: " + FloatToString(fMainDmg, 0, 2));
+            return fMainDmg;
+        }
+    }
+    // Set the creature to this item that we are calculationg the avg damages for.
+    SetLocalObject(oItem, "AI_CREATURE_POSSESSION", oCreature);
+    int nItemType = GetBaseItemType(oItem);
+    // Figure average damage for one attack, or two with two weapons.
+    // We are keeping it simple to reduce time and checks.
+    // Get the weapons base stats.
+    int nMinDmg = StringToInt(Get2DAString("baseitems", "NumDice", nItemType));
+    int nMaxDmg = nMinDmg * StringToInt(Get2DAString("baseitems", "DieToRoll", nItemType));
+    int nThreat = StringToInt(Get2DAString("baseitems", "CritThreat", nItemType));
+    int nMultiplier = StringToInt(Get2DAString("baseitems", "CritHitMult", nItemType));
+    int nIndex, nBonusMinDmg, nBonusMaxDmg, nItemPropertyType, nNumDice;
+    // We set ToHit to 10 for a 50% chance to hit without modifiers.
+    float fCritBonusDmg, fToHit = 10.0;
+    // Check oCreature's feats.
+    if(GetHasFeat(FEAT_WEAPON_FINESSE, oCreature) &&
+       ai_GetIsLightWeapon(oItem, oCreature))
+    {
+        // Add Dexterity modifier to the Attack bonus.
+        nIndex = GetAbilityModifier(ABILITY_DEXTERITY, oCreature);
+    }
+    else
+    {
+        // Add Strength modifier to the attack bonus.
+        nIndex = GetAbilityModifier(ABILITY_STRENGTH, oCreature);
+        // Add 1/2 strength modifier to damage for 2handed weapons, but not Double weapons.
+        if(b2Handed && !bOffHand)
+        {
+            nMinDmg += nIndex / 2;
+            nMaxDmg += nIndex / 2;
+        }
+    }
+    fToHit += nIndex;
+    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "WeaponFocusFeat", nItemType)), oCreature, TRUE))
+    {
+        fToHit += 1.0;
+        if(GetHasFeat(StringToInt(Get2DAString("baseitems", "WeaponSpecializationFeat", nItemType)), oCreature, TRUE))
+        {
+            nMinDmg += 2;
+            nMaxDmg += 2;
+        }
+        if(GetHasFeat(StringToInt(Get2DAString("baseitems", "EpicWeaponFocusFeat", nItemType)), oCreature, TRUE))
+        {
+            fToHit += 2.0;
+            if(GetHasFeat(StringToInt(Get2DAString("baseitems", "EpicWeaponSpecializationFeat", nItemType)), oCreature, TRUE))
+            {
+                nMinDmg += 4;
+                nMaxDmg += 4;
+            }
+        }
+    }
+    if(GetHasFeat(StringToInt(Get2DAString("baseitems", "WeaponImprovedCriticalFeat", nItemType)), oCreature, TRUE))
+    {
+        nMultiplier += nMultiplier;
+        if(GetHasFeat(StringToInt(Get2DAString("baseitems", "EpicWeaponOverwhelmingCriticalFeat", nItemType)), oCreature, TRUE))
+        {
+            if(nMultiplier > 3) fCritBonusDmg = 10.5;
+            else if(nMultiplier == 3) fCritBonusDmg = 7.0;
+            else fCritBonusDmg = 3.5;
+        }
+    }
+    // Check oItem's properties.
+    itemproperty ipProperty = GetFirstItemProperty(oItem);
+    while(GetIsItemPropertyValid(ipProperty))
+    {
+        nItemPropertyType = GetItemPropertyType(ipProperty);
+        if(nItemPropertyType == ITEM_PROPERTY_ENHANCEMENT_BONUS)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nBonusMinDmg += nIndex;
+            nBonusMaxDmg += nIndex;
+            fToHit += IntToFloat(nIndex);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_DAMAGE_BONUS)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nNumDice = StringToInt(Get2DAString("iprp_damagecost", "NumDice", nIndex));
+            nBonusMinDmg += nNumDice;
+            nBonusMaxDmg += nNumDice * StringToInt(Get2DAString("iprp_damagecost", "Die", nIndex));
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_ATTACK_BONUS)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            fToHit += IntToFloat(nIndex);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_KEEN)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nMultiplier += nMultiplier;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_HASTE)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nMinDmg += nMinDmg;
+            nMaxDmg += nMaxDmg;
+            nBonusMinDmg += nBonusMinDmg;
+            nBonusMaxDmg += nBonusMaxDmg;
+            nMultiplier += nMultiplier;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_MASSIVE_CRITICALS)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nNumDice = StringToInt(Get2DAString("iprp_damagecost", "NumDice", nIndex));
+            fCritBonusDmg += IntToFloat(nNumDice) + IntToFloat(nNumDice * StringToInt(Get2DAString("iprp_damagecost", "Die", nIndex))) / 2.0;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_DECREASED_ENHANCEMENT_MODIFIER)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nBonusMinDmg -= nIndex;
+            nBonusMaxDmg -= nIndex;
+            fToHit -= IntToFloat(nIndex);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_DECREASED_ATTACK_MODIFIER)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            fToHit -= IntToFloat(nIndex);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_DECREASED_DAMAGE)
+        {
+            nIndex = GetItemPropertyCostTableValue(ipProperty);
+            nBonusMinDmg -= nIndex;
+            nBonusMaxDmg -= nIndex;
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_NO_DAMAGE)
+        {
+            // A weapon always does a minimum of 1 pnt of damage.
+            nMinDmg = 1;
+            nMaxDmg = 1;
+        }
+        ipProperty = GetNextItemProperty(oItem);
+    }
+    float fAvgDmg = IntToFloat(nMinDmg + nMaxDmg + nBonusMinDmg + nBonusMaxDmg) / 2;
+    // Set value for Offhand chance to hit.
+    float fOffHandToHit = fToHit - 10.0;
+    float fOffHandAvgDmg = fAvgDmg;
+    // Set value for Main hand chance to hit with a weapon in Off hand.
+    float fMain2HandToHit = fToHit - 6.0;
+    float fMain2HandAvgDmg = fAvgDmg;
+    // Calculate the avg dmg for oItem used in the main hand with no Off hand weapon.
+    fToHit = fToHit / 20.0;
+    float fThreatChance = (IntToFloat(nThreat) / 20.0) * fToHit;
+    fAvgDmg = (fAvgDmg * fToHit) + ((fAvgDmg * IntToFloat(nMultiplier) + fCritBonusDmg) * fThreatChance);
+    SetLocalFloat(oItem, "AI_AVG_DMG", fAvgDmg);
+    if(AI_DEBUG) ai_Debug("0i_items", "768", GetName(oItem) + " fSingleAvgDmg: " + FloatToString(fAvgDmg, 0, 2));
+    if(!b2Handed || (b2Handed && oOffWeapon != OBJECT_INVALID))
+    {
+        // Calculate chance to hit based on two weapon feats and main hand vs off hand.
+        if(GetHasFeat(374/*Dual_Wield*/, oCreature))
+        {
+            if(ai_GetArmorBonus(GetItemInSlot(INVENTORY_SLOT_CHEST, oCreature)) < 4)
+            {
+                fMain2HandToHit += 2.0;
+                fOffHandToHit += 6.0;
+            }
+        }
+        else
+        {
+            if(GetHasFeat(FEAT_AMBIDEXTERITY, oCreature)) fOffHandToHit += 4.0;
+            if(GetHasFeat(FEAT_TWO_WEAPON_FIGHTING, oCreature))
+            {
+                fMain2HandToHit += 2.0;
+                fOffHandToHit += 2.0;
+            }
+        }
+        if(ai_GetIsLightWeapon(oItem, oCreature)) fOffHandToHit += 2.0;
+        if(oOffWeapon != OBJECT_INVALID &&
+          (ai_GetIsLightWeapon(oOffWeapon, oCreature) || ai_GetIsDoubleWeapon(oItem)))
+        {
+            fMain2HandToHit += 2.0;
+        }
+        // Calculate the avg dmg for oItem used in the main hand with an off hand weapon.
+        fMain2HandToHit = fMain2HandToHit / 20.0;
+        fThreatChance = (IntToFloat(nThreat) / 20.0) * fMain2HandToHit;
+        fMain2HandAvgDmg = (fMain2HandAvgDmg * fMain2HandToHit) + ((fMain2HandAvgDmg * IntToFloat(nMultiplier) + fCritBonusDmg) * fThreatChance);
+        SetLocalFloat(oItem, "AI_MAIN_2W_HAND_AVG_DMG", fMain2HandAvgDmg);
+        if(AI_DEBUG) ai_Debug("0i_items", "768", GetName(oItem) + " fMain2HandAvgDmg: " + FloatToString(fMain2HandAvgDmg, 0, 2));
+        // Calculate the avg dmg for oItem used in the off hand.
+        fOffHandToHit = fOffHandToHit / 20.0;
+        fThreatChance = (IntToFloat(nThreat) / 20.0) * fOffHandToHit;
+        fOffHandAvgDmg = (fOffHandAvgDmg * fOffHandToHit) + ((fOffHandAvgDmg * IntToFloat(nMultiplier) + fCritBonusDmg) * fThreatChance);
+        SetLocalFloat(oItem, "AI_OFFHAND_AVG_DMG", fOffHandAvgDmg);
+        if(AI_DEBUG) ai_Debug("0i_items", "790", GetName(oItem) + " fOffHandAvgDmg: " + FloatToString(fOffHandAvgDmg, 0, 2));
+        // Return the correct value based on params passed.
+        if(oOffWeapon != OBJECT_INVALID)
+        {
+            // This is used only for double weapons! Must pass b2Handed = TRUE and
+            // oOffWeapon = the double weapon that was passes as oItem.
+            if(b2Handed) return fMain2HandAvgDmg + fOffHandAvgDmg;
+            return fMain2HandAvgDmg;
+        }
+        if(bOffHand) return fOffHandAvgDmg;
+    }
+    return fAvgDmg;
+}
+int ai_SetShieldAC(object oCreature, object oItem)
+{
+    if(oCreature == GetLocalObject(oItem, "AI_CREATURE_POSSESSION"))
+    {
+        return GetLocalInt(oItem, "AI_SHIELD_AC");
+    }
+    // Set the creature who has this item for setting the power of.
+    SetLocalObject(oItem, "AI_CREATURE_POSSESSION", oCreature);
+    int nItemType = GetBaseItemType(oItem);
+    int nAC, nItemPropertyType;
+    if(nItemType == BASE_ITEM_SMALLSHIELD) nAC = 1;
+    else if(nItemType == BASE_ITEM_LARGESHIELD) nAC = 2;
+    else if(nItemType == BASE_ITEM_TOWERSHIELD) nAC = 3;
+    itemproperty ipProperty = GetFirstItemProperty(oItem);
+    while(GetIsItemPropertyValid(ipProperty))
+    {
+        nItemPropertyType = GetItemPropertyType(ipProperty);
+        if(nItemPropertyType == ITEM_PROPERTY_AC_BONUS)
+        {
+            nAC += GetItemPropertyCostTableValue(ipProperty);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_DECREASED_AC)
+        {
+            nAC -= GetItemPropertyCostTableValue(ipProperty);
+        }
+        else if(nItemPropertyType == ITEM_PROPERTY_HASTE)
+        {
+            nAC += 4;
+        }
+        ipProperty = GetNextItemProperty(oItem);
+    }
+    SetLocalInt(oItem, "AI_SHIELD_AC", nAC);
+    if(AI_DEBUG) ai_Debug("0i_items", "718", GetName(oItem) + " nAC: " + IntToString(nAC));
+    return nAC;
+}
 int ai_GetHasItemProperty(object oItem, int nItemPropertyType, int nItemPropertySubType = -1)
 {
     itemproperty ipProperty = GetFirstItemProperty(oItem);
@@ -677,3 +948,4 @@ void ai_MoveInventory(object oOldHenchman, object oNewHenchman)
         }
     }
 }
+

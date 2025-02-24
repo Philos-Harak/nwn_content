@@ -81,10 +81,12 @@ void ai_SetBehaviorState(int nCondition, int bValid = TRUE);
 int ai_GetBehaviorState(int nCondition);
 // Highlights the current mode for the widget passed.
 void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken);
+// Checks to see if the party scale is correctly adjusted.
+void ai_CheckXPPartyScale(object oCreature);
 
 void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 {
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "71", GetName(OBJECT_SELF) + " is clearing actions (" +
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "89", GetName(OBJECT_SELF) + " is clearing actions (" +
              IntToString(bClearCombatState) + ")!");
     DeleteLocalInt(OBJECT_SELF, AI_CURRENT_ACTION_MODE);
     ClearAllActions(bClearCombatState);
@@ -193,18 +195,17 @@ int ai_GetIsBusy(object oCreature)
 int ai_Disabled(object oCreature)
 {
     if(GetIsDead(oCreature)) return 1;
-    // Not Commandable is basically disabled as far as the AI is concerned.
-    if(!GetCommandable(oCreature))
-    {
-        if(AI_DEBUG) ai_Debug("0i_stats_cond", "213", GetName(oCreature) + " is disabled(Not Commandable)!");
-        return EFFECT_TYPE_PARALYZE;
-    }
     // Check for effects.
     effect eEffect = GetFirstEffect(oCreature);
     while(GetIsEffectValid(eEffect))
     {
         switch(GetEffectType(eEffect))
         {
+            case EFFECT_TYPE_DOMINATED :
+            {
+                if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
+                return FALSE;
+            }
             case EFFECT_TYPE_STUNNED :
             case EFFECT_TYPE_DAZED :
             case EFFECT_TYPE_SLEEP :
@@ -222,6 +223,12 @@ int ai_Disabled(object oCreature)
             }
         }
         eEffect = GetNextEffect(oCreature);
+    }
+    // Not Commandable is basically disabled as far as the AI is concerned.
+    if(!GetCommandable(oCreature))
+    {
+        if(AI_DEBUG) ai_Debug("0i_stats_cond", "213", GetName(oCreature) + " is disabled(Not Commandable)!");
+        return EFFECT_TYPE_PARALYZE;
     }
     if(AI_DEBUG) ai_Debug("0i_states_cond", "202", GetName(oCreature) + " is not disabled.");
     return FALSE;
@@ -369,3 +376,47 @@ void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken)
     else bBool = FALSE;
     NuiSetBind(oPC, nToken, "btn_cmd_attack_encouraged", JsonBool(bBool));
 }
+void ai_CheckXPPartyScale(object oCreature)
+{
+    object oMaster;
+    if(!ai_GetIsCharacter(oCreature))
+    {
+        oMaster = GetMaster(oCreature);
+        while(oMaster != OBJECT_INVALID)
+        {
+            if(ai_GetIsCharacter(oMaster)) break;
+            oMaster = GetMaster(oMaster);
+        }
+        if(oMaster == OBJECT_INVALID) return;
+    }
+    else oMaster = oCreature;
+    float fDefaultXPScale = IntToFloat(GetLocalInt(GetModule(), AI_BASE_PARTY_SCALE_XP));
+    float fPartySize = 4.0;
+    int nAssociateType, nHenchman, nHenchAssociate;
+    object oHenchman;
+    for(nAssociateType = 1; nAssociateType <= 5; nAssociateType++)
+    {
+        if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
+        {
+            for(nHenchman = 1; nHenchman <= AI_MAX_HENCHMAN; nHenchman++)
+            {
+                oHenchman = GetAssociate(nAssociateType, oMaster, nHenchman);
+                if(oHenchman != OBJECT_INVALID)
+                {
+                    fPartySize += 1.0;
+                    for(nHenchAssociate = 2; nHenchAssociate <= 5; nHenchAssociate++)
+                    {
+                        if(GetAssociate(nHenchAssociate, oHenchman, 1) != OBJECT_INVALID) fPartySize += 1.0;
+                    }
+                }
+            }
+        }
+        else if(GetAssociate(nAssociateType, oMaster, 1) != OBJECT_INVALID) fPartySize += 1.0;
+    }
+    int nXPScale = FloatToInt(fPartySize / 4.0 * fDefaultXPScale);
+    //SendMessageToPC(oMaster, GetName(oMaster) + " nXPScale = (3 + fPartySize / 4.0 * fDefaultXPScale)" +
+    //                IntToString(nXPScale) + " = (" + FloatToString(fPartySize, 0, 1) + " / 4.0 * " +
+    //                FloatToString(fDefaultXPScale, 0, 1) + ")");
+    SetModuleXPScale(nXPScale);
+}
+

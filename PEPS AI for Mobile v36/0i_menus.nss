@@ -39,11 +39,11 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate);
 // Creates the Plugin Manager menu.
 void ai_CreatePluginNUI(object oPC);
 // Creates the Spell menu that selects the spells to go on the Spell Widget.
-void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate);
-/// Creates the Spell menu that lets the player to select the associates castable spells.
+void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate);
+// Creates the Spell menu that lets the player to select the associates castable spells.
 void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate);
 // Creates the spell description menu so a player can see what a spell does.
-void ai_CreateSpellDescriptionNUI(object oPC, int nSpell);
+void ai_CreateDescriptionNUI(object oPC, int nSpell, int bSpell);
 
 string ai_GetRandomTip()
 {
@@ -94,6 +94,19 @@ int ai_GetAIButton(object oPlayer, int nButton, object oAssociate, string sAssoc
     }
     return nAIButtons & nButton;
 }
+json ai_CreateAIScriptJson(object oPC)
+{
+    json jScript = JsonArray();
+    JsonArrayInsertInplace(jScript, NuiComboEntry("", 0));
+    int nNth = 1;
+    string sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, nNth);
+    while(sScript != "")
+    {
+        JsonArrayInsertInplace(jScript, NuiComboEntry(sScript, nNth));
+        sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, ++nNth);
+    }
+    return jScript;
+}
 json ai_CreateCompanionJson(object oPC, string sCompanion2da)
 {
     int nCnt, nMaxRowCount = Get2DARowCount(sCompanion2da);
@@ -143,11 +156,11 @@ string ai_GetSpellIconAttributes(object oCaster, int nClass, int nLevel, int nSp
 }
 void ai_CreateAIMainNUI(object oPC)
 {
-    int nMonsterAI = (ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) != "");
-    int nAssociateAI = (ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "");
     // Set window to not save until it has been created.
     SetLocalInt (oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand (2.0, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
+    int nMonsterAI = (ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) != "");
+    int nAssociateAI = (ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "");
     string sText = " [Single player]";
     if(AI_SERVER) sText = " [Server]";
     // ************************************************************************* Width / Height
@@ -164,35 +177,48 @@ void ai_CreateAIMainNUI(object oPC)
     CreateLabel(jRow, "", "lbl_ai_info", 510.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 ******************************************************************* 500 / 129
+    // Row 3 ******************************************************************* 500 / 134
     jRow = JsonArray();
-    CreateButton(jRow, "Plugin Manager", "btn_plugin_manager", 160.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
-    if(nAssociateAI) CreateButtonSelect(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 160.0f, 20.0f, "btn_assoc_widget_tooltip");
-    CreateButtonSelect(jRow, "Ghost Mode", "btn_ghost_mode", 160.0f, 20.0f, "btn_ghost_mode_tooltip");
+    CreateButton(jRow, "Plugin Manager", "btn_plugin_manager", 112.0f, 25.0f, -1.0, "btn_plugin_manager_tooltip");
+    if(nAssociateAI) CreateButtonSelect(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 160.0f, 25.0f, "btn_assoc_widget_tooltip");
+    CreateButtonSelect(jRow, "Ghost Mode", "btn_ghost_mode", 112.0f, 25.0f, "btn_ghost_mode_tooltip");
+    CreateButton(jRow, "Close", "btn_close", 112.0f, 25.0f);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 ******************************************************************* 500 / 157
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "AI RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Row 4 ******************************************************************* 500 / 161
+    //jRow = JsonArray();
+    //JsonArrayInsertInplace(jRow, NuiSpacer());
+    //CreateLabel(jRow, "AI RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
+    //JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 157.0;
+    //JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    float fHeight = 134.0;
     // Row 5 ******************************************************************* 500 / --- (28)
     jRow = JsonArray();
     // Make the AI options a Group.
     json jGroupRow = JsonArray();
     json jGroupCol = JsonArray();
-    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_max_henchman", 6, FALSE, 60.0f, 20.0f, "txt_max_henchman_tooltip");
-    CreateLabel(jGroupRow, "Max number of henchmen that is allowed in your party.", "lbl_max_hench", 416.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_max_henchman_tooltip");
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_max_henchman", 6, FALSE, 40.0f, 35.0f, "txt_max_henchman_tooltip");
+    CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_max_hench_up", 35.0, 35.0, 0.0);
+    CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_max_hench_down", 35.0, 35.0, 0.0);
+    CreateLabel(jGroupRow, "Maximum henchmen that is allowed in your party.", "lbl_max_hench", 370.0f, 35.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_max_henchman_tooltip");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    fHeight += 50.0;
+    jGroupRow = JsonArray();
+    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_xp_scale", 3, FALSE, 40.0f, 35.0f, "txt_xp_scale_tooltip");
+    CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_xp_scale_up", 35.0, 35.0, 0.0);
+    CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_xp_scale_down", 35.0, 35.0, 0.0);
+    CreateLabel(jGroupRow, "Module experience scale.", "lbl_xp_scale", 170.0f, 35.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_xp_scale_tooltip");
+    CreateCheckBox(jGroupRow, "scale to party.", "chbx_party_scale", 115.0, 35.0, "chbx_party_scale_tooltip");
+    CreateButton(jGroupRow, "Default", "btn_default_xp", 60.0f, 35.0f, -1.0, "btn_default_xp_tooltip");
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    fHeight += 108.0;
     jGroupRow = JsonArray();
     if(nMonsterAI)
     {
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 6, FALSE, 60.0f, 20.0f, "txt_ai_difficulty_tooltip");
-        CreateLabel(jGroupRow, "% chance monsters will attack the weakest target.", "lbl_ai_difficulty", 406.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_ai_difficulty_tooltip");
+        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 6, FALSE, 40.0f, 35.0f, "txt_ai_difficulty_tooltip");
+        CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_ai_diff_up", 35.0, 35.0, 0.0);
+        CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_ai_diff_down", 35.0, 35.0, 0.0);
+        CreateLabel(jGroupRow, "% chance monsters will attack the weakest target.", "lbl_ai_difficulty", 370.0f, 35.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_ai_difficulty_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = JsonArray();
         CreateCheckBox(jGroupRow, " Allow monsters to prebuff before combat starts.", "chbx_buff_monsters", 450.0, 20.0);
@@ -210,8 +236,10 @@ void ai_CreateAIMainNUI(object oPC)
         CreateCheckBox(jGroupRow, " Summoned associates to remain after masters death.", "chbx_perm_assoc", 450.0, 20.0);
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = JsonArray();
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_perception_distance", 6, FALSE, 60.0f, 20.0f, "txt_perception_distance_tooltip");
-        CreateLabel(jGroupRow, "meters is the distance a monster can respond to allies.", "lbl_perception_distance", 411.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
+        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_perception_distance", 6, FALSE, 40.0f, 35.0f, "txt_perception_distance_tooltip");
+        CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_perc_up", 35.0, 35.0, 0.0);
+        CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_perc_down", 35.0, 35.0, 0.0);
+        CreateLabel(jGroupRow, "meters a monster can respond to allies.", "lbl_perception_distance", 370.0f, 35.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         //jGroupRow = JsonArray();
         //CreateLabel(jGroupRow, "", "lbl_perc_dist", 450.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "lbl_perc_dist_tooltip");
@@ -220,21 +248,27 @@ void ai_CreateAIMainNUI(object oPC)
         //CreateCheckBox(jGroupRow, " Make enemy corpses remain. ** This can break some modules! **", "chbx_corpses_stay", 490.0, 20.0);
         //JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Allow monsters to wander upto ", "chbx_wander", 250.0, 20.0, "chbx_wander_tooltip");
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_wander_distance", 6, FALSE, 60.0f, 20.0f, "chbx_wander_tooltip");
-        CreateLabel(jGroupRow, "meters and ", "lbl_wander_distance", 80.0f, 20.0f, NUI_HALIGN_LEFT, NUI_VALIGN_BOTTOM, 0.0, "chbx_wander_tooltip");
-        CreateCheckBox(jGroupRow, "open doors.", "chbx_open_doors", 100.0, 20.0, "chbx_wander_tooltip");
+        CreateCheckBox(jGroupRow, " Monsters can wander ", "chbx_wander", 175.0, 35.0, "chbx_wander_tooltip");
+        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_wander_distance", 6, FALSE, 40.0f, 35.0f, "chbx_wander_tooltip");
+        CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_wander_up", 35.0, 35.0, 0.0);
+        CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_wander_down", 35.0, 35.0, 0.0);
+        CreateLabel(jGroupRow, " meters & ", "lbl_wander_distance", 70.0f, 35.0f, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "chbx_wander_tooltip");
+        CreateCheckBox(jGroupRow, "open doors.", "chbx_open_doors", 100.0, 35.0, "chbx_wander_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = JsonArray();
-        CreateLabel(jGroupRow, "Add ", "lbl_inc_enc", 30.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0);
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_enc", 6, FALSE, 60.0f, 20.0f);
-        CreateLabel(jGroupRow, "monsters per spawned encounter monster.", "lbl_inc_hp", 377.0, 20.0, NUI_HALIGN_LEFT);
+        CreateLabel(jGroupRow, "Add ", "lbl_inc_enc", 30.0, 35.0, NUI_HALIGN_LEFT, 0, -1.0);
+        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_enc", 4, FALSE, 55.0f, 35.0f, "txt_inc_enc_tooltip");
+        CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_encounter_up", 35.0, 35.0, 0.0);
+        CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_encounter_down", 35.0, 35.0, 0.0);
+        CreateLabel(jGroupRow, "monsters per spawned encounter monster.", "lbl_inc_enc", 325.0, 35.0, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "txt_inc_enc_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = JsonArray();
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_hp", 6, FALSE, 60.0f, 20.0f, "txt_inc_hp_tooltip");
-        CreateLabel(jGroupRow, "% increase in all monster's hitpoints.", "lbl_inc_percentage", 406.0, 20.0, NUI_HALIGN_LEFT);
+        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_hp", 6, FALSE, 40.0f, 35.0f, "txt_inc_hp_tooltip");
+        CreateButtonImage(jGroupRow, "nui_cnt_up", "btn_inc_hp_up", 35.0, 35.0, 0.0);
+        CreateButtonImage(jGroupRow, "nui_cnt_down", "btn_inc_hp_down", 35.0, 35.0, 0.0);
+        CreateLabel(jGroupRow, "% increase in all monster's hitpoints.", "lbl_inc_percentage", 370.0, 35.0, NUI_HALIGN_LEFT);
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        fHeight += 336.0;
+        fHeight += 360.0;
     }
     if(nMonsterAI || nAssociateAI)
     {
@@ -269,7 +303,7 @@ void ai_CreateAIMainNUI(object oPC)
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, AI_MAIN_NUI, sName + " PEPS Main Menu",
-                             fX, fY, 534.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
+                             fX, fY, 534.0f, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     // Save the associate to the nui for use in 0e_nui
     json jData = JsonArray();
     JsonArrayInsertInplace(jData, JsonString(ObjectToString(oPC)));
@@ -327,15 +361,34 @@ void ai_CreateAIMainNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_ghost_mode", JsonBool (bGhostMode));
     NuiSetBind(oPC, nToken, "btn_ghost_mode_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString("  Allows associates to move through creatures while in command mode."));
+    NuiSetBind(oPC, nToken, "btn_close_event", JsonBool(TRUE));
     // Row 3 Label for AI RULES
     // Row 4
     NuiSetBind(oPC, nToken, "txt_max_henchman_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_max_hench_up_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_max_hench_down_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_MAX_HENCHMAN))));
     NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
-    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-12)."));
+    NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed in your party (1-12)."));
+    NuiSetBind(oPC, nToken, "txt_xp_scale_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_xp_scale_up_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_xp_scale_down_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(GetModuleXPScale())));
+    NuiSetBindWatch (oPC, nToken, "txt_xp_scale", TRUE);
+    NuiSetBind(oPC, nToken, "txt_xp_scale_tooltip", JsonString("  Set the modules XP scale (0 - 200) Normal D&D is 10."));
+    NuiSetBind(oPC, nToken, "chbx_party_scale_check", JsonBool(GetLocalInt(oModule, AI_RULE_PARTY_SCALE)));
+    NuiSetBindWatch(oPC, nToken, "chbx_party_scale_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_party_scale_event", JsonBool(TRUE));
+    sText = IntToString(GetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP));
+    NuiSetBind(oPC, nToken, "chbx_party_scale_tooltip", JsonString("  PEPS adjusts your XP based on party size from (" + sText + ")."));
+    NuiSetBind(oPC, nToken, "btn_default_xp_event", JsonBool(TRUE));
+    sText = IntToString(GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE));
+    NuiSetBind(oPC, nToken, "btn_default_xp_tooltip", JsonString("  Reset the Modules XP to (" + sText + ")."));
     if(nMonsterAI)
     {
         NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_ai_diff_up_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_ai_diff_down_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
         NuiSetBindWatch(oPC, nToken, "txt_ai_difficulty", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
@@ -354,6 +407,8 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBindWatch(oPC, nToken, "chbx_perm_assoc_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_perm_assoc_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_perception_distance_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_perc_up_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_perc_down_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE), 0, 0)));
         NuiSetBindWatch(oPC, nToken, "txt_perception_distance", TRUE);
         NuiSetBind(oPC, nToken, "txt_perception_distance_tooltip", JsonString("  Range [10 to 60 meters] from the player."));
@@ -380,14 +435,21 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bWander));
         NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE), 0, 0)));
         NuiSetBindWatch(oPC, nToken, "txt_wander_distance", TRUE);
+        NuiSetBind(oPC, nToken, "btn_wander_up_event", JsonBool(bWander));
+        NuiSetBind(oPC, nToken, "btn_wander_down_event", JsonBool(bWander));
         NuiSetBind(oPC, nToken, "chbx_open_doors_check", JsonBool(GetLocalInt(oModule, AI_RULE_OPEN_DOORS)));
         NuiSetBindWatch(oPC, nToken, "chbx_open_doors_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_open_doors_event", JsonBool(bWander));
         NuiSetBind(oPC, nToken, "chbx_wander_tooltip", JsonString("  ** This can break some modules! **"));
         NuiSetBind(oPC, nToken, "txt_inc_enc_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_ENC_MONSTERS))));
+        NuiSetBind(oPC, nToken, "btn_encounter_up_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_encounter_down_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "txt_inc_enc_tooltip", JsonString("  Spawns one extra monster per counter above 1. Adds value to counter per encounter monster spawned."));
+        NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS), 0, 2)));
         NuiSetBindWatch(oPC, nToken, "txt_inc_enc", TRUE);
         NuiSetBind(oPC, nToken, "txt_inc_hp_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_inc_hp_up_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_inc_hp_down_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP))));
         NuiSetBindWatch(oPC, nToken, "txt_inc_hp", TRUE);
     }
@@ -459,8 +521,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     CreateButton(jRow, "", "btn_cmd_attack", 200.0, 20.0, -1.0, "btn_cmd_attack_tooltip");
     CreateCheckBox(jRow, "", "chbx_cmd_attack", 25.0, 20.0);
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 157.0;
-    // Row 5 ******************************************************************* 500 / 213
+    // Row 5 ******************************************************************* 500 / 185
     jRow = JsonArray();
     CreateButton(jRow, "", "btn_cmd_follow", 200.0, 20.0, -1.0, "btn_cmd_follow_tooltip");
     CreateCheckBox(jRow, "", "chbx_cmd_follow", 25.0, 20.0);
@@ -469,8 +530,8 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     CreateCheckBox(jRow, "", "chbx_follow_target", 25.0, 20.0);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    fHeight = fHeight + 28.0;
-    // Row 6 ******************************************************************* 500 / 185
+    float fHeight = 185.0;
+    // Row 6 ******************************************************************* 500 / ---
     if(bIsPC)
     {
         jRow = JsonArray();
@@ -482,7 +543,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 7 ******************************************************************* 500 / 241
+    // Row 7 ******************************************************************* 500 / ---
     jRow = JsonArray();
     CreateButton(jRow, "Combat Tactics", "btn_cmd_ai_script", 200.0, 20.0, -1.0, "btn_cmd_ai_script_tooltip");
     CreateCheckBox(jRow, "", "chbx_cmd_ai_script", 25.0, 20.0);
@@ -492,24 +553,21 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
-    // Row 8 ******************************************************************* 500 / 269
+    // Row 8 ******************************************************************* 500 / ---
     int bSpellCaster = ai_GetIsSpellCaster(oAssociate);
-    if(bSpellCaster)
+    jRow = JsonArray();
+    CreateButton(jRow, "Set Quick Widget", "btn_quick_widget", 200.0, 20.0, -1.0, "btn_quick_widget_tooltip");
+    CreateCheckBox(jRow, "", "chbx_quick_widget", 25.0, 20.0);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    if(bSpellCaster == 2) // Memorizes their spells.
     {
-        jRow = JsonArray();
-        CreateButton(jRow, "Set Spell Widget", "btn_spell_widget", 200.0, 20.0, -1.0, "btn_spell_widget_tooltip");
-        CreateCheckBox(jRow, "", "chbx_spell_widget", 25.0, 20.0);
-        JsonArrayInsertInplace(jRow, NuiSpacer());
-        if(bSpellCaster == 2) // Memorizes their spells.
-        {
-            CreateButton(jRow, "Set Memorized Spells", "btn_spell_memorize", 200.0, 20.0, -1.0, "btn_spell_memorize_tooltip");
-            CreateLabel(jRow, "", "blank_label_1", 25.0, 20.0);
-        }
-        // Add row to the column.
-        JsonArrayInsertInplace(jCol, NuiRow(jRow));
-        fHeight = fHeight + 28.0;
+        CreateButton(jRow, "Set Memorized Spells", "btn_spell_memorize", 200.0, 20.0, -1.0, "btn_spell_memorize_tooltip");
+        CreateLabel(jRow, "", "blank_label_1", 25.0, 20.0);
     }
-    // Row 9 ******************************************************************* 500 / 269
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    fHeight = fHeight + 28.0;
+    // Row 9 ******************************************************************* 500 / ---
     jRow = JsonArray();
     CreateButton(jRow, "Cast Short Buff spells", "btn_buff_short", 200.0, 20.0, -1.0, "btn_buff_short_tooltip");
     CreateCheckBox(jRow, "", "chbx_buff_short", 25.0, 20.0);
@@ -519,7 +577,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
-    // Row 10 ******************************************************************* 500 / 297
+    // Row 10 ****************************************************************** 500 / ---
     jRow = JsonArray();
     CreateButton(jRow, "Cast All Buff spells", "btn_buff_all", 200.0, 20.0, -1.0, "btn_buff_all_tooltip");
     CreateCheckBox(jRow, "", "chbx_buff_all", 25.0, 20.0);
@@ -529,7 +587,15 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
-    // Row 11 ******************************************************************* 500 / 325
+    // Row 11 ******************************************************************* 500 / ---
+    jRow = JsonArray();
+    CreateButton(jRow, "", "btn_jump_to", 200.0, 20.0, -1.0, "btn_jump_to");
+    CreateCheckBox(jRow, "", "chbx_jump_to", 25.0, 20.0);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    fHeight = fHeight + 28.0;
+    // Row 12 ****************************************************************** 500 / ---
     jRow = JsonArray();
     CreateButton(jRow, "Toggle Camera Focus", "btn_camera", 200.0, 20.0, -1.0, "btn_camera_tooltip");
     CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0);
@@ -540,7 +606,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
     /* DOES NOT WORK WITH VERSION 36!
-    // Row 12 ******************************************************************* 500 / ---
+    // Row 13 ****************************************************************** 500 / ---
     int bFamiliar = GetHasFeat(FEAT_SUMMON_FAMILIAR, oAssociate, TRUE);
     if(bFamiliar)
     {
@@ -551,7 +617,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         // Add row to the column.
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
-    // Row 13 ******************************************************************* 500 / ---
+    // Row 14 ******************************************************************* 500 / ---
         jRow = JsonArray();
         CreateCombo(jRow, ai_CreateCompanionJson(oPC, "hen_familiar"), "cmb_familiar", 200.0, 20.0);
         CreateCheckBox(jRow, "", "chbx_familiar", 25.0, 20.0);
@@ -561,7 +627,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 14 ******************************************************************* 500 / ---
+    // Row 15 ****************************************************************** 500 / ---
     int bCompanion = GetHasFeat(FEAT_ANIMAL_COMPANION, oAssociate, TRUE);
     if(bCompanion)
     {
@@ -572,7 +638,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         // Add row to the column.
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
-    // Row 15 ******************************************************************* 500 / ---
+    // Row 16 ****************************************************************** 500 / ---
         jRow = JsonArray();
         CreateCombo(jRow, ai_CreateCompanionJson(oPC, "hen_companion"), "cmb_companion", 200.0, 20.0);
         CreateCheckBox(jRow, "", "chbx_companion", 25.0, 20.0);
@@ -583,29 +649,30 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         fHeight = fHeight + 28.0;
     }
     */
-    // Row 16+ ****************************************************************** 500 / ---
+    // Row 17+ ****************************************************************** 500 / ---
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     json jPCPlugins;
     if(bIsPC)
     {
         jPCPlugins = ai_UpdatePluginsForPC(oPC, sAssociateType);
         // Set the plugins the player can use.
-        int nButton, nIndex = 0;
-        string sButton;
-        json jScript = JsonArrayGet(jPCPlugins, nIndex);
-        while(JsonGetType(jScript) != JSON_TYPE_NULL)
+        int nIndex;
+        string sButton, sName;
+        json jPlugin = JsonArrayGet(jPCPlugins, nIndex);
+        while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
             jRow = JsonArray();
-            sButton = IntToString(++nButton);
-            CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+            sButton = IntToString(nIndex);
+            sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+            CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
             CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
             JsonArrayInsertInplace(jRow, NuiSpacer());
-            nIndex += 2;
-            jScript = JsonArrayGet(jPCPlugins, nIndex);
-            if(JsonGetType(jScript) != JSON_TYPE_NULL)
+            jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
+            if(JsonGetType(jPlugin) != JSON_TYPE_NULL)
             {
-                sButton = IntToString(++nButton);
-                CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+                sButton = IntToString(nIndex);
+                sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+                CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
                 CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
                 // Add row to the column.
                 JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -618,8 +685,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
                 fHeight += 28.0;
                 break;
             }
-            nIndex += 2;
-            jScript = JsonArrayGet(jPCPlugins, nIndex);
+            jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
         }
     }
     // Row 17 ****************************************************************** 500 / ---
@@ -658,6 +724,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     int bBuffShort = ai_GetWidgetButton(oPC, BTN_BUFF_SHORT, oAssociate, sAssociateType);
     int bBuffLong = ai_GetWidgetButton(oPC, BTN_BUFF_LONG, oAssociate, sAssociateType);
     int bBuffAll = ai_GetWidgetButton(oPC, BTN_BUFF_ALL, oAssociate, sAssociateType);
+    int bJumpTo = ai_GetWidgetButton(oPC, BTN_CMD_JUMP_TO, oAssociate, sAssociateType);
     int bCamera = ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType);
     int bInventory = ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType);
     int bBtnFamiliar = ai_GetWidgetButton(oPC, BTN_CMD_FAMILIAR, oAssociate, sAssociateType);
@@ -763,11 +830,11 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     // Command labels
     if(bIsPC) sText = "  All ";
     else sText = "  ";
-    NuiSetBind(oPC, nToken, "btn_cmd_action_label", JsonString(sText + "Action Mode"));
-    NuiSetBind(oPC, nToken, "btn_cmd_guard_label", JsonString(sText + "Guard"));
-    NuiSetBind(oPC, nToken, "btn_cmd_hold_label", JsonString(sText + "Stand Ground"));
+    NuiSetBind(oPC, nToken, "btn_cmd_action_label", JsonString(sText + "Action"));
+    NuiSetBind(oPC, nToken, "btn_cmd_guard_label", JsonString(sText + "Guard Mode"));
+    NuiSetBind(oPC, nToken, "btn_cmd_hold_label", JsonString(sText + "Hold Mode"));
     NuiSetBind(oPC, nToken, "btn_cmd_attack_label", JsonString(sText + "Normal Mode"));
-    NuiSetBind(oPC, nToken, "btn_cmd_follow_label", JsonString(sText + "Follow"));
+    NuiSetBind(oPC, nToken, "btn_cmd_follow_label", JsonString(sText + "Follow Mode"));
     NuiSetBind(oPC, nToken, "btn_follow_target_label", JsonString("  Follow Target"));
     float fRange = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE) +
                    StringToFloat(Get2DAString("appearance", "PREFATCKDIST", GetAppearanceType(oAssociate)));
@@ -775,16 +842,16 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     if(bIsPC)
     {
         sText = "  All associates";
-        NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " follow"));
+        NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " enter follow mode"));
     }
     else
     {
         sText = "  " + GetName(oAssociate);
-        NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " follow [" + sRange + " meters]"));
+        NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " enter follow mode [" + sRange + " meters]"));
     }
-    NuiSetBind(oPC, nToken, "btn_cmd_action_tooltip", JsonString(sText + " enter action mode"));
-    NuiSetBind(oPC, nToken, "btn_cmd_guard_tooltip", JsonString(sText + " guard me"));
-    NuiSetBind(oPC, nToken, "btn_cmd_hold_tooltip", JsonString(sText + " stand ground"));
+    NuiSetBind(oPC, nToken, "btn_cmd_action_tooltip", JsonString(sText + " do actions"));
+    NuiSetBind(oPC, nToken, "btn_cmd_guard_tooltip", JsonString(sText + " enter guard mode"));
+    NuiSetBind(oPC, nToken, "btn_cmd_hold_tooltip", JsonString(sText + " enter hold mode"));
     NuiSetBind(oPC, nToken, "btn_cmd_attack_tooltip", JsonString(sText + " enter normal mode"));
     object oTarget = GetLocalObject(oAssociate, AI_FOLLOW_TARGET);
     string sTarget;
@@ -805,6 +872,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     {
         string sScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
         if(sScript == "ai_a_ambusher") sText = "  Using ambush tactics";
+        else if(sScript == "ai_a_flanker") sText = "  Using flank tactics";
         else if(sScript == "ai_a_peaceful") sText = "  Using peaceful tactics";
         else if(sScript == "ai_a_defensive") sText = "  Using defensive tactics";
         else if(sScript == "ai_a_ranged") sText = "  Using ranged tactics";
@@ -828,20 +896,17 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
                    "  Place a trap at the location selected"));
     }
     // Row 8
-    if(bSpellCaster)
+    NuiSetBind(oPC, nToken, "btn_quick_widget_event", JsonBool(TRUE));
+    NuiSetBind (oPC, nToken, "btn_quick_widget_tooltip", JsonString(
+               "  Add/Remove abilities and spells from creatures widget"));
+    NuiSetBind(oPC, nToken, "chbx_quick_widget_check", JsonBool (bSpellWidget));
+    NuiSetBindWatch (oPC, nToken, "chbx_quick_widget_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_quick_widget_event", JsonBool(TRUE));
+    if(bSpellCaster == 2) // Memorizes their spells.
     {
-        NuiSetBind(oPC, nToken, "chbx_spell_widget_check", JsonBool(bSpellWidget));
-        NuiSetBindWatch (oPC, nToken, "chbx_spell_widget_check", TRUE);
-        NuiSetBind(oPC, nToken, "chbx_spell_widget_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_spell_widget_event", JsonBool(TRUE));
-        NuiSetBind (oPC, nToken, "btn_spell_widget_tooltip", JsonString(
-                   "  Add/Remove spells from creatures widget"));
-        if(bSpellCaster == 2) // Memorizes their spells.
-        {
-            NuiSetBind(oPC, nToken, "btn_spell_memorize_event", JsonBool(TRUE));
-            NuiSetBind (oPC, nToken, "btn_spell_memorize_tooltip", JsonString(
-                       "  Change memorized spell list."));
-        }
+        NuiSetBind(oPC, nToken, "btn_spell_memorize_event", JsonBool(TRUE));
+        NuiSetBind (oPC, nToken, "btn_spell_memorize_tooltip", JsonString(
+                   "  Change memorized spell list."));
     }
     // Row 9
     NuiSetBind(oPC, nToken, "chbx_buff_short_check", JsonBool (bBuffShort));
@@ -874,6 +939,17 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         NuiSetBind (oPC, nToken, "btn_buff_rest_tooltip", JsonString (sText));
     }
     // Row 11
+    NuiSetBind(oPC, nToken, "chbx_jump_to_check", JsonBool(bJumpTo));
+    NuiSetBindWatch (oPC, nToken, "chbx_jump_to_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_jump_to_event", JsonBool(TRUE));
+    sText = GetName(oPC);
+    if(oPC == oAssociate) sName = "everyone";
+    else sName = GetName(oAssociate);
+    NuiSetBind(oPC, nToken, "btn_jump_to_label", JsonString("Jump to " + sText));
+    NuiSetBind(oPC, nToken, "btn_jump_to_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_jump_to_tooltip", JsonString (
+               "  Jump " + sName + " to " + sText));
+    // Row 12
     NuiSetBind(oPC, nToken, "chbx_camera_check", JsonBool (bCamera));
     NuiSetBindWatch (oPC, nToken, "chbx_camera_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_camera_event", JsonBool(TRUE));
@@ -886,7 +962,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_inventory_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_inventory_tooltip", JsonString (
                "  Open " + sName + " inventory"));
-    /*/ Row 12 & 13
+    /*/ Row 13 & 14
     DOES NOT WORK WITH version 36!
     if(bFamiliar)
     {
@@ -911,7 +987,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
             NuiSetBind(oPC, nToken, "lbl_familiar_name_label", JsonString("Familiar name"));
         }
     }
-    // Row 14 & 15
+    // Row 15 & 16
     if(bCompanion)
     {
         NuiSetBind(oPC, nToken, "chbx_companion_check", JsonBool(bBtnCompanion));
@@ -937,26 +1013,25 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     } */
     if(bIsPC)
     {
-        // Row 16+
-        int nIndex, nButton, bWidget;
-        string sButton;
-        json jScript = JsonArrayGet(jPCPlugins, nIndex);
-        while(JsonGetType(jScript) != JSON_TYPE_NULL)
+        // Row 17+
+        int nIndex, bWidget;
+        string sButton, sText;
+        json jPlugin = JsonArrayGet(jPCPlugins, nIndex);
+        while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
-            sText = JsonGetString(jScript);
-            sButton = IntToString(++nButton);
+            sButton = IntToString(nIndex);
             NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_event", JsonBool(TRUE));
-            bWidget = JsonGetInt(JsonArrayGet(jPCPlugins, nIndex + 1));
-            NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_event", JsonBool(TRUE));
+            bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
             NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(bWidget));
             NuiSetBindWatch (oPC, nToken, "chbx_plugin_" + sButton + "_check", TRUE);
-            sText = "  Execute script: " + sText;
+            NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_event", JsonBool(TRUE));
+            sText = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
             NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_tooltip", JsonString(sText));
-            jScript = JsonArrayGet(jPCPlugins, ++nIndex);
+            jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
         }
         NuiSetBind(oPC, nToken, "chbx_plugin_tooltip", JsonString("  Adds the plugin to your widget."));
     }
-    // Row 17
+    // Row 18
     sText = ai_GetRandomTip();
     NuiSetBind(oPC, nToken, "lbl_info_1_label", JsonString(sText));
 }
@@ -1025,11 +1100,11 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 8 ******************************************************************* 500 / 269
     jRow = JsonArray();
-    CreateButton(jRow, "Use No Magic", "btn_no_magic", 200.0, 20.0, -1.0, "btn_no_magic_tooltip");
-    CreateCheckBox(jRow, "", "chbx_no_magic", 25.0, 20.0);
+    CreateButton(jRow, "Use Magic", "btn_magic", 200.0, 20.0, -1.0, "btn_magic_tooltip");
+    CreateCheckBox(jRow, "", "chbx_magic", 25.0, 20.0);
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Use All Magic", "btn_all_magic", 200.0, 20.0, -1.0, "btn_all_magic_tooltip");
-    CreateCheckBox(jRow, "", "chbx_all_magic", 25.0, 20.0);
+    CreateButton(jRow, "Use Magic Items", "btn_magic_items", 200.0, 20.0, -1.0, "btn_magic_items_tooltip");
+    CreateCheckBox(jRow, "", "chbx_magic_items", 25.0, 20.0);
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 9 ******************************************************************* 500 / 297
     jRow = JsonArray();
@@ -1057,7 +1132,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     float fHeight = 353.0;
     // Row 12 ****************************************************************** 500 / ---
-    if(sAssociateType != "summons")
+    if(sAssociateType != "summons" && sAssociateType != "dominated")
     {
         jRow = JsonArray();
         CreateButton(jRow, "Auto Looting", "btn_loot", 200.0, 20.0, -1.0, "btn_loot_tooltip");
@@ -1074,7 +1149,8 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     // Row 12 ****************************************************************** 500 / ---
     jRow = JsonArray();
     CreateButton(jRow, "Set Current AI:", "btn_ai_script", 175.0f, 20.0f, -1.0, "btn_ai_script_tooltip");
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_ai_script", 16, FALSE, 291.0f, 20.0f, "txt_ai_script_tooltip");
+    CreateTextEditBox(jRow, "sPlaceHolder", "txt_ai_script", 16, FALSE, 145.0f, 20.0f, "txt_ai_script_tooltip");
+    CreateCombo(jRow, ai_CreateAIScriptJson(oPC), "cmb_ai_script", 146.0, 20.0);
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     fHeight += 28.0;
     // Row 13 ****************************************************************** 500 / ---
@@ -1095,7 +1171,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_NUI, sName + " AI Menu",
-                           fX, fY, 500.0, 409.0 + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
+                           fX, fY, 500.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     // Get which buttons are activated.
     int bAI = ai_GetAIButton(oPC, BTN_AI_FOR_PC, oAssociate, sAssociateType);
     int bReduceSpeech = ai_GetAIButton(oPC, BTN_AI_REDUCE_SPEECH, oAssociate, sAssociateType);
@@ -1110,7 +1186,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     int bMagicLevel = ai_GetAIButton(oPC, BTN_AI_MAGIC_LEVEL, oAssociate, sAssociateType);
     int bSpontaneous = ai_GetAIButton(oPC, BTN_AI_NO_SPONTANEOUS, oAssociate, sAssociateType);
     int bNoMagic = ai_GetAIButton(oPC, BTN_AI_NO_MAGIC_USE, oAssociate, sAssociateType);
-    int bAllMagic = ai_GetAIButton(oPC, BTN_AI_ALL_MAGIC_USE, oAssociate, sAssociateType);
+    int bNoMagicItems = ai_GetAIButton(oPC, BTN_AI_NO_MAGIC_ITEM_USE, oAssociate, sAssociateType);
     int bDefMagic = ai_GetAIButton(oPC, BTN_AI_DEF_MAGIC_USE, oAssociate, sAssociateType);
     int bOffMagic = ai_GetAIButton(oPC, BTN_AI_OFF_MAGIC_USE, oAssociate, sAssociateType);
     int bHealOut = ai_GetAIButton(oPC, BTN_AI_HEAL_OUT, oAssociate, sAssociateType);
@@ -1229,32 +1305,35 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_spontaneous_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_spontaneous_tooltip", JsonString(sText));
     // Row 8
-    sText = "  [Any]";
-    if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC)) sText = "  [None]";
-    else if(ai_GetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING)) sText = "  [Defense]";
-    else if(ai_GetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING)) sText = "  [Offense]";
-    NuiSetBind(oPC, nToken, "chbx_no_magic_check", JsonBool(bNoMagic));
-    NuiSetBindWatch (oPC, nToken, "chbx_no_magic_check", TRUE);
-    NuiSetBind(oPC, nToken, "chbx_no_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_no_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_no_magic_tooltip", JsonString(sText + " Turn magic use off"));
-    NuiSetBind(oPC, nToken, "chbx_all_magic_check", JsonBool(bAllMagic));
-    NuiSetBindWatch (oPC, nToken, "chbx_all_magic_check", TRUE);
-    NuiSetBind(oPC, nToken, "chbx_all_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_all_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_all_magic_tooltip", JsonString(sText + " Use any magic"));
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC)) sText = "  Magic Off";
+    else sText = "  Magic On";
+    NuiSetBind(oPC, nToken, "chbx_magic_check", JsonBool(bNoMagic));
+    NuiSetBindWatch (oPC, nToken, "chbx_magic_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_magic_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_magic_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_magic_tooltip", JsonString(sText));
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS)) sText = "  Magic Items Off";
+    else sText = "  Magic Items On";
+    NuiSetBind(oPC, nToken, "chbx_magic_items_check", JsonBool(bNoMagicItems));
+    NuiSetBindWatch (oPC, nToken, "chbx_magic_items_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_magic_items_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_magic_items_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_magic_items_tooltip", JsonString(sText));
     // Row 9
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING)) sText = "  Defensive Magic On";
+    else sText = "  Defensive Magic Off";
     NuiSetBind(oPC, nToken, "chbx_def_magic_check", JsonBool (bDefMagic));
     NuiSetBindWatch (oPC, nToken, "chbx_def_magic_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_def_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "chbx_def_magic_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_def_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_def_magic_tooltip", JsonString(sText + " Use defensive magic only"));
+    NuiSetBind(oPC, nToken, "btn_def_magic_tooltip", JsonString(sText));
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING)) sText = "  Offensive Magic On";
+    else sText = "  Offensive Magic Off";
     NuiSetBind(oPC, nToken, "chbx_off_magic_check", JsonBool(bOffMagic));
     NuiSetBindWatch (oPC, nToken, "chbx_off_magic_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_off_magic_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_off_magic_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_off_magic_tooltip", JsonString(sText + " Use offensive magic only"));
+    NuiSetBind(oPC, nToken, "btn_off_magic_tooltip", JsonString(sText));
     // Row 10
     int nHeal = GetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT);
     NuiSetBind(oPC, nToken, "chbx_heal_out_check", JsonBool(bHealOut));
@@ -1279,14 +1358,14 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     else sText = "  Self healing On";
     NuiSetBind(oPC, nToken, "btn_heals_onoff_tooltip", JsonString(sText));
     NuiSetBind(oPC, nToken, "chbx_healp_onoff_check", JsonBool(bPartyHealOnOff));
-    NuiSetBindWatch (oPC, nToken, "chbx_healp_onoff_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_healp_onoff_event", JsonBool(TRUE));
+    NuiSetBindWatch (oPC, nToken, "chbx_healp_onoff_check", TRUE);
     NuiSetBind(oPC, nToken, "btn_healp_onoff_event", JsonBool(TRUE));
     if(ai_GetAIMode(oAssociate, AI_MODE_PARTY_HEALING_OFF)) sText = "  Party healing Off";
     else sText = "  Party healing On";
     NuiSetBind(oPC, nToken, "btn_healp_onoff_tooltip", JsonString(sText));
     // Row 12
-    if(sAssociateType != "summons")
+    if(sAssociateType != "summons" && sAssociateType != "dominated")
     {
         sRange = FloatToString(GetLocalFloat(oAssociate, AI_LOOT_CHECK_RANGE), 0, 0);
         if(ai_GetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS)) sText = "  Looting On [" + sRange + " meters]";
@@ -1317,8 +1396,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
         NuiSetBindWatch (oPC, nToken, "chbx_perc_range_check", TRUE);
         NuiSetBind(oPC, nToken, "btn_perc_range_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_perc_range_tooltip", JsonString(sText));
-    }
-    */
+    }     */
     // Row 13
     string sScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
     if(sScript == "") sScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
@@ -1327,6 +1405,8 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "txt_ai_script_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_ai_script", JsonString(sScript));
     NuiSetBind(oPC, nToken, "txt_ai_script_tooltip", JsonString("  Associate AI scripts must start with ai_a_"));
+    NuiSetBind(oPC, nToken, "cmb_ai_script_event", JsonBool(TRUE));
+    NuiSetBindWatch(oPC, nToken, "cmb_ai_script_selected", TRUE);
     // Row 14
     sText = ai_GetRandomTip();
     NuiSetBind (oPC, nToken, "lbl_info_label", JsonString(sText));
@@ -1354,6 +1434,7 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     int bBuffShort = ai_GetWidgetButton(oPC, BTN_BUFF_SHORT, oAssociate, sAssociateType);
     int bBuffLong = ai_GetWidgetButton(oPC, BTN_BUFF_LONG, oAssociate, sAssociateType);
     int bBuffAll = ai_GetWidgetButton(oPC, BTN_BUFF_ALL, oAssociate, sAssociateType);
+    int bJumpTo = ai_GetWidgetButton(oPC, BTN_CMD_JUMP_TO, oAssociate, sAssociateType);
     int bCamera = ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType);
     int bInventory = ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType);
     int bFamiliar = ai_GetWidgetButton(oPC, BTN_CMD_FAMILIAR, oAssociate, sAssociateType);
@@ -1372,7 +1453,7 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     int bMagicLevel = ai_GetAIButton(oPC, BTN_AI_MAGIC_LEVEL, oAssociate, sAssociateType);
     int bSpontaneous = ai_GetAIButton(oPC, BTN_AI_NO_SPONTANEOUS, oAssociate, sAssociateType);
     int bNoMagic = ai_GetAIButton(oPC, BTN_AI_NO_MAGIC_USE, oAssociate, sAssociateType);
-    int bAllMagic = ai_GetAIButton(oPC, BTN_AI_ALL_MAGIC_USE, oAssociate, sAssociateType);
+    int bNoMagicItems = ai_GetAIButton(oPC, BTN_AI_NO_MAGIC_ITEM_USE, oAssociate, sAssociateType);
     int bDefMagic = ai_GetAIButton(oPC, BTN_AI_DEF_MAGIC_USE, oAssociate, sAssociateType);
     int bOffMagic = ai_GetAIButton(oPC, BTN_AI_OFF_MAGIC_USE, oAssociate, sAssociateType);
     int bHealOut = ai_GetAIButton(oPC, BTN_AI_HEAL_OUT, oAssociate, sAssociateType);
@@ -1463,6 +1544,14 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
         CreateButtonImage(jRow, "ir_rest", "btn_buff_rest", 35.0f, 35.0f, 0.0, "btn_buff_rest_tooltip");
         fButtons += 1.0;
     }
+    if(bJumpTo)
+    {
+        string sImage;
+        if(oPC == oAssociate) sImage = "dm_jumpall";
+        else sImage = "dm_jump";
+        CreateButtonImage(jRow, sImage, "btn_jump_to", 35.0f, 35.0f, 0.0, "btn_jump_to_tooltip");
+        fButtons += 1.0;
+    }
     if(bCamera)
     {
         CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
@@ -1545,12 +1634,12 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     }
     if(bNoMagic)
     {
-        CreateButtonImage(jRow, "ir_cntrspell", "btn_no_magic", 35.0f, 35.0f, 0.0, "btn_no_magic_tooltip");
+        CreateButtonImage(jRow, "ir_cntrspell", "btn_magic", 35.0f, 35.0f, 0.0, "btn_magic_tooltip");
         fButtons += 1.0;
     }
-    if(bAllMagic)
+    if(bNoMagicItems)
     {
-        CreateButtonImage(jRow, "ir_splbook", "btn_all_magic", 35.0f, 35.0f, 0.0, "btn_all_magic_tooltip");
+        CreateButtonImage(jRow, "ir_moreattacks", "btn_magic_items", 35.0f, 35.0f, 0.0, "btn_magic_items_tooltip");
         fButtons += 1.0;
     }
     if(bDefMagic)
@@ -1594,43 +1683,44 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
         fButtons += 1.0;
     }
     int bIsPC = ai_GetIsCharacter(oAssociate);
-    json jPCPlugins;
     if(bIsPC)
     {
-       jPCPlugins = ai_UpdatePluginsForPC(oPC, sAssociateType);
+        json jPCPlugins = ai_UpdatePluginsForPC(oPC, sAssociateType);
         // Plug in buttons *****************************************************
-        int nIndex;
-        string sButton;
-        json jScript = JsonArrayGet(jPCPlugins, nIndex);
-        while(JsonGetType(jScript) != JSON_TYPE_NULL)
+        int nIndex, bWidget;
+        string sIcon, sButton;
+        json jPlugin = JsonArrayGet(jPCPlugins, nIndex);
+        while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
-            jScript = JsonArrayGet(jPCPlugins, ++nIndex);
-            if(JsonGetInt(jScript))
+            bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
+            if(bWidget)
             {
-                sButton = IntToString((nIndex + 1) / 2);
-                CreateButtonImage(jRow, "is_summon" + sButton, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
+                sIcon = JsonGetString(JsonArrayGet(jPlugin, 3));
+                sButton = IntToString(nIndex);
+                CreateButtonImage(jRow, sIcon, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
                 fButtons += 1.0;
             }
-            jScript = JsonArrayGet(jPCPlugins, ++nIndex);
+            jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
         }
     }
     float fHeight = 83.0f;
     if(bAIWidgetLock) fHeight = 50.0f;
-    // Spell Widget.
-    int nIndex, nSpell, nLevel, nMetamagic;
+    // Quick Widget.
+    int nIndex, nSpell, nLevel, nMetaMagic;
     string sClass, sLevel, sIndex;
     json jSpell;
     json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
     json jSpells = JsonArrayGet(jAIData, 10);
     json jWidget = JsonArrayGet(jSpells, 2);
     json jCol = JsonArray();
-    if(bSpellWidget)
+    if(bSpellWidget && JsonGetLength(jWidget) > 0)
     {
-        // Row 2 (Widget)*******************************************************
+        // Row 2 (Widget Row 1)*************************************************
         if(JsonGetType(jWidget) != JSON_TYPE_NULL)
         {
             fHeight += 43.0;
             float fSpellButtons;
+            json jButton, jRectangle, jMetaMagic, jDrawList;
             // Add row to the column.
             JsonArrayInsertInplace(jCol, NuiRow(jRow));
             jRow = JsonArray();
@@ -1641,15 +1731,15 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
                 if(JsonGetType(jSpell) != JSON_TYPE_NULL)
                 {
                     sIndex = IntToString(nIndex);
-                    json jButton = NuiButtonImage(NuiBind("btn_widget_" + sIndex + "_image"));
+                    jButton = NuiButtonImage(NuiBind("btn_widget_" + sIndex + "_image"));
                     jButton = NuiEnabled(jButton, NuiBind("btn_widget_" + sIndex + "_event"));
                     jButton = NuiId(jButton, "btn_widget_" + sIndex);
                     jButton = NuiWidth(NuiHeight(jButton, 35.0), 35.0);
                     jButton = NuiMargin(jButton, 0.0);
                     jButton = NuiTooltip(jButton, NuiBind("btn_widget_" + sIndex + "_tooltip"));
-                    json jRectangle = NuiRect(4.0, 4.0, 10.0, 10.0);
-                    json jMetaMagic = NuiDrawListText(JsonBool(TRUE), NuiColor(255, 255, 0), jRectangle, NuiBind("metamagic_" + sIndex + "_text"));
-                    json jDrawList = JsonArrayInsert(JsonArray(), jMetaMagic);
+                    jRectangle = NuiRect(4.0, 4.0, 10.0, 10.0);
+                    jMetaMagic = NuiDrawListText(JsonBool(TRUE), NuiColor(255, 255, 0), jRectangle, NuiBind("metamagic_" + sIndex + "_text"));
+                    jDrawList = JsonArrayInsert(JsonArray(), jMetaMagic);
                     jButton = NuiDrawList(jButton, JsonBool(TRUE), jDrawList);
                     JsonArrayInsertInplace(jRow, jButton);
                     fSpellButtons += 1.0;
@@ -1658,9 +1748,40 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
                 ++nIndex;
             }
             if(fSpellButtons > fButtons) fButtons = fSpellButtons;
+            // Row 3 (Widget Row 2)*************************************************
+            if(nIndex > 9  && JsonGetLength(jWidget) > 10)
+            {
+                fHeight += 43.0;
+                // Add row to the column.
+                JsonArrayInsertInplace(jCol, NuiRow(jRow));
+                jRow = JsonArray();
+                CreateLabel(jRow, "", "blank_label", 35.0, 35.0, 0, 0, 0.0);
+                while(nIndex < 20)
+                {
+                    jSpell = JsonArrayGet(jWidget, nIndex);
+                    if(JsonGetType(jSpell) != JSON_TYPE_NULL)
+                    {
+                        sIndex = IntToString(nIndex);
+                        jButton = NuiButtonImage(NuiBind("btn_widget_" + sIndex + "_image"));
+                        jButton = NuiEnabled(jButton, NuiBind("btn_widget_" + sIndex + "_event"));
+                        jButton = NuiId(jButton, "btn_widget_" + sIndex);
+                        jButton = NuiWidth(NuiHeight(jButton, 35.0), 35.0);
+                        jButton = NuiMargin(jButton, 0.0);
+                        jButton = NuiTooltip(jButton, NuiBind("btn_widget_" + sIndex + "_tooltip"));
+                        jRectangle = NuiRect(4.0, 4.0, 10.0, 10.0);
+                        jMetaMagic = NuiDrawListText(JsonBool(TRUE), NuiColor(255, 255, 0), jRectangle, NuiBind("metamagic_" + sIndex + "_text"));
+                        jDrawList = JsonArrayInsert(JsonArray(), jMetaMagic);
+                        jButton = NuiDrawList(jButton, JsonBool(TRUE), jDrawList);
+                        JsonArrayInsertInplace(jRow, jButton);
+                        fSpellButtons += 1.0;
+                    }
+                    else break;
+                    ++nIndex;
+                }
+            }
         }
         // Add the row to the column.
-        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        if(nIndex > 0) JsonArrayInsertInplace(jCol, NuiRow(jRow));
     }
     else
     {
@@ -1728,21 +1849,21 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     if(bCmdAction)
     {
         NuiSetBind(oPC, nToken, "btn_cmd_action_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_cmd_action_tooltip", JsonString(sText + " enter action mode"));
+        NuiSetBind(oPC, nToken, "btn_cmd_action_tooltip", JsonString(sText + " do actions"));
         bBool = ai_GetAIMode(oAssociate, AI_MODE_COMMANDED);
         NuiSetBind(oPC, nToken, "btn_cmd_action_encouraged", JsonBool(bBool));
     }
     if(bCmdGuard)
     {
         NuiSetBind(oPC, nToken, "btn_cmd_guard_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_cmd_guard_tooltip", JsonString(sText + " guard me"));
+        NuiSetBind(oPC, nToken, "btn_cmd_guard_tooltip", JsonString(sText + " enter guard mode"));
         bBool = ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER);
         NuiSetBind(oPC, nToken, "btn_cmd_guard_encouraged", JsonBool(bBool));
     }
     if(bCmdHold)
     {
         NuiSetBind(oPC, nToken, "btn_cmd_hold_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_cmd_hold_tooltip", JsonString(sText + " stand ground"));
+        NuiSetBind(oPC, nToken, "btn_cmd_hold_tooltip", JsonString(sText + " enter hold mode"));
         bBool = ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND);
         NuiSetBind(oPC, nToken, "btn_cmd_hold_encouraged", JsonBool(bBool));
     }
@@ -1769,12 +1890,12 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
         if(bIsPC)
         {
             sText = "  All associates";
-            NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " follow"));
+            NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " enter follow mode"));
         }
         else
         {
             sText = "  " + GetName(oAssociate);
-            NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " follow [" + sRange + " meters]"));
+            NuiSetBind(oPC, nToken, "btn_cmd_follow_tooltip", JsonString(sText + " enter follow mode [" + sRange + " meters]"));
         }
         bBool = ai_GetAIMode(oAssociate, AI_MODE_FOLLOW);
         NuiSetBind(oPC, nToken, "btn_cmd_follow_encouraged", JsonBool(bBool));
@@ -1850,6 +1971,14 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     {
         NuiSetBind(oPC, nToken, "btn_buff_all_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_buff_all_tooltip", JsonString("  Buff the party with all our defensive spells"));
+    }
+    if(bJumpTo)
+    {
+        NuiSetBind(oPC, nToken, "btn_jump_to_event", JsonBool(TRUE));
+        sText = GetName(oPC);
+        if(oPC == oAssociate) sName = "everyone";
+        else sName = GetName(oAssociate);
+        NuiSetBind(oPC, nToken, "btn_jump_to_tooltip", JsonString("  Jump " + sName + " to " + sText));
     }
     if(bCamera)
     {
@@ -1932,7 +2061,7 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     {
         sRange = FloatToString(GetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE), 0, 0);
         NuiSetBind(oPC, nToken, "btn_traps_event", JsonBool(TRUE));
-        if(ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS)) sText = "  Disarm Traps On [" + sRange + " meters]";
+        if(ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS)) sText = "  Disable Traps On [" + sRange + " meters]";
         else sText = "  Disable Traps Off [" + sRange + " meters]";
         NuiSetBind(oPC, nToken, "btn_traps_tooltip", JsonString(sText));
     }
@@ -1967,13 +2096,17 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     }
     if(bNoMagic)
     {
-        NuiSetBind(oPC, nToken, "btn_no_magic_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_no_magic_tooltip", JsonString("  Turn magic use off"));
+        if(ai_GetAIMode(oAssociate, AI_MAGIC_NO_MAGIC)) sText = "  Magic Off";
+        else sText = "  Magic On";
+        NuiSetBind(oPC, nToken, "btn_magic_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_magic_tooltip", JsonString(sText));
     }
-    if(bAllMagic)
+    if(bNoMagicItems)
     {
-        NuiSetBind(oPC, nToken, "btn_all_magic_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_all_magic_tooltip", JsonString("  Use any magic"));
+        if(ai_GetAIMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS)) sText = "  Magic Items Off";
+        else sText = "  Magic Items On";
+        NuiSetBind(oPC, nToken, "btn_magic_items_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_magic_items_tooltip", JsonString(sText));
     }
     if(bDefMagic)
     {
@@ -2041,23 +2174,26 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     }
     if(bIsPC)
     {
-        int nIndex;
-        string sButton, sText, sScript;
-        json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
-        json jScript = JsonArrayGet(jPlugins, nIndex);
-        while(JsonGetType(jScript) != JSON_TYPE_NULL)
+        int nIndex, bWidget;
+        string sButton, sName, sText, sScript;
+        json jPCPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
+        json jPlugin = JsonArrayGet(jPCPlugins, nIndex);
+        while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
-            sScript = JsonGetString(jScript);
-            jScript = JsonArrayGet(jPlugins, ++nIndex);
-            if(JsonGetInt(jScript))
+            bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
+            if(bWidget)
             {
-                sButton = IntToString((nIndex + 1) / 2);
-                if(ResManGetAliasFor(sScript, RESTYPE_NCS) == "") sText = "  " + sScript + " not found by ResMan!";
-                else sText = "  Executes " + sScript + " plugin";
+                sButton = IntToString(nIndex);
+                sScript = JsonGetString(JsonArrayGet(jPlugin, 0));
+                if(ResManGetAliasFor(sScript, RESTYPE_NCS) == "")
+                {
+                    sText = "  " + sScript + " not found by ResMan!";
+                }
+                else sName = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
                 NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_event", JsonBool (TRUE));
-                NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_tooltip", JsonString(sText));
+                NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_tooltip", JsonString(sName));
             }
-            jScript = JsonArrayGet(jPlugins, ++nIndex);
+            jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
         }
     }
     if(bSpellWidget)
@@ -2072,24 +2208,83 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
                 jSpell = JsonArrayGet(jWidget, nIndex);
                 if(JsonGetType(jSpell) != JSON_TYPE_NULL)
                 {
-                    nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-                    sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                    nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
-                    sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
-                    nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
-                    nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
-                    nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
                     sIndex = IntToString(nIndex);
-                    sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
-                    NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
-                    NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
-                    sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
-                    NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
-                    if(GetSpellUsesLeft(oAssociate, nClass, nSpell, nMetaMagic, nDomain))
+                    nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+                    if(nDomain == -1) // This is a feat.
                     {
-                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
+                        nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        sSpellIcon = Get2DAString("feat", "ICON", nSpell);
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                        if(GetHasFeat(nSpell, oAssociate))
+                        {
+                            sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSpell)));
+                            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName));
+                        }
+                        else NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
                     }
-                    else NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
+                    else // This is a spell.
+                    {
+                        nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+                        nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
+                        nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
+                        sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                        sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
+                        NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
+                        if(GetSpellUsesLeft(oAssociate, nClass, nSpell, nMetaMagic, nDomain))
+                        {
+                            sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                            sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
+                            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
+                        }
+                        else NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
+                    }
+                }
+                else break;
+                ++nIndex;
+            }
+            while(nIndex < 20)
+            {
+                jSpell = JsonArrayGet(jWidget, nIndex);
+                if(JsonGetType(jSpell) != JSON_TYPE_NULL)
+                {
+                    sIndex = IntToString(nIndex);
+                    nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+                    if(nDomain == -1) // This is a feat.
+                    {
+                        nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        sSpellIcon = Get2DAString("feat", "ICON", nSpell);
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                        if(GetHasFeat(nSpell, oAssociate))
+                        {
+                            sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSpell)));
+                            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName));
+                        }
+                        else NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
+                    }
+                    else // This is a spell.
+                    {
+                        nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+                        nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
+                        nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
+                        sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
+                        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                        sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
+                        NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
+                        if(GetSpellUsesLeft(oAssociate, nClass, nSpell, nMetaMagic, nDomain))
+                        {
+                            sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                            sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
+                            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
+                        }
+                        else NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
+                    }
                 }
                 else break;
                 ++nIndex;
@@ -2127,21 +2322,28 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     // Row 1 ******************************************************************* 318 / 73
     int bIsPC = ai_GetIsCharacter(oAssociate);
     json jRow = JsonArray();
-    CreateButton(jRow, "Set All", "btn_set_all", 110.0, 20.0);
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Clear All", "btn_clear_all", 110.0, 20.0);
+    CreateCheckBox(jRow, "Give all loot to the player", "chbx_give_loot", 200.0, 20.0, "chbx_give_loot_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 2 *************************************************************** 388 / 101
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "Max Weight to pickup:", "lbl_weight", 180.0, 20.0, NUI_HALIGN_CENTER);
     CreateTextEditBox(jRow, "plc_hold", "txt_max_weight", 9, FALSE, 50.0, 20.0, "txt_max_weight_tooltip");
+    CreateLabel(jRow, "Maximum Weight to pickup", "lbl_weight", 200.0, 20.0, NUI_HALIGN_CENTER);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 3 *************************************************************** 388 / 129
+    jRow = JsonArray();
+    CreateButton(jRow, "Set All", "btn_set_all", 110.0, 20.0);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Clear All", "btn_clear_all", 110.0, 20.0);
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 4 *************************************************************** 388 / 129
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateLabel(jRow, "Minimum Gold", "lbl_min_gold", 100.0, 20.0, NUI_HALIGN_CENTER);
@@ -2150,97 +2352,97 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 *************************************************************** 388 / 157
+    // Row 5 *************************************************************** 388 / 157
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Plot items", 2);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 *************************************************************** 388 / 185
+    // Row 6 *************************************************************** 388 / 185
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Armor", 3);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 6 *************************************************************** 388 / 213
+    // Row 7 *************************************************************** 388 / 213
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Belts", 4);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 7 *************************************************************** 388 / 241
+    // Row 8 *************************************************************** 388 / 241
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Boots", 5);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 8 *************************************************************** 388 / 269
+    // Row 9 *************************************************************** 388 / 269
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Cloaks", 6);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 9 *************************************************************** 388 / 297
+    // Row 10 *************************************************************** 388 / 297
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Gems", 7);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 10 *************************************************************** 388 / 325
+    // Row 11 *************************************************************** 388 / 325
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Gloves and Bracers", 8);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 11 *************************************************************** 388 / 353
+    // Row 12 *************************************************************** 388 / 353
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Headgear", 9);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 12 *************************************************************** 388 / 381
+    // Row 13 *************************************************************** 388 / 381
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Jewelry", 10);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 13 *************************************************************** 388 / 409
+    // Row 14 *************************************************************** 388 / 409
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Miscellaneous items", 11);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 14 *************************************************************** 388 / 437
+    // Row 15 *************************************************************** 388 / 437
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Potions", 12);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 15 *************************************************************** 388 / 465
+    // Row 16 *************************************************************** 388 / 465
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Scrolls", 13);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 16 *************************************************************** 388 / 493
+    // Row 17 *************************************************************** 388 / 493
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Shields", 14);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 17 *************************************************************** 388 / 521
+    // Row 18 *************************************************************** 388 / 521
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Wands, Rods, and Staves", 15);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 18 ************************************************************** 388 / 549
+    // Row 19 ************************************************************** 388 / 549
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Weapons", 16);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 19 ************************************************************** 388 / 577
+    // Row 20 ************************************************************** 388 / 577
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Arrows", 17);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 20 ************************************************************** 388 / 605
+    // Row 21 ************************************************************** 388 / 605
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Bolts", 18);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 21 ************************************************************** 388 / 633
+    // Row 22 ************************************************************** 388 / 633
     jRow = JsonArray();
     ai_CreateLootFilterRow(jRow, "Bullets", 19);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 633.0;
+    float fHeight = 661.0;
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     // Get the window location to restore it from the database.
     json jLocations = ai_GetAssociateDbJson(oPC, sAssociateType, "locations");
@@ -2253,7 +2455,7 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_LOOTFILTER_NUI, sName + " Loot Filter",
-                           fX, fY, 288.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
+                           fX, fY, 310.0, fHeight + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     // Save the associate to the nui.
     json jData = JsonArray();
     JsonArrayInsertInplace(jData, JsonString(ObjectToString(oAssociate)));
@@ -2262,10 +2464,12 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
     // Row 1
-    NuiSetBind(oPC, nToken, "btn_set_all_event", JsonBool (TRUE));
-    NuiSetBind(oPC, nToken, "btn_set_all", JsonInt(TRUE));
-    NuiSetBind(oPC, nToken, "btn_clear_all_event", JsonBool (TRUE));
-    NuiSetBind(oPC, nToken, "btn_clear_all", JsonInt(TRUE));
+    int bGiveLoot = ai_GetLootFilter(oAssociate, AI_LOOT_GIVE_TO_PC);
+    NuiSetBind(oPC, nToken, "chbx_give_loot_check", JsonBool (bGiveLoot));
+    NuiSetBindWatch (oPC, nToken, "chbx_give_loot_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_give_loot_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "chbx_give_loot_tooltip", JsonString(
+               "  Check this to make henchman give any loot picked up to the player."));
     // Row 2
     int nWeight = GetLocalInt(oAssociate, AI_MAX_LOOT_WEIGHT);
     if(nWeight == 0)
@@ -2276,42 +2480,47 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "txt_max_weight_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_max_weight", JsonString(IntToString(nWeight)));
     NuiSetBindWatch (oPC, nToken, "txt_max_weight", TRUE);
-    NuiSetBind(oPC, nToken, "txt_max_weight_tooltip", JsonString("Max weighted item you will pickup from 1 to 1,000"));
+    NuiSetBind(oPC, nToken, "txt_max_weight_tooltip", JsonString("  Max weighted item you will pickup from 1 to 1,000"));
     // Row 3
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_PLOT, 2);
+    NuiSetBind(oPC, nToken, "btn_set_all_event", JsonBool (TRUE));
+    NuiSetBind(oPC, nToken, "btn_set_all", JsonInt(TRUE));
+    NuiSetBind(oPC, nToken, "btn_clear_all_event", JsonBool (TRUE));
+    NuiSetBind(oPC, nToken, "btn_clear_all", JsonInt(TRUE));
     // Row 4
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_ARMOR, 3);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_PLOT, 2);
     // Row 5
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BELTS, 4);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_ARMOR, 3);
     // Row 6
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BOOTS, 5);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BELTS, 4);
     // Row 7
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_CLOAKS, 6);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BOOTS, 5);
     // Row 8
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_GEMS, 7);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_CLOAKS, 6);
     // Row 9
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_GLOVES, 8);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_GEMS, 7);
     // Row 10
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_HEADGEAR, 9);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_GLOVES, 8);
     // Row 11
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_JEWELRY, 10);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_HEADGEAR, 9);
     // Row 12
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_MISC, 11);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_JEWELRY, 10);
     // Row 13
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_POTIONS, 12);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_MISC, 11);
     // Row 14
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_SCROLLS, 13);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_POTIONS, 12);
     // Row 15
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_SHIELDS, 14);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_SCROLLS, 13);
     // Row 16
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_WANDS_RODS_STAVES, 15);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_SHIELDS, 14);
     // Row 17
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_WEAPONS, 16);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_WANDS_RODS_STAVES, 15);
     // Row 18
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_ARROWS, 17);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_WEAPONS, 16);
     // Row 19
-    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BOLTS, 18);
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_ARROWS, 17);
     // Row 20
+    ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BOLTS, 18);
+    // Row 21
     ai_SetupLootElements(oPC, oAssociate, nToken, AI_LOOT_BULLETS, 19);
 }
 void ai_CreateHenchmanPasteButton(object oPC, int nIndex, json jRow)
@@ -2371,7 +2580,14 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5+ ****************************************************************** 244 / 185
+    // Row 5 ******************************************************************* 244 / 157
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Dominated", "btn_paste_dominated", 220.0, 20.0);
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 6+ ****************************************************************** 244 / 185
     float fHeight = 185.0;
     int nIndex;
     for(nIndex = 1; nIndex < 7; nIndex++)
@@ -2410,9 +2626,11 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_paste_companion_event", JsonBool(oCreature != oAssociate));
     oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
     NuiSetBind(oPC, nToken, "btn_paste_summons_event", JsonBool(oCreature != oAssociate));
-    for(nIndex = 1; nIndex < 7; nIndex++)
+    oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+    NuiSetBind(oPC, nToken, "btn_paste_dominated_event", JsonBool(oCreature != oAssociate));
+    for(nIndex = 1; nIndex < AI_MAX_HENCHMAN; nIndex++)
     {
-        oCreature = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, 1);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
         if(oCreature != OBJECT_INVALID)
         {
             NuiSetBind(oPC, nToken, "btn_paste_henchman" + IntToString(nIndex) + "_event", JsonBool(oCreature != oAssociate));
@@ -2449,23 +2667,25 @@ void ai_CreatePluginNUI(object oPC)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     float fHeight = 101.0;
     // Row 3+ ****************************************************************** 500 / ---
+    nIndex = 0;
+    string sName;
     json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
         jRow = JsonArray();
-        sButton = IntToString(++nButton);
+        sButton = IntToString(nIndex);
         JsonArrayInsertInplace(jRow, NuiSpacer());
         CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sButton, 150.0f, 20.0f);
         JsonArrayInsertInplace(jRow, NuiSpacer());
-        CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+        sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+        CreateButton(jRow, sName, "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
         CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0);
         JsonArrayInsertInplace(jRow, NuiSpacer());
         // Add row to the column.
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight += 28.0;
-        nIndex += 2;
-        jScript = JsonArrayGet(jPlugins, nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     // Get the window location to restore it from the database.
     json jLocations = ai_GetAssociateDbJson(oPC, "pc", "locations");
@@ -2474,7 +2694,7 @@ void ai_CreatePluginNUI(object oPC)
     float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sName = GetName(oPC);
+    sName = GetName(oPC);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, AI_PLUGIN_NUI, sName + " PEPS Plugin Manager",
@@ -2498,25 +2718,24 @@ void ai_CreatePluginNUI(object oPC)
     NuiSetBind(oPC, nToken, "txt_plugin_tooltip", JsonString("  Enter an executable script name."));
     // Row 3+
     nIndex = 0;
-    nButton = 0;
+    int bCheck;
     string sText;
-    jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        sText = JsonGetString(jScript);
-        sButton = IntToString(++nButton);
+        sButton = IntToString(nIndex);
         NuiSetBind(oPC, nToken, "btn_remove_plugin_" + sButton + "_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_event", JsonBool(TRUE));
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
+        bCheck = JsonGetInt(JsonArrayGet(jPlugin, 1));
+        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(bCheck));
         NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(JsonGetInt(jScript)));
         NuiSetBindWatch (oPC, nToken, "chbx_plugin_" + sButton + "_check", TRUE);
-        sText = "  Execute script: " + sText;
+        sText = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_tooltip", JsonString(sText));
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
 }
-void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
+void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
 {
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     // Set window to not save until it has been created.
@@ -2524,7 +2743,7 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     DelayCommand (2.0, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     json jRow = JsonArray();
     json jCol = JsonArray();
-    // Row 1 Classes************************************************************ 414 / 73
+    // Row 1 Classes************************************************************ 414 / 88
     int nClass, bCaster, nIndex;
     string sIndex, sClassIcon, sLevelIcon;
     for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
@@ -2532,21 +2751,18 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
         nClass = GetClassByPosition(nIndex, oAssociate);
         if(nClass != CLASS_TYPE_INVALID)
         {
-            bCaster = StringToInt(Get2DAString("classes", "SpellCaster", nClass));
-            if(bCaster)
-            {
-                // This saves the class position in the button id so we can get it later.
-                sIndex = IntToString(nIndex);
-                sClassIcon = Get2DAString("classes", "Icon", nClass);
-                CreateButtonImage(jRow, sClassIcon, "btn_class_" + sIndex, 35.0f, 35.0f, 0.0, "btn_class_" + sIndex + "_tooltip");
-            }
+            // This saves the class position in the button id so we can get it later.
+            sIndex = IntToString(nIndex);
+            sClassIcon = Get2DAString("classes", "Icon", nClass);
+            CreateButtonImage(jRow, sClassIcon, "btn_class_" + sIndex, 35.0f, 35.0f, 0.0, "btn_class_" + sIndex + "_tooltip");
         }
     }
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 (Levels) ********************************************************** 414 / 116
+    // Row 2 (Levels) ********************************************************** 414 / 131
     jRow = JsonArray();
+    CreateButtonImage(jRow, "", "btn_level_10" , 35.0f, 35.0f, 0.0, "btn_level_10_tooltip");
     for(nIndex = 0; nIndex <= 9; nIndex++)
     {
         // This saves the level in the button id so we can get it later.
@@ -2555,7 +2771,7 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     }
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 (Spell List)******************************************************* 414 / 398
+    // Row 3 (Spell List)******************************************************* 414 / 433
     jRow = JsonArray();
     json jButton = JsonArray();
     jButton = NuiButton(NuiBind("text_spell"));
@@ -2573,14 +2789,14 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     jRow = JsonArrayInsert(jRow, NuiHeight(NuiList(jListTemplate, NuiBind("icon_spell"), 35.0), 282.0));
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 (Widget Label)****************************************************** 414 / 426
+    // Row 4 (Widget Label)***************************************************** 414 / 461
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "Spell Widget List", "lbl_spell_list", 150.0, 20.0, 0, 0, 0.0);
+    CreateLabel(jRow, "Quick Widget List", "lbl_quick_list", 150.0, 20.0, 0, 0, 0.0);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 (Widget)*********************************************************** 414 / 469
+    // Row 5 (Widget row 1)***************************************************** 414 / 504
     jRow = JsonArray();
     for(nIndex = 0; nIndex < 10; nIndex++)
     {
@@ -2600,9 +2816,29 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     }
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 6 (Widget row 2)***************************************************** 414 / 543
+    jRow = JsonArray();
+    for(nIndex = 10; nIndex < 20; nIndex++)
+    {
+        // This saves the index location in the json jWidget in the button id for later use.
+        sIndex = IntToString(nIndex);
+        json jButton = NuiButtonImage(NuiBind("btn_widget_" + sIndex + "_image"));
+        jButton = NuiEnabled(jButton, NuiBind("btn_widget_" + sIndex + "_event"));
+        jButton = NuiId(jButton, "btn_widget_" + sIndex);
+        jButton = NuiWidth(NuiHeight(jButton, 35.0), 35.0);
+        jButton = NuiMargin(jButton, 0.0);
+        jButton = NuiTooltip(jButton, NuiBind("btn_widget_" + sIndex + "_tooltip"));
+        json jRectangle = NuiRect(4.0, 4.0, 10.0, 10.0);
+        json jMetaMagic = NuiDrawListText(JsonBool(TRUE), NuiColor(255, 255, 0), jRectangle, NuiBind("metamagic_" + sIndex + "_text"));
+        jDrawList = JsonArrayInsert(JsonArray(), jMetaMagic);
+        jButton = NuiDrawList(jButton, JsonBool(TRUE), jDrawList);
+        JsonArrayInsertInplace(jRow, jButton);
+    }
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Get the window location to restore it from the database.
     json jLocations = ai_GetAssociateDbJson(oPC, sAssociateType, "locations");
-    jLocations = JsonObjectGet(jLocations, AI_SPELL_WIDGET_NUI);
+    jLocations = JsonObjectGet(jLocations, AI_QUICK_WIDGET_NUI);
     float fX, fY;
     if(JsonGetType(jLocations) == JSON_TYPE_NULL)
     {
@@ -2619,9 +2855,8 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     string sText, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
-    int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_SPELL_WIDGET_NUI, sName + " Spell Widget Menu",
-                           fX, fY, 375.0, 469.0 + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
-    // Set the Layout of the window.      409.0
+    int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_QUICK_WIDGET_NUI, sName + " Quick Widget Menu",
+                           fX, fY, 414.0, 543.0 + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     // Save the associate to the nui for use in 0e_nui
     json jData = JsonArray();
     JsonArrayInsertInplace(jData, JsonString(ObjectToString(oAssociate)));
@@ -2631,24 +2866,40 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     int nClassSelected, nLevelSelected;
     json jSpells;
     json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    // Temporary fix for error! :/
+    if(JsonGetLength(jAIData) == 0)
+    {
+        ai_CheckAssociateData(oPC, oAssociate, sAssociateType, TRUE);
+        jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+        jSpells = JsonArray();
+        jSpells = JsonArrayInsert(jSpells, JsonInt(1));
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10));
+        jAIData = JsonArrayInsert(jAIData, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+        nLevelSelected = 10;
+    }
     if(JsonGetLength(jAIData) == 9)
     {
         jSpells = JsonArray();
         jSpells = JsonArrayInsert(jSpells, JsonInt(1));
-        jSpells = JsonArrayInsert(jSpells, JsonInt(0));
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10));
+        jSpells = JsonArrayInsert(jSpells, JsonArray());
         jAIData = JsonArrayInsert(jAIData, jSpells);
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+        nLevelSelected = 10;
     }
     else
     {
         jSpells = JsonArrayGet(jAIData, 10);
-        if(JsonGetType(jSpells) == JSON_TYPE_NULL)
+        if(JsonGetLength(jSpells) == 0)
         {
             jSpells = JsonArray();
             jSpells = JsonArrayInsert(jSpells, JsonInt(1));
-            jSpells = JsonArrayInsert(jSpells, JsonInt(0));
+            jSpells = JsonArrayInsert(jSpells, JsonInt(10));
+            jSpells = JsonArrayInsert(jSpells, JsonArray());
             jAIData = JsonArraySet(jAIData, 10, jSpells);
             ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+            nLevelSelected = 10;
         }
         else
         {
@@ -2660,19 +2911,22 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
     // Row 1 & 2 Class & Level
     int nSpellLevel, nIndexLevel, nMaxSpellLevel;
     string sClass, sLevel, sLevelImage, sIndexLevel;
+    NuiSetBind(oPC, nToken, "btn_level_10_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_level_10_tooltip", JsonString("  Special Abilities"));
+    NuiSetBind(oPC, nToken, "btn_level_10_image", JsonString("dm_god"));
     for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
     {
         nClass = GetClassByPosition(nIndex, oAssociate);
         if(nClass != CLASS_TYPE_INVALID)
         {
-            bCaster = StringToInt(Get2DAString("classes", "SpellCaster", nClass));
-            if(bCaster)
+            sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
+            sIndex = IntToString(nIndex);
+            NuiSetBind(oPC, nToken, "btn_class_" + sIndex + "_event", JsonBool(TRUE));
+            NuiSetBind(oPC, nToken, "btn_class_" + sIndex + "_tooltip", JsonString("  " + sClass));
+            if(nClassSelected == nIndex)
             {
-                sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
-                sIndex = IntToString(nIndex);
-                NuiSetBind(oPC, nToken, "btn_class_" + sIndex + "_event", JsonBool(TRUE));
-                NuiSetBind(oPC, nToken, "btn_class_" + sIndex + "_tooltip", JsonString("  " + sClass));
-                if(nClassSelected == nIndex)
+                bCaster = StringToInt(Get2DAString("classes", "SpellCaster", nClass));
+                if(bCaster)
                 {
                     int nClassLevel = GetLevelByClass(nClass, oAssociate);
                     string sSpellsGained = Get2DAString("classes", "SpellGainTable", nClass);
@@ -2706,71 +2960,171 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
                             NuiSetBind(oPC, nToken, "btn_level_" + sIndexLevel + "_event", JsonBool(FALSE));
                         }
                     }
-                     NuiSetBind(oPC, nToken, "btn_level_" + IntToString(nLevelSelected) + "_encouraged", JsonBool(TRUE));
-                     NuiSetBind(oPC, nToken, "btn_class_" + IntToString(nClassSelected) + "_encouraged", JsonBool(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_level_" + IntToString(nLevelSelected) + "_encouraged", JsonBool(TRUE));
                 }
+                else
+                {
+                    nLevelSelected = 10;
+                    for(nIndexLevel = 0; nIndexLevel <= 9; nIndexLevel++)
+                    {
+                        sIndexLevel = IntToString(nIndexLevel);
+                        NuiSetBind(oPC, nToken, "btn_level_" + sIndexLevel + "_event", JsonBool(TRUE));
+                        NuiSetBind(oPC, nToken, "btn_level_" + sIndexLevel + "_image", JsonString("ctl_cg_btn_splvl"));
+                        NuiSetBind(oPC, nToken, "btn_level_" + sIndexLevel + "_event", JsonBool(FALSE));
+                    }
+                    NuiSetBind(oPC, nToken, "btn_level_10_encouraged", JsonBool(TRUE));
+                }
+                NuiSetBind(oPC, nToken, "btn_class_" + IntToString(nClassSelected) + "_encouraged", JsonBool(TRUE));
             }
         }
     }
-    // Row 3 Spells
-    int nSpell, nLevel, nMetamagic;
+    // Row 3 Abilities/Skills/Spells
+    int nSpell, nLevel, nMetamagic, nSubSpell, nSubSpellIndex;
     json jSpell;
-    json jWidget = JsonArrayGet(jSpells, 2);
     nClass = GetClassByPosition(nClassSelected, oAssociate);
-    int nSpellSlot;
-    string sSpellIcon, sSpellName, sMetaMagicText;
+    int nSpellSlot, nCounter, nMax2daRow, nFeat;
+    string sSpellIcon, sSpellName, sMetaMagicText, sClassFeats, sSubSpellIndex;
+    json jAbilityArray = JsonArray();
     json jSpell_Icon = JsonArray();
     json jSpell_Text = JsonArray();
     json jMetaMagic_Text = JsonArray();
-    // Search all memorized spells for the spell.
-    //SendMessageToPC(oPC, GetName(oAssociate) + " nClass: " + IntToString(nClass) +
-    //               " nLevelSelected: " + IntToString(nLevelSelected) +
-    //               " nMemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", nClass));
-    if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
+    // Special abilities and skills.
+    if(nLevelSelected == 10)
     {
-        int nMaxSlot = GetMemorizedSpellCountByLevel(oAssociate, nClass, nLevelSelected);
-        while(nSpellSlot < nMaxSlot)
+        for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
         {
-            nSpell = GetMemorizedSpellId(oAssociate, nClass, nLevelSelected, nSpellSlot);
-            if(nSpell != -1)
+            nClass = GetClassByPosition(nIndex, oAssociate);
+            if(nClass != CLASS_TYPE_INVALID)
             {
-                sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
-                sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                //SendMessageToPC(oPC, "nSpell: " + IntToString(nSpell) +
-                //               " sSpellIcon: " + sSpellIcon +
-                //               " sSpellName: " + sSpellName+
-                //               " nMaxSlot: " + IntToString(nMaxSlot) +
-                //               " nSpellSlot: " + IntToString(nSpellSlot));
-                sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, nClass, nLevelSelected, nSpellSlot);
-                jMetaMagic_Text = JsonArrayInsert(jMetaMagic_Text, JsonString(sMetaMagicText));
-                jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
-                jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                nCounter = 0;
+                nLevel = GetLevelByClass(nClass, oAssociate);
+                sClassFeats = Get2DAString("classes", "FeatsTable", nClass);
+                nMax2daRow = Get2DARowCount(sClassFeats);
+                while(nCounter < nMax2daRow)
+                {
+                    if(Get2DAString(sClassFeats, "OnMenu", nCounter) != "0")
+                    {
+                        nFeat = StringToInt(Get2DAString(sClassFeats, "FeatIndex", nCounter));
+                        if(GetHasFeat(nFeat, oAssociate, TRUE))
+                        {
+                            nSpell = StringToInt(Get2DAString("feat", "SPELLID", nFeat));
+                            /*/ Check for subfeats.
+                            nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell1", nSpell));
+                            SendMessageToPC(oPC, "nFeat: " + IntToString(nFeat) +
+                                        " nSpell: " + IntToString(nSpell) +
+                                        " nSubSpell: " + IntToString(nSubSpell));
+                            if(nSubSpell)
+                            {
+                                for(nSubSpellIndex = 1; nSubSpellIndex <= 5; nSubSpellIndex++)
+                                {
+                                    sSubSpellIndex = IntToString(nSubSpellIndex);
+                                    nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell" + sSubSpellIndex, nSpell));
+                                    SendMessageToPC(oPC, " nSpell: " + IntToString(nSpell) +
+                                                " nSubSpell: " + IntToString(nSubSpell));
+                                    if(nSubSpell != 0)
+                                    {
+                                        //nFeat = StringToInt(Get2DAString("spells", "FeatID", nSubSpell));
+                                        //SendMessageToPC(oPC, "nFeat: " + IntToString(nFeat));
+                                        jAbilityArray = JsonArrayInsert(jAbilityArray, JsonInt(nSubSpell));
+                                        sSpellIcon = Get2DAString("spells", "iConResRef", nSubSpell);
+                                        sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSubSpell)));
+                                        jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                                        jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                                    }
+                                }
+                            }
+                            else */if((nFeat < 71 || nFeat > 81) && GetHasFeat(nFeat, oAssociate, TRUE))
+                            {
+                                jAbilityArray = JsonArrayInsert(jAbilityArray, JsonInt(nFeat));
+                                sSpellIcon = Get2DAString("feat", "ICON", nFeat);
+                                sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
+                                jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                                jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                            }
+                        }
+                    }
+                    nCounter++;
+                }
             }
-            ++nSpellSlot;
         }
+        // Used in the execution script to get the special abilities.
+        jData = JsonArrayInsert(jData, jAbilityArray);
+        NuiSetUserData(oPC, nToken, jData);
     }
-    else
+    else // Anything else is for spells.
     {
-        int nMaxSlot = GetKnownSpellCount(oAssociate, nClass, nLevelSelected);
-        while(nSpellSlot < nMaxSlot)
+        // Search all memorized spells for the spell.
+        //SendMessageToPC(oPC, GetName(oAssociate) + " nClass: " + IntToString(nClass) +
+        //               " nLevelSelected: " + IntToString(nLevelSelected) +
+        //               " nMemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", nClass));
+        if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
         {
-            nSpell = GetKnownSpellId(oAssociate, nClass, nLevelSelected, nSpellSlot);
-            if(nSpell != -1)
+            int nMaxSlot = GetMemorizedSpellCountByLevel(oAssociate, nClass, nLevelSelected);
+            while(nSpellSlot < nMaxSlot)
             {
-                sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
-                sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
-                jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                nSpell = GetMemorizedSpellId(oAssociate, nClass, nLevelSelected, nSpellSlot);
+                if(nSpell != -1)
+                {
+                    /*/ Check for subspells.
+                    nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell1", nSpell));
+                    if(nSubSpell)
+                    {
+                        for(nSubSpellIndex = 1; nSubSpellIndex <= 5; nSubSpellIndex++)
+                        {
+                            sSubSpellIndex = IntToString(nSubSpellIndex);
+                            nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell" + sSubSpellIndex, nSpell));
+                            if(nSubSpellIndex != 0)
+                            {
+                                jAbilityArray = JsonArrayInsert(jAbilityArray, JsonInt(nSubSpell));
+                                sSpellIcon = Get2DAString("feat", "ICON", nSubSpell);
+                                sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSubSpell)));
+                                jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                                jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                            }
+                        }
+                    }
+                    else
+                    { */
+                        sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                        sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                        //SendMessageToPC(oPC, "nSpell: " + IntToString(nSpell) +
+                        //               " sSpellIcon: " + sSpellIcon +
+                        //               " sSpellName: " + sSpellName+
+                        //               " nMaxSlot: " + IntToString(nMaxSlot) +
+                        //               " nSpellSlot: " + IntToString(nSpellSlot));
+                        sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, nClass, nLevelSelected, nSpellSlot);
+                        jMetaMagic_Text = JsonArrayInsert(jMetaMagic_Text, JsonString(sMetaMagicText));
+                        jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                        jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                    //}
+                }
+                ++nSpellSlot;
             }
-            ++nSpellSlot;
+        }
+        else
+        {
+            int nMaxSlot = GetKnownSpellCount(oAssociate, nClass, nLevelSelected);
+            while(nSpellSlot < nMaxSlot)
+            {
+                nSpell = GetKnownSpellId(oAssociate, nClass, nLevelSelected, nSpellSlot);
+                if(nSpell != -1)
+                {
+                    sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                    sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                    jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                    jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                }
+                ++nSpellSlot;
+            }
         }
     }
     NuiSetBind(oPC, nToken, "icon_spell", jSpell_Icon);
     NuiSetBind(oPC, nToken, "text_spell", jSpell_Text);
     NuiSetBind(oPC, nToken, "metamagic_text", jMetaMagic_Text);
-    // Row 4 Spell widget list label.
-    // Row 5 Spell widget List
+    // Row 4 Quick widget list label.
+    // Row 5 Quick widget List 1
     int nMetaMagic, nDomain;
+    json jWidget = JsonArrayGet(jSpells, 2);
     nIndex = 0;
     while(nIndex < 10)
     {
@@ -2779,19 +3133,70 @@ void ai_CreateSpellWidgetSelectionNUI(object oPC, object oAssociate)
         NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
         if(JsonGetType(jSpell) != JSON_TYPE_NULL)
         {
-            nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-            sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-            nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
-            sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
-            nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
-            nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
             nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-            sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
-            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
-            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
-            sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
-            NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
-
+            if(nDomain == -1) // This is a feat.
+            {
+                nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSpell)));
+                sSpellIcon = Get2DAString("feat", "ICON", nSpell);
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName));
+            }
+            else // This is a spell.
+            {
+                nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+                sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
+                nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
+                nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
+                sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
+                sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
+                NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
+            }
+        }
+        else
+        {
+            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString("ctl_cg_btn_splvl"));
+            NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(""));
+            NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(FALSE));
+        }
+        ++nIndex;
+    }
+    if(nIndex < 10) return;
+    // Row 6 Quick widget List2
+    while(nIndex < 20)
+    {
+        jSpell = JsonArrayGet(jWidget, nIndex);
+        sIndex = IntToString(nIndex);
+        NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_event", JsonBool(TRUE));
+        if(JsonGetType(jSpell) != JSON_TYPE_NULL)
+        {
+            nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+            if(nDomain == -1) // This is a feat.
+            {
+                nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSpell)));
+                sSpellIcon = Get2DAString("feat", "ICON", nSpell);
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName));
+            }
+            else // This is a spell.
+            {
+                nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+                sClass = GetStringByStrRef(StringToInt(Get2DAString("classes", "Name", nClass)));
+                nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
+                nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
+                sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_image", JsonString(sSpellIcon));
+                NuiSetBind(oPC, nToken, "btn_widget_" + sIndex + "_tooltip", JsonString("  " + sName + " (" + sClass + " / " + IntToString(nLevel) + ")"));
+                sMetaMagicText = ai_GetSpellIconAttributes(oAssociate, -1, -1, -1, nMetaMagic, nDomain);
+                NuiSetBind(oPC, nToken, "metamagic_" + sIndex + "_text", JsonString(sMetaMagicText));
+            }
         }
         else
         {
@@ -2870,6 +3275,12 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
     int nClassSelected, nLevelSelected;
     json jSpells;
     json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    // Temporary fix for error! :/
+    if(JsonGetLength(jAIData) == 0)
+    {
+        ai_CheckAssociateData(oPC, oAssociate, sAssociateType, TRUE);
+        jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    }
     if(JsonGetLength(jAIData) == 9)
     {
         jSpells = JsonArray();
@@ -2894,6 +3305,14 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
             nClassSelected = JsonGetInt(JsonArrayGet(jSpells, 0));
             nLevelSelected = JsonGetInt(JsonArrayGet(jSpells, 1));
         }
+    }
+    // If we left the Quick Use widget on Special Abilities goto level 0
+    if(nLevelSelected == 10)
+    {
+        nLevelSelected = 0;
+        jSpells = JsonArraySet(jSpells, 1, JsonInt(0));
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     }
     if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER) nClassSelected = 1;
     nClass = GetClassByPosition(nClassSelected, oAssociate);
@@ -2931,14 +3350,14 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
         fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
         fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     }
-    // Set the Layout of the window.
-    json jLayout = NuiCol(jCol);
     string sText, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
+    // Set the Layout of the window.
+    json jLayout = NuiCol(jCol);
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_SPELL_MEMORIZE_NUI, sName + " Spell Memorization Menu",
-                           fX, fY, 375.0, 469.0 + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
-    // Set the Layout of the window.      409.0
+                           fX, fY, 375.0, 504.0 + 12.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
+    // Set the Layout of the window.
     // Save the associate to the nui for use in 0e_nui
     json jData = JsonArrayInsert(JsonArray(), JsonString(ObjectToString(oAssociate)));
     // Set event watches for save window location.
@@ -3089,16 +3508,16 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
         ++nIndex;
     }
 }
-void ai_CreateSpellDescriptionNUI(object oPC, int nSpell)
+void ai_CreateDescriptionNUI(object oPC, int nSpell, int bSpell)
 {
     json jRow = JsonArray();
     json jCol = JsonArray();
-    // Row 1 ******************************************************************* 500 / 73
+    // Row 1 ******************************************************************* 500 / 469
     CreateImage(jRow, "", "spell_icon", NUI_ASPECT_FIT, NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE, 40.0, 40.0);
     CreateTextBox(jRow, "spell_text", 380.0, 400.0);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 1 ******************************************************************* 500 / 73
+    // Row 1 ******************************************************************* 500 / 522
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "OK", "btn_ok", 150.0f, 45.0f);
@@ -3106,21 +3525,29 @@ void ai_CreateSpellDescriptionNUI(object oPC, int nSpell)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+    string sName, sIcon, sDescription;
+    if(bSpell)
+    {
+        sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+        sIcon = Get2DAString("spells", "IconResRef", nSpell);
+        sDescription = GetStringByStrRef(StringToInt(Get2DAString("spells", "SpellDesc", nSpell)));
+    }
+    else
+    {
+        sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nSpell)));
+        sIcon = Get2DAString("feat", "ICON", nSpell);
+        sDescription = GetStringByStrRef(StringToInt(Get2DAString("feat", "DESCRIPTION", nSpell)));
+    }
     int nToken = SetWindow(oPC, jLayout, AI_SPELL_DESCRIPTION_NUI, sName,
-                             -1.0, -1.0, 460.0f, 518.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
-    // Save the associate to the nui for use in 0e_nui
+                             -1.0, -1.0, 460.0f, 537.0 + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
     json jData = JsonArray();
     JsonArrayInsertInplace(jData, JsonString(ObjectToString(oPC)));
     NuiSetUserData(oPC, nToken, jData);
     // Row 1
-    string sIcon = Get2DAString("spells", "IconResRef", nSpell);
     NuiSetBind(oPC, nToken, "spell_icon_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "spell_icon_image", JsonString(sIcon));
-    string sText = GetStringByStrRef(StringToInt(Get2DAString("spells", "SpellDesc", nSpell)));
     NuiSetBind(oPC, nToken, "spell_text_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "spell_text", JsonString(sText));
+    NuiSetBind(oPC, nToken, "spell_text", JsonString(sDescription));
     // Row 2
     NuiSetBind(oPC, nToken, "btn_ok_event", JsonBool(TRUE));
 }
-

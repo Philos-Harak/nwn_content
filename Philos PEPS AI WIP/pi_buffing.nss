@@ -132,9 +132,11 @@ void main()
     else NuiSetBind (oPC, nToken, "btn_list4", JsonBool(FALSE));
     NuiSetBind(oPC, nToken, "btn_list4_event", JsonBool(TRUE));
     int nValue = JsonGetInt(JsonArrayGet(jMenuData, 3));
+    NuiSetBind(oPC, nToken, "buff_widget_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(nValue));
     NuiSetBindWatch(oPC, nToken, "buff_widget_check", TRUE);
     nValue = JsonGetInt(JsonArrayGet(jMenuData, 4));
+    NuiSetBind(oPC, nToken, "lock_buff_widget_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "lock_buff_widget_check", JsonBool(nValue));
     NuiSetBindWatch(oPC, nToken, "lock_buff_widget_check", TRUE);
     // Create buttons with spells listed.
@@ -179,6 +181,19 @@ void main()
 }
 int StartingUp(object oPC)
 {
+    if(GetLocalInt(oPC, AI_ADD_PLUGIN))
+    {
+        json jPlugin = JsonArray();
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_buffing"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("Quick Buff"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_appear"));
+        json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);
+        jPlugins = JsonArrayInsert(jPlugins, jPlugin);
+        SetLocalJson(oPC, AI_JSON_PLUGINS, jPlugin);
+        SetLocalInt(oPC, AI_PLUGIN_SET, TRUE);
+        return TRUE;
+    }
     if(!GetLocalInt(oPC, AI_STARTING_UP)) return FALSE;
     json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
     int bWidgetOn = JsonGetInt(JsonArrayGet(jMenuData, 3));
