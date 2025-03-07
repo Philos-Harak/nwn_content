@@ -51,7 +51,7 @@ void ai_OnRested(object oCreature);
 //******************************************************************************
 
 // Increments/Decrements the following distance of associates.
-void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore enemy associates for oAssociate.
@@ -61,11 +61,11 @@ void ai_Search(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Stealth for oAssociate.
 void ai_Stealth(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Open Doors for oAssociate.
-void ai_OpenDoor(object oPC, object oAssociate, string sAssociateType);
+void ai_OpenDoor(object oPC, object oAssociate, string sAssociateType, int nToken = 0);
 // Turns on/off Picking/Bashing locks for oAssociate.
-void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode);
+void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode, int nToken = 0);
 // Turns on/off Disarming of Traps for oAssociate.
-void ai_Traps(object oPC, object oAssociate, string sAssociateType);
+void ai_Traps(object oPC, object oAssociate, string sAssociateType, int nToken = 0);
 // Turns on/off the amount of speaking for oAssociate.
 void ai_ReduceSpeech(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off use of offensive/defensive spells.
@@ -75,37 +75,35 @@ void ai_UseMagic(object oPC, object oAssociate, string sAssociateType);
 // Turn Magic Item use on/off for oAssociates.
 void ai_UseMagicItems(object oPC, object oAssociate, string sAssociateType);
 // Adjusts loot options for oAssociate
-void ai_Loot(object oPC, object oAssociate, string sAssociateType);
+void ai_Loot(object oPC, object oAssociate, string sAssociateType, int nToken = 0);
 // Adjust loot options for oAssociate
 void ai_Spontaneous(object oPC, object oAssociate, string sAssociateType);
 // Increments/Decrements the magic use variable for the AI.
-void ai_MagicIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType);
+void ai_MagicIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken = 0);
 // Increments/Decrements the Loot Range use variable for the AI.
-void ai_LootRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+void ai_LootRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Increments/Decrements the Lock Range use variable for the AI.
-void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Increments/Decrements the Trap Range use variable for the AI.
-void ai_TrapRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+void ai_TrapRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Increments/Decrements the Open Door Range use variable for the AI.
-void ai_OpenDoorIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+void ai_OpenDoorIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Saves a new AI script for oAssociate.
-void ai_SaveAIScript(object oPC, object oAssociate, int nToken);
+void ai_SaveAIScript(object oPC, object oAssociate, int nToken = 0);
 // Button action for buffing a PC.
 void ai_Buff_Button(object oPC, object oAssociate, int nOption, string sAssociateType);
 // Button action for setting healing ranges.
-void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, string sAssociateType);
+void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, string sAssociateType, int nToken = 0);
 // Button action for turning healing on/off.
 void ai_Heal_OnOff(object oPC, object oAssociate, string sAssociateType, int nMode);
 // Button action for selecting a target to follow.
 void ai_FollowTarget(object oPC, object oAssociate);
-// Button action to allow associates to walk through creatures.
-void ai_Ghost_Mode(object oPC, object oAssociate, string sAssociateType);
 // Button action for giving commands to associates.
 void ai_DoCommand(object oPC, object oAssociate, int nCommand);
 // Button action to have associate do an action based on the target via OnPlayer Target event.
 void ai_Action(object oPC, object oAssociate);
 // Toggles between normal ai script and special tactic ai scripts.
-void ai_AIScript(object oPC, object oAssociate, string sAssociate);
+void ai_AIScript(object oPC, object oAssociate, string sAssociate, int nToken = 0);
 // Has the PC select a Trap and then place it on the ground from an associate.
 void ai_HavePCPlaceTrap(object oPC, object oAssociate);
 // Jumps oAssociate to oPC, if oPC == oAssociate it jumps all oAssocites to oPC.
@@ -170,7 +168,7 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
     {
         // We want to use the distance between the PC and target not us.
         fDistance = GetDistanceBetween(GetMaster(), oTarget);
-        int nPerceptionRange = GetLocalInt(oCreature, AI_PERCEPTION_RANGE);
+        int nPerceptionRange = GetLocalInt(oCreature, AI_ASSOCIATE_PERCEPTION);
         if(nPerceptionRange == 8) fPerceptionDistance = 10.0;
         else if(nPerceptionRange == 10) fPerceptionDistance = 35.0;
         else fPerceptionDistance = 20.0;
@@ -309,9 +307,9 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                 {
                     ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
                     // If master is attacking a target we will attack them too!
-                    if(!ai_GetIsInCombat(oCreature)) ai_SetCreatureTalents(oCreature, FALSE);
+                    if(!ai_GetIsInCombat(oCreature)) ai_StartAssociateCombat(oCreature);
                     object oTarget = ai_GetAttackedTarget(oMaster);
-                    if(oTarget != OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
+                    if(oTarget == OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
                     else ai_DoAssociateCombatRound(oCreature, oTarget);
                 }
             }
@@ -332,8 +330,6 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             if(ai_IsInCombatRound(oCreature))
             {
                 ai_ClearCombatState(oCreature);
-                DeleteLocalObject(oCreature, AI_ATTACKED_PHYSICAL);
-                DeleteLocalObject(oCreature, AI_ATTACKED_SPELL);
             }
             ai_ClearCreatureActions(TRUE);
             aiSaveAssociateModesToDb(oMaster, oCreature);
@@ -497,7 +493,6 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                 {
                     ai_SetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH, FALSE);
                     SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
-                    SendMessageToPC(oCreature, " Search ON!");
                     ai_PassActionToAssociates(oCreature, ACTION_MODE_DETECT, FALSE);
 
                 }
@@ -615,7 +610,15 @@ void ai_PassAIModeToAssociates(object oAssociate, int nAIMode, int bStatus = TRU
 }
 void ai_SetAssociateAIScript(object oCreature, int bCheckTacticScripts = TRUE)
 {
-    string sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
+    string sCombatAI;
+    object oMaster = GetMaster();
+    if(ai_GetIsCharacter(oMaster))
+    {
+        string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
+        json jAIData = ai_GetAssociateDbJson(oMaster, sAssociateType, "aidata");
+        sCombatAI = JsonGetString(JsonArrayGet(jAIData, 8));
+    }
+    else sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
     int nAssociateType = GetAssociateType(oCreature);
     if (nAssociateType == ASSOCIATE_TYPE_FAMILIAR && sCombatAI == "")
     {
@@ -731,20 +734,35 @@ void ai_HenchmanCastDefensiveSpells (object oCreature, object oPC)
 int ai_CheckForCombat(object oCreature, int bMonster)
 {
     object oEnemy = ai_GetNearestEnemy(oCreature, 1, 7, 7, 7, 5, TRUE);
+    //object oEnemy = ai_GetNearestEnemy(oCreature, 1, -1, -1, -1, -1, TRUE);
     if(AI_DEBUG) ai_Debug("0i_associate", "586", "Checking for Combat: oEnemy is " + GetName(oEnemy) +
              " Distance: " + FloatToString(GetDistanceBetween(oEnemy, oCreature), 0, 2));
-    if(oEnemy != OBJECT_INVALID && GetDistanceBetween(oEnemy, oCreature) < GetLocalFloat(GetModule(), "AI_RULE_PERCEPTION_DISTANCE"))
+    if(oEnemy != OBJECT_INVALID)
     {
-        //ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
-        //SetLocalObject (oCreature, AI_MY_TARGET, oEnemy);
-        //SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_SHOUT);
-        if(ai_CanIAttack(oCreature))
+        float fPerceptionDistance, fDistance;
+        if(bMonster)
         {
-            if(AI_DEBUG) ai_Debug("0i_associates", "578", "---------- " + GetName(oCreature) + " is starting combat! ----------");
-            ai_SetCreatureTalents(oCreature, bMonster);
-            ai_DoAssociateCombatRound(oCreature);
+            fDistance = GetDistanceBetween(oCreature, oEnemy);
+            fPerceptionDistance = GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE);
         }
-        return TRUE;
+        else
+        {
+            // We want to use the distance between the PC and target not us.
+            object oMaster = GetMaster();
+            if(oMaster != OBJECT_INVALID) fDistance = GetDistanceBetween(oMaster, oEnemy);
+            else fDistance = GetDistanceBetween(oCreature, oEnemy);
+            fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+            if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
+        }
+        if(fDistance < fPerceptionDistance)
+        {
+            ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+            SetLocalObject (oCreature, AI_MY_TARGET, oEnemy);
+            SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
+            if(bMonster) ai_StartMonsterCombat(oCreature);
+            else if(ai_CanIAttack(oCreature)) ai_StartAssociateCombat(oCreature);
+            return TRUE;
+        }
     }
     return FALSE;
 }
@@ -810,13 +828,8 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
         // We are not in combat and we see the enemy so alert our allies!
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
-        SpeakString(sPerception, TALKVOLUME_SILENT_SHOUT);
-        if(ai_CanIAttack(oCreature))
-        {
-            if(AI_DEBUG) ai_Debug("0i_associates", "811", "---------- " + GetName(oCreature) + " is starting combat! ----------");
-            ai_SetCreatureTalents(oCreature, FALSE);
-            ai_DoAssociateCombatRound(oCreature);
-        }
+        SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
+        if(ai_CanIAttack(oCreature)) ai_StartAssociateCombat(oCreature);
     }
     else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived, FALSE);
 }
@@ -870,15 +883,13 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
         if(nEnemyPower < nPower) ai_DoMonsterCombatRound(oCreature);
         return;
     }
-    // We are not in combat so alert our allies!
-    if(AI_DEBUG) ai_Debug("0i_associates", "720", "---------- " + GetName(oCreature) + " is starting combat! ----------");
-    ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
-    SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
-    SpeakString(sPerception, TALKVOLUME_SILENT_SHOUT);
     if(sPerception == AI_I_SEE_AN_ENEMY)
     {
-        ai_SetCreatureTalents(oCreature, FALSE);
-        ai_DoMonsterCombatRound(oCreature);
+        // We are not in combat so alert our allies!
+        ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
+        SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
+        ai_StartMonsterCombat(oCreature);
     }
     else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived, TRUE);
 }
@@ -927,7 +938,7 @@ void ai_UpdateToolTipUI(object oPC, string sWindowID1, string sWindowID2, string
         if(nWidgetToken) NuiSetBind (oPC, nWidgetToken, sToolTipBind, JsonString (sText));
     }
 }
-void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
 {
     float fAdjustment = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE) + fIncrement;
     if(fAdjustment > 10.0) fAdjustment = 10.0;
@@ -951,14 +962,17 @@ void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string 
     if(oPC == oAssociate)
     {
         sName = "  All associates";
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " follow");
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " enter follow mode ");
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
+        NuiSetBind(oPC, nToken, "btn_follow_target_label", JsonString("Follow Target [" + sRange + "]"));
     }
     else
     {
         sName = "  " + GetName(oAssociate);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " follow [" + sRange + " meters]");
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " enter follow mode [" + sRange + " meters]");
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
+        NuiSetBind(oPC, nToken, "btn_cmd_follow_label", JsonString("Follow Mode [" + sRange + "]"));
+        NuiSetBind(oPC, nToken, "btn_follow_target_label", JsonString("Follow Target [" + sRange + "]"));
     }
 }
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType)
@@ -1036,24 +1050,28 @@ void ai_Stealth(object oPC, object oAssociate, string sAssociateType)
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
-void ai_OpenDoor(object oPC, object oAssociate, string sAssociateType)
+void ai_OpenDoor(object oPC, object oAssociate, string sAssociateType, int nToken = 0)
 {
     string sRange = FloatToString(GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE), 0, 0);
     if(ai_GetAIMode(oAssociate, AI_MODE_OPEN_DOORS))
     {
         ai_SendMessages(GetName(oAssociate) + " is turning open doors off.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", "  Open Doors Off [" + sRange + " meters]");
+        string sText = "Open Doors Off [" + sRange + "]";
+        NuiSetBind(oPC, nToken, "btn_open_door_label", JsonString(sText));
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", "  " + sText);
         ai_SetAIMode(oAssociate, AI_MODE_OPEN_DOORS, FALSE);
     }
     else
     {
         ai_SendMessages(GetName(oAssociate) + " is turning open doors on.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", "  Open Doors On [" + sRange + " meters]");
+        string sText = "Open Doors On [" + sRange + "]";
+        NuiSetBind(oPC, nToken, "btn_open_door_label", JsonString(sText));
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", "  " + sText);
         ai_SetAIMode(oAssociate, AI_MODE_OPEN_DOORS, TRUE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
-void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode)
+void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode, int nToken = 0)
 {
     string sRange = FloatToString(GetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE), 0, 0);
     if(nMode == 1)
@@ -1061,13 +1079,17 @@ void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode)
         if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS))
         {
             ai_SendMessages(GetName(oAssociate) + " will stop picking locks.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  Pick Locks Off [" + sRange + " meters]");
+            string sText = "Pick Locks Off [" + sRange + "]";
+            NuiSetBind(oPC, nToken, "btn_pick_locks_label", JsonString(sText));
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_PICK_LOCKS, FALSE);
         }
         else
         {
             ai_SendMessages(GetName(oAssociate) + " will now pick locks.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  Pick Locks On [" + sRange + " meters]");
+            string sText = "Pick Locks On [" + sRange + "]";
+            NuiSetBind(oPC, nToken, "btn_pick_locks_label", JsonString(sText));
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_PICK_LOCKS, TRUE);
         }
     }
@@ -1076,31 +1098,39 @@ void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode)
         if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS))
         {
             ai_SendMessages(GetName(oAssociate) + " will stop bashing locks.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  Bash Locks Off [" + sRange + " meters]");
+            string sText = "Bash Locks Off [" + sRange + "]";
+            NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sText));
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_BASH_LOCKS, FALSE);
         }
         else
         {
             ai_SendMessages(GetName(oAssociate) + " will now bash locks.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  Bash Locks On [" + sRange + " meters]");
+            string sText = "Bash Locks On [" + sRange + "]";
+            NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sText));
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_BASH_LOCKS, TRUE);
         }
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
-void ai_Traps(object oPC, object oAssociate, string sAssociateType)
+void ai_Traps(object oPC, object oAssociate, string sAssociateType, int nToken = 0)
 {
     string sRange = FloatToString(GetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE), 0, 0);
     if(ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS))
     {
         ai_SendMessages(GetName(oAssociate) + " will stop disarming traps.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", "  Disable Traps Off [" + sRange + " meters]");
+        string sText = "Disable Traps Off [" + sRange + "]";
+        NuiSetBind(oPC, nToken, "btn_traps_label", JsonString(sText));
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", "  " + sText);
         ai_SetAIMode(oAssociate, AI_MODE_DISARM_TRAPS, FALSE);
     }
     else
     {
         ai_SendMessages(GetName(oAssociate) + " will now disarm traps.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", "  Disable Traps On [" + sRange + " meters]");
+        string sText = "Disable Traps On [" + sRange + "]";
+        NuiSetBind(oPC, nToken, "btn_traps_label", JsonString(sText));
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", "  " + sText);
         ai_SetAIMode(oAssociate, AI_MODE_DISARM_TRAPS, TRUE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
@@ -1191,7 +1221,7 @@ void ai_UseMagicItems(object oPC, object oAssociate, string sAssociateType)
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
-void ai_Loot(object oPC, object oAssociate, string sAssociateType)
+void ai_Loot(object oPC, object oAssociate, string sAssociateType, int nToken = 0)
 {
     int bLooting = !ai_GetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS);
     string sRange = FloatToString(GetLocalFloat(oAssociate, AI_LOOT_CHECK_RANGE), 0, 0);
@@ -1199,16 +1229,17 @@ void ai_Loot(object oPC, object oAssociate, string sAssociateType)
     if(bLooting)
     {
         sMessage = " is picking up items.";
-        sText = "  Looting On [" + sRange + " meters]";
+        sText = "Looting On [" + sRange + "]";
     }
     else
     {
         sMessage = " is not picking up items.";
-        sText = "  Looting Off [" + sRange + " meters]";
+        sText = "Looting Off [" + sRange + "]";
     }
     ai_SendMessages(GetName(oAssociate) + sMessage, AI_COLOR_YELLOW, oPC);
     ai_SetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS, bLooting);
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_loot_tooltip", sText);
+    NuiSetBind(oPC, nToken, "btn_loot_label", JsonString(sText));
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_loot_tooltip", "  " + sText);
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
 void ai_Spontaneous(object oPC, object oAssociate, string sAssociateType)
@@ -1231,7 +1262,7 @@ void ai_Spontaneous(object oPC, object oAssociate, string sAssociateType)
     ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_spontaneous_tooltip", sText);
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
-void ai_MagicIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType)
+void ai_MagicIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken = 0)
 {
     int nAdjustment = GetLocalInt(oAssociate, AI_DIFFICULTY_ADJUSTMENT) + nIncrement;
     if(nAdjustment > 100) nAdjustment = 100;
@@ -1241,9 +1272,10 @@ void ai_MagicIncrement(object oPC, object oAssociate, int nIncrement, string sAs
     JsonArraySetInplace(jAIData, 0, JsonInt(nAdjustment));
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sMagic = IntToString(nAdjustment);
+    NuiSetBind(oPC, nToken, "btn_magic_level_label", JsonString("Magic Level [" + sMagic + "]"));
     ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_magic_level_tooltip", "  Magic Level [" + sMagic + "]");
 }
-void ai_LootRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+void ai_LootRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
 {
     float fAdjustment = GetLocalFloat(oAssociate, AI_LOOT_CHECK_RANGE) + fIncrement;
     if(fAdjustment > 40.0) fAdjustment = 40.0;
@@ -1253,11 +1285,12 @@ void ai_LootRangeIncrement(object oPC, object oAssociate, float fIncrement, stri
     JsonArraySetInplace(jAIData, 3, JsonFloat(fAdjustment));
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sRange = FloatToString(fAdjustment, 0, 0);
-    string sLoot = "  Looting Off [" + sRange + " meters]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS)) sLoot = "  Looting On [" + sRange + " meters]";
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_loot_tooltip", sLoot);
+    string sLoot = "Looting Off [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_PICKUP_ITEMS)) sLoot = "Looting On [" + sRange + " meters]";
+    NuiSetBind(oPC, nToken, "btn_loot_label", JsonString(sLoot));
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_loot_tooltip", "  " + sLoot);
 }
-void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
 {
     float fAdjustment = GetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE) + fIncrement;
     if(fAdjustment > 40.0) fAdjustment = 40.0;
@@ -1267,14 +1300,16 @@ void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, stri
     JsonArraySetInplace(jAIData, 4, JsonFloat(fAdjustment));
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sRange = FloatToString(fAdjustment, 0, 0);
-    string sPick = "  Pick Locks Off [" + sRange + " meters]";
-    string sBash = "  Bash Locks Off [" + sRange + " meters]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS)) sPick = "  Pick locks On [" + sRange + " meters]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sBash = "  Bash locks On [" + sRange + " meters]";
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", sPick);
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", sBash);
+    string sPick = "Pick Locks Off [" + sRange + "]";
+    string sBash = "Bash Locks Off [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS)) sPick = "Pick Locks On [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sBash = "Bash Locks On [" + sRange + "]";
+    NuiSetBind(oPC, nToken, "btn_pick_locks_label", JsonString(sPick));
+    NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sBash));
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  " + sPick);
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  " + sBash);
 }
-void ai_TrapRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+void ai_TrapRangeIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
 {
     float fAdjustment = GetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE) + fIncrement;
     if(fAdjustment > 40.0) fAdjustment = 40.0;
@@ -1284,11 +1319,12 @@ void ai_TrapRangeIncrement(object oPC, object oAssociate, float fIncrement, stri
     JsonArraySetInplace(jAIData, 5, JsonFloat(fAdjustment));
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sRange = FloatToString(fAdjustment, 0, 0);
-    string sText = "  Disable Traps Off [" + sRange + " meters]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS)) sText = "  Disable Traps On [" + sRange + " meters]";
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", sText);
+    string sText = "Disable Traps Off [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS)) sText = "Disable Traps On [" + sRange + "]";
+    NuiSetBind(oPC, nToken, "btn_traps_label", JsonString(sText));
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_traps_tooltip", "  " + sText);
 }
-void ai_OpenDoorIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+void ai_OpenDoorIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
 {
     float fAdjustment = GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE) + fIncrement;
     if(fAdjustment > 40.0) fAdjustment = 40.0;
@@ -1298,9 +1334,10 @@ void ai_OpenDoorIncrement(object oPC, object oAssociate, float fIncrement, strin
     JsonArraySetInplace(jAIData, 9, JsonFloat(fAdjustment));
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sRange = FloatToString(fAdjustment, 0, 0);
-    string sText = "  Open Doors Off [" + sRange + " meters]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_OPEN_DOORS)) sText = "  Open Doors On [" + sRange + " meters]";
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", sText);
+    string sText = "Open Doors Off [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_OPEN_DOORS)) sText = "Open Doors On [" + sRange + "]";
+    NuiSetBind(oPC, nToken, "btn_open_door_label", JsonString(sText));
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_open_door_tooltip", "  " + sText);
 }
 void ai_SaveAIScript(object oPC, object oAssociate, int nToken)
 {
@@ -1359,7 +1396,7 @@ void ai_Buff_Button(object oPC, object oAssociate, int nOption, string sAssociat
         else ai_SendMessages("You cannot buff while possessing your familiar.", AI_COLOR_RED, oPC);
     }
 }
-void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, string sAssociateType)
+void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, string sAssociateType, int nToken)
 {
     int nHeal = GetLocalInt(oAssociate, sVar);
     if(nIncrement > 0 && nHeal > 100 - nIncrement) nHeal = 100 - nIncrement;
@@ -1370,12 +1407,14 @@ void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, 
     json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
     if(sVar == AI_HEAL_OUT_OF_COMBAT_LIMIT)
     {
+        NuiSetBind(oPC, nToken, "btn_heal_out_label", JsonString("Heal " + sHeal + "% out combat"));
         string sText = "  Will heal at or below [" + sHeal + "%] health out of combat";
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_heal_out_tooltip", sText);
         JsonArraySetInplace(jAIData, 1, JsonInt(nHeal));
     }
     else if(sVar == AI_HEAL_IN_COMBAT_LIMIT)
     {
+        NuiSetBind(oPC, nToken, "btn_heal_in_label", JsonString("Heal " + sHeal + "% in combat"));
         string sText = "  Will heal at or below [" + sHeal + "%] health in combat";
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_heal_in_tooltip", sText);
         JsonArraySetInplace(jAIData, 2, JsonInt(nHeal));
@@ -1573,9 +1612,9 @@ void ai_Philos_AttackNearest(object oMaster, object oCreature)
         {
             ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
             // If master is attacking a target we will attack them too!
-            if(!ai_GetIsInCombat(oCreature)) ai_SetCreatureTalents(oCreature, FALSE);
+            if(!ai_GetIsInCombat(oCreature)) ai_StartAssociateCombat(oCreature);
             object oTarget = ai_GetAttackedTarget(oMaster);
-            if(oTarget != OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
+            if(oTarget == OBJECT_INVALID) ai_DoAssociateCombatRound(oCreature);
             else ai_DoAssociateCombatRound(oCreature, oTarget);
         }
         else
@@ -1635,7 +1674,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         if(nCommand == 1) // Guard PC.
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
@@ -1666,7 +1705,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 2) // Follow PC.
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
@@ -1697,7 +1736,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 3) // Standground.
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
@@ -1728,7 +1767,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 4) // Normal mode - i.e. Attack nearest.
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
@@ -1760,7 +1799,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         {
             int bTurnOn = !ai_GetAIMode(oPC, AI_MODE_AGGRESSIVE_SEARCH);
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 ai_Original_SetSearch(oPC, bTurnOn);
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
@@ -1812,7 +1851,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         {
             int bTurnOn = !ai_GetAIMode(oPC, AI_MODE_AGGRESSIVE_STEALTH);
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 ai_Original_SetStealth(oPC, bTurnOn);
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
@@ -1866,7 +1905,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         if(nCommand == 1)
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 AssignCommand(oAssociate, ai_Original_Guard());
             }
@@ -1875,7 +1914,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 2)
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 AssignCommand(oAssociate, ai_Original_Follow());
             }
@@ -1884,7 +1923,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 3)
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 AssignCommand(oAssociate, ai_Original_StandGround());
             }
@@ -1893,7 +1932,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         else if(nCommand == 4)
         {
             // Not using Philos Henchman AI. Use vanilla commands.
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 AssignCommand(oAssociate, ai_Original_AttackNearest());
             }
@@ -1917,9 +1956,9 @@ void ai_Action(object oPC, object oAssociate)
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
 }
-void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
+void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToken)
 {
-    if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "")
+    if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "")
     {
         string sScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
         if(sScript == "ai_a_ambusher")
@@ -1928,7 +1967,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using flanking tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using flanking tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Flanker: Attacks enemies engaged with allies");
         }
         else if(sScript == "ai_a_flanker")
         {
@@ -1936,7 +1975,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using peaceful tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using peaceful tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Peaceful: Avoids attacking any enemies if possible");
         }
         else if(sScript == "ai_a_peaceful")
         {
@@ -1944,7 +1983,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using defensive tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using defensive tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Defensive: Attacks then uses Expertise/Parry");
         }
         else if(sScript == "ai_a_defensive")
         {
@@ -1952,7 +1991,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using ranged tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using ranged tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Ranged: Attacks from range as much as possible");
         }
         else if(sScript == "ai_a_ranged")
         {
@@ -1960,22 +1999,15 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using counter spell tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using counter spell tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Counter Spell: Tries to counter enemy spells");
         }
         else if(sScript == "ai_a_cntrspell")
         {
             DeleteLocalString(oAssociate, AI_DEFAULT_SCRIPT);
             ai_SetAssociateAIScript(oAssociate, FALSE);
             sScript = GetLocalString(oAssociate, AI_DEFAULT_SCRIPT);
-            string sText;
-            if(sScript == "ai_a_ambusher") sText = "ambush";
-            else if(sScript == "ai_a_peaceful") sText = "peaceful";
-            else if(sScript == "ai_a_defensive") sText = "defensive";
-            else if(sScript == "ai_a_ranged") sText = "ranged";
-            else if(sScript == "ai_a_cntrspell") sText = "counter spell";
-            else sText = "normal";
-            ai_SendMessages(GetName(oAssociate) + " is now using " + sText + " tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using " + sText + " tactics");
+            ai_SendMessages(GetName(oAssociate) + " is now using default tactics in combat.", AI_COLOR_YELLOW, oPC);
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Default tactics: Using the creatures base AI script");
         }
         else
         {
@@ -1983,8 +2015,9 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType)
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using ambush tactics in combat.", AI_COLOR_YELLOW, oPC);
-            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Using ambush tactics");
+            ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Ambusher: Attacks from a hidden position");
         }
+        NuiSetBind(oPC, nToken, "btn_cmd_ai_script_label", JsonString("Tactics: " + sScript));
         json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
         if(JsonGetType(JsonArrayGet(jAIData, 8)) == JSON_TYPE_NULL) JsonArrayInsertInplace(jAIData, JsonString(sScript));
         else JsonArraySetInplace(jAIData, 8, JsonString(sScript));

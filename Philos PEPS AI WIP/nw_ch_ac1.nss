@@ -15,7 +15,8 @@ void ai_ActionFollow(object oCreature, object oTarget)
         float fFollowDistance = ai_GetFollowDistance(oCreature);
         if(fDistance > fFollowDistance)
         {
-            if(fDistance > fFollowDistance * 5.0) AssignCommand(oCreature, JumpToObject(oTarget));
+            if(fDistance > fFollowDistance * 5.0 &&
+               ai_GetIsInCombat(oCreature)) AssignCommand(oCreature, JumpToObject(oTarget));
             else
             {
                 ClearAllActions();
@@ -29,6 +30,7 @@ void main()
 {
     if (GetAILevel(OBJECT_SELF) == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
+    ai_Counter_Start();
     // We run our OnSpawn in the heartbeat so the creator can use the original
     // OnSpawn for their game.
     if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) ai_OnAssociateSpawn(oCreature);
@@ -38,6 +40,7 @@ void main()
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     // If we are an associate and don't have a master then exit.
     object oMaster = GetMaster(oCreature);
+    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "41", "oMaster: " + GetName(oMaster));
     if(oMaster == OBJECT_INVALID)
     {
         if(ai_GetIsInCombat(oCreature))
@@ -77,7 +80,7 @@ void main()
     {
         if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND))
         {
-            if(ai_TryHealing(oCreature, oCreature)) return;
+            ai_TryHealing(oCreature, oCreature);
             return;
         }
         if(ai_GetIsInCombat(oCreature))
@@ -90,8 +93,11 @@ void main()
         // In command mode we let the player tell us what to do.
         if(!ai_GetAIMode(oCreature, AI_MODE_COMMANDED))
         {
+            ai_Counter_End(GetName(oCreature) + ": Heartbeat");
             if(ai_TryHealing(oCreature, oCreature)) return;
+            ai_Counter_End(GetName(oCreature) + ": Heartbeat: TryHealing");
             if(ai_CheckNearbyObjects(oCreature)) return;
+            ai_Counter_End(GetName(oCreature) + ": Heartbeat: CheckNearbyObjects");
             if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
             {
                 ai_ScoutAhead(oCreature);
@@ -102,7 +108,7 @@ void main()
     // Finally we check to make sure we are following our master.
     if(GetCurrentAction(oCreature) != ACTION_FOLLOW)
     {
-        //ai_Debug("0e_ch_1_hb", "66", "Follow master: " +
+        //ai_Debug("nw_ch_ac1", "66", "Follow master: " +
         //         " Stealth: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH)) +
         //         " Search: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH)));
         if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))

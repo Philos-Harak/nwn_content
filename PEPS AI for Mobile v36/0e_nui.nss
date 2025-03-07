@@ -9,7 +9,6 @@
 #include "x0_i0_assoc"
 #include "0i_menus"
 #include "0i_player_target"
-void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, string sAssociateType);
 // Sets the Widget Buttons state to sElem Checkbox state.
 void ai_SetWidgetButtonToCheckbox(object oPC, int nButton, object oAssociate, string sAssociateType, int nToken, string sElem);
 // Flips an AI Buttons state to sElem Checkbox state.
@@ -20,6 +19,8 @@ void ai_SetLootFilterToCheckbox(object oPC, object oAssociate, int nFilterBit, i
 void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nCompanionType);
 // Sets an associates companion name. Cannot set companion for a player!
 void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nCompanionType);
+// Sets an associates AI script via a combo box.
+void ai_SetAIScript(object oPC, object oAssociate, int nToken);
 // Increments/Decrements the Perception Range use variable for the AI.
 void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken);
 // Saves an associates perception range changed on the button.
@@ -31,9 +32,8 @@ void ai_TurnOn(object oPC, object oAssociate, string sAssociateType);
 // Turns off oAssociate AI, Setting all event scripts.
 void ai_TurnOff(object oPC, object oAssociate, string sAssociateType);
 
-void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, string sAssociateType)
+void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, object oAssociate, string sAssociateType)
 {
-    object oAssociate = ai_GetAssociateByStringType(oPC, sAssociateType);
     string sText, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
@@ -63,7 +63,7 @@ void main()
     //if(AI_DEBUG) ai_Debug ("0e_nui", "58", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
     //             " nToken: " + IntToString(nToken) + " oPC: " + GetName(oPC));
     //SendMessageToPC(oPC, "0e_nui , 64 sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
-    //             " nToken: " + IntToString(nToken) + " nIndex: " + IntToString(nIndex) +
+    //              " nToken: " + IntToString(nToken) + " nIndex: " + IntToString(nIndex) +
     //             " oPC: " + GetName(oPC));
     // Get if the menu has an associate attached.
     json jData = NuiGetUserData(oPC, nToken);
@@ -115,11 +115,14 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_CreatePluginNUI(oPC);
             }
-            else if(sElem == "btn_close") NuiDestroy(oPC, nToken);
-            else if(sElem == "btn_ghost_mode")
+            if(sElem == "btn_close")
+            {
+                NuiDestroy(oPC, nToken);
+            }
+            if(sElem == "btn_ghost_mode")
             {
                 // We set ghost mode differently for each AI.
-                if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
                     {
@@ -191,46 +194,50 @@ void main()
             else if(sElem == "btn_toggle_assoc_widget")
             {
                 int bWidgetOff = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc");
+                string sAssocType;
                 ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc", bWidgetOff);
                 object oAssoc = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "familiar", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "familiar" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "companion", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "companion" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "summons", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "summons" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "dominated", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "dominated" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 int nIndex;
-                string sTag;
                 object oHenchman;
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
                     oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
                     if(oHenchman != OBJECT_INVALID)
                     {
-                        sTag = GetTag(oHenchman);
-                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sTag, bWidgetOff);
-                        if(bWidgetOff) IsWindowClosed(oPC, sTag + AI_WIDGET_NUI);
+                        sAssocType = ai_GetAssociateType(oPC, oHenchman);
+                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sAssocType, bWidgetOff);
+                        if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                         else ai_CreateWidgetNUI(oPC, oHenchman);
                     }
                 }
@@ -240,118 +247,6 @@ void main()
                 int nDefaultXP = GetLocalInt(GetModule(), AI_RULE_DEFAULT_XP_SCALE);
                 SetModuleXPScale(nDefaultXP);
                 NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nDefaultXP)));
-            }
-            else if(sElem == "btn_max_hench_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_max_henchman"));
-                int nMaxHenchmen = StringToInt(sText);
-                if(nMaxHenchmen > 11) nMaxHenchmen = 1;
-                else nMaxHenchmen++;
-                NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(nMaxHenchmen)));
-            }
-            else if(sElem == "btn_max_hench_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_max_henchman"));
-                int nMaxHenchmen = StringToInt(sText);
-                if(nMaxHenchmen < 2) nMaxHenchmen = 12;
-                else nMaxHenchmen--;
-                NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(nMaxHenchmen)));
-            }
-            else if(sElem == "btn_xp_scale_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_xp_scale"));
-                int nXpScale = StringToInt(sText);
-                if(nXpScale > 199) nXpScale = 0;
-                else nXpScale++;
-                NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nXpScale)));
-            }
-            else if(sElem == "btn_xp_scale_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_xp_scale"));
-                int nXpScale = StringToInt(sText);
-                if(nXpScale < 1) nXpScale = 200;
-                else nXpScale--;
-                NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nXpScale)));
-            }
-            else if(sElem == "btn_ai_diff_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_ai_difficulty"));
-                int nAIDiff = StringToInt(sText);
-                if(nAIDiff > 99) nAIDiff = 0;
-                else nAIDiff++;
-                NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(nAIDiff)));
-            }
-            else if(sElem == "btn_ai_diff_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_ai_difficulty"));
-                int nMaxHenchmen = StringToInt(sText);
-                if(nMaxHenchmen < 1) nMaxHenchmen = 100;
-                else nMaxHenchmen--;
-                NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(nMaxHenchmen)));
-            }
-            else if(sElem == "btn_perc_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_perception_distance"));
-                int nAIDiff = StringToInt(sText);
-                if(nAIDiff > 59) nAIDiff = 10;
-                else nAIDiff++;
-                NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(IntToString(nAIDiff)));
-            }
-            else if(sElem == "btn_perc_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_perception_distance"));
-                int nAIDiff = StringToInt(sText);
-                if(nAIDiff < 11) nAIDiff = 60;
-                else nAIDiff--;
-                NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(IntToString(nAIDiff)));
-            }
-            else if(sElem == "btn_wander_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_wander_distance"));
-                int nPerc = StringToInt(sText);
-                if(nPerc > 59) nPerc = 10;
-                else nPerc++;
-                NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(IntToString(nPerc)));
-            }
-            else if(sElem == "btn_wander_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_wander_distance"));
-                int nPerc = StringToInt(sText);
-                if(nPerc < 11) nPerc = 60;
-                else nPerc--;
-                NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(IntToString(nPerc)));
-            }
-            else if(sElem == "btn_encounter_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_enc"));
-                float fEncounter = StringToFloat(sText);
-                if(fEncounter > 8.9) fEncounter = 0.0;
-                else fEncounter += 0.10;
-                NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(fEncounter, 0, 2)));
-            }
-            else if(sElem == "btn_encounter_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_enc"));
-                float fEncounter = StringToFloat(sText);
-                if(fEncounter < 0.1) fEncounter = 9.9;
-                else fEncounter -= 0.10;
-                NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(fEncounter, 0, 2)));
-            }
-            else if(sElem == "btn_inc_hp_up")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"));
-                int nHp = StringToInt(sText);
-                if(nHp > 99) nHp = 0;
-                else nHp++;
-                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nHp)));
-            }
-            else if(sElem == "btn_inc_hp_down")
-            {
-                string sText = JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"));
-                int nHp = StringToInt(sText);
-                if(nHp < 1) nHp = 100;
-                else nHp--;
-                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nHp)));
             }
         }
         if(sEvent == "watch")
@@ -492,8 +387,6 @@ void main()
                     jRules = JsonObjectSet(jRules, AI_RULE_WANDER, JsonInt(bCheck));
                     NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bCheck));
                     NuiSetBind(oPC, nToken, "chbx_open_doors_event", JsonBool(bCheck));
-                    NuiSetBind(oPC, nToken, "btn_wander_up_event", JsonBool(bCheck));
-                    NuiSetBind(oPC, nToken, "btn_wander_down_event", JsonBool(bCheck));
                 }
                 else if(sElem == "chbx_open_doors_check")
                 {
@@ -518,7 +411,7 @@ void main()
                     sText = IntToString(GetModuleXPScale());
                     NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(sText));
                 }
-                 ai_SetCampaignDbJson("rules", jRules);
+                ai_SetCampaignDbJson("rules", jRules);
             }
         }
         else if(sEvent == "mousescroll")
@@ -579,7 +472,7 @@ void main()
                 }
                 else
                 {
-                    ai_ToggleAssociateWidgetOnOff(oPC, nToken, sAssociateType);
+                    ai_ToggleAssociateWidgetOnOff(oPC, nToken, oAssociate, sAssociateType);
                 }
             }
             else if(sElem == "btn_ai_options")
@@ -598,8 +491,10 @@ void main()
             else if(sElem == "btn_cmd_stealth") ai_DoCommand(oPC, oAssociate, 6);
             else if(sElem == "btn_cmd_attack") ai_DoCommand(oPC, oAssociate, 4);
             else if(sElem == "btn_cmd_follow") ai_DoCommand(oPC, oAssociate, 2);
+            else if(sElem == "btn_follow_up") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_follow_down") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
             else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
-            else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType, nToken);
             else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
             else if(sElem == "btn_quick_widget")
             {
@@ -686,15 +581,15 @@ void main()
             {
                 // Follow range is only changed on non-pc's
                 if(sElem == "btn_cmd_follow" &&
-                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
+                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
                 // Follow range is only changed on non-pc's
                 if(sElem == "btn_cmd_follow" &&
-                oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
             }
         }
     }
@@ -718,10 +613,10 @@ void main()
             else if(sElem == "btn_ignore_assoc") ai_Ignore_Associates(oPC, oAssociate, sAssociateType);
             else if(sElem == "btn_search") ai_Search(oPC, oAssociate, sAssociateType);
             else if(sElem == "btn_stealth") ai_Stealth(oPC, oAssociate, sAssociateType);
-            else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType);
-            else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType);
-            else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1);
-            else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2);
+            else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType, nToken);
+            else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType, nToken);
+            else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1, nToken);
+            else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2, nToken);
             else if(sElem == "btn_magic") ai_UseMagic(oPC, oAssociate, sAssociateType);
             else if(sElem == "btn_magic_items") ai_UseMagicItems(oPC, oAssociate, sAssociateType);
             else if(sElem == "btn_def_magic") ai_UseOffensiveMagic(oPC, oAssociate, TRUE, FALSE, sAssociateType);
@@ -729,9 +624,26 @@ void main()
             else if(sElem == "btn_spontaneous") ai_Spontaneous(oPC, oAssociate, sAssociateType);
             else if(sElem == "btn_heals_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 1);
             else if(sElem == "btn_healp_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 2);
-            else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType, nToken);
             else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
             else if(sElem == "btn_ai_script") ai_SaveAIScript(oPC, oAssociate, nToken);
+            // ** Mobile up/down adjustments.
+            else if(sElem == "btn_magic_up") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
+            else if(sElem == "btn_door_up") ai_OpenDoorIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_traps_up") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_pick_up") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_bash_up") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_heal_out_up") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+            else if(sElem == "btn_heal_in_up") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+            else if(sElem == "btn_loot_up") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+            else if(sElem == "btn_magic_down") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+            else if(sElem == "btn_door_down") ai_OpenDoorIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+            else if(sElem == "btn_traps_down") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+            else if(sElem == "btn_pick_down") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+            else if(sElem == "btn_bash_down") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+            else if(sElem == "btn_heal_out_down") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+            else if(sElem == "btn_heal_in_down") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+            else if(sElem == "btn_loot_down") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
         }
         else if(sEvent == "watch")
         {
@@ -758,6 +670,7 @@ void main()
             else if(sElem == "chbx_healp_onoff_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_STOP_PARTY_HEALING, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_loot_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_LOOT, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_perc_range_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_PERC_RANGE, oAssociate, sAssociateType, nToken, sElem);
+            else if(sElem == "cmb_ai_script_selected") ai_SetAIScript(oPC, oAssociate, nToken);
             NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
             ai_CreateWidgetNUI(oPC, oAssociate);
         }
@@ -766,27 +679,25 @@ void main()
             float nMouseScroll = JsonGetFloat(JsonObjectGet(JsonObjectGet(NuiGetEventPayload(), "mouse_scroll"), "y"));
             if(nMouseScroll == 1.0) // Scroll up
             {
-                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
+                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
+                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
-                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
             }
         }
     }
@@ -820,17 +731,17 @@ void main()
                 else if(sElem == "btn_ignore_assoc") ai_Ignore_Associates(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_search") ai_Search(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_stealth") ai_Stealth(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1);
-                else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2);
-                else if(sElem == "btn_magic_minus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
-                else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
+                else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType, nToken);
+                else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType, nToken);
+                else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1, nToken);
+                else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2, nToken);
+                else if(sElem == "btn_magic_minus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+                else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
                 else if(sElem == "btn_magic") ai_UseMagic(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_magic_items") ai_UseMagicItems(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_def_magic") ai_UseOffensiveMagic(oPC, oAssociate, TRUE, FALSE, sAssociateType);
                 else if(sElem == "btn_off_magic") ai_UseOffensiveMagic(oPC, oAssociate, FALSE, TRUE, sAssociateType);
-                else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
+                else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType, nToken);
                 else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
                 else if(sElem == "btn_spontaneous") ai_Spontaneous(oPC, oAssociate, sAssociateType);
                 else if(sElem == "btn_buff_short")
@@ -877,7 +788,7 @@ void main()
                 else if(sElem == "btn_cmd_stealth") ai_DoCommand(oPC, oAssociate, 6);
                 else if(sElem == "btn_cmd_attack") ai_DoCommand(oPC, oAssociate, 4);
                 else if(sElem == "btn_cmd_follow") ai_DoCommand(oPC, oAssociate, 2);
-                else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType);
+                else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType, nToken);
                 else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
                 else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
                 else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
@@ -890,33 +801,31 @@ void main()
             if(nMouseScroll == 1.0) // Scroll up
             {
                 if(sElem == "btn_cmd_follow" &&
-                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
-                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, 1, sAssociateType, -1);
+                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType, nToken);
+                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
             }
             if(nMouseScroll == -1.0) // Scroll down
             {
                 if(sElem == "btn_cmd_follow" &&
-                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
-                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
-                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
-                else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, -1, sAssociateType, -1);
+                   oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+                if(sElem == "btn_magic_level") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType, nToken);
+                else if(sElem == "btn_pick_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_bash_locks") ai_LockRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_traps") ai_TrapRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_open_door") ai_OpenDoorIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
+                else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
             }
         }
         if(sEvent == "mousedown")
@@ -927,7 +836,7 @@ void main()
                 if(sElem == "btn_open_main")
                 {
                     if(IsWindowClosed(oPC, sAssociateType + AI_NUI)) ai_CreateAssociateAINUI(oPC, oAssociate);
-                    if(sElem == "btn_follow_range") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                    if(sElem == "btn_follow_range") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
                 }
             }
         }
@@ -1363,7 +1272,7 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_CreateQuickWidgetSelectionNUI(oPC, oAssociate);
             }
-            else if(sElem == "btn_text_spell") // Adds Ability/spell to quick widget.
+            else if(sElem == "btn_text_spell") // Adds spell to spell widget.
             {
                 json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
                 json jSpells = JsonArrayGet(jAIData, 10);
@@ -1595,11 +1504,16 @@ void ai_SetLootFilterToCheckbox(object oPC, object oAssociate, int nFilterBit, i
 void ai_AddAssociate(object oPC, int nToken, json jAssociate, location lLocation, int nFamiliar, int nCompanion, int nRange = 0)
 {
     object oAssociate = JsonToObject(jAssociate, lLocation, OBJECT_INVALID, TRUE);
+    //ChangeToStandardFaction(oAssociate, STANDARD_FACTION_COMMONER);
+    //SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 50, oAssociate);
+    //SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 50, oAssociate);
+    //SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 50, oAssociate);
+    //SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 0, oAssociate);
     AddHenchman(oPC, oAssociate);
     DeleteLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE");
     NuiDestroy(oPC, nToken);
     ai_CreateWidgetNUI(oPC, oAssociate);
-    if(nRange) SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nRange);
+    if(nRange) SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nRange);
     if(nFamiliar) SummonFamiliar(oAssociate);
     if(nCompanion) SummonAnimalCompanion(oAssociate);
 }
@@ -1608,6 +1522,8 @@ void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nAssocia
     if(ai_GetIsCharacter(oAssociate)) return;
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     int nSelection;
+    // Need to remove the henchman before we copy them to keep factions correct.
+    ai_FireHenchman(oPC, oAssociate);
     json jAssociate = ObjectToJson(oAssociate, TRUE);
     if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR)
     {
@@ -1621,7 +1537,6 @@ void ai_SetCompanionType(object oPC, object oAssociate, int nToken, int nAssocia
     }
     //ai_Debug("0e_nui", "916", JsonDump(jAssociate, 1));
     location lLocation = GetLocation(oAssociate);
-    ai_FireHenchman(oPC, oAssociate);
     int nFamiliar, nCompanion;
     object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oAssociate);
     if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
@@ -1637,6 +1552,8 @@ void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssocia
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     string sAssociateType;
     string sName;
+    // Need to remove the henchman before we copy them to keep factions correct.
+    ai_FireHenchman(oPC, oAssociate);
     json jAssociate = ObjectToJson(oAssociate, TRUE);
     if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR)
     {
@@ -1650,7 +1567,6 @@ void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssocia
         jAssociate = GffReplaceString(jAssociate, "FamiliarName", sName);
     }
     location lLocation = GetLocation(oAssociate);
-    ai_FireHenchman(oPC, oAssociate);
     int nFamiliar, nCompanion;
     object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oAssociate);
     if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
@@ -1660,11 +1576,32 @@ void ai_SetCompanionName(object oPC, object oAssociate, int nToken, int nAssocia
     DestroyObject(oAssociate);
     DelayCommand(0.1, ai_AddAssociate(oPC, nToken, jAssociate, lLocation, nFamiliar, nCompanion));
 }
+void ai_SetAIScript(object oPC, object oAssociate, int nToken)
+{
+    int nSelection = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_ai_script_selected"));
+    if(nSelection == 0) return;
+    string sScript = sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, nSelection);
+    NuiSetBind(oPC, nToken, "txt_ai_script", JsonString(sScript));
+    string sOldScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
+    if(sScript != sOldScript)
+    {
+        SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
+        SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
+        string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+        json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+        if(JsonGetType(JsonArrayGet(jAIData, 8)) == JSON_TYPE_NULL) JsonArrayInsertInplace(jAIData, JsonString(sScript));
+        else JsonArraySetInplace(jAIData, 8, JsonString(sScript));
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+        ai_SendMessages(GetName(oAssociate) + " is now using " + sScript + " AI script!", AI_COLOR_GREEN, oPC);
+    }
+    else ai_SendMessages(GetName(oAssociate) + " is already using this script! Did not change AI script.", AI_COLOR_RED, oPC);
+}
 void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken)
 {
-    int nAdjustment = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE) + nIncrement;
+    int nAdjustment = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU");
+    nAdjustment += nIncrement;
     if(nAdjustment < 8 || nAdjustment > 11) return;
-    SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nAdjustment);
+    SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU", nAdjustment);
     json jAssociate = ObjectToJson(oAssociate, TRUE);
     int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
     string sText, sInfo;
@@ -1686,29 +1623,19 @@ void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string
     }
     ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_perc_range_tooltip", sText);
     if(nToken > -1) NuiSetBind (oPC, nToken, "lbl_info_label", JsonString(sInfo));
-    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
-    JsonArraySetInplace(jAIData, 7, JsonInt(nAdjustment));
-    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
 }
 void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateType)
 {
     if(ai_GetIsCharacter(oAssociate)) return;
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
-    int nBtnPercRange = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE);
-    // Need to remove the henchman before we copy them to keep factions correct.
-    ai_FireHenchman(oPC, oAssociate);
-    json jAssociate = ObjectToJson(oAssociate, TRUE);
-    int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
-    if(nBtnPercRange == nHenchPercRange)
-    {
-        ai_SendMessages(GetName(oAssociate) + " already has this perception set.", AI_COLOR_YELLOW, oPC);
-        return;
-    }
+    int nBtnPercRange = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU");
     string sText, sText2;
+    float fRange = 20.0;
     if(nBtnPercRange == 8)
     {
         sText = "short";
         sText2 = "  Perception Range Short [10 meters Sight / 10 meters Listen]";
+        fRange = 10.0;
     }
     else if(nBtnPercRange == 9)
     {
@@ -1719,14 +1646,31 @@ void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateT
     {
         sText = "long";
         sText2 = "  Perception Range Long [35 meters Sight / 20 meters Listen]";
+        fRange = 35.0;
     }
     else if(nBtnPercRange == 11)
     {
         sText = "default";
         sText2 = "  Perception Range Default [20 meters Sight / 20 meters Listen]";
     }
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, fRange);
+    SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nBtnPercRange);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    JsonArraySetInplace(jAIData, 7, JsonInt(nBtnPercRange));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    // Need to remove the henchman before we copy them to keep factions correct.
+    ai_FireHenchman(oPC, oAssociate);
+    json jAssociate = ObjectToJson(oAssociate, TRUE);
+    int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
+    if(nBtnPercRange == nHenchPercRange)
+    {
+        ai_SendMessages(GetName(oAssociate) + " already has this perception set.", AI_COLOR_YELLOW, oPC);
+        AddHenchman(oPC, oAssociate);
+        DeleteLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE");
+        return;
+    }
     NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_NUI));
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_perc_range_tooltip", sText);
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_perc_range_tooltip", sText2);
     ai_SendMessages(GetName(oAssociate) + " has updated their perception range to " + sText + ".", AI_COLOR_YELLOW, oPC);
     location lLocation = GetLocation(oAssociate);
     jAssociate = GffReplaceByte(jAssociate, "PerceptionRange", nBtnPercRange);

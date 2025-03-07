@@ -1,7 +1,7 @@
 /*//////////////////////////////////////////////////////////////////////////////
 // Script Name: 0i_time
 ////////////////////////////////////////////////////////////////////////////////
- Include script for handling all time functions.
+ Include script for handling all time functions for the server.
 
  Lokey's functions:
 int GetPosixTimestamp();
@@ -12,6 +12,10 @@ string GetCurrentDateTime();
 int GetCurrentTimeInSeconds();
 // RETURNS a formated date, good for timestamping logs and text.
 string GetCurrentDateTime();
+// Sends a server shutdown message 1800 seconds i.e 30 minutes before.
+// nDuration is in seconds. i.e. one hours is 3600 defaults to 24 hours (86400).
+// Should be put into the servers OnHeartBeat.
+void CheckServerShutdownMessage(int nDuration = 86400);
 
 int GetCurrentTimeInSeconds()
 {

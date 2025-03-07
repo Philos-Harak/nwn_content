@@ -56,4 +56,10 @@ void main()
         TeleportEffect(oAssociate);
         DelayCommand(fDelay, AssignCommand(oAssociate, JumpToObject(oWP)));
     }
+    oAssociate = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oUser);
+    if (oAssociate != OBJECT_INVALID)
+    {
+        TeleportEffect(oAssociate);
+        DelayCommand(fDelay, AssignCommand(oAssociate, JumpToObject(oWP)));
+    }
 }

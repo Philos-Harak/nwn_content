@@ -55,6 +55,8 @@ void main()
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Display Target Info", "btn_info", 150.0f, 20.0f, -1.0, "btn_info_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Player Ghost mode", "btn_ghost_mode", 150.0f, 20.0f, -1.0, "btn_ghost_mode_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Clear Reputation", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
@@ -101,25 +103,7 @@ void main()
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 11 ****************************************************************** 500 / 385
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Create Tomi", "btn_create_tomi", 130.0f, 20.0f, -1.0, "btn_create_tomi_tooltip");
-    CreateButton(jRow, "Create Linu", "btn_create_linu", 130.0f, 20.0f, -1.0, "btn_create_linu_tooltip");
-    CreateButton(jRow, "Create Daelan", "btn_create_daelan", 130.0f, 20.0f, -1.0, "btn_create_daelan_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 12 ****************************************************************** 500 / 385
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Create Boddy", "btn_create_boddy", 130.0f, 20.0f, -1.0, "btn_create_boddy_tooltip");
-    CreateButton(jRow, "Create Grimgnaw", "btn_create_grim", 130.0f, 20.0f, -1.0, "btn_create_grim_tooltip");
-    CreateButton(jRow, "Create Sharwynn", "btn_create_shar", 130.0f, 20.0f, -1.0, "btn_create_shar_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 13 ******************************************************************* 500 / 385
+    // Row 11 ******************************************************************* 500 / 385
     jRow = JsonArray();
     // Make the debug creature group.
     json jGroupRow = JsonArray();
@@ -137,11 +121,10 @@ void main()
     {
         jGroupRow = JsonArray();
         string sScript = GetEventScript(oDebugCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
-        if(sScript == "0e_c2_1_hb") sText = GetName(oDebugCreature) + " is using Philos' monster AI scripts.";
-        else if(sScript == "0e_ch_1_hb") sText = GetName(oDebugCreature) + " is using Philos' associate AI scripts.";
-        else if(sScript == "xx_pc_1_hb") sText = GetName(oDebugCreature) + " is using Philos' player AI scripts.";
-        else if(sScript == "0e_prc_fam_event" || sScript == "0e_prc_sum_event") sText = GetName(oDebugCreature) + " is using Philos' AI scripts for PRC.";
-        else sText = GetName(oDebugCreature) + " is not using any Philos' AI scripts.";
+        if(sScript == "nw_c2_default1") sText = GetName(oDebugCreature) + " is using monster AI scripts (" + sScript + ").";
+        else if(sScript == "nw_ch_ac1") sText = GetName(oDebugCreature) + " is using associate AI scripts (" + sScript + ").";
+        else if(sScript == "xx_pc_1_hb") sText = GetName(oDebugCreature) + " is using player AI scripts (" + sScript + ").";
+        else sText = GetName(oDebugCreature) + " is using unknown AI scripts (" + sScript + ").";
         CreateLabel(jGroupRow, sText, "debug_info", 455.0f, 20.0f, NUI_HALIGN_CENTER);
         // Add group row to the group column.
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
@@ -173,6 +156,8 @@ void main()
     // Row 6
     NuiSetBind(oPC, nToken, "btn_info_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_info_tooltip", JsonString("  Displays a target object's information to the log screen."));
+    NuiSetBind(oPC, nToken, "btn_ghost_mode_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString("  Turns on/off player in ghost mode."));
     NuiSetBind(oPC, nToken, "btn_clear_reputation_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_clear_reputation_tooltip", JsonString("  Clears reputation with creature's faction."));
     // Row 7
@@ -195,20 +180,6 @@ void main()
     NuiSetBindWatch (oPC, nToken, "txt_var_value", TRUE);
     NuiSetBind(oPC, nToken, "txt_var_value_tooltip", JsonString("  The value to set on the variable, Objects/Locations will need to be selected."));
     // Row 11
-    NuiSetBind(oPC, nToken, "btn_create_tomi_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_tomi_tooltip", JsonString("  Creates Tomi Undergallows."));
-    NuiSetBind(oPC, nToken, "btn_create_linu_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_linu_tooltip", JsonString("  Creates Linu La'neral."));
-    NuiSetBind(oPC, nToken, "btn_create_daelan_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_daelan_tooltip", JsonString("  Creates Daelan Red Tiger."));
-    // Row 12
-    NuiSetBind(oPC, nToken, "btn_create_boddy_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_boddy_tooltip", JsonString("  Creates Boddyknock Glinckle."));
-    NuiSetBind(oPC, nToken, "btn_create_grim_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_grim_tooltip", JsonString("  Creates Grimgnaw."));
-    NuiSetBind(oPC, nToken, "btn_create_shar_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_create_shar_tooltip", JsonString("  Creates Sharwynn."));
-    // Row 13
     NuiSetBind(oPC, nToken, "btn_debug_creature_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_debug_creature_tooltip", JsonString("  Sets target creature to send AI debug to the log file."));
     NuiSetBind(oPC, nToken, "btn_clear_debug_event", JsonBool(TRUE));

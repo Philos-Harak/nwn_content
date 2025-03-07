@@ -26,7 +26,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -68,7 +68,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
+                ai_SearchForHiddenCreature(oCreature, FALSE);
                 return;
             }
         }
@@ -83,5 +83,5 @@ void main()
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    else ai_SearchForHiddenCreature(oCreature, FALSE);
 }

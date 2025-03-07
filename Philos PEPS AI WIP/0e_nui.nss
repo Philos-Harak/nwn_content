@@ -9,7 +9,6 @@
 #include "x0_i0_assoc"
 #include "0i_menus"
 #include "0i_player_target"
-void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, string sAssociateType);
 // Sets the Widget Buttons state to sElem Checkbox state.
 void ai_SetWidgetButtonToCheckbox(object oPC, int nButton, object oAssociate, string sAssociateType, int nToken, string sElem);
 // Flips an AI Buttons state to sElem Checkbox state.
@@ -28,14 +27,16 @@ void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string
 void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateType);
 // Changes Perception Distance Rule for monsters.
 void ai_RulePercDistInc(object oPC, object oModule, int nIncrement, int nToken);
+// Adds a spell to a json AI restricted spell list then returns jRules.
+// bRestrict = TRUE will add to the list FALSE will remove it from the list.
+json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE);
 // Turns on oAssociate AI, Setting all event scripts.
 void ai_TurnOn(object oPC, object oAssociate, string sAssociateType);
 // Turns off oAssociate AI, Setting all event scripts.
 void ai_TurnOff(object oPC, object oAssociate, string sAssociateType);
 
-void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, string sAssociateType)
+void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, object oAssociate, string sAssociateType)
 {
-    object oAssociate = ai_GetAssociateByStringType(oPC, sAssociateType);
     string sText, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
@@ -117,15 +118,15 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_CreatePluginNUI(oPC);
             }
-            if(sElem == "btn_ghost_mode")
+            if(sElem == "btn_action_ghost")
             {
                 // We set ghost mode differently for each AI.
-                if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
                     {
                         DeleteLocalInt(oPC, sGhostModeVarname);
-                        ai_SendMessages("Ghost mode is turned off when using commands.", AI_COLOR_YELLOW, oPC);
+                        ai_SendMessages("Action Ghost mode is turned off when using commands.", AI_COLOR_YELLOW, oPC);
                         object oAssociate;
                         int nIndex;
                         for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
@@ -150,21 +151,21 @@ void main()
                     else
                     {
                         SetLocalInt(oPC, sGhostModeVarname, TRUE);
-                        ai_SendMessages("Ghost mode is turned on when using commands.", AI_COLOR_YELLOW, oPC);
+                        ai_SendMessages("Action Ghost mode is turned on when using commands.", AI_COLOR_YELLOW, oPC);
                     }
                 }
                 else
                 {
-                    if(ai_GetAIMode(oPC, AI_MODE_GHOST))
+                    if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST))
                     {
-                        ai_SetAIMode(oPC, AI_MODE_GHOST, FALSE);
-                        ai_SendMessages("Ghost mode is turned off when using commands.", AI_COLOR_YELLOW, oPC);
+                        ai_SetAIMode(oPC, AI_MODE_ACTION_GHOST, FALSE);
+                        ai_SendMessages("Action Ghost mode is turned off when using commands.", AI_COLOR_YELLOW, oPC);
                         object oAssociate;
                         int nIndex;
                         for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                         {
                            oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-                           if(oAssociate != OBJECT_INVALID)
+                           if(oAssociate != OBJECT_INVALID && !ai_GetAIMode(oAssociate, AI_MODE_GHOST))
                            {
                                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                                 DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -173,7 +174,7 @@ void main()
                         for(nIndex = 2; nIndex < 6; nIndex++)
                         {
                             oAssociate = GetAssociate(nIndex, oPC);
-                            if(oAssociate != OBJECT_INVALID)
+                            if(oAssociate != OBJECT_INVALID  && !ai_GetAIMode(oAssociate, AI_MODE_GHOST))
                             {
                                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                                 DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -182,56 +183,59 @@ void main()
                     }
                     else
                     {
-                        ai_SetAIMode(oPC, AI_MODE_GHOST, TRUE);
-                        ai_SendMessages("Ghost mode is turned on when using commands.", AI_COLOR_YELLOW, oPC);
+                        ai_SetAIMode(oPC, AI_MODE_ACTION_GHOST);
+                        ai_SendMessages("Action Ghost mode is turned on when using commands.", AI_COLOR_YELLOW, oPC);
                     }
                     aiSaveAssociateModesToDb(oPC, oPC);
                 }
-
             }
             else if(sElem == "btn_toggle_assoc_widget")
             {
                 int bWidgetOff = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc");
+                string sAssocType;
                 ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc", bWidgetOff);
                 object oAssoc = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "familiar", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "familiar" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "companion", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "companion" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "summons", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "summons" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
                 if(oAssoc != OBJECT_INVALID)
                 {
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, "dominated", bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, "dominated" + AI_WIDGET_NUI);
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                     else ai_CreateWidgetNUI(oPC, oAssoc);
                 }
                 int nIndex;
-                string sTag;
                 object oHenchman;
                 for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
                 {
                     oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
                     if(oHenchman != OBJECT_INVALID)
                     {
-                        sTag = GetTag(oHenchman);
-                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sTag, bWidgetOff);
-                        if(bWidgetOff) IsWindowClosed(oPC, sTag + AI_WIDGET_NUI);
+                        sAssocType = ai_GetAssociateType(oPC, oHenchman);
+                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sAssocType, bWidgetOff);
+                        if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
                         else ai_CreateWidgetNUI(oPC, oHenchman);
                     }
                 }
@@ -380,7 +384,6 @@ void main()
                     SetLocalInt(oModule, AI_RULE_WANDER, bCheck);
                     jRules = JsonObjectSet(jRules, AI_RULE_WANDER, JsonInt(bCheck));
                     NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bCheck));
-                    NuiSetBind(oPC, nToken, "chbx_open_doors_event", JsonBool(bCheck));
                 }
                 else if(sElem == "chbx_open_doors_check")
                 {
@@ -404,6 +407,40 @@ void main()
                     NuiSetBind(oPC, nToken, "chbx_party_scale_tooltip", JsonString("  PEPS adjusts your XP based on party size from (" + sText + ")."));
                     sText = IntToString(GetModuleXPScale());
                     NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(sText));
+                }
+                else if(sElem == "chbx_darkness_check")
+                {
+                    if(bCheck)
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DARKNESS);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_SHADOW_CONJURATION_DARKNESS);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELLABILITY_AS_DARKNESS);
+                        jRules = ai_AddRestrictedSpell(jRules, 688); // WildShape_Darkness
+                    }
+                    else
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DARKNESS, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_SHADOW_CONJURATION_DARKNESS, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELLABILITY_AS_DARKNESS, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, 688, FALSE); // WildShape_Darkness
+                    }
+                }
+                else if(sElem == "chbx_dispels_check")
+                {
+                    if(bCheck)
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_LESSER_DISPEL);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DISPEL_MAGIC);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_GREATER_DISPELLING);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION);
+                    }
+                    else
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_LESSER_DISPEL, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DISPEL_MAGIC, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_GREATER_DISPELLING, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION, FALSE);
+                    }
                 }
                 ai_SetCampaignDbJson("rules", jRules);
             }
@@ -466,7 +503,7 @@ void main()
                 }
                 else
                 {
-                    ai_ToggleAssociateWidgetOnOff(oPC, nToken, sAssociateType);
+                    ai_ToggleAssociateWidgetOnOff(oPC, nToken, oAssociate, sAssociateType);
                 }
             }
             else if(sElem == "btn_ai_options")
@@ -515,6 +552,7 @@ void main()
             }
             else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
             else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
+            else if(sElem == "btn_ghost_mode") ai_GhostMode(oPC, oAssociate, nToken, sAssociateType);
             else if(sElem == "btn_camera") ai_ChangeCameraView(oPC, oAssociate);
             else if(sElem == "btn_inventory") ai_OpenInventory(oAssociate, oPC);
             else if(sElem == "btn_familiar_name") ai_SetCompanionName(oPC, oAssociate, nToken, ASSOCIATE_TYPE_FAMILIAR);
@@ -557,6 +595,7 @@ void main()
             else if(sElem == "chbx_buff_long_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_BUFF_LONG, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_buff_all_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_BUFF_ALL, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_jump_to_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_JUMP_TO, oAssociate, sAssociateType, nToken, sElem);
+            else if(sElem == "chbx_ghost_mode_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_GHOST_MODE, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_camera_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_inventory_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_familiar_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_FAMILIAR, oAssociate, sAssociateType, nToken, sElem);
@@ -738,6 +777,7 @@ void main()
                 }
                 else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
                 else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
+                else if(sElem == "btn_ghost_mode") ai_GhostMode(oPC, oAssociate, nToken, sAssociateType);
                 else if(sElem == "btn_camera") ai_ChangeCameraView(oPC, oAssociate);
                 else if(sElem == "btn_inventory") ai_OpenInventory(oAssociate, oPC);
                 else if(sElem == "btn_familiar")
@@ -1263,13 +1303,13 @@ void main()
                 }
                 if(JsonGetLength(jWidget) < 20)
                 {
+                    json jSpell = JsonArray();
+                    json jData = NuiGetUserData(oPC, nToken);
+                    json jQuickListArray = JsonArrayGet(jData, 1);
+                    int nSpell = JsonGetInt(JsonArrayGet(jQuickListArray, nIndex));
                     // Button 10 is special abilities.
                     if(JsonGetInt(JsonArrayGet(jSpells, 1)) == 10)
                     {
-                        json jSpell = JsonArray();
-                        json jData = NuiGetUserData(oPC, nToken);
-                        json jAbilityArray = JsonArrayGet(jData, 1);
-                        int nSpell = JsonGetInt(JsonArrayGet(jAbilityArray, nIndex));
                         jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
                         jSpell = JsonArrayInsert(jSpell, JsonInt(-1));  // Class
                         jSpell = JsonArrayInsert(jSpell, JsonInt(-1));  // Level
@@ -1286,20 +1326,18 @@ void main()
                     {
                         int nClass = GetClassByPosition(JsonGetInt(JsonArrayGet(jSpells, 0)), oAssociate);
                         int nLevel = JsonGetInt(JsonArrayGet(jSpells, 1));
-                        int nSpell, nMetaMagic, nDomain;
+                        int nMetaMagic, nDomain;
                         if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
                         {
-                            nSpell = GetMemorizedSpellId(oAssociate, nClass, nLevel, nIndex);
                             nMetaMagic = GetMemorizedSpellMetaMagic(oAssociate, nClass, nLevel, nIndex);
                             nDomain = GetMemorizedSpellIsDomainSpell(oAssociate, nClass, nLevel, nIndex);
                         }
                         else
                         {
-                            nSpell = GetKnownSpellId(oAssociate, nClass, nLevel, nIndex);
                             nMetaMagic = METAMAGIC_ANY;
                             nDomain = 0;
                         }
-                        json jSpell = JsonArray();
+
                         jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
                         jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
                         jSpell = JsonArrayInsert(jSpell, JsonInt(nLevel));
@@ -1492,7 +1530,7 @@ void ai_AddAssociate(object oPC, int nToken, json jAssociate, location lLocation
     DeleteLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE");
     NuiDestroy(oPC, nToken);
     ai_CreateWidgetNUI(oPC, oAssociate);
-    if(nRange) SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nRange);
+    if(nRange) SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nRange);
     if(nFamiliar) SummonFamiliar(oAssociate);
     if(nCompanion) SummonAnimalCompanion(oAssociate);
 }
@@ -1577,11 +1615,10 @@ void ai_SetAIScript(object oPC, object oAssociate, int nToken)
 }
 void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string sAssociateType, int nToken)
 {
-    int nAdjustment = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE + "_MENU");
-    if(nAdjustment == 0) nAdjustment = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE);
+    int nAdjustment = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU");
     nAdjustment += nIncrement;
     if(nAdjustment < 8 || nAdjustment > 11) return;
-    SetLocalInt(oAssociate, AI_PERCEPTION_RANGE + "_MENU", nAdjustment);
+    SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU", nAdjustment);
     json jAssociate = ObjectToJson(oAssociate, TRUE);
     int nHenchPercRange = JsonGetInt(GffGetByte(jAssociate, "PerceptionRange"));
     string sText, sInfo;
@@ -1603,15 +1640,12 @@ void ai_PercRangeIncrement(object oPC, object oAssociate, int nIncrement, string
     }
     ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_perc_range_tooltip", sText);
     if(nToken > -1) NuiSetBind (oPC, nToken, "lbl_info_label", JsonString(sInfo));
-    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
-    JsonArraySetInplace(jAIData, 7, JsonInt(nAdjustment));
-    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
 }
 void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateType)
 {
     if(ai_GetIsCharacter(oAssociate)) return;
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
-    int nBtnPercRange = GetLocalInt(oAssociate, AI_PERCEPTION_RANGE + "_MENU");
+    int nBtnPercRange = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU");
     string sText, sText2;
     float fRange = 20.0;
     if(nBtnPercRange == 8)
@@ -1636,8 +1670,11 @@ void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateT
         sText = "default";
         sText2 = "  Perception Range Default [20 meters Sight / 20 meters Listen]";
     }
-    SetLocalFloat(oAssociate, AI_PERCEPTION_RANGE, fRange);
-    SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nBtnPercRange);
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, fRange);
+    SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nBtnPercRange);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    JsonArraySetInplace(jAIData, 7, JsonInt(nBtnPercRange));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     // Need to remove the henchman before we copy them to keep factions correct.
     ai_FireHenchman(oPC, oAssociate);
     json jAssociate = ObjectToJson(oAssociate, TRUE);
@@ -1677,6 +1714,35 @@ void ai_RulePercDistInc(object oPC, object oModule, int nIncrement, int nToken)
     json jRules = ai_GetCampaignDbJson("rules");
     JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(nAdjustment));
     ai_SetCampaignDbJson("rules", jRules);
+}
+json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)
+{
+    object oModule = GetModule();
+    json jRSpells = GetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS);
+    int nIndex, nMaxIndex = JsonGetLength(jRSpells);
+    if(bRestrict)
+    {
+        while(nIndex < nMaxIndex)
+        {
+            if(JsonGetInt(JsonArrayGet(jRSpells, nIndex)) == nSpell) return jRules;
+            nIndex++;
+        }
+        jRSpells = JsonArrayInsert(jRSpells, JsonInt(nSpell));
+    }
+    else
+    {
+        while(nIndex < nMaxIndex)
+        {
+            if(JsonGetInt(JsonArrayGet(jRSpells, nIndex)) == nSpell)
+            {
+                jRSpells = JsonArrayDel(jRSpells, nIndex);
+                break;
+            }
+            nIndex++;
+        }
+    }
+    SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
+    return JsonObjectSet(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
 }
 void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
 {

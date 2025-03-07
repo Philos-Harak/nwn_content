@@ -7,42 +7,43 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:02.24.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:36-03.07.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
-//***************************  ADJUSTABLE CONSTANTS  ***************************
-// Turn On/Off Debug.
+// If you change these constants make sure the database has been removed
+// so the ai_SetAIRules() will rewrite the new server rule values.
+// File Name: peps_database.sqlite3
+//**********************************  SERVER ***********************************
+// Turn On/Off Debug. You can only use the debug with the pi_debug/pe_debug scripts.
+// This will only work if you are using the PEPS menu system.
 const int AI_DEBUG = TRUE;
-// Defines if we are building for single player or a server.
+// Defines if we are compiling for single player or a server. Always on for server!
 const int AI_SERVER = FALSE;
-// Allows Henchman to have a widget.
-const int AI_HENCHMAN_WIDGET = TRUE;
-// The number of classes allowed for a character to take in the server/module.
+// The number of classes allowed for a creature to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 3;
 // Taunts cool down time before the AI attemps another Taunt.
 const int AI_TAUNT_COOLDOWN = 3;
 // Animal Empathy cool down time before the AI attemps another check.
 const int AI_EMPATHY_COOLDOWN = 3;
-// Change the Custom token number if it conflicts with your server.
-const int AI_BASE_CUSTOM_TOKEN = 1000;
 // Arcane Spell failure% or less than, for a caster to still try to cast a spell.
 const int AI_ASF_WILL_USE = 15;
-// Delay between Henchman casting Buff spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_BUFF_DELAY = 0.2;
-//*******************************  SERVER RULES ********************************
+// Monsters chance to heal while in combat per round.
+const int AI_MONSTER_HEAL_IN_COMBAT_CHANCE = 70;
+// Monsters chance to heal when out of combat per heart beat.
+const int AI_MONSTER_HEAL_OUT_COMBAT_CHANCE = 70;
 // Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
 const int AI_MORAL_CHECKS = FALSE;
 // Allows monsters to prebuff before combat starts.
 const int AI_PREBUFF = TRUE;
 // Allows monsters cast summons spells when prebuffing.
 const int AI_PRESUMMONS = TRUE;
-// Allows monsters to use tactical AI scripts.
+// Allows monsters to use tactical AI scripts such as ambush, flanker, ranged.
 const int AI_TACTICAL = TRUE;
 // Enemies may summon familiars and Animal companions and will be randomized.
 const int AI_SUMMON_COMPANIONS = FALSE;
 // Allow the AI to move during combat base on the situation and action taking.
 const int AI_ADVANCED_MOVEMENT = TRUE;
-// Follow Item Level Restrictions for monsters/associates.
+// Follow Item Level Restrictions for AI.
 const int AI_ITEM_LEVEL_RESTRICTIONS = FALSE;
 // Allow the AI to use Use Magic Device.
 const int AI_USE_MAGIC_DEVICE = TRUE;
@@ -51,6 +52,7 @@ const int AI_HEALING_KITS = TRUE;
 // Associates are permanent and don't get removed when the master dies.
 const int AI_COMPANIONS_PERMANENT = FALSE;
 // Monster AI's chance (0 to 100) to attack the weakest target instead of the nearest.
+// The higher the number the harder the encounter with monsters!
 const int AI_TARGET_WEAKEST = 0;
 // Variable that can change the distance creatures will come and attack after
 // hearing a shout from an ally that sees or hears an enemy.
@@ -68,9 +70,17 @@ const int AI_OPEN_DOORS = FALSE;
 // Monster's actual perception distance.
 // 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
 // 11 Default(Based on appearance.2da Most creatures use 9, bosses use 10).
-const int AI_PERCEPTION_DISTANCE = 11;
+const int AI_MONSTER_PERCEPTION = 11;
+// Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_BUFF_DELAY = 0.2;
+
+// The below constants are for Henchman AI only.
 // Should the AI auto adjust the XP scale to remove party size penalty?
 const int AI_PARTY_SCALE = FALSE;
+// Allows Henchman to have a widget if using the henchman AI.
+const int AI_HENCHMAN_WIDGET = TRUE;
+// Change the Custom token number if it conflicts with your server.
+const int AI_BASE_CUSTOM_TOKEN = 1000;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -470,8 +480,10 @@ const string AI_TRAP_CHECK_RANGE = "AI_TRAP_CHECK_RANGE";
 const string AI_FOLLOW_RANGE = "AI_FOLLOW_RANGE";
 // Variable that holds the target for an associate to follow.
 const string AI_FOLLOW_TARGET = "AI_FOLLOW_TARGET";
-// Variable that holds the perception range of the henchman.
-const string AI_PERCEPTION_RANGE = "AI_PERCEPTION_RANGE";
+// Variable that holds the perception range of associates.
+const string AI_ASSOCIATE_PERCEPTION = "AI_PERCEPTION_RANGE";
+// Variable that holds the perception distance of associates.
+const string AI_ASSOC_PERCEPTION_DISTANCE = "AI_ASSOC_PERCEPTION_DISTANCE";
 // Variable that holds the open doors range of the henchman.
 const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";
 // Variable that holds the Spell widgets json data.
@@ -504,8 +516,14 @@ const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
 const string AI_NO_TALENTS = "AI_NO_TALENTS_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
+// Variable set on the module if the module is using PRC.
+const string AI_USING_PRC = "AI_USING_PRC";
+// Variable that sets if the rules have been added to the module.
+const string AI_RULES_SET = "AI_RULES_SET";
 // Variable that tells us that oCreature has run our OnSpawn event.
 const string AI_ONSPAWN_EVENT = "AI_ONSPAWN_EVENT";
+// Variable used to define a creatures unique Tag for widgets.
+const string AI_TAG = "AI_TAG";
 // Variable that saves any module target event script so we can pass it along.
 const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
 // Variable for plugins to inject Targeting mode code into PEPS.
@@ -575,6 +593,8 @@ const string AI_RULE_OPEN_DOORS = "AI_RULE_OPEN_DOORS";
 const string AI_RULE_DEFAULT_XP_SCALE = "AI_RULE_DEFAULT_XP_SCALE";
 // Variable name set to allow the game to regulate experience based on party size.
 const string AI_RULE_PARTY_SCALE = "AI_RULE_PARTY_SCALE";
+// Variable name set to restrict the AI's use of Darkness.
+const string AI_RULE_RESTRICTED_SPELLS = "AI_RULE_RESTRICTED_SPELLS";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction
@@ -609,6 +629,3 @@ const int NW_WALK_FLAG_CONSTANT                    = 0x00000002;
 const int NW_WALK_FLAG_IS_DAY                      = 0x00000004;
 // Set when the creature is walking back
 const int NW_WALK_FLAG_BACKWARDS                   = 0x00000008;
-
-
-

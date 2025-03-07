@@ -245,8 +245,8 @@ void ai_CreateDMWidgetNUI(object oPC)
 }
 void ai_CreateDMOptionsNUI(object oPC)
 {
-    int nMonsterAI = (ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) != "");
-    int nAssociateAI = (ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "");
+    int nMonsterAI = (ResManGetAliasFor("ai_default", RESTYPE_NCS) != "");
+    int nAssociateAI = (ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "");
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     // ************************************************************************* Width / Height
     string sText = " [Single player]";
@@ -369,11 +369,11 @@ void ai_CreateDMOptionsNUI(object oPC)
     // Row 2
     int nUsing;
     // Check the monster AI.
-    string sLocation = ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS);
+    string sLocation = ResManGetAliasFor("ai_default", RESTYPE_NCS);
     if(sLocation != "") sText = "Monster AI is loaded";
     else sText = "Monster AI not loaded";
     // Check the associate AI.
-    sLocation = ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS);
+    sLocation = ResManGetAliasFor("ai_a_default", RESTYPE_NCS);
     if(sLocation != "") sText += ", Associate AI is loaded";
     else sText += ", Associate AI not loaded";
     // Check the player AI.

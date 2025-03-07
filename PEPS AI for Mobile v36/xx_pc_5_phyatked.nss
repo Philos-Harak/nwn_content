@@ -18,7 +18,7 @@ void main()
     if(ai_GetIsInCombat(oCreature)) return;
     // We only inform others if attacked when not busy, not disabled, & not in combat.
     SetLocalObject(oCreature, AI_MY_TARGET, oAttacker);
-    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_SHOUT);
+    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
     // The only way to get here is to not be in combat thus we have not
     // perceived them so lets look for them.
     if(!ai_CanIAttack(oCreature)) return;

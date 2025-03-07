@@ -19,7 +19,7 @@ int StartingConditional()
         if(sSpell == "") return FALSE;
         nSpell = StringToInt(sSpell);
         if(GetHasSpell(nSpell, oCaster)) return TRUE;
-        else if(ai_GetKnownSpell(oCaster, nSpell)) return TRUE;
+        //else if(ai_GetKnownSpell(oCaster, nSpell)) return TRUE;
         nCnt++;
     }
     return FALSE;

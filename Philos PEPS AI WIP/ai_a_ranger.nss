@@ -26,7 +26,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -80,7 +80,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
+                ai_SearchForHiddenCreature(oCreature, FALSE);
                 return;
             }
         }
@@ -90,12 +90,12 @@ void main()
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     // Our master may have setup to check difficulty before we move into melee.
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, ai_GetPerceptionRange(oCreature), !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    else ai_SearchForHiddenCreature(oCreature, FALSE);
 }

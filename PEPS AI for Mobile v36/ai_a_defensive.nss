@@ -37,7 +37,7 @@ void main()
     // SIMPLE+ - Check for moral and get what spell power we should be using.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // DIFFICULT+ - Class talents, Offensive AOE's, Defensive talents, and Potion talents.

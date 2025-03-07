@@ -15,7 +15,7 @@ void main()
     //***************************  HEALING & CURES  ****************************
     if(ai_TryHealingTalent(oCreature, nInMelee)) return;
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    // Dragons do not flee! if(ai_MoralCheck(oCreature)) return;
+    // Dragons do not flee! if(nInMelee && ai_MoralCheck(oCreature)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     //*******************  OFFENSIVE AREA OF EFFECT TALENTS  *******************
     // Check the battlefield for a group of enemies to shoot a big talent at!
@@ -47,5 +47,5 @@ void main()
         if(!ai_TryTailSweepAttack(oCreature)) ai_TryTailSlap(oCreature);
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }

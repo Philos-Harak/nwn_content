@@ -191,7 +191,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         {
             AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE)));
         }
-        else if(GetIsEnemy(oTarget, oAssociate))
+        else if(GetReputation(oAssociate, oTarget) < 11)
         {
             // Lock them into attacking this target only.
             SetLocalObject(oAssociate, AI_PC_LOCKED_TARGET, oTarget);
@@ -204,9 +204,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             else
             {
                 ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
-                ai_SetCreatureTalents(oAssociate, FALSE);
-                // Lock them into attacking this target only.
-                ai_DoAssociateCombatRound(oAssociate, oTarget);
+                ai_StartAssociateCombat(oAssociate, oTarget);
             }
             ai_SendMessages(GetName(oAssociate) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }
@@ -458,7 +456,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
     else if(nObjectType == OBJECT_TYPE_CREATURE)
     {
         if(GetIsDead(oTarget)) return;
-        else if(GetIsEnemy(oTarget, oCreature))
+        else if(GetReputation(oCreature, oTarget) < 11)
         {
             // Lock them into attacking this target only.
             SetLocalObject(oCreature, AI_PC_LOCKED_TARGET, oTarget);
@@ -471,8 +469,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
             else
             {
                 ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
-                ai_SetCreatureTalents(oCreature, FALSE);
-                ai_DoAssociateCombatRound(oCreature, oTarget);
+                ai_StartMonsterCombat(oCreature);
             }
             ai_SendMessages(GetName(oCreature) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }

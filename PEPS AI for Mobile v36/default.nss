@@ -16,7 +16,7 @@ void main()
     {
         if(nEvent == EVENT_SCRIPT_CREATURE_ON_SPAWN_IN)
         {
-            ai_CheckAIRules();
+            ai_SetAIRules();
             ai_StartupPlugins(oCreature);
             ai_CheckAssociateData(oCreature, oCreature, "pc");
             ai_CreateWidgetNUI(oCreature, oCreature);
@@ -28,7 +28,7 @@ void main()
     {
         if(nEvent == EVENT_SCRIPT_CREATURE_ON_SPAWN_IN)
         {
-            ai_CheckAIRules();
+            ai_SetAIRules();
             ai_StartupPlugins(oCreature);
             ai_CheckDMData(oCreature);
             ai_CreateDMWidgetNUI(oCreature);

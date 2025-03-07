@@ -16,7 +16,7 @@ void main()
     //***************************  HEALING & CURES  ****************************
     if(ai_TryHealingTalent(oCreature, nInMelee)) return;
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    if(ai_MoralCheck(oCreature)) return;
+    if(nInMelee && ai_MoralCheck(oCreature)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     //****************************  CLASS FEATURES  ****************************
     if(ai_TryBardSongFeat(oCreature)) return;

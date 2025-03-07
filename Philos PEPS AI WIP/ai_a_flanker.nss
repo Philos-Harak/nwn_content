@@ -25,7 +25,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -64,24 +64,23 @@ void main()
     // If there are no enemies being attacked then lets stay back.
     if(oTarget == OBJECT_INVALID)
     {
-        object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-        float fDistance = GetDistanceBetween(oCreature, oNearestEnemy);
-        // In Melee combat!
-        if(nInMelee > 0)
+        if(nInMelee)
         {
             if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
             // Lets get the strongest melee opponent in melee with us.
             object oTarget = ai_GetHighestCRTargetForMeleeCombat(oCreature, nInMelee);
-            if(oTarget == OBJECT_INVALID) oTarget = oNearestEnemy;
-            ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
-            return;
+            if(oTarget != OBJECT_INVALID)
+            {
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+                return;
+            }
         }
         // ************************** Ranged feat attacks **************************
-        if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
+        else if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
         {
             if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
-                // Lets pick off the weakest targets.
+                if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
                 oTarget = ai_GetLowestCRTarget(oCreature);
                 if(oTarget != OBJECT_INVALID)
                 {
@@ -91,6 +90,11 @@ void main()
                 }
             }
             else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+            else
+            {
+                ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
+                return;
+            }
         }
     }
     if(oTarget != OBJECT_INVALID)
@@ -98,12 +102,14 @@ void main()
         if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+        return;
     }
     // Are we too far from our master?
     object oMaster = GetMaster();
-    if(GetDistanceToObject(oMaster, oCreature) > AI_RANGE_LONG)
+    if(GetDistanceBetween(oMaster, oCreature) > AI_RANGE_LONG)
     {
         ActionMoveToObject(oMaster, TRUE, AI_RANGE_CLOSE);
         return;
     }
+    ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
 }

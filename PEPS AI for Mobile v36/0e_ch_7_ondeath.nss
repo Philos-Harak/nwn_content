@@ -10,7 +10,7 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     // Added code to allow for permanent associates in the battle!
-    if(AI_DEBUG) ai_Debug("0e_ch_7_ondeath", "14", GetName(oCreature) + " has died!" +
+    if(AI_DEBUG) ai_Debug("0e_ch_7_ondeath", "13", GetName(oCreature) + " has died!" +
                  " AI_RULE_PERM_ASSOC: " + IntToString(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC)));
     if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
     {
@@ -32,11 +32,6 @@ void main()
     DelayCommand(0.5, ai_CheckXPPartyScale(oCreature));
     DelayCommand(2.0, ai_ClearCreatureActions(TRUE));
     DelayCommand(2.0, ai_ClearCombatState(oCreature));
-    // Temp code to fix issues from previous versions.
-    ChangeToStandardFaction(oCreature, STANDARD_FACTION_MERCHANT);
-    SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 50, oCreature);
-    SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 50, oCreature);
-    SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 50, oCreature);
-    SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 0, oCreature);
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }
+

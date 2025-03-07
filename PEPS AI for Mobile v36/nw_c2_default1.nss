@@ -16,9 +16,11 @@ void main()
     // OnSpawn for their game.
     if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT))
     {
+        // This can be moved to the OnModuleLoad script event.
+        if(!GetLocalInt(GetModule(), AI_RULES_SET)) ai_SetAIRules();
         ai_OnMonsterSpawn(oCreature, GetCreatureFlag(OBJECT_SELF, CREATURE_VAR_IS_INCORPOREAL));
     }
-    if(AI_DEBUG) ai_Debug("nw_c2_default1", "14", GetName(oCreature) + " Heartbeat." +
+    if(AI_DEBUG) ai_Debug("nw_c2_default1", "21", GetName(oCreature) + " Heartbeat." +
              " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
     {
@@ -65,22 +67,15 @@ void main()
     {
         // We setup our talents when a PC gets withing Battlefield range 40.0 meters.
         object oPC = GetNearestCreature(CREATURE_TYPE_PLAYER_CHAR, PLAYER_CHAR_IS_PC, oCreature, 1, CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_ENEMY);
-        if(oPC != OBJECT_INVALID && GetIsEnemy(oPC, oCreature) &&
-           GetDistanceBetween(oCreature, oPC) <= AI_RANGE_BATTLEFIELD)
+        if(oPC != OBJECT_INVALID && GetDistanceBetween(oCreature, oPC) <= AI_RANGE_BATTLEFIELD)
         {
-            if(AI_DEBUG) ai_Debug("nw_c2_default1", "59", GetName(oCreature) + " is " +
+            if(AI_DEBUG) ai_Debug("nw_c2_default1", "72", GetName(oCreature) + " is " +
                      FloatToString(GetDistanceBetween(oCreature, oPC), 0, 2) + " from " + GetName(oPC));
-            if(AI_DEBUG) ai_Debug("nw_c2_default1", "61", GetName(oCreature) + " is Setting Creature Talents and buffing!");
+            if(AI_DEBUG) ai_Debug("nw_c2_default1", "74", GetName(oCreature) + " is Setting Creature Talents and buffing!");
             ai_SetupMonsterBuffTargets(oCreature);
-            // To save steps and time we set the talenst while we buff!
+            // To save steps and time we set the talents while we buff!
             ai_SetCreatureTalents(oCreature, TRUE);
             ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
-            if(GetObjectSeen(oPC, oCreature))
-            {
-                if(AI_DEBUG) ai_Debug("nw_c2_default1", "68", GetName(oCreature) + " is starting combat!");
-                ai_DoMonsterCombatRound(oCreature);
-                return;
-            }
         }
     }
     if(!IsInConversation (oCreature))
@@ -96,3 +91,4 @@ void main()
     }
     if(ai_TryHealing(oCreature, oCreature)) return;
 }
+

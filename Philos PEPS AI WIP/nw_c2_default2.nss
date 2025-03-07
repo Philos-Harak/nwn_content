@@ -43,7 +43,7 @@ void main()
     }
     object oLastPerceived = GetLastPerceived();
     if(AI_DEBUG) ai_Debug("nw_c2_default2", "45", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-                 " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+                 " Enemy? " + IntToString(GetReputation(oCreature, oLastPerceived)));
     if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived)) return;
     int bSeen = GetLastPerceptionSeen();
@@ -56,7 +56,7 @@ void main()
             SpeakOneLinerConversation();
         }
     }
-    if(GetIsEnemy(oLastPerceived))
+    if(GetReputation(oCreature, oLastPerceived) < 11)
     {
         // ************************** ENEMY SEEN *******************************
         if(bSeen)

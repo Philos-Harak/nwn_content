@@ -1,7 +1,53 @@
 /*////////////////////////////////////////////////////////////////////////////////////////////////////
 // Script Name: 0i_actions
 //////////////////////////////////////////////////////////////////////////////////////////////////////
- Include scripts for action during combat.
+ Include scripts for action in and out of combat.
+
+ Detect Mode:
+ Passive(default) mode
+ * Trap detection radius: 5ft
+ * Trap detection rate: every 6 seconds
+ * Trap detection roll: d20 + 1/2 skill
+ * Spot/Listen roll: d10 + 1/2 skill
+
+ Active(Detect) mode
+ * Trap detection radius: 10ft
+ * Trap detection rate: every 3 seconds
+ * Trap detection roll: d20 + skill
+ * Spot/Listen roll: d20 + skill
+
+ Stealth checks
+ * Player detects stealth: 5 times per second.
+ * Player rolls for hide/move silently & spot/listen: every 6 seconds.
+ * NPC detects stealth: 4 seconds
+ * NPC rolls for hide/move silently & spot/listen: every 6 seconds.
+
+ Listen/Move Silently:
+ * Cannot detect silenced creatures.
+ * Cannot detect sanctuaried creatures.
+ * Can only detect invisible (or when your blind) creatures within max attack range.
+ * Listen checks are made each round for success and failur.
+ * Outdoors: Objects between you and the target gives a +5 DC for every 40cm of thickness.
+ * Indoors: No Line of sight and the target is within 40 meters gives a +2 DC.
+ * +10 DC in combat for the target.
+ * +5 DC if the target is standing still.
+ * -5 DC if the listener is standing still.
+ * +1 DC for every 3 meters of distance to the target.
+ * Relative size modifiers for both: Tiny +8, Small +4, Medium 0, Larget -4, Huge -8.
+ * Favored enemy bonuses.
+
+ Spot/Hide:
+ * Cannot spot invisible creatures.
+ * Cannot spot any creatures while blinded.
+ * Night time: Spotter has not light or darkvision +5 DC.
+ * Night time: Target has a light no them -10 DC.
+ * +5 DC if target is behind the spotter.
+ * +10 DC if the spotter are in combat.
+ * +5 DC if the target is standing still.
+ * -5 DC if the spotter is standing still.
+ * Relative size modifiers for both: Tiny +8, Small +4, Medium 0, Larget -4, Huge -8.
+ * Favored enemy bonuses.
+
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10,8 +56,12 @@
 #include "X0_I0_ANIMS"
 // Chooses an action in combat and executes it for oCreature that is an associate.
 void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID);
+// Sets variables and states for oAssociate to start combat.
+void ai_StartAssociateCombat(object oAssociate, object oTarget = OBJECT_INVALID);
 // Chooses an action in combat and executes it for oCreature that is a monster.
 void ai_DoMonsterCombatRound(object oCreature);
+// Sets variables and states for oMonster to start combat.
+void ai_StartMonsterCombat(object oMonster);
 // Return the distance that is set for how close we should follow our master.
 float ai_GetFollowDistance(object oCreature);
 // Returns TRUE if the caller's distance is greater than fDistance from who they
@@ -22,10 +72,12 @@ int ai_StayClose(object oCreature);
 int ai_TryToBecomeInvisible(object oCreature);
 // Returns TRUE if oCreature continues to bash a door.
 int ai_BashDoorCheck(object oCreature);
-// Returns TRUE if we find an invisible creature within battle and do an action.
-// If oCreature is too far away they will move towards the invisible creature.
+// Returns TRUE if we find an hidden creature within battle and do an action.
+// If oCreature is too far away they will run upto 14 meters of the invisible creature.
 // If oCreature is close they will attempt to cast a spell or search for them.
-int ai_SearchForInvisibleCreature(object oCreature, int bMonster, object oInvisible = OBJECT_INVALID);
+// bMonster needs to be set for monsters otherwise we do associate perception checks.
+// fRange is how close we want to get to hidden targets.
+int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oHidden = OBJECT_INVALID, float fRange = 1.0);
 // Have oCreature move out of an area effect based on the creatures in the battle.
 void ai_MoveOutOfAOE(object oCreature, object oCaster);
 // Returns TRUE if oCreature fails a moral check.
@@ -81,8 +133,6 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked);
 int ai_AttemptToOpenDoor(object oCreature, object oDoor);
 // Action for Checking nearby objects for traps, locks and loot.
 void ai_ActionCheckNearbyObjects(object oCreature);
-// oCreature will check nearby doors to see if they should open one.
-int ai_CheckDoors(object oCreature, object oMaster);
 // oCreature will check nearby objects and see what they should do based upon
 // selected actions by the player.
 int ai_CheckNearbyObjects(object oCreature);
@@ -105,7 +155,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
     // Setup the combat state for this round of combat.
     object oNearestEnemy = ai_SetCombatState(oCreature);
     // If we found an Enemy or we have a Target then continue into the combat round.
-    if (oNearestEnemy != OBJECT_INVALID || oTarget != OBJECT_INVALID)
+    if(oNearestEnemy != OBJECT_INVALID || oTarget != OBJECT_INVALID)
     {
         // In combat we should stop searching.
         if(GetActionMode(oCreature, ACTION_MODE_DETECT) && !GetHasFeat(FEAT_KEEN_SENSE))
@@ -124,13 +174,13 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
                      " Appearance: " + IntToString(GetAppearanceType(oCreature)) +
                      " Normal Appearance: " + IntToString(ai_GetNormalAppearance(oCreature)));
             if(AI_DEBUG) ai_Debug("0i_actions", "129", "Should we use invisibility?" +
-                            " Are we invisible? " + IntToString(ai_GetIsInvisible(oCreature, FALSE)) +
-                            " Can see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
+                            " Are we hidden? " + IntToString(ai_GetIsHidden(oCreature)) +
+                            " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
             if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
             {
                 sAI = "ai_a_polymorphed";
             }
-            else if(ai_GetIsInvisible(oCreature, FALSE) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
+            else if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
         }
         if(sAI == "") sAI = "ai_a_default";
         if(AI_DEBUG) ai_Debug("0i_actions", "105", "********** " + GetName (oCreature) + " **********");
@@ -158,42 +208,55 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
         }
     }
 }
-void ai_DoMonsterCombatRound(object oCreature)
+void ai_StartAssociateCombat(object oAssociate, object oTarget = OBJECT_INVALID)
 {
-    object oNearestEnemy = ai_SetCombatState(oCreature);
+    if(AI_DEBUG) ai_Debug("0i_actions", "217", "---------- " + GetName(oAssociate) + " is starting combat! ----------");
+    ai_SetCreatureTalents(oAssociate, FALSE);
+    ai_CheckXPPartyScale(oAssociate);
+    ai_DoAssociateCombatRound(oAssociate, oTarget);
+}
+void ai_DoMonsterCombatRound(object oMonster)
+{
+    object oNearestEnemy = ai_SetCombatState(oMonster);
     if(oNearestEnemy != OBJECT_INVALID)
     {
-        if(GetActionMode(oCreature, ACTION_MODE_DETECT) && !GetHasFeat(FEAT_KEEN_SENSE, oCreature))
-           SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
-        ai_SetCombatRound(oCreature);
-        string sAI = GetLocalString(oCreature, AI_COMBAT_SCRIPT);
+        if(GetActionMode(oMonster, ACTION_MODE_DETECT) && !GetHasFeat(FEAT_KEEN_SENSE, oMonster))
+           SetActionMode(oMonster, ACTION_MODE_DETECT, FALSE);
+        ai_SetCombatRound(oMonster);
+        string sAI = GetLocalString(oMonster, AI_COMBAT_SCRIPT);
         if(sAI != "ai_coward")
         {
-            if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
+            if(GetAppearanceType(oMonster) != ai_GetNormalAppearance(oMonster))
             {
                 sAI = "ai_polymorphed";
             }
-            else if(ai_GetIsInvisible(oCreature, FALSE) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_invisible";
+            else if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
         }
         if(sAI == "") sAI = "ai_default";
-        if(AI_DEBUG) ai_Debug("0i_actions", "139", "********** " + GetName (oCreature) + " **********");
-        if(AI_DEBUG) ai_Debug("0i_actions", "140", "********** " + sAI + " **********");
+        if(AI_DEBUG) ai_Debug("0i_actions", "243", "********** " + GetName (oMonster) + " **********");
+        if(AI_DEBUG) ai_Debug("0i_actions", "244", "********** " + sAI + " **********");
         // We clear actions here and setup multiple actions to the queue for oCreature.
         ai_ClearCreatureActions();
         ai_Counter_Start();
-        ExecuteScript(sAI, oCreature);
-        ai_Counter_End(GetName(oCreature) + " is ending round calculations.");
+        ExecuteScript(sAI, oMonster);
+        ai_Counter_End(GetName(oMonster) + " is ending round calculations.");
         return;
     }
     // Check to see if we just didn't see the enemies.
-    if(GetLocalInt(oCreature, AI_ENEMY_NUMBERS) &&
-       ai_SearchForInvisibleCreature(oCreature, TRUE)) return;
+    if(GetLocalInt(oMonster, AI_ENEMY_NUMBERS) &&
+       ai_SearchForHiddenCreature(oMonster, TRUE)) return;
     // We have exhausted our check for an enemy. Combat is over.
-    ai_EndCombatRound(oCreature);
-    ai_ClearCombatState(oCreature);
-    ai_TryHealing(oCreature, oCreature);
-    if(AI_DEBUG) ai_Debug("0i_actions", "154", GetName(oCreature) + "'s combat has ended!");
+    ai_EndCombatRound(oMonster);
+    ai_ClearCombatState(oMonster);
+    ai_TryHealing(oMonster, oMonster);
+    if(AI_DEBUG) ai_Debug("0i_actions", "259", GetName(oMonster) + "'s combat has ended!");
     return;
+}
+void ai_StartMonsterCombat(object oMonster)
+{
+    if(AI_DEBUG) ai_Debug("0i_actions", "264", "---------- " + GetName(oMonster) + " is starting combat! ----------");
+    ai_SetCreatureTalents(oMonster, TRUE);
+    ai_DoMonsterCombatRound(oMonster);
 }
 float ai_GetFollowDistance(object oCreature)
 {
@@ -206,27 +269,29 @@ int ai_StayClose(object oCreature)
     if(ai_GetIsCharacter(oCreature)) return FALSE;
     if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) ||
         GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward") return FALSE;
-    float fDistance;
+    object oMaster = GetMaster(oCreature);
     // We stay within our perception range of who we are following.
-    int nPerceptionRange = GetLocalInt(oCreature, AI_PERCEPTION_RANGE);
-    if(nPerceptionRange == 8) fDistance = 10.0;
-    else if(nPerceptionRange == 10) fDistance = 35.0;
-    else fDistance = 20.0;
+    float fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+    if(fPerceptionDistance == 0.0)
+    {
+        fPerceptionDistance = GetLocalFloat(oMaster, AI_ASSOC_PERCEPTION_DISTANCE);
+        if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
+    }
     object oTarget = GetLocalObject(oCreature, AI_FOLLOW_TARGET);
-    if(oTarget == OBJECT_INVALID) oTarget = GetMaster(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_associates", "206", "Distance from who we are following in combat." +
-                          " oFollowing: " + FloatToString(GetDistanceBetween(oTarget, oCreature), 0, 2) + " fPerceptionRange: " + FloatToString(fDistance, 0, 2));
-    if(GetDistanceBetween(oTarget, oCreature) < fDistance) return FALSE;
+    if(oTarget == OBJECT_INVALID) oTarget = oMaster;
+    if(AI_DEBUG) ai_Debug("0i_associates", "214", "Distance from who we are following in combat." +
+                          " oFollowing: " + FloatToString(GetDistanceBetween(oTarget, oCreature), 0, 2) + " fPerceptionDistance: " + FloatToString(fPerceptionDistance, 0, 2));
+    if(GetDistanceBetween(oTarget, oCreature) < fPerceptionDistance) return FALSE;
     ai_ClearCreatureActions();
-    if(AI_DEBUG) ai_Debug("0i_associates", "209", "We are too far away! Move back to our master.");
+    if(AI_DEBUG) ai_Debug("0i_associates", "218", "We are too far away! Move back to our master.");
     ActionMoveToObject(oTarget, TRUE, ai_GetFollowDistance(oCreature));
     return TRUE;
 }
 int ai_TryToBecomeInvisible(object oCreature)
 {
     // If we are invisible then we don't need to check this.
-    if(!ai_GetIsInvisible(oCreature)) return FALSE;
-    // If not invisible lets try.
+    if(!ai_GetIsHidden(oCreature)) return FALSE;
+    // If we are not invisible lets try.
     int nDarkness;
     if(GetHasSpell(SPELL_DARKNESS, oCreature) && ai_GetHasEffectType(oCreature, EFFECT_TYPE_ULTRAVISION)) nDarkness = TRUE;
     if(GetHasSpell(SPELL_IMPROVED_INVISIBILITY, oCreature) || GetHasSpell(SPELL_INVISIBILITY, oCreature) ||
@@ -307,13 +372,13 @@ int ai_TryToBecomeInvisible(object oCreature)
     }
     return FALSE;
 }
-int ai_SearchForInvisibleCreature(object oCreature, int bMonster, object oInvisible = OBJECT_INVALID)
+int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible = OBJECT_INVALID, float fRange = 1.0)
 {
-    if(AI_DEBUG) ai_Debug("0i_actions", "258", GetName(oCreature) + " is searching for an invisible creature (" +
+    if(AI_DEBUG) ai_Debug("0i_actions", "358", GetName(oCreature) + " is searching for an invisible creature (" +
              GetName(oInvisible) + ").");
     if(oInvisible == OBJECT_INVALID)
     {
-        // Have we see anyone go invisible?
+        // Have we seen anyone go invisible?
         oInvisible = GetLocalObject(oCreature, AI_IS_INVISIBLE);
         if(oInvisible == OBJECT_INVALID || GetIsDead(oInvisible))
         {
@@ -321,68 +386,114 @@ int ai_SearchForInvisibleCreature(object oCreature, int bMonster, object oInvisi
             if(oInvisible == OBJECT_INVALID) oInvisible = ai_GetNearestEnemy(oCreature);
         }
     }
-    float fDistance = GetDistanceBetween(oCreature, oInvisible);
-    float fPerceptionDistance;
-    if(bMonster) fPerceptionDistance = GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE);
+    float fPerceptionDistance, fDistance;
+    if(bMonster)
+    {
+        GetDistanceBetween(oCreature, oInvisible);
+        fPerceptionDistance = GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE);
+    }
     else
     {
         // We want to use the distance between the PC and target not us.
-        float fDistance = GetDistanceBetween(oCreature, oInvisible);
-        int nPerceptionRange = GetLocalInt(oCreature, AI_PERCEPTION_RANGE);
-        if(nPerceptionRange == 8) fPerceptionDistance = 10.0;
-        else if(nPerceptionRange == 10) fPerceptionDistance = 35.0;
-        else fPerceptionDistance = 20.0;
+        object oMaster = GetMaster();
+        if(oMaster != OBJECT_INVALID) fDistance = GetDistanceBetween(oMaster, oInvisible);
+        else GetDistanceBetween(oCreature, oInvisible);
+        fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+        if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
     }
-    if(AI_DEBUG) ai_Debug("0i_actions", "301", "Is invisible: " + GetName(oInvisible) +
+    if(AI_DEBUG) ai_Debug("0i_actions", "383", "Is invisible: " + GetName(oInvisible) +
              " fDistance: " + FloatToString(fDistance, 0, 2) +
              " fPerceptionDistance: " + FloatToString(fPerceptionDistance, 0, 2));
+    // Might need to end combat at this point?
     if(fDistance > fPerceptionDistance) return FALSE;
-    SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
     // If we are close enough then lets look for them.
-    if(fDistance < AI_RANGE_CLOSE)
+    if(fDistance < AI_RANGE_LONG)
     {
-        if(GetHasSpellEffect(SPELL_INVISIBILITY, oInvisible) ||
-            GetHasSpellEffect(SPELL_IMPROVED_INVISIBILITY, oInvisible) ||
-            GetHasSpellEffect(SPELL_SANCTUARY, oInvisible) ||
-            GetHasSpellEffect(SPELL_ETHEREALNESS, oInvisible))
+        // nHidden 1 = Invisible effects, 2 = Darkness effects, 3 = Sanctuary effects, 4 Stealth.
+        int nHidden = ai_GetIsHidden(oInvisible);
+        if(nHidden)
         {
-            if(GetHasSpell(SPELL_TRUE_SEEING, oCreature))
+            // They have a magical effect! Is there a spell we can use to see?
+            if(nHidden < 4)
             {
-                ai_SetLastAction(oCreature, SPELL_TRUE_SEEING);
-                ActionCastSpellAtObject(SPELL_TRUE_SEEING, oCreature);
-                return TRUE;
+                if(AI_DEBUG) ai_Debug("0i_actions", "399", " They are using magic to hide: " +
+                                      IntToString(nHidden));
+                // True Seeing pierces all types of magical hiding.
+                if(GetHasSpell(SPELL_TRUE_SEEING, oCreature))
+                {
+                    ai_SetLastAction(oCreature, SPELL_TRUE_SEEING);
+                    ActionCastSpellAtObject(SPELL_TRUE_SEEING, oCreature);
+                    return TRUE;
+                }
+                if(nHidden == 1 || nHidden == 3) // Invisibility or Ethereal effect.
+                {
+                    if(GetHasSpell(SPELL_SEE_INVISIBILITY, oCreature))
+                    {
+                        ai_SetLastAction(oCreature, SPELL_SEE_INVISIBILITY);
+                        ActionCastSpellAtObject(SPELL_SEE_INVISIBILITY, oCreature);
+                        return TRUE;
+                    }
+                    if(GetHasSpell(SPELL_INVISIBILITY_PURGE, oCreature))
+                    {
+                        ai_SetLastAction(oCreature, SPELL_INVISIBILITY_PURGE);
+                        ActionCastSpellAtObject(SPELL_INVISIBILITY_PURGE, oCreature);
+                        return TRUE;
+                    }
+                }
+                if(nHidden == 2) // Darkness spell effect.
+                {
+                    if(GetHasSpell(SPELL_DARKVISION))
+                    {
+                        ai_SetLastAction(oCreature, SPELL_DARKVISION);
+                        ActionCastSpellAtObject(SPELL_DARKVISION, oCreature);
+                        return TRUE;
+                    }
+                }
+                // To be able to attack a magically hidden foe we have to be
+                // with in melee attack range. Cannot hear Ethereal foes!
+                // We will automatically hear them once we are within range.
+                // We also walk so we don't give attacks of opportunity.
+                if(nHidden < 3)
+                {
+                    if(AI_DEBUG) ai_Debug("0i_actions", "437", " We have no spells to counter with. Moving up to attack!");
+                    SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+                    ActionMoveToObject(oInvisible);
+                    ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+                    if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+                    return TRUE;
+                }
             }
-            else if(GetHasSpell(SPELL_SEE_INVISIBILITY, oCreature))
+            else // They are using stealth!
             {
-                ai_SetLastAction(oCreature, SPELL_SEE_INVISIBILITY);
-                ActionCastSpellAtObject(SPELL_SEE_INVISIBILITY, oCreature);
-                return TRUE;
-            }
-            else if(GetHasSpell(SPELL_INVISIBILITY_PURGE, oCreature))
-            {
-                ai_SetLastAction(oCreature, SPELL_INVISIBILITY_PURGE);
-                ActionCastSpellAtObject(SPELL_INVISIBILITY_PURGE, oCreature);
+                if(AI_DEBUG) ai_Debug("0i_actions", "447", " Using Detect mode and moving up.");
+                SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
+                SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+                ActionMoveToObject(oInvisible, FALSE, fRange);
+                ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+                if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
                 return TRUE;
             }
         }
-        if(!GetActionMode(oCreature, ACTION_MODE_DETECT))
+        else // They are not hidden, then that means we can hear them but not see them.
+             // Probably behind a wall or door.
         {
-            if(AI_DEBUG) ai_Debug("0i_actions", "303", " Using Detect mode.");
-            SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
+            SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+            ActionMoveToObject(oInvisible, FALSE, fRange);
+            ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+            if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
+            return TRUE;
         }
-        ActionMoveToObject(oInvisible);
-        ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
+    }
+    else // We need to get closer to start looking for them.
+    {
+        if(AI_DEBUG) ai_Debug("0i_actions", "469", "Moving towards invisible creature from a distance: " + GetName(oInvisible));
+        SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
+        ActionMoveToObject(oInvisible, TRUE, 14.0);
+        AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
         if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
         return TRUE;
     }
-    else
-    {
-        if(AI_DEBUG) ai_Debug("0i_actions", "131", "Moving to invisible creature: " + GetName(oInvisible));
-        ActionMoveToObject(oInvisible);
-        AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
-        if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
-    }
-    return TRUE;
+    return FALSE;
 }
 void ai_MoveOutOfAOE(object oCreature, object oCaster)
 {
@@ -473,7 +584,7 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell)
         case SPELL_STORM_OF_VENGEANCE:
         {
             // This only harms our enemies!
-            return (oCaster != oCreature && GetIsEnemy(oCaster));
+            return (oCaster != oCreature && GetReputation(oCreature, oCaster) < 11);
         }
         case SPELL_SILENCE:
         {
@@ -540,6 +651,7 @@ void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray)
         if(nRacialType == RACIAL_TYPE_ANIMAL || nRacialType == RACIAL_TYPE_BEAST ||
            nRacialType == RACIAL_TYPE_MAGICAL_BEAST || nRacialType == RACIAL_TYPE_OOZE ||
            nRacialType == RACIAL_TYPE_UNDEAD || nRacialType == RACIAL_TYPE_VERMIN) return;
+        SendMessageToPC(oCreature, sVoiceChatArray);
         SpeakString(sVoiceChatArray);
         return;
     }
@@ -600,7 +712,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, TRUE);
+                ai_SearchForHiddenCreature(oCreature, TRUE);
                 return;
             }
         }
@@ -621,7 +733,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
         if(AI_DEBUG) ai_Debug("0i_actions", "536", "Do melee attack against nearest: " + GetName(oTarget) + "!");
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }
 void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
 {
@@ -657,7 +769,7 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
+                ai_SearchForHiddenCreature(oCreature, FALSE);
                 return;
             }
         }
@@ -677,7 +789,7 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
         if(AI_DEBUG) ai_Debug("0i_actions", "577", GetName(OBJECT_SELF) + " does melee attack against weakest: " + GetName(oTarget) + "!");
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    else ai_SearchForHiddenCreature(oCreature, FALSE);
 }
 int ai_InCombatEquipBestMeleeWeapon(object oCreature)
 {
@@ -1291,7 +1403,7 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
     ai_Debug("0i_actions", "966", GetName(OBJECT_SELF) + " is opening " + GetName(oObject));
     string sTag = GetTag(oCreature);
     AssignCommand(oObject, ActionPlayAnimation(ANIMATION_PLACEABLE_OPEN));
-    if(GetTrapActive(oObject)) DoPlaceableObjectAction(oObject, PLACEABLE_ACTION_USE);
+    if(GetIsTrapped(oObject)) DoPlaceableObjectAction(oObject, PLACEABLE_ACTION_USE);
     SetLocalInt(oObject, "AI_LOOTED_" + sTag, TRUE);
     // Big Hack to allow NPC's to loot!
     string sLootScript = GetEventScript(oObject, EVENT_SCRIPT_PLACEABLE_ON_OPEN);
@@ -1417,14 +1529,14 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
             if(GetLocalInt(oTrap, "AI_CANNOT_TRAP_" + sTag) && !bForce) return FALSE;
             // Let them know we can't get this done!.
             //StrRef(40551) "I cannot disarm this trap!"
-            AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, GetStringByStrRef(40551))));
+            ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, GetStringByStrRef(40551)));
             ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
             SetLocalInt(oTrap, "AI_CANNOT_TRAP_" + sTag, TRUE);
             return FALSE;
         }
         if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag) && !bForce) return FALSE;
         // Let them know we can't get this done!.
-        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to disable the trap!")));
+        ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to disable the trap!");
         ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
         SetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag, TRUE);
         return FALSE;
@@ -1432,10 +1544,10 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
     if(GetObjectType(oTrap) == OBJECT_TYPE_TRIGGER)
     {
         object oMaster = ai_GetPlayerMaster(oCreature);
-        if(oMaster != OBJECT_INVALID)
+        if(oMaster != OBJECT_INVALID && !ai_GetIsCharacter(oCreature))
         {
-            ai_SetAIMode(oCreature, AI_MODE_COMMANDED);
-            ai_SendMessages(GetName(oCreature) + " has went into command mode after seeing a trap!", AI_COLOR_YELLOW, oMaster);
+            ai_SetAIMode(oCreature, AI_MODE_STAND_GROUND);
+            ai_SendMessages(GetName(oCreature) + " has went into hold mode after seeing a trap!", AI_COLOR_YELLOW, oMaster);
             ai_HighlightWidgetMode(oMaster, oCreature, NuiFindWindow(oMaster, ai_GetAssociateType(oMaster, oCreature) + AI_WIDGET_NUI));
             ai_ClearCreatureActions();
             return TRUE;
@@ -1445,7 +1557,7 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
     {
         if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag)) return FALSE;
         // Let them know we can't loot this object!.
-        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTrap) + " is trapped!")));
+        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTrap) + " is trapped!"));
         ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
         SetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag, TRUE);
     }
@@ -1577,7 +1689,7 @@ int ai_AttemptToOpenDoor(object oCreature, object oDoor)
     if(GetIsOpen(oDoor)) return FALSE;
     SetLocalInt(oDoor, AI_OBJECT_IN_USE, TRUE);
     DelayCommand(18.0, DeleteLocalInt(oDoor, AI_OBJECT_IN_USE));
-    AssignCommand(oCreature, ActionOpenDoor(oDoor));
+    AssignCommand(oCreature, ActionOpenDoor(oDoor, TRUE));
     AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oDoor, AI_OBJECT_IN_USE)));
     return TRUE;
 }
@@ -1610,6 +1722,8 @@ int ai_CheckNearbyObjects(object oCreature)
     while(oObject != OBJECT_INVALID)
     {
         fObjectDistance = GetDistanceBetween(oMaster, oObject);
+        if(AI_DEBUG) ai_Debug("0i_actions", "1651", "Checking Nearby Objects: " +
+                  GetName(oObject) + " fDistance: " + FloatToString(fObjectDistance, 0, 2));
         bIgnore = FALSE;
         if(GetTrapDetectedBy(oObject, oCreature))
         {
@@ -1748,14 +1862,14 @@ int ai_GetFleeToExit(object oCreature)
     else if(nPlot & NW_FLAG_TELEPORT_LEAVE) return TRUE;
     return FALSE;
 }
-void ai_AnimationInitialization()
+void ai_ActionInitialization()
 {
     SetAnimationCondition(NW_ANIM_FLAG_IS_ACTIVE);
     SetAnimationCondition(NW_ANIM_FLAG_INITIALIZED);
     SetLocalLocation(OBJECT_SELF, "ANIM_START_LOCATION", GetLocation(OBJECT_SELF));
 }
 // Start interacting with a placeable object
-void ai_AnimationStartInteracting(object oPlaceable)
+void ai_ActionStartInteracting(object oPlaceable)
 {
     SetAnimationCondition(NW_ANIM_FLAG_IS_INTERACTING);
     ActionMoveToObject(oPlaceable, FALSE, DISTANCE_TINY);
@@ -1764,7 +1878,7 @@ void ai_AnimationStartInteracting(object oPlaceable)
     AnimActionPlayRandomInteractAnimation(oPlaceable);
 }
 
-void ai_AnimationStopInteracting()
+void ai_ActionStopInteracting()
 {
     AnimActionRandomMoveAway(GetCurrentInteractionTarget(), DISTANCE_LARGE);
     SetCurrentInteractionTarget(OBJECT_INVALID);
@@ -1774,7 +1888,7 @@ void ai_AnimationStopInteracting()
 }
 
 // Start talking with a friend
-void ai_AnimationStartTalking(object oFriend, int nHDiff=0)
+void ai_ActionStartTalking(object oFriend, int nHDiff=0)
 {
     object oMe = OBJECT_SELF;
     ActionMoveToObject(oFriend, FALSE, DISTANCE_TINY);
@@ -1788,7 +1902,7 @@ void ai_AnimationStartTalking(object oFriend, int nHDiff=0)
     SetAnimationCondition(NW_ANIM_FLAG_IS_TALKING);
     SetAnimationCondition(NW_ANIM_FLAG_IS_TALKING, TRUE, oFriend);
 }
-void ai_AnimationStopTalking(object oFriend, int nHDiff=0)
+void ai_ActionStopTalking(object oFriend, int nHDiff=0)
 {
     object oMe = OBJECT_SELF;
     AnimActionPlayRandomGoodbye(nHDiff);
@@ -1812,23 +1926,20 @@ object ai_GetRandomFriend(float fMaxDistance)
     //           " Conversation: " + IntToString(IsInConversation(oFriend)) +
     //           " Combat: " + IntToString(GetIsInCombat(oFriend)) +
     //           " Distance: " + FloatToString(GetDistanceBetweenLocations(GetLocation(oFriend), lStartLocation), 0,0 ));
-    location lCreature = GetLocation(oCreature);
-    float fDistance = GetDistanceBetweenLocations(lCreature, lStartLocation);
-    float fCheckDistance = fMaxDistance - fDistance;
-    if(fCheckDistance > 20.0) fCheckDistance = 20.0;
+    if(fMaxDistance > 20.0) fMaxDistance = 20.0;
     if(GetIsObjectValid(oFriend)
        && !GetIsPC(oFriend)
-       && !GetAnimationCondition(NW_ANIM_FLAG_IS_ACTIVE, oFriend)
+       && !GetAnimationCondition(NW_ANIM_FLAG_IS_TALKING, oFriend)
        && !IsInConversation(oFriend)
        && !GetIsInCombat(oFriend)
-       && GetDistanceBetweenLocations(GetLocation(oFriend), lCreature) <= fCheckDistance)
+       && GetDistanceBetweenLocations(GetLocation(oFriend), lStartLocation) <= fMaxDistance)
     {
         return oFriend;
     }
 
     return OBJECT_INVALID;
 }
-int ai_AnimationFindFriend(float fMaxDistance)
+int ai_ActionFindFriend(float fMaxDistance)
 {
     // Try and find a friend to talk to.
     object oFriend = ai_GetRandomFriend(fMaxDistance);
@@ -1836,51 +1947,81 @@ int ai_AnimationFindFriend(float fMaxDistance)
     if(GetIsObjectValid(oFriend) && !GetAnimationCondition(NW_ANIM_FLAG_IS_TALKING, oFriend))
     {
         int nHDiff = GetHitDice(OBJECT_SELF) - GetHitDice(oFriend);
-        ai_AnimationStartTalking(oFriend, nHDiff);
+        ai_ActionStartTalking(oFriend, nHDiff);
         return TRUE;
     }
     return FALSE;
 }
-object ai_GetRandomObjectByTag(string sTag, float fMaxDistance)
+object ai_GetRandomObjectbyTag(string sTag, float fMaxDistance)
 {
-    int nNth;
-    if(fMaxDistance < DISTANCE_MEDIUM) nNth = d2();
-    else if (fMaxDistance < DISTANCE_HUGE) nNth = d4();
-    else nNth = d6();
-    object oCreature = OBJECT_SELF;
-    location lStartLocation = GetLocalLocation(oCreature, "ANIM_START_LOCATION");
-    location lCreature = GetLocation(oCreature);
-    float fDistance = GetDistanceBetweenLocations(lCreature, lStartLocation);
-    float fCheckDistance = fMaxDistance - fDistance;
-    if(fCheckDistance > 20.0) fCheckDistance = 20.0;
-    object oObj = GetNearestObjectByTag(sTag, oCreature, nNth);
-    if(GetIsObjectValid(oObj) && GetDistanceBetweenLocations(GetLocation(oObj), lCreature) <= fCheckDistance)
-        return oObj;
+    int nIndex;
+    if(fMaxDistance < DISTANCE_MEDIUM) nIndex = d4();
+    else if (fMaxDistance < DISTANCE_HUGE) nIndex = d8();
+    else nIndex = d10();
+    location lStartLocation = GetLocalLocation(OBJECT_SELF, "ANIM_START_LOCATION");
+    if(fMaxDistance > 20.0) fMaxDistance = 20.0;
+    object oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, nIndex);
+    while(nIndex > 0)
+    {
+        if(GetTag(oObject) == sTag &&
+           GetDistanceBetweenLocations(GetLocation(oObject), lStartLocation) <= fMaxDistance) break;
+        oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, --nIndex);
+    }
+    if(GetIsObjectValid(oObject))
+        return oObject;
     return OBJECT_INVALID;
 }
-int ai_AnimationFindPlaceable(float fMaxDistance)
+int ai_ActionSitInChair(float fMaxDistance)
 {
-    object oPlaceable = ai_GetRandomObjectByTag("NW_INTERACTIVE", fMaxDistance);
+    object oChair = GetRandomObjectByTag("Chair", fMaxDistance);
+    if (GetIsObjectValid(oChair) &&
+       !GetIsObjectValid(GetSittingCreature(oChair)))
+    {
+        ActionSit(oChair);
+        SetAnimationCondition(NW_ANIM_FLAG_IS_INTERACTING);
+        return TRUE;
+    }
+    return FALSE;
+}
+object ai_GetRandomUseableObject(float fMaxDistance)
+{
+    int nIndex;
+    if(fMaxDistance < DISTANCE_MEDIUM) nIndex = d2();
+    else if (fMaxDistance < DISTANCE_HUGE) nIndex = d4();
+    else nIndex = d6();
+    location lStartLocation = GetLocalLocation(OBJECT_SELF, "ANIM_START_LOCATION");
+    if(fMaxDistance > 20.0) fMaxDistance = 20.0;
+    object oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, nIndex);
+    while(nIndex > 0)
+    {
+        if(GetUseableFlag(oObject) &&
+           GetDistanceBetweenLocations(GetLocation(oObject), lStartLocation) <= fMaxDistance) break;
+        oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, --nIndex);
+    }
+    if(GetIsObjectValid(oObject))
+        return oObject;
+    return OBJECT_INVALID;
+}
+int ai_ActionFindPlaceable(float fMaxDistance)
+{
+    object oPlaceable = ai_GetRandomUseableObject(fMaxDistance);
     if (GetIsObjectValid(oPlaceable))
     {
-        ai_AnimationStartInteracting(oPlaceable);
+        ai_ActionStartInteracting(oPlaceable);
         return 1;
     }
     return 0;
 }
-int ai_AnimationDoor(float fMaxDistance)
+int ai_ActionCheckDoor(float fMaxDistance)
 {
     int nIndex = 1;
     object oCreature = OBJECT_SELF;
     location lStartLocation = GetLocalLocation(oCreature, "ANIM_START_LOCATION");
-    location lCreature = GetLocation(oCreature);
-    float fDistance = GetDistanceBetweenLocations(lCreature, lStartLocation);
-    float fCheckDistance = fMaxDistance - fDistance;
-    if(fCheckDistance > 20.0) fCheckDistance = 20.0;
+    if(fMaxDistance > 20.0) fMaxDistance = 20.0;
     object oDoor = GetNearestObject(OBJECT_TYPE_DOOR, oCreature);
     while(oDoor != OBJECT_INVALID)
     {
-        if(GetDistanceBetweenLocations(GetLocation(oDoor), lStartLocation) <= fCheckDistance)
+        if(GetDistanceBetweenLocations(GetLocation(oDoor), lStartLocation) <= fMaxDistance)
         {
             // Make sure everyone doesn't run to close or open the same door.
             if(!GetLocalInt(oDoor, "DOOR_INTERACTION"))
@@ -1919,7 +2060,7 @@ int ai_AnimationDoor(float fMaxDistance)
     }
     return FALSE;
 }
-int ai_AnimationInteraction()
+int ai_ActionInteraction()
 {
     // If we're talking, either keep going or stop.
     // Low prob of stopping, since both parties have
@@ -1932,7 +2073,7 @@ int ai_AnimationInteraction()
         if(Random(100) < 20)
         {
             //SendMessageToPC(GetFirstPC(), GetName(OBJECT_SELF) + " I'm done talking!");
-            ai_AnimationStopTalking(oFriend, nHDiff);
+            ai_ActionStopTalking(oFriend, nHDiff);
             return TRUE;
         }
         AnimActionPlayRandomTalkAnimation(nHDiff);
@@ -1947,7 +2088,7 @@ int ai_AnimationInteraction()
         if(Random(100) < 40)
         {
             //SendMessageToPC(GetFirstPC(), GetName(OBJECT_SELF) + " I'm done interacting!");
-            ai_AnimationStopInteracting();
+            ai_ActionStopInteracting();
             return TRUE;
         }
         AnimActionPlayRandomInteractAnimation(GetCurrentInteractionTarget());
@@ -1955,11 +2096,9 @@ int ai_AnimationInteraction()
     }
     return FALSE;
 }
-location ai_GetWalkingLocation(object oArea, object oSource, float fDistance)
+location ai_GetWalkingLocation(object oSource, float fDistance)
 {
-    location lStart;
-    if(!GetIsObjectValid(oSource)) lStart = GetCenterPointOfArea(oArea);
-    else lStart = GetLocation(oSource);
+    location lStart = GetLocation(oSource);
     // Try to move in a north/south/east/west direction that will allow better
     // movement around the map!
     float fFacing = GetFacing(oSource);
@@ -1969,91 +2108,71 @@ location ai_GetWalkingLocation(object oArea, object oSource, float fDistance)
     else if(fFacing < 135.0) fAngle = DIRECTION_NORTH;
     else if(fFacing < 225.0) fAngle = DIRECTION_WEST;
     else fAngle = DIRECTION_SOUTH;
-    //float fAngle = IntToFloat(Random(140) + 40);
-    fAngle += IntToFloat(Random(10));
+    fAngle += IntToFloat(Random(20) - 10);
     float fOrientation = fAngle;
     return GenerateNewLocationFromLocation(lStart, fDistance, fAngle, fOrientation);
 }
-void ai_AnimationRandomWalk(float fMaxDistance)
+void ai_ActionRandomWalk(float fMaxDistance)
 {
     // If we stay within our alloted distance then we can walk to the new location.
     location lStartLocation = GetLocalLocation(OBJECT_SELF, "ANIM_START_LOCATION");
-    float fDistance = GetDistanceBetweenLocations(lStartLocation, GetLocation(OBJECT_SELF));
-    int nMoveDistance = FloatToInt(fMaxDistance - fDistance);
-    if(nMoveDistance > 20) nMoveDistance = 20;
-    float fRandom = IntToFloat(Random(nMoveDistance) + 1);
-    location lNewLocation = ai_GetWalkingLocation(GetArea(OBJECT_SELF), OBJECT_SELF, fRandom);
-    //SendMessageToPC(GetFirstPC(), GetName(OBJECT_SELF) + " : Distance to new location: " +
-    //                FloatToString(GetDistanceBetweenLocations(lNewLocation, lStartLocation), 0, 0) +
-    //                " fMaxDistance: " + FloatToString(fMaxDistance, 0, 0));
+    int nRandom = FloatToInt(fMaxDistance);
+    if(nRandom > 20) nRandom = 20;
+    float fRandom = IntToFloat(Random(nRandom) + 1);
+    location lNewLocation = ai_GetWalkingLocation(OBJECT_SELF, fRandom);
+    if(AI_DEBUG) ai_Debug("0i_actions", "2092", GetName(OBJECT_SELF) + " is walking " +
+                    FloatToString(GetDistanceBetweenLocations(lNewLocation, lStartLocation), 0, 0) +
+                    " distance of fMaxDistance: " + FloatToString(fMaxDistance, 0, 0));
     ActionMoveToLocation(lNewLocation);
 }
-int ai_AnimActionFindPlaceable(float fMaxDistance)
-{
-    object oPlaceable = GetRandomObjectByTag("NW_INTERACTIVE", fMaxDistance);
-    if(GetIsObjectValid(oPlaceable))
-    {
-        ai_AnimationStartInteracting(oPlaceable);
-        return TRUE;
-    }
-    else
-    {
-        oPlaceable = GetRandomObjectByType(OBJECT_TYPE_PLACEABLE, fMaxDistance);
-        if(GetIsObjectValid(oPlaceable))
-        {
-            if(GetHasInventory(oPlaceable) || GetEventScript(oPlaceable, EVENT_SCRIPT_PLACEABLE_ON_USED) != "")
-            {
-                ai_AnimationStartInteracting(oPlaceable);
-                return TRUE;
-            }
-        }
-    }
-    return FALSE;
-}
-void ai_Animations()
+void ai_Actions()
 {
     float fMaxDistance = GetLocalFloat(GetModule(), AI_RULE_WANDER_DISTANCE);
     // Are we interacting? If so continue else see what else there is to do.
-    if(ai_AnimationInteraction()) return;
+    if(ai_ActionInteraction()) return;
     // If we got here, we're not busy
     ClearAllActions();
     // Check for chance to do an action to keep things interesting.
     int nRoll = Random(100);
-    // Sit down
+    if(fMaxDistance == 0.0)
+    {
+        if(nRoll < 51) AnimActionPlayRandomAnimation();
+        return;
+    }
     object oPC = GetFirstPC();
     if(nRoll < 5)
     {
         //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
         //                " Attempting to sit down.");
-        if(AnimActionSitInChair(fMaxDistance)) return;
+        if(ai_ActionSitInChair(fMaxDistance)) return;
     }
     // Open or close a door
     if(nRoll < 20)
     {
         //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
         //                " Looking at doors.");
-        if(ai_AnimationDoor(fMaxDistance)) return;
+        if(ai_ActionCheckDoor(fMaxDistance)) return;
     }
     // Fiddle with a placeable
     if(nRoll < 40)
     {
         //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
         //                " Looking for a placeable.");
-        if(ai_AnimationFindPlaceable(fMaxDistance)) return;
+        if(ai_ActionFindPlaceable(fMaxDistance)) return;
     }
     // Start talking to a friend
     if(nRoll < 50)
     {
         //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
         //                " Looking for a friend.");
-        if(ai_AnimationFindFriend(fMaxDistance)) return;
+        if(ai_ActionFindFriend(fMaxDistance)) return;
     }
     // Lets walk around.
     if(nRoll < 80)
     {
         //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
         //                " Walking.");
-        ai_AnimationRandomWalk(fMaxDistance);
+        ai_ActionRandomWalk(fMaxDistance);
         return;
     }
     // If we find nothing interesting to do then just stay put and look interesting.
@@ -2088,7 +2207,7 @@ int ai_CheckCurrentAction()
 }
 void ai_AmbientAnimations()
 {
-    if(!GetAnimationCondition(NW_ANIM_FLAG_INITIALIZED)) ai_AnimationInitialization();
+    if(!GetAnimationCondition(NW_ANIM_FLAG_INITIALIZED)) ai_ActionInitialization();
     // Check if we should turn off
     if(!CheckIsAnimActive(OBJECT_SELF)) return;
     // Check current actions so we don't interrupt something in progress
@@ -2096,5 +2215,5 @@ void ai_AmbientAnimations()
     // First check: go back to starting position and rest if we are hurt
     //if(AnimActionRest()) return;
     // If we get here then lets go see what we can do!
-    ai_Animations();
+    ai_Actions();
 }

@@ -99,5 +99,5 @@ void main()
         if(!ai_TryTailSweepAttack(oCreature)) ai_TryTailSlap(oCreature);
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }

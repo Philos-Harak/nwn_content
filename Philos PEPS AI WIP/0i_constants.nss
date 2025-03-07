@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:02.24.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:03.07.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -70,7 +70,7 @@ const int AI_OPEN_DOORS = FALSE;
 // Monster's actual perception distance.
 // 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
 // 11 Default(Based on appearance.2da Most creatures use 9, bosses use 10).
-const int AI_PERCEPTION_DISTANCE = 11;
+const int AI_MONSTER_PERCEPTION = 11;
 // Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
 const float AI_HENCHMAN_BUFF_DELAY = 0.2;
 
@@ -297,9 +297,9 @@ const int AI_CONDITION_DOMINATED      = 0x00100000;
 const string AI_MODE_DB_TABLE = "AI_MODE_DB_TABLE";
 // Bitwise constants for Associate modes that are used with Get/SetAssociateMode().
 const string sAIModeVarname = "ASSOCIATE_MODES";
-const int AI_MODE_DISTANCE_CLOSE =      0x00000001; // Stays within AI_DISTANCE_CLOSE of master.
-const int AI_MODE_DISTANCE_MEDIUM =     0x00000002; // Stays within AI_DISTANCE_MEDIUM of master.
-const int AI_MODE_DISTANCE_LONG =       0x00000004; // Stays within AI_DISTANCE_LONG of master.
+//const int AI_MODE_DISTANCE_CLOSE =    0x00000001; // Stays within AI_DISTANCE_CLOSE of master.
+//const int AI_MODE_DISTANCE_MEDIUM =   0x00000002; // Stays within AI_DISTANCE_MEDIUM of master.
+const int AI_MODE_ACTION_GHOST =        0x00000004; // Defines if the player is using Ghost mode when using associate actions.
 const int AI_MODE_SELF_HEALING_OFF =    0x00000008; // Creature will not use healing items or spells on self.
 const int AI_MODE_PARTY_HEALING_OFF =   0x00000010; // Creature will not use healing items or spells on party.
 const int AI_MODE_GHOST =               0x00000020; // Creature can move through other creatures.
@@ -480,8 +480,10 @@ const string AI_TRAP_CHECK_RANGE = "AI_TRAP_CHECK_RANGE";
 const string AI_FOLLOW_RANGE = "AI_FOLLOW_RANGE";
 // Variable that holds the target for an associate to follow.
 const string AI_FOLLOW_TARGET = "AI_FOLLOW_TARGET";
-// Variable that holds the perception range of the henchman.
-const string AI_PERCEPTION_RANGE = "AI_PERCEPTION_RANGE";
+// Variable that holds the perception range of associates.
+const string AI_ASSOCIATE_PERCEPTION = "AI_PERCEPTION_RANGE";
+// Variable that holds the perception distance of associates.
+const string AI_ASSOC_PERCEPTION_DISTANCE = "AI_ASSOC_PERCEPTION_DISTANCE";
 // Variable that holds the open doors range of the henchman.
 const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";
 // Variable that holds the Spell widgets json data.
@@ -514,10 +516,14 @@ const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
 const string AI_NO_TALENTS = "AI_NO_TALENTS_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
+// Variable set on the module if the module is using PRC.
+const string AI_USING_PRC = "AI_USING_PRC";
 // Variable that sets if the rules have been added to the module.
 const string AI_RULES_SET = "AI_RULES_SET";
 // Variable that tells us that oCreature has run our OnSpawn event.
 const string AI_ONSPAWN_EVENT = "AI_ONSPAWN_EVENT";
+// Variable used to define a creatures unique Tag for widgets.
+const string AI_TAG = "AI_TAG";
 // Variable that saves any module target event script so we can pass it along.
 const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
 // Variable for plugins to inject Targeting mode code into PEPS.
@@ -587,6 +593,8 @@ const string AI_RULE_OPEN_DOORS = "AI_RULE_OPEN_DOORS";
 const string AI_RULE_DEFAULT_XP_SCALE = "AI_RULE_DEFAULT_XP_SCALE";
 // Variable name set to allow the game to regulate experience based on party size.
 const string AI_RULE_PARTY_SCALE = "AI_RULE_PARTY_SCALE";
+// Variable name set to restrict the AI's use of Darkness.
+const string AI_RULE_RESTRICTED_SPELLS = "AI_RULE_RESTRICTED_SPELLS";
 /*/ Special behavior constants from x0_i0_behavior
 const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
 //Will always attack regardless of faction

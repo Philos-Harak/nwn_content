@@ -10,21 +10,17 @@
 object ai_ChangeMonster(object oCreature, object oModule);
 // Checks to see if we should change the associate via Json.
 object ai_ChangeAssociate(object oCreature, object oModule);
-// Sets the events for oCreature that is a monster in most modules.
-void ai_SetMonsterEventScripts(object oCreature);
-// Sets the events for oCreature that is an associate in most modules.
-void ai_SetAssociateEventScripts(object oCreature);
 // Sets the events for oCreature that is a Monster while playing Infinite Dungeons.
 void ai_SetIDMonsterEventScripts(object oCreature);
 // Sets the events for oCreature that is a monster in while using the PRC and
 // playing Infinite Dungeons.
 void ai_SetPRCIDMonsterEventScripts(object oCreature);
-// Sets the events for oCreature that is a monster while using the PRC.
-void ai_SetPRCMonsterEventScripts(object oCreature);
 // Sets the events for oCreature that is an associate while using the PRC.
 void ai_SetPRCAssociateEventScripts(object oCreature);
-// Reverts a single players monsters, NPC's and associate event scripts back to their default.
-void ai_FixEventScripts(object oCreature);
+// Reverts single player monster event scripts back to their default.
+void ai_ChangeEventScriptsForMonster(object oCreature);
+// Reverts single player associates event scripts back to their default.
+void ai_ChangeEventScriptsForAssociate(object oCreature);
 //******************************************************************************
 //********************* Creature event scripts *********************************
 //******************************************************************************
@@ -43,24 +39,37 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
 {
     object oModule = GetModule();
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
+    // DOES NOT WORK IN VERSION 36!
+    // Do changes before we adjust anything on the creature via Json!
+    //oCreature = ai_ChangeMonster(oCreature, oModule);
+    if(!AI_SERVER)
+    {
+        // Do PRC check and save variable to the module.
+        if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
+            SetLocalInt(oModule, AI_USING_PRC, TRUE);
+        string sModuleName = GetModuleName();
+        if(sModuleName == "Neverwinter Nights - Infinite Dungeons" ||
+           sModuleName == "Infinite Dungeons [PRC8]")
+        {
+            if(GetLocalInt(oModule, AI_USING_PRC))
+            {
+                ai_SetPRCIDMonsterEventScripts(oCreature);
+            }
+            else ai_SetIDMonsterEventScripts(oCreature);
+            // Fix to get plot givers, finishers from getting killed a lot.
+            if(GetLocalString(oCreature, "sConversation") == "id1_plotgiver " ||
+               GetLocalString(oCreature, "sConversation") == "id1_plotdest")
+            {
+                ChangeToStandardFaction(oCreature, STANDARD_FACTION_MERCHANT);
+                SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 50, oCreature);
+                //ChangeFaction(oCreature, GetObjectByTag("id1_littletimmy"));
+            }
+        }
+    }
     // We change this script so we can setup permanent summons on/off.
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
-    // DOES NOT WORK IN VERSION 36!
-    // Do changes before we adjust anything on the creature via Json!
-    //oCreature = ai_ChangeMonster(oCreature, oModule);
-    string sModuleName = GetModuleName();
-    //string sModuleTag = GetTag(oModule);
-    if(sModuleName == "Neverwinter Nights - Infinite Dungeons")
-    {
-        // Do PRC check.
-        if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
-        {
-            ai_SetPRCIDMonsterEventScripts(oCreature);
-        }
-        else ai_SetIDMonsterEventScripts(oCreature);
-    }
     if(bIncorporeal)
     {
         string sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
@@ -70,8 +79,8 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     ai_SetCreatureAIScript(oCreature);
     ai_SetNormalAppearance(oCreature);
     ai_SetAura(oCreature);
-    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, 70);
-    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, 70);
+    SetLocalInt(oCreature, AI_HEAL_IN_COMBAT_LIMIT, AI_MONSTER_HEAL_IN_COMBAT_CHANCE);
+    SetLocalInt(oCreature, AI_HEAL_OUT_OF_COMBAT_LIMIT, AI_MONSTER_HEAL_OUT_COMBAT_CHANCE);
     int nMonsterHpIncrease = GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP);
     if(nMonsterHpIncrease)
     {
@@ -85,26 +94,25 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
     float fMonsterIncrease = GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS);
     if(GetIsEncounterCreature(oCreature) && fMonsterIncrease > 0.0)
     {
-        object oNewCreature;
         int nMonsterIncrease;
         float fMonsterCounter = GetLocalFloat(oModule, "AI_MONSTER_COUNTER");
         fMonsterCounter += fMonsterIncrease;
-        if(fMonsterCounter >= 1.0)
+        nMonsterIncrease = FloatToInt(fMonsterCounter);
+        if(nMonsterIncrease > 0)
         {
-           nMonsterIncrease = FloatToInt(fMonsterCounter);
            fMonsterCounter = fMonsterCounter - IntToFloat(nMonsterIncrease);
         }
         SetLocalFloat(oModule, "AI_MONSTER_COUNTER", fMonsterCounter);
         while(nMonsterIncrease > 0)
         {
             CopyObject(oCreature, GetLocation(oCreature), OBJECT_INVALID, "", TRUE);
-            nMonsterIncrease --;
+            nMonsterIncrease = nMonsterIncrease - 1;
         }
     }
 }
 object ai_CreateMonster(json jCreature, location lLocation, object oModule)
 {
-    //if(AI_DEBUG) ai_Debug("0i_module", "129", JsonDump(jCreature, 1));
+    //WriteTimestampedLogEntry("0i_module, 106, " + JsonDump(jCreature, 1));
     object oCreature = JsonToObject(jCreature, lLocation, OBJECT_INVALID, TRUE);
     if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY))
     {
@@ -129,24 +137,27 @@ json ai_SetCompanionSummoning(object oCreature, json jCreature)
 }
 object ai_ChangeMonster(object oCreature, object oModule)
 {
-    object oPC = GetFirstPC();
+    object oPC = GetNearestCreature(CREATURE_TYPE_PLAYER_CHAR, PLAYER_CHAR_IS_PC, oCreature);
     // Lets not mess up the cutscenes with silly RULES.
+    float fDistance = GetDistanceBetween(oCreature, oPC);
     if(GetCutsceneMode(oPC)) return oCreature;
     // Looks bad to see creatures wink in and out plus could cause module errors.
-    if(GetDistanceBetween(oCreature, oPC) < AI_RANGE_PERCEPTION) return oCreature;
+    if(fDistance != 0.0 && fDistance < AI_RANGE_PERCEPTION) return oCreature;
     if(IsInConversation(oCreature)) return oCreature;
     int nStay = GetLocalInt(oModule, AI_RULE_CORPSES_STAY);
     int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS);
     int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE);
+    //WriteTimestampedLogEntry("nStay: " + IntToString(nStay) + " nSummon: " + IntToString(nSummon) +
+    //      " nPercDist: " + IntToString(nPercDist));
     if(nStay || nSummon || nPercDist != 11)
     {
         location lLocation = GetLocation(oCreature);
         json jCreature = ObjectToJson(oCreature, TRUE);
-        //ai_Debug("0i_single_player", "116", GetName(oCreature) + " " + JsonDump(jCreature, 1));
+        //WriteTimestampedLogEntry("0i_module, 144 " + GetName(oCreature) + " " + JsonDump(jCreature, 1));
         if(nPercDist != 11) jCreature = GffReplaceByte(jCreature, "PerceptionRange", nPercDist);
         if(nStay) jCreature = GffReplaceDword(jCreature, "DecayTime", 600000);
         if(nSummon) jCreature = ai_SetCompanionSummoning(oCreature, jCreature);
-        AssignCommand(oCreature, SetIsDestroyable(TRUE, FALSE, FALSE));
+        AssignCommand(oCreature, SetIsDestroyable(FALSE, FALSE, TRUE));
         DestroyObject(oCreature);
         return ai_CreateMonster(jCreature, lLocation, oModule);
     }
@@ -156,9 +167,17 @@ void ai_OnAssociateSpawn(object oCreature)
 {
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     // We change this script so we can setup permanent summons on/off.
+    // If you don't use this you may remove the next three lines.
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+    if(!AI_SERVER)
+    {
+        if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
+        {
+            ai_SetPRCAssociateEventScripts(oCreature);
+        }
+    }
     // Initialize Associate modes for basic use.
     ai_SetListeningPatterns(oCreature);
     ai_SetNormalAppearance(oCreature);
@@ -181,47 +200,54 @@ void ai_SetIDMonsterEventScripts(object oCreature)
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
     if(sScript == "x2_def_heartbeat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else if(sScript == "nw_c2_default1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Perception **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
     SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
     if(sScript == "x2_def_percept") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_id_events");
     else if(sScript == "nw_c2_default2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On End Combat Round **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
     SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
     if(sScript == "x2_def_endcombat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_id_events");
     else if(sScript == "nw_c2_default3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Dialogue **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
     SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
     if(sScript == "x2_def_onconv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_id_events");
     else if(sScript == "nw_c2_default4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DIALOGUE_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Melee Attacked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
     SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
     if(sScript == "x2_def_attacked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_id_events");
     else if(sScript == "nw_c2_default5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_MELEE_ATTACKED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Damaged **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
     SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
     if(sScript == "x2_def_ondamage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_id_events");
     else if(sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     // This is always set incase they have permanent summons turned on.
     //********** On Death **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_id_events");
     //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
     if(sScript == "x2_def_ondisturb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_id_events");
     else if(sScript == "nw_c2_default8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DISTURBED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     //********** On Rested **********
@@ -229,18 +255,21 @@ void ai_SetIDMonsterEventScripts(object oCreature)
     SetLocalString(oCreature, "AI_ON_RESTED", sScript);
     if(sScript == "x2_def_rested") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_id_events");
     else if(sScript == "nw_c2_defaulta") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_RESTED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Spell Cast At **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
     SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
     if(sScript == "x2_def_spellcast") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_id_events");
     else if(sScript == "nw_c2_defaultb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_SPELLCASTAT_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Blocked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
     SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
     if(sScript == "x2_def_onblocked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_id_events");
     else if(sScript == "nw_c2_defaulte") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }
@@ -253,47 +282,54 @@ void ai_SetPRCIDMonsterEventScripts(object oCreature)
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
     if(sScript == "x2_def_heartbeat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_id_events");
     else if(sScript == "nw_c2_default1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Perception **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
     SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
     if(sScript == "x2_def_percept") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_id_events");
     else if(sScript == "nw_c2_default2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On End Combat Round **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
     SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
     if(sScript == "x2_def_endcombat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_id_events");
     else if(sScript == "nw_c2_default3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Dialogue **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
     SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
     if(sScript == "x2_def_onconv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_id_events");
     else if(sScript == "nw_c2_default4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DIALOGUE_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Melee Attacked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
     SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
     if(sScript == "x2_def_attacked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_id_events");
     else if(sScript == "nw_c2_default5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_MELEE_ATTACKED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Damaged **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
     SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
     if(sScript == "x2_def_ondamage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_id_events");
     else if(sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     // This is always set incase they have permanent summons turned on.
     //********** On Death **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_id_events");
     //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
     if(sScript == "x2_def_ondisturb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_id_events");
     else if(sScript == "nw_c2_default8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DISTURBED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     //********** On Rested **********
@@ -301,216 +337,72 @@ void ai_SetPRCIDMonsterEventScripts(object oCreature)
     SetLocalString(oCreature, "AI_ON_RESTED", sScript);
     if(sScript == "x2_def_rested") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_id_events");
     else if(sScript == "nw_c2_defaulta") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_RESTED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Spell Cast At **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
     SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
     if(sScript == "x2_def_spellcast") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_id_events");
     else if(sScript == "nw_c2_defaultb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_SPELLCASTAT_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //********** On Blocked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
     SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
     if(sScript == "x2_def_onblocked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_id_events");
     else if(sScript == "nw_c2_defaulte") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_id_events");
+    else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }
-void ai_SetPRCMonsterEventScripts(object oCreature)
+// Special event scripts for PRC associates!
+void ai_SetPRCAssociateEventScripts(object oCreature)
 {
-    //if(AI_DEBUG) ai_Debug("0i_module", "194", "Changing " + GetName(oCreature) + "'s monster event scripts for PRC.");
+    //if(AI_DEBUG) ai_Debug("0i_module", "433", "Changing " + GetName(oCreature) + "'s Infinte Dungeons event scripts for PRC.");
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
-    if(sScript == "nw_c2_default1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_mon_event");
-    else if(sScript == "x2_def_heartbeat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_ch_events");
+    else return;
     //********** On Perception **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
     SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
-    if(sScript == "nw_c2_default2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_mon_event");
-    else if(sScript == "x2_def_percept") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_ch_events");
     //********** On End Combat Round **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
     SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
-    if(sScript == "nw_c2_default3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_mon_event");
-    else if(sScript == "x2_def_endcombat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_ch_events");
     //********** On Dialogue **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
     SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
-    if(sScript == "nw_c2_default4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_mon_event");
-    else if(sScript == "x2_def_onconv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_DIALOGUE_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_ch_events");
     //********** On Melee Attacked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
     SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
-    if(sScript == "nw_c2_default5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_mon_event");
-    else if(sScript == "x2_def_attacked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_MELEE_ATTACKED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_ch_events");
     //********** On Damaged **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
     SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
-    if(sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_mon_event");
-    else if(sScript == "x2_def_ondamage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Death **********
-    // This is always set incase they have permanent summons switched on/off.
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_ch_events");
+    //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
-    //********** On Disturbed **********
-    if(sScript == "nw_c2_default8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_mon_event");
-    else if(sScript == "x2_def_ondisturb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_DISTURBED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_ch_events");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     //********** On Rested **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED);
     SetLocalString(oCreature, "AI_ON_RESTED", sScript);
-    // We just save the monsters rest event script incase we need to revert it for a user.
-    //if(sScript == "" || sScript == "nw_c2_defaulta") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_c2_a_rested);
-    //else if(sScript != "") WriteTimestampedLogEntry("ON_RESTED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_ch_events");
     //********** On Spell Cast At **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
     SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
-    if(sScript == "nw_c2_defaultb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_mon_event");
-    else if(sScript == "x2_def_spellcast") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_SPELLCASTAT_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_ch_events");
     //********** On Blocked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
     SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
-    if(sScript == "nw_c2_defaulte") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_mon_event");
-    else if(sScript == "x2_def_onblocked") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_mon_event");
-    else if(sScript != "") WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_ch_events");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
-}
-void ai_SetPRCAssociateEventScripts(object oCreature)
-{
-    //if(AI_DEBUG) ai_Debug("0i_module", "483", "Changing " + GetName(oCreature) + "'s PRC event scripts.");
-    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
-    SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
-    if(sScript == "prc_ai_fam_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_ch_1_hb");
-    else if(sScript == "prc_ai_mob_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_mob_event");
-    else if(sScript == "prc_ai_coh_hb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_coh_event");
-    else if(sScript == "prc_sprwp_ac1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_heart") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_HEARTBEAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Perception **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
-    SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
-    if(sScript == "prc_ai_fam_percp") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_percp") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_percp") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_ch_2_percept");
-    else if(sScript == "prc_ai_mob_percp") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ac2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_percep") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_NOTICE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On End Combat Round **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
-    SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
-    if(sScript == "prc_ai_fam_combt") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_combt") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_combt") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_ch_3_endround");
-    else if(sScript == "prc_ai_mob_combt") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ac3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_combat") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_END_COMBATROUND SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Dialogue **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
-    SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
-    if(sScript == "prc_ai_fam_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_ch_4_convers");
-    else if(sScript == "prc_ai_mob_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_mob_event");
-    else if(sScript == "prc_ai_coh_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_coh_event");
-    else if(sScript == "prc_sprwp_ac4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_conv") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_DIALOGUE SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Melee Attacked **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
-    SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
-    if(sScript == "prc_ai_fam_attck") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_attck") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_attck") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_ch_5_phyatked");
-    else if(sScript == "prc_ai_mob_attck") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ac5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_attack") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_MELEE_ATTACKED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Damaged **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
-    SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
-    if(sScript == "prc_ai_fam_damag") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_damag") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_damag") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_ch_6_damaged");
-    else if(sScript == "prc_ai_mob_damag") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ac6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_damage") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_DAMAGED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Death **********
-    // We do not use the ondeath script when using the PRC, too many issues.
-    //sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    //SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    //if(sScript == "prc_ai_fam_death") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_fam_event");
-    //else if(sScript == "prc_ai_sum_death") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_sum_event");
-    //else if(sScript == "prc_sprwp_ac7") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_sum_event");
-    //else if(sScript == "nw_ch_ac7") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_sum_event");
-    //else WriteTimestampedLogEntry("ON_DEATH SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Disturbed **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
-    SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
-    if(sScript == "prc_ai_fam_distb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_distb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_distb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_ch_8_disturb");
-    else if(sScript == "prc_ai_mob_distb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ac8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ac8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_distrb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_DISTURBED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-    //********** On Rested **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED);
-    SetLocalString(oCreature, "AI_ON_RESTED", sScript);
-    if(sScript == "prc_ai_fam_rest") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_rest") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_rest") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_ch_a_rested");
-    else if(sScript == "prc_ai_mob_rest") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_aca") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_aca") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_rest") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_RESTED SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Spell Cast At **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
-    SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
-    if(sScript == "prc_ai_fam_spell") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_sum_spell") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_spell") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_ch_b_castat");
-    else if(sScript == "prc_ai_mob_spell") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_acb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_acb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_spell") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_SPELLCASTAT SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    //********** On Blocked **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
-    SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
-    if(sScript == "prc_ai_fam_block") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_fam_event");
-    else if(sScript == "prc_ai_fam_block") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_sum_event");
-    else if(sScript == "prc_ai_con_block") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_ch_e_blocked");
-    else if(sScript == "prc_ai_mob_block") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_mob_event");
-    else if(sScript == "prc_sprwp_ace") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_sum_event");
-    else if(sScript == "nw_ch_ace") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_sum_event");
-    else if(sScript == "x0_ch_hen_block") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_sum_event");
-    else WriteTimestampedLogEntry("ON_BLOCKED_BY_DOOR SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
+    if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
 }
 void ai_ChangeEventScriptsForMonster(object oCreature)
 {
@@ -544,6 +436,7 @@ void ai_ChangeEventScriptsForAssociate(object oCreature)
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "nw_ch_ace");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
 }
+
 
 
 

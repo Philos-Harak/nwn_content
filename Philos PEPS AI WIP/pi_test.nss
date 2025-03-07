@@ -44,7 +44,16 @@ void main()
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 101.0;
+    // Row 3 ******************************************************************* 636 / 101
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Jump To", "btn_jump", 150.0f, 20.0f, -1.0, "btn_jump_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Kill In Area", "btn_kill_area", 150.0f, 20.0f, -1.0, "btn_kill_area_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    float fHeight = 129.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = GetName(oPC);
@@ -71,6 +80,11 @@ void main()
     NuiSetBind(oPC, nToken, "btn_kill_tooltip", JsonString("  Kill target creature doing 10,000 magic damage."));
     NuiSetBind(oPC, nToken, "btn_remove_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_remove_tooltip", JsonString("  Remove selected object or the nearest object to ground selection."));
+    // Row 3
+    NuiSetBind(oPC, nToken, "btn_jump_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_jump_tooltip", JsonString("  Jump to target location."));
+    NuiSetBind(oPC, nToken, "btn_kill_area_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_kill_area_tooltip", JsonString("  Kills all creatures in target area."));
 }
 int StartingUp(object oPC)
 {

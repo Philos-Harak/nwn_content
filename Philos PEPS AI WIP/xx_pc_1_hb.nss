@@ -12,7 +12,7 @@ void ai_ActionFollow(object oCreature, object oTarget)
     {
         float fDistance = GetDistanceBetween(oCreature, oTarget);
         float fFollowDistance = ai_GetFollowDistance(oCreature);
-        if(fDistance > fFollowDistance)
+        if(fDistance > fFollowDistance && !ai_GetIsInCombat(oCreature))
         {
             if(fDistance > fFollowDistance * 5.0) AssignCommand(oCreature, JumpToObject(oTarget));
             else
@@ -40,7 +40,7 @@ void main()
     if(ai_CheckNearbyObjects(oCreature)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_STEALTH))
     {
-        if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "47", "Going into stealth mode!");
+        if(AI_DEBUG) ai_Debug("xx_ch_1_hb", "47", "Going into stealth mode!");
         int nStealth = GetSkillRank(SKILL_HIDE, oCreature);
         nStealth += GetSkillRank(SKILL_MOVE_SILENTLY, oCreature);
         if(nStealth / 2 >= ai_GetCharacterLevels(oCreature))
@@ -54,7 +54,7 @@ void main()
         SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
         if(ai_GetAIMode(oCreature, AI_MODE_AGGRESSIVE_SEARCH))
         {
-            if(AI_DEBUG) ai_Debug("0e_ch_1_hb", "61", "Going into search mode!");
+            if(AI_DEBUG) ai_Debug("xx_ch_1_hb", "61", "Going into search mode!");
             SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
         }
         else SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);

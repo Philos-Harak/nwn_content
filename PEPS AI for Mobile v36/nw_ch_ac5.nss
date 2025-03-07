@@ -18,10 +18,18 @@ void main()
     if(ai_GetIsInCombat(oCreature)) return;
     // We only inform others if attacked when not busy, not disabled, & not in combat.
     SetLocalObject(oCreature, AI_MY_TARGET, oAttacker);
-    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_SHOUT);
+    SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
+    // If they are using a melee weapon then make sure we are using our perception range.
+    // Don't go running towards them just yet, but if its a ranged weapon then react.
+    if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oAttacker)))
+    {
+        float fDistance = GetDistanceBetween(oCreature, oAttacker);
+        float fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+        if(fDistance > fPerceptionDistance) return;
+    }
+    if(!ai_CanIAttack(oCreature)) return;
     // The only way to get here is to not be in combat thus we have not
     // perceived them so lets look for them.
-    if(!ai_CanIAttack(oCreature)) return;
     if(GetDistanceBetween(oCreature, oAttacker) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
     else ActionMoveToObject(oAttacker, TRUE, AI_RANGE_CLOSE - 1.0);
 }

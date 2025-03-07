@@ -248,7 +248,7 @@ int ai_TryHealingTalent(object oCreature, int nInMelee, object oTarget = OBJECT_
         {
             // Lets not run past an enemy to heal unless we have the feats, bad tactics!
             float fRange;
-            if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
+            if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
             else
             {
                 fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -551,7 +551,7 @@ void ai_SetAura(object oCreature)
 void ai_UseSkill(object oCreature, int nSkill, object oTarget)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_SKILL);
-    if(GetIsEnemy(oTarget)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
+    if(GetReputation(oCreature, oTarget) < 11) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     if(AI_DEBUG) ai_Debug("0i_talents", "498", GetName(oCreature) + " is using skill: " +
              GetStringByStrRef(StringToInt(Get2DAString("skills", "Name", nSkill))) +
              " on " + GetName(oTarget));
@@ -652,7 +652,7 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
 void ai_UseFeat(object oCreature, int nFeat, object oTarget, int nSubFeat = 0)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_FEAT);
-    if(GetIsEnemy(oTarget)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
+    if(GetReputation(oCreature, oTarget) < 11) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     if(AI_DEBUG) ai_Debug("0i_talents", "600", GetName(oCreature) + " is using feat: " +
              GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat))) +
              " on " + GetName(oTarget));
@@ -1032,7 +1032,7 @@ int ai_TryLayOnHands(object oCreature)
     if(!GetHasFeat(FEAT_LAY_ON_HANDS, oCreature)) return FALSE;
     // Lets not run past an enemy to use touch atk unless we have the feats, bad tactics!
     float fRange;
-    if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
+    if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
     else
     {
         fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -1097,7 +1097,7 @@ int ai_TryTurningTalent(object oCreature)
     object oEnemy = GetNearestCreature(7, 7, oCreature, nCnt);
     while(oEnemy != OBJECT_INVALID && nHDCount < nTurnHD && GetDistanceBetween(oEnemy, oCreature) <= 20.0)
     {
-        if(GetIsEnemy(oEnemy, oCreature) && !ai_Disabled(oEnemy))
+        if(GetReputation(oCreature, oEnemy) < 11 && !ai_Disabled(oEnemy))
         {
             nRacial = GetRacialType(oEnemy);
             nHD = 0;
@@ -1131,7 +1131,7 @@ int ai_TryTurningTalent(object oCreature)
         while(oEnemy != OBJECT_INVALID && nHDCount2 < nTurnHD && GetDistanceBetween(oEnemy, oNearestEnemy) <= 20.0)
         {
             if(AI_DEBUG) ai_Debug("0i_talents", "1129", GetName(oEnemy));
-            if(GetIsEnemy(oEnemy, oCreature) && !ai_Disabled(oEnemy))
+            if(GetReputation(oCreature, oEnemy) < 11 && !ai_Disabled(oEnemy))
             {
                 nRacial = GetRacialType(oEnemy);
                 nHD = 0;
@@ -1314,7 +1314,7 @@ int ai_TryWingAttacks(object oCreature)
     while(oTarget != OBJECT_INVALID)
     {
         if(AI_DEBUG) ai_Debug("0i_talents", "1002", "oTarget: " + GetName(oTarget));
-        if(GetIsEnemy(oTarget) && !GetIsDead(oTarget)) break;
+        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lWing);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " right wing ");
@@ -1324,7 +1324,7 @@ int ai_TryWingAttacks(object oCreature)
     while(oTarget != OBJECT_INVALID)
     {
         if(AI_DEBUG) ai_Debug("0i_talents", "1012", "oTarget: " + GetName(oTarget));
-        if(GetIsEnemy(oTarget) && !GetIsDead(oTarget)) break;
+        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lWing);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " left wing ");
@@ -1358,7 +1358,7 @@ int ai_TryTailSlap(object oCreature)
     object oTarget = GetFirstObjectInShape(SHAPE_SPHERE, fSize, lTail);
     while(oTarget != OBJECT_INVALID)
     {
-        if(GetIsEnemy(oTarget) && !GetIsDead(oTarget)) break;
+        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lTail);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " tail ");\
@@ -1510,7 +1510,7 @@ int ai_TrySneakAttack(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
         string sIndex;
         // Check if we have Mobility, Spring Attack or a good tumble.
         // if we do then look for other targets besides who we are in melee with.
-        if(!nInMelee) sIndex = IntToString(ai_GetBestSneakAttackIndex(oCreature, ai_GetPerceptionRange(oCreature), bAlwaysAtk));
+        if(!nInMelee) sIndex = IntToString(ai_GetBestSneakAttackIndex(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk));
         // If there are few enemies then we can safely move around.
         else if(nInMelee < 3 || ai_CanIMoveInCombat(oCreature))
         {
@@ -1692,8 +1692,25 @@ int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nS
     } */
     return FALSE;
 }
+int ai_SpellRestricted(int nSpell)
+{
+    json jRSpells = GetLocalJson(GetModule(), AI_RULE_RESTRICTED_SPELLS);
+    int nIndex, nMaxIndex = JsonGetLength(jRSpells);
+    while(nIndex < nMaxIndex)
+    {
+        if(JsonGetInt(JsonArrayGet(jRSpells, nIndex)) == nSpell)
+        {
+            if(AI_DEBUG) ai_Debug("0i_talents", "1703", IntToString(nSpell) + " is has been restricted and will be ignored!");
+            return TRUE;
+        }
+        nIndex++;
+    }
+    return FALSE;
+}
 void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bMonster, object oItem = OBJECT_INVALID)
 {
+    // Players/Admins can restrict some spells.
+    if(ai_SpellRestricted(nSpell)) return;
     // Get the talent category, we organize all talents by categories.
     string sCategory = Get2DAString("ai_spells", "Category", nSpell);
     // If it is a blank talent or it is an Area of Effect talent we skip.
@@ -2047,14 +2064,8 @@ void ai_SetCreatureTalents(object oCreature, int bMonster)
     ai_Counter_End(GetName(oCreature) + ": Item Talents");
     if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) && GetLocalInt(oModule, AI_RULE_PRESUMMON) && bMonster)
     {
-        if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature))
-        {
-            ai_TrySummonFamiliarTalent(oCreature);
-        }
-        if(GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature))
-        {
-            ai_TrySummonAnimalCompanionTalent(oCreature);
-        }
+        ai_TrySummonFamiliarTalent(oCreature);
+        ai_TrySummonAnimalCompanionTalent(oCreature);
     }
     // AI_CAT_CURE is setup differently we save the level as the highest.
     if(JsonGetType(GetLocalJson(oCreature, AI_TALENT_CURE)) != JSON_TYPE_NULL) SetLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_CURE, 9);
@@ -2204,6 +2215,8 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
         {
             if(AI_DEBUG) ai_Debug("0i_talents", "1925", "Using a non-healing potion nInMelee: " + IntToString(nInMelee));
             if(nInMelee > 1) return FALSE;
+            // Don't use potions on allies that are not within 5'.
+            if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_MELEE) return FALSE;
         }
         // For now we are allowing creatures to use "give" potions to others
         // unless the player is using a healing potion and has party healing turned off.
@@ -2835,7 +2848,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             // Lets not run past an enemy to cast an enhancement unless we have
             // the ability to move in combat, bad tactics!
             float fRange;
-            if(ai_CanIMoveInCombat(oCreature)) fRange = ai_GetPerceptionRange(oCreature);
+            if(ai_CanIMoveInCombat(oCreature)) fRange = AI_RANGE_PERCEPTION;
             else
             {
                 fRange = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
@@ -2867,7 +2880,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             int nCnt = 1, bCastSpell;
             string sAOEType;
             object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
-            while(oAOE != OBJECT_INVALID && GetDistanceBetween(oCreature, oAOE) <= ai_GetPerceptionRange(oCreature))
+            while(oAOE != OBJECT_INVALID && GetDistanceBetween(oCreature, oAOE) <= AI_RANGE_PERCEPTION)
             {
                 // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
                 sAOEType = GetTag(oAOE);

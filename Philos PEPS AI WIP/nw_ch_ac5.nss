@@ -23,12 +23,8 @@ void main()
     // Don't go running towards them just yet, but if its a ranged weapon then react.
     if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oAttacker)))
     {
-        float fPerceptionDistance;
         float fDistance = GetDistanceBetween(oCreature, oAttacker);
-        int nPerceptionRange = GetLocalInt(oCreature, AI_PERCEPTION_RANGE);
-        if(nPerceptionRange == 8) fPerceptionDistance = 10.0;
-        else if(nPerceptionRange == 10) fPerceptionDistance = 35.0;
-        else fPerceptionDistance = 20.0;
+        float fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
         if(fDistance > fPerceptionDistance) return;
     }
     if(!ai_CanIAttack(oCreature)) return;

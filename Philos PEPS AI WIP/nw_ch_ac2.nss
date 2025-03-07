@@ -14,37 +14,58 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-
-    if(GetLastPerceptionSeen ())
+    object oLastPerceived = GetLastPerceived();
+    if(AI_DEBUG)
     {
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "20", GetName(oCreature) + " sees " +
+        if(GetLastPerceptionHeard ())
+        {
+            ai_Debug("nw_ch_ac2", "21", GetName(oCreature) + " heard " +
+                     GetName(GetLastPerceived()) + " Distance: " +
+                     FloatToString(GetDistanceBetween(GetLastPerceived(), oCreature), 0, 2) +
+                     " Seen: " + IntToString(GetObjectSeen(oLastPerceived, oCreature)) + ".");
+        }
+        if(GetLastPerceptionSeen ())
+        {
+            ai_Debug("nw_ch_ac2", "29", GetName(oCreature) + " sees " +
                      GetName(GetLastPerceived()) + " Distance: " +
                      FloatToString(GetDistanceBetween(GetLastPerceived(), oCreature), 0, 2) + ".");
-    }
-    if(GetLastPerceptionHeard ())
-    {
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "26", GetName(oCreature) + " heard " +
-                     GetName(GetLastPerceived()) + " Distance: " +
-                     FloatToString(GetDistanceBetween(GetLastPerceived(), oCreature), 0, 2) + ".");
-    }
-    if(GetLastPerceptionVanished ())
-    {
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "32", GetName(oCreature) + " lost sight of " +
+        }
+        if(GetLastPerceptionVanished ())
+        {
+            ai_Debug("nw_ch_ac2", "35", GetName(oCreature) + " lost sight of " +
                      GetName(GetLastPerceived()) + ".");
+        }
     }
     // We do nothing on Inaudibles so drop out early!
     if(GetLastPerceptionInaudible())
     {
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "38", GetName(oCreature) + " lost sound of " +
-                     GetName(GetLastPerceived()) + ".");
+        ai_Debug("nw_ch_ac2", "42", GetName(oCreature) + " lost sound of " +
+                 GetName(GetLastPerceived()) + ".");
         return;
     }
-    object oLastPerceived = GetLastPerceived();
-    if(AI_DEBUG) ai_Debug("nw_ch_ac2", "43", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-                 " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+    if(AI_DEBUG) ai_Debug("nw_ch_ac2", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
+                 " Enemy? " + IntToString(GetReputation(oCreature, oLastPerceived)));
     if(ai_Disabled(oCreature)) return;
-    if(GetIsDead(oLastPerceived) || !GetIsEnemy(oLastPerceived)) return;
+    if(GetIsDead(oLastPerceived) || GetReputation(oCreature, oLastPerceived) > 10) return;
     // All code below assumes the perceived creature is an enemy and is alive!
+    // **************************** ENEMY HEARD ********************************
+    if(GetLastPerceptionHeard())
+    {
+        // Since Heard is run before Seen, but the values are set at the same
+        // time we can skip heard checks on heard & seen creatures!
+        if(GetObjectSeen(oLastPerceived, oCreature))
+        {
+            // If the creature we are perceiving was our invisible creature then
+            // remove that they are invisible.
+            if(oLastPerceived == GetLocalObject(oCreature, AI_IS_INVISIBLE))
+            {
+                DeleteLocalObject(oCreature, AI_IS_INVISIBLE);
+            }
+            ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
+        }
+        ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
+        return;
+    }
     // **************************** ENEMY SEEN *********************************
     if(GetLastPerceptionSeen())
     {
@@ -57,26 +78,19 @@ void main()
         ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
         return;
     }
-    // **************************** ENEMY HEARD ********************************
-    if(GetLastPerceptionHeard())
-    {
-        ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
-        return;
-    }
     // **************************** ENEMY VANISHED *****************************
     if(GetLastPerceptionVanished())
     {
-        if(ai_Disabled(oCreature)) return;
         // Lets keep a mental note of the invisible creature.
         SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "72", " We saw " + GetName(oLastPerceived) + " disappear!");
+        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "74", " We saw " + GetName(oLastPerceived) + " disappear!");
         if(ai_GetIsBusy(oCreature)) return;
         // If in combat check to see if our target disappeared.
         // If they have and we are not in melee with them then reevaluate combat
         // since we lost our target.
         if(ai_GetIsInCombat(oCreature))
         {
-            if(AI_DEBUG) ai_Debug("nw_ch_ac2", "79", "Is this our target? " +
+            if(AI_DEBUG) ai_Debug("nw_ch_ac2", "81", "Is this our target? " +
                          IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
             if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
             {

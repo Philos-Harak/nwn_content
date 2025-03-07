@@ -43,7 +43,7 @@ void main()
     }
     object oLastPerceived = GetLastPerceived();
     if(AI_DEBUG) ai_Debug("nw_c2_default2", "45", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-                 " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+                 " Enemy? " + IntToString(GetReputation(oCreature, oLastPerceived)));
     if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived)) return;
     int bSeen = GetLastPerceptionSeen();
@@ -56,7 +56,7 @@ void main()
             SpeakOneLinerConversation();
         }
     }
-    if(GetIsEnemy(oLastPerceived))
+    if(GetReputation(oCreature, oLastPerceived) < 11)
     {
         // ************************** ENEMY SEEN *******************************
         if(bSeen)
@@ -79,7 +79,7 @@ void main()
         {
             // Lets keep a mental note of the invisible creature.
             SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-            if(AI_DEBUG) ai_Debug("nw_c2_default2", "82", " We saw " + GetName(oLastPerceived) + " disappear!");
+            if(AI_DEBUG) ai_Debug("0e_c2_2_percept", "82", " We saw " + GetName(oLastPerceived) + " disappear!");
             if(ai_GetIsBusy(oCreature)) return;
             // If in combat check to see if our target disappeared.
             // If they have and we are not in melee with them then reevaluate combat

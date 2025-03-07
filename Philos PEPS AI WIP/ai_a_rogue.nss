@@ -25,7 +25,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -51,11 +51,11 @@ void main()
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
-            if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
             // Are we suppose to protect our master first?
             if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
             if(oTarget == OBJECT_INVALID)
             {
+                if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
                 // Lets pick off the weakest targets.
                 if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
                 else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
@@ -68,7 +68,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
+                ai_SearchForHiddenCreature(oCreature, FALSE);
                 return;
             }
         }
@@ -84,5 +84,5 @@ void main()
         if(ai_TryMeleeTalents(oCreature, oTarget)) return;
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    else ai_SearchForHiddenCreature(oCreature, FALSE);
 }

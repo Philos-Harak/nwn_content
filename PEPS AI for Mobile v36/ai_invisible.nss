@@ -10,29 +10,12 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    // If we are wounded and since they can't see us we should look at moving
-    // out of combat so we can heal.
-    int nHp = ai_GetPercHPLoss(oCreature);
-    if(nHp < 50)
-    {
-        object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-        float fDistance = GetDistanceBetween(oNearestEnemy, oCreature);
-        if(fDistance <= AI_RANGE_MELEE)
-        {
-            ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
-        }
-        else if(fDistance <= AI_RANGE_CLOSE)
-        {
-            ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG);
-        }
-    }
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
     //***************************  HEALING & CURES  ****************************
     if(ai_TryHealingTalent(oCreature, nInMelee)) return;
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    if(ai_MoralCheck(oCreature)) return;
+    if(nInMelee && ai_MoralCheck(oCreature)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     // Skill, Class, Offensive AOE's, and Defensive talents.
     // *************************** SPELL TALENTS ***************************
@@ -58,30 +41,35 @@ void main()
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
+    // If we won't loose invisibility then ranged attacks are ok!
     // ************************  RANGED ATTACKS  *******************************
-    if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    if(GetHasSpellEffect(SPELL_IMPROVED_INVISIBILITY) || GetHasSpellEffect(SPELLABILITY_AS_IMPROVED_INVISIBLITY))
     {
-        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
         {
-            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
-            if(oTarget != OBJECT_INVALID)
+            if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
-                return;
-            }
-            else
-            {
-                ai_SearchForInvisibleCreature(oCreature, TRUE);
-                return;
+                if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+                else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget != OBJECT_INVALID)
+                {
+                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                    return;
+                }
+                else
+                {
+                    ai_SearchForHiddenCreature(oCreature, TRUE);
+                    return;
+                }
             }
         }
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION);
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
@@ -103,5 +91,5 @@ void main()
         }
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }

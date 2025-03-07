@@ -21,7 +21,7 @@ void main()
     object oCreature = OBJECT_SELF;
     int nEvent = GetCurrentlyRunningEvent();
     int bFollower = GetLocalInt(oCreature, "bFollower");
-    //WriteTimestampedLogEntry("00e_inf_dungeons [25] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
+    //WriteTimestampedLogEntry("0e_id_events [24] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
     //                         " bFollower: " + IntToString(bFollower));
     switch (nEvent)
     {
@@ -91,6 +91,15 @@ void main()
         {
             if(bFollower) ExecuteScript("nw_ch_ac8", oCreature);
             else ExecuteScript("nw_c2_default8", oCreature);
+            break;
+        }
+        case EVENT_SCRIPT_CREATURE_ON_DEATH:
+        {
+            if(bFollower) ExecuteScript("nw_ch_ac7", oCreature);
+            else
+            {
+                ExecuteScript("nw_c2_default7", oCreature);
+            }
             break;
         }
     }
@@ -235,7 +244,7 @@ void ai_hen_id1_castat(object oCreature)
         if(nSpell == SPELL_RAISE_DEAD || nSpell  == SPELL_RESURRECTION)
         {
             object oCaster = GetLastSpellCaster();
-            // Restore merchant faction to neutral
+            // Restore faction to neutral
             SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 100, oCaster);
             SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 100, oCaster);
             SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 100, oCaster);

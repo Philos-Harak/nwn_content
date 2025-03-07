@@ -22,7 +22,7 @@ void ai_DoActions(object oCreature, int nForm)
     }
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     // When polymorphed we turn back then check moral.
-    // if(ai_MoralCheck(oCreature)) return;
+    // if(nInMelee && ai_MoralCheck(oCreature)) return;
     // Skill, Class, Offensive AOE's, and Defensive talents.
     // *************************** SPELL TALENTS ***************************
     if(ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
@@ -34,7 +34,7 @@ void ai_DoActions(object oCreature, int nForm)
     object oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
     // If we don't find a target then we don't want to fight anyone!
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }
 void main()
 {

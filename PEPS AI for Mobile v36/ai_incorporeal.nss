@@ -12,7 +12,7 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange (oCreature);
-    if (ai_MoralCheck (oCreature)) return;
+    if (nInMelee && ai_MoralCheck (oCreature)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
     //*******************  OFFENSIVE AREA OF EFFECT TALENTS  *******************
     // Check the battlefield for a group of enemies to shoot a big talent at!
@@ -54,7 +54,7 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, TRUE);
+                ai_SearchForHiddenCreature(oCreature, TRUE);
                 return;
             }
         }
@@ -79,5 +79,5 @@ void main()
         }
         else ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, TRUE);
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }

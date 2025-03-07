@@ -5,7 +5,6 @@
   Associate OnRested event script;
   Fires when the creature attempts to rest via ActionRest or a PC rests.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_associates"
 #include "0i_menus"
 void ai_UpdateAssociateWidget(object oMaster, object oAssociate, int nUIToken)
 {
@@ -22,7 +21,7 @@ void main()
     {
         int nLevel = ai_GetCharacterLevels(oAssociate);
         float fDelay = StringToFloat(Get2DAString("restduration", "DURATION", nLevel));
-        fDelay = (fDelay / 1000.0f) + 4.0f;
+        fDelay = (fDelay / 1000.0f) + 6.0f;
         // Update widget for spell widget.
         string sAssociateType = ai_GetAssociateType(oMaster, oAssociate);
         int nUIToken = NuiFindWindow(oMaster, sAssociateType + AI_WIDGET_NUI);
@@ -36,4 +35,3 @@ void main()
         }
     }
 }
-

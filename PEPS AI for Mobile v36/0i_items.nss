@@ -91,6 +91,9 @@ object ai_GetBestPicks(object oCreature, int nLockDC);
 void ai_RemoveInventory(object oCreature);
 // Copies all equiped and inventory items from oOldHenchman to oNewHenchman.
 void ai_MoveInventory(object oOldHenchman, object oNewHenchman);
+// Returns if oCreature is proficient with nBaseItem.
+// PRC lets the creature use any weapon, but gives -4 penalty if not proficient.
+int prc_IsProficient(object oCreature, int nBaseItem);
 
 int ai_GetIsWeapon(object oItem)
 {
@@ -574,10 +577,12 @@ int ai_CheckIfCanUseItem(object oCreature, object oItem)
 int ai_GetIsProficientWith(object oCreature, object oItem)
 {
     int nWeaponType = GetBaseItemType(oItem);
+    // In the PRC you can equip any weapon.
+    if(GetLocalInt(GetModule(), AI_USING_PRC)) return TRUE;
     int nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat0", nWeaponType));
     // If it is 0 then it doesn't require a feat or we are at the end of the
     // feat requirements.
-    if(nFeat == 0) return FALSE;
+    if(nFeat == 0) return TRUE;
     if(GetHasFeat(nFeat, oCreature)) return TRUE;
     nFeat = StringToInt(Get2DAString("baseitems", "ReqFeat1", nWeaponType));
     if(nFeat == 0) return FALSE;
@@ -643,6 +648,10 @@ float ai_GetMeleeWeaponAvgDmg(object oCreature, object oItem, int b2Handed = FAL
     int nIndex, nBonusMinDmg, nBonusMaxDmg, nItemPropertyType, nNumDice;
     // We set ToHit to 10 for a 50% chance to hit without modifiers.
     float fCritBonusDmg, fToHit = 10.0;
+    if(GetLocalInt(GetModule(), AI_USING_PRC))
+    {
+        if(!prc_IsProficient(oCreature, nItemType)) fToHit -= 4.0;
+    }
     // Check oCreature's feats.
     if(GetHasFeat(FEAT_WEAPON_FINESSE, oCreature) &&
        ai_GetIsLightWeapon(oItem, oCreature))
@@ -947,5 +956,241 @@ void ai_MoveInventory(object oOldHenchman, object oNewHenchman)
             ActionEquipItem(oNewItem, nIndex);
         }
     }
+}
+int prc_IsProficient(object oCreature, int nBaseItem)
+{
+    switch(nBaseItem)
+    {
+        //special case: counts as simple for chitine
+        case BASE_ITEM_SHORTSWORD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(3600/*FEAT_MINDBLADE*/, oCreature)
+                 || (GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 && GetRacialType(oCreature) == 76/*RACIAL_TYPE_CHITINE*/)
+                 || GetHasFeat(7901/*FEAT_WEAPON_PROFICIENCY_SHORTSWORD*/, oCreature);
+
+        case BASE_ITEM_LONGSWORD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(3600/*FEAT_MINDBLADE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ELF, oCreature)
+                 || GetHasFeat(7902/*FEAT_WEAPON_PROFICIENCY_LONGSWORD*/, oCreature);
+
+        case BASE_ITEM_BATTLEAXE:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || (GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 && GetRacialType(oCreature) == 216/*RACIAL_TYPE_GNOLL*/)
+                 || GetHasFeat(7903/*FEAT_WEAPON_PROFICIENCY_BATTLEAXE*/, oCreature);
+
+        case BASE_ITEM_BASTARDSWORD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature)
+                 || GetHasFeat(3600/*FEAT_MINDBLADE*/, oCreature)
+                 || GetHasFeat(7904/*FEAT_WEAPON_PROFICIENCY_BASTARD_SWORD*/, oCreature);
+
+        case BASE_ITEM_LIGHTFLAIL:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(7905/*FEAT_WEAPON_PROFICIENCY_LIGHT_FLAIL*/, oCreature);
+
+        case BASE_ITEM_WARHAMMER:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(7906/*FEAT_WEAPON_PROFICIENCY_WARHAMMER*/, oCreature);
+
+        case BASE_ITEM_LONGBOW:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ELF, oCreature)
+                 || GetHasFeat(7907/*FEAT_WEAPON_PROFICIENCY_LONGBOW*/, oCreature);
+
+        case BASE_ITEM_LIGHTMACE:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(7908/*FEAT_WEAPON_PROFICIENCY_LIGHT_MACE*/, oCreature);
+
+        case BASE_ITEM_HALBERD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(7909/*FEAT_WEAPON_PROFICIENCY_HALBERD*/, oCreature);
+
+        case BASE_ITEM_SHORTBOW:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ELF, oCreature)
+                 || (GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 && GetRacialType(oCreature) == 216/*RACIAL_TYPE_GNOLL*/)
+                 || GetHasFeat(7910/*FEAT_WEAPON_PROFICIENCY_SHORTBOW*/, oCreature);
+
+        case BASE_ITEM_TWOBLADEDSWORD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature)
+                 || GetHasFeat(7911/*FEAT_WEAPON_PROFICIENCY_TWO_BLADED_SWORD*/, oCreature);
+
+        case BASE_ITEM_GREATSWORD:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(7912/*FEAT_WEAPON_PROFICIENCY_GREATSWORD*/, oCreature);
+
+        case BASE_ITEM_GREATAXE:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(7913/*FEAT_WEAPON_PROFICIENCY_GREATAXE*/, oCreature);
+
+        case BASE_ITEM_DART:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature)
+                 || GetHasFeat(7914/*FEAT_WEAPON_PROFICIENCY_DART*/, oCreature);
+
+        case BASE_ITEM_DIREMACE:
+            return GetHasFeat(7915/*FEAT_WEAPON_PROFICIENCY_DIRE_MACE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_DOUBLEAXE:
+            return GetHasFeat(7916/*FEAT_WEAPON_PROFICIENCY_DOUBLE_AXE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_HEAVYFLAIL:
+            return GetHasFeat(7917/*FEAT_WEAPON_PROFICIENCY_HEAVY_FLAIL*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case BASE_ITEM_LIGHTHAMMER:
+            return GetHasFeat(7918/*FEAT_WEAPON_PROFICIENCY_LIGHT_HAMMER*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case BASE_ITEM_HANDAXE:
+            return GetHasFeat(7919/*FEAT_WEAPON_PROFICIENCY_HANDAXE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature);
+
+        case BASE_ITEM_KAMA:
+            return GetHasFeat(7920/*FEAT_WEAPON_PROFICIENCY_KAMA*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_KATANA:
+            return GetHasFeat(7921/*FEAT_WEAPON_PROFICIENCY_KATANA*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_KUKRI:
+            return GetHasFeat(7922/*FEAT_WEAPON_PROFICIENCY_KUKRI*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_MORNINGSTAR:
+            return GetHasFeat(7923/*FEAT_WEAPON_PROFICIENCY_MORNINGSTAR*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature);
+
+        case BASE_ITEM_QUARTERSTAFF:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_WIZARD, oCreature);
+
+        case BASE_ITEM_RAPIER:
+            return GetHasFeat(7924/*FEAT_WEAPON_PROFICIENCY_RAPIER*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ELF, oCreature);
+
+        case BASE_ITEM_SCIMITAR:
+            return GetHasFeat(7925/*FEAT_WEAPON_PROFICIENCY_SCIMITAR*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature);
+
+        case BASE_ITEM_SCYTHE:
+            return GetHasFeat(7926/*FEAT_WEAPON_PROFICIENCY_SCYTHE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case BASE_ITEM_SHORTSPEAR:
+            return GetHasFeat(7927/*FEAT_WEAPON_PROFICIENCY_SHORTSPEAR*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature);
+
+        case BASE_ITEM_SHURIKEN:
+             return GetHasFeat(7928/*FEAT_WEAPON_PROFICIENCY_SHURIKEN*/, oCreature)
+                  || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature)
+                  || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature);
+
+        case BASE_ITEM_SICKLE:
+            return GetHasFeat(7929/*FEAT_WEAPON_PROFICIENCY_SICKLE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature);
+
+        case BASE_ITEM_SLING:
+            return GetHasFeat(7930/*FEAT_WEAPON_PROFICIENCY_SLING*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature);
+
+        case BASE_ITEM_THROWINGAXE:
+            return GetHasFeat(7931/*FEAT_WEAPON_PROFICIENCY_THROWING_AXE*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 || GetHasFeat(3600/*FEAT_MINDBLADE*/, oCreature);
+
+        case BASE_ITEM_CSLASHWEAPON:
+        case BASE_ITEM_CPIERCWEAPON:
+        case BASE_ITEM_CBLUDGWEAPON:
+        case BASE_ITEM_CSLSHPRCWEAP:
+            return GetHasFeat(FEAT_WEAPON_PROFICIENCY_CREATURE, oCreature);
+
+        case BASE_ITEM_TRIDENT:
+            return GetHasFeat(7932/*FEAT_WEAPON_PROFICIENCY_TRIDENT*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_DRUID, oCreature);
+
+        case 124://BASE_ITEM_DOUBLE_SCIMITAR:
+            return GetHasFeat(7948/*FEAT_WEAPON_PROFICIENCY_DOUBLE_SCIMITAR*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case 119://BASE_ITEM_FALCHION:
+            return GetHasFeat(7943/*FEAT_WEAPON_PROFICIENCY_FALCHION*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case 125://BASE_ITEM_GOAD:
+            return GetHasFeat(7949/*FEAT_WEAPON_PROFICIENCY_GOAD*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature);
+
+        case 122://BASE_ITEM_HEAVY_MACE:
+            return GetHasFeat(7946/*FEAT_WEAPON_PROFICIENCY_HEAVY_MACE*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_SIMPLE, oCreature);
+
+        case 115://BASE_ITEM_HEAVY_PICK:
+            return GetHasFeat(7939/*FEAT_WEAPON_PROFICIENCY_HEAVY_PICK*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case 116://BASE_ITEM_LIGHT_PICK:
+            return GetHasFeat(7940/*FEAT_WEAPON_PROFICIENCY_LIGHT_PICK*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case 121://BASE_ITEM_KATAR:
+            return GetHasFeat(7945/*FEAT_WEAPON_PROFICIENCY_KATAR*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case 123://BASE_ITEM_MAUL:
+            return GetHasFeat(7947/*FEAT_WEAPON_PROFICIENCY_MAUL*/, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        case 118://BASE_ITEM_NUNCHAKU:
+            return GetHasFeat(7942/*FEAT_WEAPON_PROFICIENCY_NUNCHAKU*/, oCreature)
+                                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case 117://BASE_ITEM_SAI:
+            return GetHasFeat(7941/*FEAT_WEAPON_PROFICIENCY_SAI*/, oCreature)
+                                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MONK, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case 120://BASE_ITEM_SAP:
+            return GetHasFeat(7944/*FEAT_WEAPON_PROFICIENCY_SAP*/, oCreature)
+                                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_ROGUE, oCreature)
+                || GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature);
+
+        //special case: counts as martial for dwarves
+        case BASE_ITEM_DWARVENWARAXE:
+            return GetHasFeat(7933/*FEAT_WEAPON_PROFICIENCY_DWARVEN_WARAXE*/, oCreature)
+                 || (GetHasFeat(FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature)
+                 && GetHasFeat(4710/*FEAT_DWARVEN*/, oCreature))
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+
+        case BASE_ITEM_WHIP:
+            return GetHasFeat(7934/*FEAT_WEAPON_PROFICIENCY_WHIP*/, oCreature)
+                 || GetHasFeat(FEAT_WEAPON_PROFICIENCY_EXOTIC, oCreature);
+    }
+    return TRUE;
 }
 

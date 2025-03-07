@@ -75,9 +75,6 @@ json ai_GetCampaignDbJson(string sDataField, string sName = "PEPS_DATA", string 
 // Checks if oMaster has the Table created for Associate data.
 // If no table found then the table is created and then initialized.
 void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType);
-// Returns the associate defined by sAssociateType string
-// Text must be one of the following: pc, familiar, companion, summons, henchman#
-object ai_GetAssociateByStringType(object oPlayer, string sAssociateType);
 // Returns the associatetype int string format for oAssociate.
 // They are pc, familar, companion, summons, henchman is the henchmans tag
 string ai_GetAssociateType(object oPlayer, object oAssociate);
@@ -177,8 +174,8 @@ void ai_SetAIRules()
         SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, 0);
         JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(0));
         // Monster's perception distance.
-        SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, AI_PERCEPTION_DISTANCE);
-        JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_PERCEPTION_DISTANCE));
+        SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, AI_MONSTER_PERCEPTION);
+        JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_MONSTER_PERCEPTION));
         // Variable name set to hold the maximum number of henchman the player wants.
         int nMaxHenchmen = GetMaxHenchmen();
         SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nMaxHenchmen);
@@ -199,6 +196,8 @@ void ai_SetAIRules()
         // Variable name set to allow the game to regulate experience based on party size.
         SetLocalInt(oModule, AI_RULE_PARTY_SCALE, AI_PARTY_SCALE);
         JsonObjectSetInplace(jRules, AI_RULE_PARTY_SCALE, JsonInt(AI_PARTY_SCALE));
+        SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, JsonArray());
+        JsonObjectSetInplace(jRules, AI_RULE_RESTRICTED_SPELLS, JsonArray());
         ai_SetCampaignDbJson("rules", jRules);
     }
     else
@@ -288,6 +287,14 @@ void ai_SetAIRules()
             }
         }
         SetLocalInt(oModule, AI_RULE_PARTY_SCALE, bValue);
+        json jRSpells = JsonObjectGet(jRules, AI_RULE_RESTRICTED_SPELLS);
+        if(JsonGetType(jRSpells) == JSON_TYPE_NULL)
+        {
+            jRSpells = JsonArray();
+            JsonObjectSetInplace(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
+            ai_SetCampaignDbJson("rules", jRules);
+        }
+        SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
    }
 }
 int ai_GetIsCharacter(object oCreature)
@@ -682,26 +689,34 @@ void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType)
     SqlBindString(sql, "@name", sAssociateType);
     if(!SqlStep(sql)) ai_InitializeAssociateData(oPlayer, sAssociateType);
 }
-object ai_GetAssociateByStringType(object oPlayer, string sAssociateType)
-{
-    if(sAssociateType == "pc") return oPlayer;
-    else if (sAssociateType == "familiar") return GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPlayer);
-    else if (sAssociateType == "companion") return GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPlayer);
-    else if (sAssociateType == "summons") return GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPlayer);
-    else if (sAssociateType == "dominated") return GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPlayer);
-    else return GetNearestObjectByTag(sAssociateType, oPlayer);
-    return OBJECT_INVALID;
-}
 string ai_GetAssociateType(object oPlayer, object oAssociate)
 {
     if(GetIsPC(oAssociate)) return "pc";
-    int nAssociateType = GetAssociateType(oAssociate);
-    if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) return "companion";
-    else if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) return "familiar";
-    else if(nAssociateType == ASSOCIATE_TYPE_SUMMONED) return "summons";
-    else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) return "dominated";
-    else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN) return GetTag(oAssociate);
-    return "";
+    string sAITag = GetLocalString(oAssociate, AI_TAG);
+    if(sAITag == "")
+    {
+        int nAssociateType = GetAssociateType(oAssociate);
+        if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) sAITag = "companion";
+        else if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) sAITag =  "familiar";
+        else if(nAssociateType == ASSOCIATE_TYPE_SUMMONED) sAITag =  "summons";
+        else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) sAITag =  "dominated";
+        else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN) sAITag =  GetTag(oAssociate);
+        string sCurrentAITag;
+        int nIndex;
+        object oCreature;
+        for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
+        {
+            oCreature = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPlayer, nIndex);
+            if(oAssociate != oCreature && sAITag == GetTag(oCreature)) sAITag += IntToString(Random(1000));
+        }
+        for(nIndex = 2; nIndex < 6; nIndex++)
+        {
+            oCreature = GetAssociate(nIndex, oPlayer, 1);
+            if(oAssociate != oCreature && sAITag == GetTag(oCreature)) sAITag += IntToString(Random(1000));
+        }
+        SetLocalString(oAssociate, AI_TAG, sAITag);
+    }
+    return sAITag;
 }
 void ai_SetAssociateDbInt(object oPlayer, string sAssociatetype, string sDataField, int nData, string sTable = AI_TABLE)
 {
@@ -826,8 +841,8 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     // This can be replaced as it is not used in the database.
     // We keep it for now as we don't want to move other data.
     jAIData = JsonArrayInsert(jAIData, JsonInt(11));     // 7 - Associate Perception DistanceDistance.
-    SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, 11);
-    SetLocalFloat(oAssociate, AI_PERCEPTION_RANGE, 20.0);
+    SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, 11);
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, 20.0);
     jAIData = JsonArrayInsert(jAIData, JsonString(""));  // 8 - Associate Combat Tactics.
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
@@ -917,8 +932,12 @@ void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType
     jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
     fValue = GetLocalFloat(oAssociate, AI_FOLLOW_RANGE);
     jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
-    // No need to keep in the database AI_PERCEPTION_RANGE!
-    jAIData = JsonArrayInsert(jAIData, JsonInt(11));
+    nValue = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION);
+    jAIData = JsonArrayInsert(jAIData, JsonInt(nValue));
+    float fRange = 20.0;
+    if(nValue == 8) fRange = 10.0;
+    else if(nValue == 10) fRange = 35.0;
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, fRange);
     string sValue = GetLocalString(oAssociate, AI_DEFAULT_SCRIPT);
     jAIData = JsonArrayInsert(jAIData, JsonString(sValue));
     fValue = GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE);
@@ -956,7 +975,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
 {
     //ai_Debug("0i_main", "810", "Checking data for oAssociate: " + GetName(oAssociate));
     // Do quick check to see if they have a variable saved if so then exit.
-    if(GetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE) != 0.0)
+    if(GetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE) != 0.0)
     {
         if(!bLoad) return;
         // If the database gets destroyed lets drop an error and restore values
@@ -1008,12 +1027,12 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
         SetLocalFloat(oAssociate, AI_TRAP_CHECK_RANGE, JsonGetFloat(JsonArrayGet(jAIData, 5)));
         SetLocalFloat(oAssociate, AI_FOLLOW_RANGE, JsonGetFloat(JsonArrayGet(jAIData, 6)));
         int nPercRange = JsonGetInt(JsonArrayGet(jAIData, 7));
-        if(nPercRange != 8 || nPercRange != 9 || nPercRange != 10 || nPercRange != 11) nPercRange = 11;
-        SetLocalInt(oAssociate, AI_PERCEPTION_RANGE, nPercRange);
+        if(nPercRange < 8 || nPercRange > 11) nPercRange = 11;
+        SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nPercRange);
         float fRange = 20.0;
         if(nPercRange == 8) fRange = 10.0;
         else if(nPercRange == 10) fRange = 35.0;
-        SetLocalFloat(oAssociate, AI_PERCEPTION_RANGE, fRange);
+        SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, fRange);
         string sScript = JsonGetString(JsonArrayGet(jAIData, 8));
         if(sScript != "") SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
         json jDoorRange = JsonArrayGet(jAIData, 9);

@@ -13,7 +13,7 @@ void main()
     object oObject = GetBlockingDoor();
     if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
-    if(nObjectType == OBJECT_TYPE_CREATURE && GetIsEnemy(oObject, oCreature))
+    if(nObjectType == OBJECT_TYPE_CREATURE && GetReputation(oCreature, oObject) < 11)
     {
         if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
         {
@@ -24,10 +24,13 @@ void main()
     }
     // Anything below blocking us is a door.
     if(nObjectType != OBJECT_TYPE_DOOR) return;
+    // Only open the door if the player has turned door opening on.
+    if(!GetLocalInt(GetModule(), AI_RULE_OPEN_DOORS)) return;
     //if(GetLockKeyTag(oObject) != "") return;
     else if(GetIsDoorActionPossible(oObject, DOOR_ACTION_OPEN) &&
        GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) >= 5)
     {
+        if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "33", GetName(oCreature) + " is opening " + GetName(oObject));
         DoDoorAction(oObject, DOOR_ACTION_OPEN);
         return;
     }

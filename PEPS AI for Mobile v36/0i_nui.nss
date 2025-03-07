@@ -240,7 +240,11 @@ int SetWindow(object oPC, json jLayout, string sWinID, string sTitle, float fX, 
     if (fX == -1.0) fX = GetGUIWidthMiddle (oPC, fWidth);
     if (fY == -1.0) fY = GetGUIHeightMiddle (oPC, fHeight);
     int nScale = GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE);
-    if(nScale != 100)
+    if(nScale == 200)
+    {
+        fHeight = fHeight + 10.0;
+    }
+    else if(nScale != 100)
     {
         fHeight = fHeight * (IntToFloat(1050 - nScale) / 1000.0);
         //fWidth = fWidth * (IntToFloat(1120 - nScale) / 1000.0);

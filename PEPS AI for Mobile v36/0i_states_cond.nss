@@ -86,7 +86,7 @@ void ai_CheckXPPartyScale(object oCreature);
 
 void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 {
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "71", GetName(OBJECT_SELF) + " is clearing actions (" +
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "89", GetName(OBJECT_SELF) + " is clearing actions (" +
              IntToString(bClearCombatState) + ")!");
     DeleteLocalInt(OBJECT_SELF, AI_CURRENT_ACTION_MODE);
     ClearAllActions(bClearCombatState);
@@ -360,17 +360,15 @@ int ai_GetBehaviorState(int nCondition)
 }
 void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken)
 {
+    if(oPC == oAssociate) return;
     int bBool;
-    bBool = ai_GetAIMode(oAssociate,AI_MODE_COMMANDED);
-    NuiSetBind(oPC, nToken, "btn_cmd_action_encouraged", JsonBool(bBool));
     bBool = ai_GetAIMode(oAssociate,AI_MODE_DEFEND_MASTER);
     NuiSetBind(oPC, nToken, "btn_cmd_guard_encouraged", JsonBool(bBool));
     bBool = ai_GetAIMode(oAssociate,AI_MODE_STAND_GROUND);
     NuiSetBind(oPC, nToken, "btn_cmd_hold_encouraged", JsonBool(bBool));
     bBool = ai_GetAIMode(oAssociate,AI_MODE_FOLLOW);
     NuiSetBind(oPC, nToken, "btn_cmd_follow_encouraged", JsonBool(bBool));
-    if(!ai_GetAIMode(oAssociate, AI_MODE_COMMANDED) &&
-       !ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER) &&
+    if(!ai_GetAIMode(oAssociate, AI_MODE_DEFEND_MASTER) &&
        !ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND) &&
        !ai_GetAIMode(oAssociate, AI_MODE_FOLLOW)) bBool = TRUE;
     else bBool = FALSE;
@@ -378,6 +376,8 @@ void ai_HighlightWidgetMode(object oPC, object oAssociate, int nToken)
 }
 void ai_CheckXPPartyScale(object oCreature)
 {
+    object oModule = GetModule();
+    if(!GetLocalInt(oModule, AI_RULE_PARTY_SCALE)) return;
     object oMaster;
     if(!ai_GetIsCharacter(oCreature))
     {
@@ -390,7 +390,7 @@ void ai_CheckXPPartyScale(object oCreature)
         if(oMaster == OBJECT_INVALID) return;
     }
     else oMaster = oCreature;
-    float fDefaultXPScale = IntToFloat(GetLocalInt(GetModule(), AI_BASE_PARTY_SCALE_XP));
+    float fDefaultXPScale = IntToFloat(GetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP));
     float fPartySize = 4.0;
     int nAssociateType, nHenchman, nHenchAssociate;
     object oHenchman;
@@ -419,5 +419,4 @@ void ai_CheckXPPartyScale(object oCreature)
     //                FloatToString(fDefaultXPScale, 0, 1) + ")");
     SetModuleXPScale(nXPScale);
 }
-
 

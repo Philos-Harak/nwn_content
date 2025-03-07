@@ -7,6 +7,7 @@
 #include "0i_main"
 #include "0i_module"
 #include "0i_menus"
+//#include "prc_inc_eventhk"
 // Gets a variable from oTarget, if oTarget is OBJECT_INVALID then
 // it will get the variable from the Module and Area.
 void debug_GetObjectVariable(object oPC, object oTarget, string sDesc = "");
@@ -40,30 +41,6 @@ void main()
             ai_SetCampaignDbJson("rules", jRules);
             SetLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT", oTarget);
             ExecuteScript("pi_debug", oPC);
-        }
-        else if(sTargetMode == "FIX_ASSOCIATE_SCRIPTS")
-        {
-            if(GetMaster(oTarget) == oPC)
-            {
-                    ai_SetListeningPatterns(oTarget);
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_ch_1_hb");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_ch_2_percept");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_ch_3_endround");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_ch_4_convers");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_ch_5_phyatked");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_ch_6_damaged");
-                    string sScript = GetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH);
-                    if(sScript != "0e_ch_7_ondeath" && sScript != "0e_ch_7_death")
-                    {
-                        SetLocalString(oTarget, "AI_ON_DEATH", sScript);
-                    }
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_ch_8_disturb");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_ch_a_rested");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_ch_b_castat");
-                    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_ch_e_blocked");
-                }
-            else ai_SendMessages(GetName(oTarget) + " is not one of your associates!", AI_COLOR_RED, oPC);
         }
         else if(sTargetMode == "CLEAR_REPUTATION")
         {
@@ -360,6 +337,19 @@ void main()
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";
                 SendMessageToPC(oPC, "ON_USER_DEFINED_EVENT SCRIPT: " + sScript);
             }
+            /* Checks PRC virtual events. See prc_inc_eventhk
+            int nIndex = 1;
+            string sEvent = GetFirstEventScript(oTarget, EVENT_VIRTUAL_ONHEARTBEAT, FALSE);
+            if(sEvent != "")
+            {
+                SendMessageToPC(oPC, "HB event script " + IntToString(nIndex) + ": " + sEvent);
+                for(nIndex = 2; nIndex < 20; nIndex++)
+                {
+                    sEvent = GetNextEventScript(oTarget, EVENT_VIRTUAL_ONHEARTBEAT, FALSE);
+                    if(sEvent == "") break;
+                    SendMessageToPC(oPC, "HB event script " + IntToString(nIndex) + ": " + sEvent);
+                }
+            }*/
         }
         else if(sTargetMode == "DEBUG_JSON_DUMP")
         {
@@ -478,15 +468,22 @@ void main()
                 ai_SendMessages("Select an object to send it's information to the players screen.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
-            else if(sElem == "btn_fix_associate")
+            else if(sElem == "btn_ghost_mode")
             {
-                // Set this variable on the player so PEPS can run the targeting script for this plugin.
-                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
-                // Set Targeting variables.
-                SetLocalString(oPC, AI_TARGET_MODE, "FIX_ASSOCIATE_SCRIPTS");
+                if(GetLocalInt(oPC, sGhostModeVarname))
+                {
+                    ai_RemoveASpecificEffect(oPC, EFFECT_TYPE_CUTSCENEGHOST);
+                    DeleteLocalInt(oPC, sGhostModeVarname);
+                    ai_SendMessages("Ghost mode has been turned off for " + GetName(oPC) + ".", AI_COLOR_GREEN, oPC);
+                }
+                else
+                {
+                    effect eGhost = EffectCutsceneGhost();
+                    ApplyEffectToObject(DURATION_TYPE_PERMANENT, eGhost, oPC);
+                    SetLocalInt(oPC, sGhostModeVarname, TRUE);
+                    ai_SendMessages("Ghost mode has been turned on for " + GetName(oPC) + ".", AI_COLOR_GREEN, oPC);
+                }
                 NuiDestroy(oPC, nToken);
-                ai_SendMessages("Select an associate to reset it's event scripts for Philos' AI.", AI_COLOR_YELLOW, oPC);
-                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_clear_reputation")
             {
@@ -583,34 +580,6 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_SendMessages("Select Object to set (" + sVarName + ") variable to.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
-            }
-            else if(GetStringLeft(sElem, 11) == "btn_create_")
-            {
-                // * override level of henchman for chapters 2e and 4
-                int nLevel;
-                string sLevel;
-                if(GetTag(GetModule()) == "ENDMODULE2") sLevel = "07";
-                else if(GetTag(GetModule()) == "ENDMODULE3") sLevel = "10";
-                int nCharLevel = ai_GetCharacterLevels(oPC);
-                if(nLevel > StringToInt(sLevel)) sLevel = IntToString(nLevel);
-                if(nLevel < 3) nLevel = 3;
-                if(nLevel > 11) nLevel = 11;
-                if(nLevel < 10) sLevel == "0" + IntToString(nLevel);
-                else sLevel == IntToString(nLevel);
-                string sResRef;
-                string sBtn = GetStringRight(sElem, GetStringLength(sElem) - 11);
-                if(sBtn == "tomi") sResRef = "NW_HEN_GAL_";
-                if(sBtn == "linu") sResRef = "NW_HEN_LIN_";
-                if(sBtn == "daelan") sResRef = "NW_HEN_DAE_";
-                if(sBtn == "boddy") sResRef = "NW_HEN_BOD_";
-                if(sBtn == "grim") sResRef = "NW_HEN_GRI_";
-                if(sBtn == "shar") sResRef = "NW_HEN_SHA_";
-                SendMessageToPC(oPC, "sResRef: " + sResRef + sLevel + " nLevel: " + IntToString(nLevel));
-                object oHenchman = CreateObject(OBJECT_TYPE_CREATURE, sResRef + sLevel, GetLocation(oPC));
-                SetLocalObject(oHenchman,"NW_L_FORMERMASTER", oPC);
-                if(GetIsObjectValid(GetItemPossessedBy(oPC, GetTag(oHenchman) + "PERS")) == FALSE)
-                   CreateItemOnObject(GetTag(oHenchman) + "PERS", oPC);
-                NuiDestroy(oPC, nToken);
             }
         }
         if(sEvent == "watch")
@@ -779,4 +748,3 @@ void debug_ListObjectVariables(object oPC, object oTarget)
     }
     if(!nIndex) ai_SendMessages("No variables to list!", AI_COLOR_YELLOW, oPC);
 }
-

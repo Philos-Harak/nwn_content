@@ -37,7 +37,7 @@ void main()
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
                 ai_SendMessages("You have exited selecting an action for the party.", AI_COLOR_YELLOW, oPC);
-                if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname)) ai_OriginalRemoveAllActionMode(oPC);
                 }
@@ -46,7 +46,7 @@ void main()
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
                 ai_SendMessages("You have exited selecting an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
-                if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
                     {
@@ -57,8 +57,10 @@ void main()
                 else
                 {
                     ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
-                    if(ai_GetAIMode(oPC, AI_MODE_GHOST))
+                    if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) && !ai_GetAIMode(oPC, AI_MODE_GHOST) &&
+                       GetLocalInt(oAssociate, sGhostModeVarname))
                     {
+
                         ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                         DeleteLocalInt(oAssociate, sGhostModeVarname);
                     }
@@ -83,7 +85,7 @@ void main()
         // This action makes an associates move to vTarget.
         if(sTargetMode == "ASSOCIATE_ACTION_ALL")
         {
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 ai_OriginalActionAllAssociates(oPC, oTarget, lLocation);
             }
@@ -91,7 +93,7 @@ void main()
         }
         else if(sTargetMode == "ASSOCIATE_ACTION")
         {
-            if(ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) == "")
+            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
             {
                 AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
             }

@@ -21,16 +21,20 @@ void main()
     object oCreature = OBJECT_SELF;
     int nEvent = GetCurrentlyRunningEvent();
     int bFollower = GetLocalInt(oCreature, "bFollower");
-    //WriteTimestampedLogEntry("00e_inf_dungeons [25] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
-    //                         " bFollower: " + IntToString(bFollower));
+    WriteTimestampedLogEntry("0e_prc_id_events [24] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
+                             " bFollower: " + IntToString(bFollower));
     switch (nEvent)
     {
         case EVENT_SCRIPT_CREATURE_ON_HEARTBEAT:
         {
-            if(bFollower) ai_hen_id1_heart(oCreature);
+            if(bFollower)
+            {
+                if(GetImmortal(oCreature)) SetImmortal(oCreature, FALSE);
+                ai_hen_id1_heart(oCreature);
+            }
             else
             {
-                ExecuteScript("0e_c2_1_hb", oCreature);
+                ExecuteScript("nw_c2_default1", oCreature);
                 ExecuteScript("prc_npc_hb", oCreature);
             }
             break;
@@ -40,7 +44,7 @@ void main()
             if(bFollower) ai_hen_id1_percept(oCreature);
             else
             {
-                ExecuteScript("0e_c2_2_percept", oCreature);
+                ExecuteScript("nw_c2_default2", oCreature);
                 ExecuteScript("prc_npc_percep", oCreature);
             }
             break;
@@ -60,27 +64,27 @@ void main()
             if(bFollower) ai_hen_id1_convo(oCreature, nMatch);
             else
             {
-                ExecuteScript("0e_c2_4_convers", oCreature);
+                //ExecuteScript("nw_c2_default4", oCreature);
                 ExecuteScript("prc_npc_conv", oCreature);
             }
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED:
         {
-            if(bFollower) ExecuteScript("0e_ch_5_phyatked", oCreature);
+            if(bFollower) ExecuteScript("nw_ch_ac5", oCreature);
             else
             {
-                ExecuteScript("0e_c2_5_phyatked", oCreature);
+                ExecuteScript("nw_c2_default5", oCreature);
                 ExecuteScript("prc_npc_physatt", oCreature);
             }
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DAMAGED:
         {
-            if(bFollower) ExecuteScript("0e_ch_6_damaged", oCreature);
+            if(bFollower) ExecuteScript("nw_ch_ac6", oCreature);
             else
             {
-                ExecuteScript("0e_c2_6_damaged", oCreature);
+                ExecuteScript("nw_c2_default6", oCreature);
                 ExecuteScript("prc_npc_damaged", oCreature);
             }
             break;
@@ -90,7 +94,7 @@ void main()
             if(bFollower) ai_hen_id1_castat(oCreature);
             else
             {
-                ExecuteScript("0e_c2_b_castat", oCreature);
+                ExecuteScript("nw_c2_defaultb", oCreature);
                 ExecuteScript("prc_npc_spellat", oCreature);
             }
             break;
@@ -100,34 +104,43 @@ void main()
             if(bFollower) ai_hen_id1_endcombat(oCreature, bFollower);
             else
             {
-                ExecuteScript("0e_c2_3_endround", oCreature);
+                ExecuteScript("nw_c2_default3", oCreature);
                 ExecuteScript("prc_npc_combat", oCreature);
             }
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR:
         {
-            if(bFollower) ExecuteScript("0e_ch_e_blocked", oCreature);
+            if(bFollower) ExecuteScript("nw_ch_ace", oCreature);
             else
             {
-                ExecuteScript("0e_c2_e_blocked", oCreature);
+                ExecuteScript("nw_c2_defaulte", oCreature);
                 ExecuteScript("prc_npc_blocked", oCreature);
             }
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_RESTED:
         {
-            if(bFollower) ExecuteScript("0e_ch_a_rested", oCreature);
+            if(bFollower) ExecuteScript("nw_ch_aca", oCreature);
             else ExecuteScript("prc_npc_rested", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DISTURBED:
         {
-            if(bFollower) ExecuteScript("0e_ch_8_disturb", oCreature);
+            if(bFollower) ExecuteScript("nw_ch_ac8", oCreature);
             else
             {
-                ExecuteScript("0e_c2_8_disturb", oCreature);
+                ExecuteScript("nw_c2_default8", oCreature);
                 ExecuteScript("prc_npc_disturb", oCreature);
+            }
+            break;
+        }
+        case EVENT_SCRIPT_CREATURE_ON_DEATH:
+        {
+            if(bFollower) ExecuteScript("nw_ch_ac7", oCreature);
+            else
+            {
+                ExecuteScript("nw_c2_default7", oCreature);
             }
             break;
         }
@@ -143,7 +156,7 @@ void ai_hen_id1_heart(object oCreature)
         ActionPlayAnimation(ANIMATION_LOOPING_DEAD_FRONT, 1.0, 65.0);
         SetCommandable(FALSE);
     }
-    ExecuteScript("0e_ch_1_hb", oCreature);
+    ExecuteScript("nw_ch_ac1", oCreature);
 }
 void ai_hen_id1_convo(object oCreature, int nMatch)
 {
@@ -183,7 +196,7 @@ void ai_hen_id1_convo(object oCreature, int nMatch)
         }
         return;
     }
-    ExecuteScript("0e_ch_4_convers", oCreature);
+    ExecuteScript("nw_ch_ac4", oCreature);
 }
 void ai_hen_id1_percept(object oCreature)
 {
@@ -208,7 +221,7 @@ void ai_hen_id1_percept(object oCreature)
             }
         }
     }
-    ExecuteScript("0e_ch_2_percept", oCreature);
+    ExecuteScript("nw_ch_ac2", oCreature);
 }
 void ai_hen_id1_endcombat(object oCreature, int bFollower)
 {
@@ -262,8 +275,8 @@ void ai_hen_id1_endcombat(object oCreature, int bFollower)
             }
         }
     }
-    if(bFollower) ExecuteScript("0e_ch_3_endround", oCreature);
-    else ExecuteScript("0e_c2_3_endround", oCreature);
+    if(bFollower) ExecuteScript("nw_ch_ac3", oCreature);
+    else ExecuteScript("nw_c2_default3", oCreature);
 }
 void ai_hen_id1_castat(object oCreature)
 {
@@ -302,5 +315,5 @@ void ai_hen_id1_castat(object oCreature)
             }
         }
     }
-    ExecuteScript("0e_ch_b_castat", oCreature);
+    ExecuteScript("nw_ch_acb", oCreature);
 }

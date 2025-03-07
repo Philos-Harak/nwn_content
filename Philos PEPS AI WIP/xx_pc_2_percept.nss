@@ -41,9 +41,9 @@ void main()
     }
     object oLastPerceived = GetLastPerceived();
     if(AI_DEBUG) ai_Debug("xx_pc_2_percept", "43", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-                 " Enemy? " + IntToString(GetIsEnemy(oLastPerceived)));
+                 " Enemy? " + IntToString(GetReputation(oCreature, oLastPerceived)));
     if(ai_Disabled(oCreature)) return;
-    if(GetIsDead(oLastPerceived) || !GetIsEnemy(oLastPerceived)) return;
+    if(GetIsDead(oLastPerceived) || GetReputation(oCreature, oLastPerceived) > 10) return;
     // All code below assumes the perceived creature is an enemy and is alive!
     // **************************** ENEMY SEEN *********************************
     if(GetLastPerceptionSeen())

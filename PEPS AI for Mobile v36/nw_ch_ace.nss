@@ -1,5 +1,5 @@
 /*//////////////////////////////////////////////////////////////////////////////
- Script: nw_ch_ace
+ Script: 0e_ch_e_blocked
  Programmer: Philos
 ////////////////////////////////////////////////////////////////////////////////
   Associates OnBlocked event script;
@@ -13,7 +13,7 @@ void main()
     object oObject = GetBlockingDoor();
     if(AI_DEBUG) ai_Debug("nw_ch_ace", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
-    if(nObjectType == OBJECT_TYPE_CREATURE && GetIsEnemy(oObject, oCreature))
+    if(nObjectType == OBJECT_TYPE_CREATURE && GetReputation(oCreature, oObject) < 11)
     {
         if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
         {
@@ -47,15 +47,7 @@ void main()
     else if(GetLocked(oObject))
     {
         if(AI_DEBUG) ai_Debug("nw_ch_ace", "49", GetName(oObject) + " is locked!");
-        string sID = ObjectToString(oCreature);
-        if(!GetLocalInt(oObject, "AI_STATED_LOCKED_" + sID) &&
-           !ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK)) SpeakString("That " + GetName(oObject) + " is locked!");
-        SetLocalInt(oObject, "AI_STATED_LOCKED_" + sID, TRUE);
-        if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
-           ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
-        {
-            ai_AttemptToByPassLock(oCreature, oObject);
-        }
+        ai_AttemptToByPassLock(oCreature, oObject);
     }
     // Clear our action so we can move on to something else unless the door is open.
     else if(!GetIsOpen(oObject))

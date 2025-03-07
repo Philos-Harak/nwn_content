@@ -26,7 +26,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -35,7 +35,6 @@ void main()
         //**************************  SKILL FEATURES  **************************
         if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
-        if(ai_TryBarbarianRageFeat(oCreature)) return;
         if(ai_TryBardSongFeat(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
         if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
@@ -57,7 +56,7 @@ void main()
     // ************************** Ranged feat attacks **************************
     if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
        !ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) &&
-       (nInMelee < 3 || ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID))
+       (nInMelee < 3))
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
@@ -83,25 +82,45 @@ void main()
             }
             else
             {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
+                ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
                 return;
             }
         }
         else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
-    //ai_Debug("ai_a_ranged", "91", "Check for melee attack on weakest enemy!");
     // ************************** Melee feat attacks *************************
-    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
-    if(ai_TrySneakAttack(oCreature, nInMelee)) return;
-    if(ai_TryWhirlwindFeat(oCreature)) return;
-    if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
-    if(oTarget != OBJECT_INVALID)
+    object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
+    if(nInMelee)
     {
-        if(ai_TryMeleeTalents(oCreature, oTarget)) return;
-        ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+        oTarget = ai_GetEnemyAttackingMe(oCreature);
+        if(oTarget != OBJECT_INVALID)
+        {
+            if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
+            if(ai_TrySneakAttack(oCreature, nInMelee)) return;
+            if(ai_TryWhirlwindFeat(oCreature)) return;
+            if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
+            if(oTarget != OBJECT_INVALID)
+            {
+                if(ai_TryMeleeTalents(oCreature, oTarget)) return;
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+                return;
+            }
+        }
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    if(oNearestEnemy != OBJECT_INVALID)
+    {
+        float fDistance = GetDistanceBetween(oCreature, oNearestEnemy);
+        float fRange = AI_RANGE_LONG;
+        if(GetIsAreaInterior(GetArea(oCreature))) fRange = AI_RANGE_CLOSE;
+        if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature)) fRange = AI_RANGE_CLOSE;
+        if(fDistance < fRange)
+         {
+            int bRun = ai_CanIMoveInCombat(oCreature);
+            ActionMoveAwayFromObject(oNearestEnemy, bRun, fRange - fDistance + 2.0);
+        }
+    }
+    else ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
 }
 

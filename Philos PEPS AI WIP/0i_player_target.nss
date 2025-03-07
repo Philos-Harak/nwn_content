@@ -163,7 +163,9 @@ void ai_OriginalActionAllAssociates(object oPC, object oTarget, location lLocati
 void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
 {
     object oAssociate = OBJECT_SELF;
-    if(!GetLocalInt(oAssociate, sGhostModeVarname) && ai_GetAIMode(oPC, AI_MODE_GHOST))
+    if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) &&
+       !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
+       !GetLocalInt(oAssociate, sGhostModeVarname))
     {
         effect eGhost = EffectCutsceneGhost();
         ApplyEffectToObject(DURATION_TYPE_PERMANENT, eGhost, oAssociate);
@@ -191,7 +193,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         {
             AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE)));
         }
-        else if(GetIsEnemy(oTarget, oAssociate))
+        else if(GetReputation(oAssociate, oTarget) < 11)
         {
             // Lock them into attacking this target only.
             SetLocalObject(oAssociate, AI_PC_LOCKED_TARGET, oTarget);
@@ -204,9 +206,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             else
             {
                 ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
-                ai_SetCreatureTalents(oAssociate, FALSE);
-                // Lock them into attacking this target only.
-                ai_DoAssociateCombatRound(oAssociate, oTarget);
+                ai_StartAssociateCombat(oAssociate, oTarget);
             }
             ai_SendMessages(GetName(oAssociate) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }
@@ -345,12 +345,15 @@ void ai_SelectFollowTarget(object oPC, object oAssociate, object oTarget)
 }
 void ai_OriginalRemoveAllActionMode(object oPC)
 {
+    if(!ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST)) return;
     object oAssociate;
     int nIndex;
     for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-       if(oAssociate != OBJECT_INVALID && ai_GetAIMode(oPC, AI_MODE_GHOST))
+       if(oAssociate != OBJECT_INVALID &&
+          !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
+          GetLocalInt(oAssociate, sGhostModeVarname))
        {
             ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
             DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -359,7 +362,9 @@ void ai_OriginalRemoveAllActionMode(object oPC)
     for(nIndex = 2; nIndex < 6; nIndex++)
     {
         oAssociate = GetAssociate(nIndex, oPC);
-        if(oAssociate != OBJECT_INVALID && ai_GetAIMode(oPC, AI_MODE_GHOST))
+        if(oAssociate != OBJECT_INVALID &&
+           !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
+           GetLocalInt(oAssociate, sGhostModeVarname))
         {
             ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
             DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -376,7 +381,9 @@ void ai_RemoveAllActionMode(object oPC)
         if(oAssociate != OBJECT_INVALID)
         {
             ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
-            if(ai_GetAIMode(oPC, AI_MODE_GHOST))
+            if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) &&
+               !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
+               GetLocalInt(oAssociate, sGhostModeVarname))
             {
                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                 DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -390,7 +397,9 @@ void ai_RemoveAllActionMode(object oPC)
         if(oAssociate != OBJECT_INVALID)
         {
             ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
-            if(ai_GetAIMode(oPC, AI_MODE_GHOST))
+            if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) &&
+               !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
+               GetLocalInt(oAssociate, sGhostModeVarname))
             {
                 ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                 DeleteLocalInt(oAssociate, sGhostModeVarname);
@@ -458,7 +467,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
     else if(nObjectType == OBJECT_TYPE_CREATURE)
     {
         if(GetIsDead(oTarget)) return;
-        else if(GetIsEnemy(oTarget, oCreature))
+        else if(GetReputation(oCreature, oTarget) < 11)
         {
             // Lock them into attacking this target only.
             SetLocalObject(oCreature, AI_PC_LOCKED_TARGET, oTarget);
@@ -471,8 +480,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
             else
             {
                 ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
-                ai_SetCreatureTalents(oCreature, FALSE);
-                ai_DoAssociateCombatRound(oCreature, oTarget);
+                ai_StartMonsterCombat(oCreature);
             }
             ai_SendMessages(GetName(oCreature) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }

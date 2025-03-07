@@ -52,7 +52,7 @@ void ai_OnMonsterSpawn(object oCreature, int bIncorporeal)
         // To save steps and time we set the talenst while we buff!
         ai_SetCreatureTalents(oCreature, TRUE);
         ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
-        //ai_Debug("0i_replace_j_ai", "63", GetName(oCreature) + " is starting combat!");
+        if(AI_DEBUG) ai_Debug("0i_replace_j_ai", "63", "---------- " + GetName(oCreature) + " is starting combat! ----------");
         ai_DoMonsterCombatRound(oCreature);
     }
 }

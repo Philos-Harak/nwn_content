@@ -10,22 +10,6 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    // If we are wounded and since they can't see us we should look at moving
-    // out of combat so we can heal.
-    int nHp = ai_GetPercHPLoss(oCreature);
-    if(nHp < 50)
-    {
-        object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-        float fDistance = GetDistanceBetween(oNearestEnemy, oCreature);
-        if(fDistance <= AI_RANGE_MELEE)
-        {
-            ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_CLOSE);
-        }
-        else if(fDistance <= AI_RANGE_CLOSE)
-        {
-            ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG);
-        }
-    }
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     // Has our master told us to not use magic?
@@ -41,7 +25,7 @@ void main()
     // Check for moral and get the maximum spell level we should use.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
-        if(ai_MoralCheck(oCreature)) return;
+        if(nInMelee && ai_MoralCheck(oCreature)) return;
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
@@ -85,36 +69,41 @@ void main()
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
     // ************************** Melee feat attacks *************************
-    if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    // If we won't loose invisibility then ranged attacks are ok!
+    // ************************  RANGED ATTACKS  *******************************
+    if(GetHasSpellEffect(SPELL_IMPROVED_INVISIBILITY) || GetHasSpellEffect(SPELLABILITY_AS_IMPROVED_INVISIBLITY))
     {
-        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
         {
-            // Are we suppose to protect our master first?
-            if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID)
+            if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
-                // Lets pick off the weakest targets.
-                if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
-                else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                // Are we suppose to protect our master first?
+                if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+                if(oTarget == OBJECT_INVALID)
+                {
+                    // Lets pick off the weakest targets.
+                    if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
+                    else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                }
+                if(oTarget != OBJECT_INVALID)
+                {
+                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                    return;
+                }
+                else
+                {
+                    ai_SearchForHiddenCreature(oCreature, FALSE);
+                    return;
+                }
             }
-            if(oTarget != OBJECT_INVALID)
-            {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
-                return;
-            }
-            else
-            {
-                ai_SearchForInvisibleCreature(oCreature, FALSE);
-                return;
-            }
+            else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
         }
-        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     if(ai_TrySneakAttack(oCreature, nInMelee)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, ai_GetPerceptionRange(oCreature));
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID)
     {
@@ -136,6 +125,6 @@ void main()
         }
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }
-    else ai_SearchForInvisibleCreature(oCreature, FALSE);
+    else ai_SearchForHiddenCreature(oCreature, FALSE);
 }
 

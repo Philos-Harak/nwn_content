@@ -62,12 +62,50 @@ void main()
             effect eDmg = EffectDamage(10000);
             ApplyEffectToObject(DURATION_TYPE_INSTANT, eDmg, oTarget);
             ai_SendMessages(GetName(oTarget) + " has been killed.", AI_COLOR_RED, oPC);
+            // Set this variable on the player so PEPS can run the targeting script for this plugin.
+            SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+            // Set Targeting variables.
+            SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+            SetLocalString(oPC, AI_TARGET_MODE, "TEST_KILL_TARGET");
+            EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
         }
         else if(sTargetMode == "TEST_REMOVE_TARGET")
         {
             SetIsDestroyable(TRUE, FALSE, FALSE, oTarget);
             DestroyObject(oTarget);
             ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
+        }
+        else if(sTargetMode == "TEST_JUMP")
+        {
+            JumpToLocation(lLocation);
+            int nIndex;
+            object oAssociate;
+            for(nIndex = 2; nIndex < 6; nIndex++)
+            {
+                oAssociate = GetAssociate(nIndex, oPC);
+                if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, JumpToLocation(lLocation));
+            }
+            for(nIndex = 1; nIndex < AI_MAX_HENCHMAN; nIndex++)
+            {
+                oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
+                if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, JumpToLocation(lLocation));
+            }
+            // Set this variable on the player so PEPS can run the targeting script for this plugin.
+            SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+            // Set Targeting variables.
+            SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+            SetLocalString(oPC, AI_TARGET_MODE, "TEST_JUMP");
+            EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_TRANSITION, MOUSECURSOR_NOWALK);
+        }
+        else if(sTargetMode == "TEST_KILL_AREA")
+        {
+            effect eDmg = EffectDamage(10000);
+            object oKill = GetFirstObjectInShape(SHAPE_SPHERE, 6.67, lLocation, FALSE);
+            while(oKill != OBJECT_INVALID)
+            {
+                ApplyEffectToObject(DURATION_TYPE_INSTANT, eDmg, oKill);
+                oKill = GetNextObjectInShape(SHAPE_SPHERE, 6.67, lLocation, FALSE);
+            }
         }
     }
     // Run all non-targeting code here, usually NUI events.
@@ -156,6 +194,25 @@ void main()
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE |
                                  OBJECT_TYPE_DOOR | OBJECT_TYPE_ITEM |
                                  OBJECT_TYPE_PLACEABLE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+            }
+            else if(sElem == "btn_jump")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_JUMP");
+                EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_TRANSITION, MOUSECURSOR_NOWALK);
+            }
+            else if(sElem == "btn_kill_area")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_KILL_AREA");
+                SetEnterTargetingModeData(oPC, SPELL_TARGETING_SHAPE_SPHERE, 6.67, 0.0, 3);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
             }
         }
         else if(sEvent == "watch")

@@ -104,20 +104,21 @@ void ai_CreateDMWidgetNUI(object oPC)
         fButtons += 1.0;
     }
     // Plug in buttons *********************************************************
-    int nIndex;
-    string sButton;
+    int nIndex, bWidget;
+    string sButton, sIcon;
     json jPlugins = ai_UpdatePluginsForDM(oPC);
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
-        if(JsonGetInt(jScript))
+        bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
+        if(bWidget)
         {
-            sButton = IntToString((nIndex + 1) / 2);
-            CreateButtonImage(jRow, "is_summon" + sButton, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
+            sIcon = JsonGetString(JsonArrayGet(jPlugin, 3));
+            sButton = IntToString(nIndex);
+            CreateButtonImage(jRow, sIcon, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
             fButtons += 1.0;
         }
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     if(fButtons > 1.0f) fWidth = fWidth + ((fButtons - 1.0) * 39.0f);
     // Add the row to the column.
@@ -223,27 +224,29 @@ void ai_CreateDMWidgetNUI(object oPC)
     } */
     nIndex = 0;
     string sScript;
-    jPlugins = ai_GetCampaignDbJson("plugins", sName, AI_DM_TABLE);
-    jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        sScript = JsonGetString(jScript);
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
-        if(JsonGetInt(jScript))
+        bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
+        if(bWidget)
         {
-            sButton = IntToString((nIndex + 1) / 2);
-            if(ResManGetAliasFor(sScript, RESTYPE_NCS) == "") sText = "  " + sScript + " not found by ResMan!";
-            else sText = "  Executes " + sScript + " plugin";
+            sButton = IntToString(nIndex);
+            sScript = JsonGetString(JsonArrayGet(jPlugin, 0));
+            if(ResManGetAliasFor(sScript, RESTYPE_NCS) == "")
+            {
+                sText = "  " + sScript + " not found by ResMan!";
+            }
+            else sName = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
             NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_event", JsonBool (TRUE));
-            NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_tooltip", JsonString(sText));
+            NuiSetBind(oPC, nToken, "btn_exe_plugin_" + sButton + "_tooltip", JsonString(sName));
         }
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
 }
 void ai_CreateDMOptionsNUI(object oPC)
 {
-    int nMonsterAI = (ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS) != "");
-    int nAssociateAI = (ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS) != "");
+    int nMonsterAI = (ResManGetAliasFor("ai_default", RESTYPE_NCS) != "");
+    int nAssociateAI = (ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "");
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     // ************************************************************************* Width / Height
     string sText = " [Single player]";
@@ -366,11 +369,11 @@ void ai_CreateDMOptionsNUI(object oPC)
     // Row 2
     int nUsing;
     // Check the monster AI.
-    string sLocation = ResManGetAliasFor("0e_c2_1_hb", RESTYPE_NCS);
+    string sLocation = ResManGetAliasFor("ai_default", RESTYPE_NCS);
     if(sLocation != "") sText = "Monster AI is loaded";
     else sText = "Monster AI not loaded";
     // Check the associate AI.
-    sLocation = ResManGetAliasFor("0e_ch_1_hb", RESTYPE_NCS);
+    sLocation = ResManGetAliasFor("ai_a_default", RESTYPE_NCS);
     if(sLocation != "") sText += ", Associate AI is loaded";
     else sText += ", Associate AI not loaded";
     // Check the player AI.
@@ -491,23 +494,24 @@ void ai_CreateDMCommandNUI(object oPC)
     fHeight = fHeight + 28.0;
     // Row 6+ ****************************************************************** 500 / ---
     json jDMPlugins = ai_UpdatePluginsForDM(oPC);
-    // Set the plugins the player can use.
-    int nIndex, nButton;
+    // Set the plugins the dm can use.
+    int nIndex;
     string sButton;
-    json jScript = JsonArrayGet(jDMPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    json jPlugin = JsonArrayGet(jDMPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
         jRow = JsonArray();
-        sButton = IntToString(++nButton);
-        CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+        sButton = IntToString(nIndex);
+        sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+        CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
         CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
         JsonArrayInsertInplace(jRow, NuiSpacer());
-        nIndex += 2;
-        jScript = JsonArrayGet(jDMPlugins, nIndex);
-        if(JsonGetType(jScript) != JSON_TYPE_NULL)
+        jPlugin = JsonArrayGet(jDMPlugins, ++nIndex);
+        if(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
-            sButton = IntToString(++nButton);
-            CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+            sButton = IntToString(nIndex);
+            sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+            CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
             CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
             // Add row to the column.
             JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -520,8 +524,7 @@ void ai_CreateDMCommandNUI(object oPC)
             fHeight += 28.0;
             break;
         }
-        nIndex += 2;
-        jScript = JsonArrayGet(jDMPlugins, nIndex);
+        jPlugin = JsonArrayGet(jDMPlugins, ++nIndex);
     }
     // Row 7 ****************************************************************** 500 / ---
     jRow = JsonArray();
@@ -634,20 +637,19 @@ void ai_CreateDMCommandNUI(object oPC)
                "  Open " + sDMName + " inventory"));
     // Row 6+
     nIndex = 0;
-    nButton = 0;
     int bWidget;
-    jScript = JsonArrayGet(jDMPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    jPlugin = JsonArrayGet(jDMPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        sText = JsonGetString(jScript);
-        sButton = IntToString(++nButton);
+        sButton = IntToString(nIndex);
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_event", JsonBool(TRUE));
-        bWidget = JsonGetInt(JsonArrayGet(jDMPlugins, nIndex + 1));
+        bWidget = JsonGetInt(JsonArrayGet(jPlugin, 1));
         NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(bWidget));
         NuiSetBindWatch (oPC, nToken, "chbx_plugin_" + sButton + "_check", TRUE);
-        sText = "  Execute script: " + sText;
+        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_event", JsonBool(TRUE));
+        sText = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_tooltip", JsonString(sText));
-        jScript = JsonArrayGet(jDMPlugins, ++nIndex);
+        jPlugin = JsonArrayGet(jDMPlugins, ++nIndex);
     }
     NuiSetBind(oPC, nToken, "chbx_plugin_tooltip", JsonString("  Adds the plugin to your widget."));
     // Row 7
@@ -656,11 +658,9 @@ void ai_CreateDMCommandNUI(object oPC)
 }
 void ai_CreateDMPluginNUI(object oPC)
 {
-    int nIndex, nButton;
-    string sButton;
     json jRow = JsonArray();
     json jCol = JsonArray();
-    // Row 2 ******************************************************************* 500 / 73
+    // Row 1 ******************************************************************* 500 / 73
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Load All Plugins", "btn_load_plugins", 150.0f, 20.0f, -1.0, "btn_load_plugins_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
@@ -681,24 +681,25 @@ void ai_CreateDMPluginNUI(object oPC)
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     float fHeight = 101.0;
     // Row 3+ ****************************************************************** 500 / ---
-    string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     json jPlugins = ai_GetCampaignDbJson("plugins");
-    json jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    int nIndex = 0;
+    json jPlugin = JsonArrayGet(jPlugins, nIndex);
+    string sName, sButton;
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
         jRow = JsonArray();
-        sButton = IntToString(++nButton);
+        sButton = IntToString(nIndex);
         JsonArrayInsertInplace(jRow, NuiSpacer());
-        CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sButton, 105.0f, 20.0f);
+        CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sButton, 150.0f, 20.0f);
         JsonArrayInsertInplace(jRow, NuiSpacer());
-        CreateButton(jRow, JsonGetString(jScript), "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
-        CreateCheckBox(jRow, "Allow", "chbx_plugin_" + sButton, 65.0, 20.0, "chbx_plugin_tooltip");
+        sName = JsonGetString(JsonArrayGet(jPlugin, 2));
+        CreateButton(jRow, sName, "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+        CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0);
         JsonArrayInsertInplace(jRow, NuiSpacer());
         // Add row to the column.
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
         fHeight += 28.0;
-        nIndex += 2;
-        jScript = JsonArrayGet(jPlugins, nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     // Get the window location to restore it from the database.
     json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
@@ -710,38 +711,36 @@ void ai_CreateDMPluginNUI(object oPC)
     sName = GetName(oPC);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
-    int nToken = SetWindow(oPC, jLayout, AI_PLUGIN_NUI, sName + " PEPS Plugin Manager",
+    int nToken = SetWindow(oPC, jLayout, "dm_plugin_nui", sName + " PEPS Plugin Manager",
                              fX, fY, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
-    // Set event watches for save window location.
-    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Row 1
     NuiSetBind(oPC, nToken, "btn_load_plugins_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_load_plugins_tooltip", JsonString("  Load all known PEPS plugins that are in the game files."));
     NuiSetBind(oPC, nToken, "btn_check_plugins_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_check_plugins_tooltip", JsonString("  Add all plugins to be allowed for players widget."));
+    NuiSetBind(oPC, nToken, "btn_check_plugins_tooltip", JsonString("  Add all plugins to the players widget."));
     NuiSetBind(oPC, nToken, "btn_clear_plugins_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_clear_plugins_tooltip", JsonString("  Remove all plugins to be allowed for players widget."));
+    NuiSetBind(oPC, nToken, "btn_clear_plugins_tooltip", JsonString("  Remove all plugins from the players widget."));
     // Row 2
     NuiSetBind(oPC, nToken, "btn_add_plugin_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_plugin_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_plugin_tooltip", JsonString("  Enter an executable script name."));
     // Row 3+
     nIndex = 0;
-    nButton = 0;
+    int bCheck;
     string sText;
-    jScript = JsonArrayGet(jPlugins, nIndex);
-    while(JsonGetType(jScript) != JSON_TYPE_NULL)
+    jPlugin = JsonArrayGet(jPlugins, nIndex);
+    while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        sText = JsonGetString(jScript);
-        sButton = IntToString(++nButton);
+        sButton = IntToString(nIndex);
         NuiSetBind(oPC, nToken, "btn_remove_plugin_" + sButton + "_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_event", JsonBool(TRUE));
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
-        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(JsonGetInt(jScript)));
+        bCheck = JsonGetInt(JsonArrayGet(jPlugin, 1));
+        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_check", JsonBool(bCheck));
+        NuiSetBind(oPC, nToken, "chbx_plugin_" + sButton + "_event", JsonBool(TRUE));
         NuiSetBindWatch (oPC, nToken, "chbx_plugin_" + sButton + "_check", TRUE);
-        sText = "  Execute script: " + sText;
+        sText = "  " + JsonGetString(JsonArrayGet(jPlugin, 2));
         NuiSetBind(oPC, nToken, "btn_plugin_" + sButton + "_tooltip", JsonString(sText));
-        jScript = JsonArrayGet(jPlugins, ++nIndex);
+        jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     NuiSetBind(oPC, nToken, "chbx_plugin_tooltip", JsonString("  Allows players to use this plugin."));
 }

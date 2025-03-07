@@ -32,8 +32,8 @@ struct stSpell
     int nMaxSlots;
     int nSlot;
 };
-// Returns TRUE if oCreature knows nSpell.
-int ai_GetKnownSpell(object oCreature, int nSpell);
+// Returns TRUE if oCreature can cast nSpell from nLevel.
+int ai_GetCanCastSpell(object oCreature, int nSpell, int nClass, int nLevel, int nMetaMagic = 0, int nDomain = 0);
 // Returns TRUE if oCreature is immune to petrification.
 int ai_IsImmuneToPetrification(object oCaster, object oCreature);
 // Returns TRUE if oCreature has an effect from a mind affecting spell.
@@ -117,8 +117,8 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell);
 // These are cast as actions and will happen at the speed based on
 // AI_HENCHMAN_BUFF_DELAY, but are still actions.
 // nTarget is 0-9 where 0 is all targets, 1 is oPC, 2 is the caster
-// 3-6 is oPC's henchman, 7 Familiar, 8 is Animal Companion, and 9 is Summons.
-// Targets must be defined in variable AI_ALLY_TARGET_* where * is 1 to 9.
+// 3 Familiar, 4 is Animal Companion, 5 is Summons, 6 is Dominated, and 7+ is henchman.
+// Targets must be defined in variable AI_ALLY_TARGET_* where * is 1 to #.
 // nBuffType is the duration 1 - all, 2 - short, 3 - long.
 void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC);
 // Returns TRUE if oCaster cast spontaneous cure spell on oTarget.
@@ -144,21 +144,32 @@ int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage);
 // Casts the spell on the current target.
 void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location lLocation);
 
-int ai_GetKnownSpell(object oCreature, int nSpell)
+int ai_GetCanCastSpell(object oCreature, int nSpell, int nClass, int nLevel, int nMetaMagic = 0, int nDomain = 0)
 {
-    int ic, nLevel, nIndex, nSpellCount, nClass;
-    for(ic = 1; ic < 4; ic++)
+    int nIndex, nSpellCount, nClassPosition, nSlot, nMaxSlots, nPosition = 1;
+    while(nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        nClass = GetClassByPosition(ic, oCreature);
-        if(nClass == CLASS_TYPE_INVALID) return FALSE;
-        for(nLevel = 1; nLevel < 10; nLevel++)
+        nClassPosition = GetClassByPosition(nPosition, oCreature);
+        if(nClassPosition == CLASS_TYPE_INVALID) return FALSE;
+        if(nClass = nClassPosition)
         {
-            nSpellCount = GetKnownSpellCount(oCreature, nClass, nLevel);
-            for(nIndex = 0; nIndex < nSpellCount; nIndex ++)
+            if(Get2DAString("classes", "SpellCaster", nClass) == "1")
             {
-                if(nSpell == GetKnownSpellId(oCreature, nClass, nLevel, nIndex)) return TRUE;
+                nSlot = 0;
+                if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
+                {
+                    nMaxSlots = GetMemorizedSpellCountByLevel(oCreature, nClass, nLevel);
+                    while(nSlot < nMaxSlots)
+                    {
+                        if(GetMemorizedSpellId(oCreature, nClass, nLevel, nSlot) == nSpell &&
+                           GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot)) return TRUE;
+                        nSlot++;
+                    }
+                }
+                else return GetSpellUsesLeft(oCreature, nClass, nSpell, nMetaMagic, nDomain);
             }
         }
+        nPosition++;
     }
     return FALSE;
 }
@@ -602,10 +613,12 @@ void ai_ClearSpellsCastGroups(object oCreature)
 }
 int ai_CanUseSpell(object oCaster, object oTarget, int nSpell, int nTargetType)
 {
-    if(nTargetType > 0 && nTargetType < 7) // Ability score buffs.
+    // For ability scores we return a bonus to the ability to be checked against
+    // the target with the highest ability getting the spell first.
+    if(nTargetType == 1) // Ability score buff for strength.
     {
         // We don't want to buff the strength for someone using weapon finesse!
-        if(nTargetType - 1 == ABILITY_STRENGTH && GetHasFeat(FEAT_WEAPON_FINESSE, oTarget)) return FALSE;
+        if(GetHasFeat(FEAT_WEAPON_FINESSE, oTarget)) return -5;
         return TRUE;
     }
     if(nTargetType == 7) // Lowest AC.
@@ -726,8 +739,7 @@ object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbility
     {
         object oMaster = GetMaster();
         if(!GetHasSpellEffect(nSpell, oMaster) &&
-           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
-           ai_CanUseSpell(oCaster, oMaster, nSpell, nAbilityScore + 1)) return oMaster;
+           ai_SpellGroupNotCast(oMaster, sBuffGroup)) return oMaster;
     }
     int nCntr = 1, nAB, nHighAB, nTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
@@ -736,8 +748,8 @@ object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbility
         if(oTarget != OBJECT_INVALID && !GetHasSpellEffect(nSpell, oTarget) &&
            GetDistanceBetween(oCaster, oTarget) <= fRange)
         {
-            nAB = GetAbilityScore(oTarget, nAbilityScore);
-            if(nAB > nHighAB && ai_CanUseSpell(oCaster, oTarget, nSpell, nAbilityScore + 1))
+            nAB = GetAbilityScore(oTarget, nAbilityScore) + ai_CanUseSpell(oCaster, oTarget, nSpell, nAbilityScore + 1);
+            if(nAB > nHighAB)
             {nHighAB = nAB; nTarget = nCntr; }
         }
         oTarget = GetLocalObject(oCaster, sTargetType + IntToString(++nCntr));
@@ -1130,10 +1142,10 @@ void ai_SetupMonsterBuffTargets(object oCaster)
              " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
     while(oCreature != OBJECT_INVALID && nCntr < 8 && GetDistanceBetween(oCaster, oCreature) < AI_RANGE_CLOSE)
     {
-        if(AI_DEBUG) ai_Debug("0i_spells", "1029", "Setting " + GetName(oCreature) + " as AI_ALLY_TARGET_" + IntToString(nCntr + 2));
+        if(AI_DEBUG) ai_Debug("0i_spells", "1133", "Setting " + GetName(oCreature) + " as AI_ALLY_TARGET_" + IntToString(nCntr + 2));
         SetLocalObject (oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr + 2), oCreature);
         oCreature = GetNearestCreature(CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_FRIEND, oCaster, ++nCntr);
-        if(AI_DEBUG) ai_Debug("0i_spells", "871", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
+        if(AI_DEBUG) ai_Debug("0i_spells", "1136", GetName(oCreature) + " nCntr: " + IntToString(nCntr) +
                  " Distance: " + FloatToString(GetDistanceBetween(oCaster, oCreature), 0, 2));
     }
 }
@@ -1142,27 +1154,35 @@ void ai_SetupAllyTargets(object oCaster, object oPC)
     // Setup our targets.
     if(oCaster != oPC) SetLocalObject (oCaster, "AI_ALLY_TARGET_1", oPC);
     SetLocalObject(oCaster, "AI_ALLY_TARGET_2", oCaster);
+    int nTarget = 2;
+    object oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
     int nCntr = 1;
+    int nMaxHenchman = GetMaxHenchmen() + nTarget;
     object oHenchman = GetHenchman(oPC, nCntr);
-    while(oHenchman != OBJECT_INVALID && nCntr < 5)
+    while(oHenchman != OBJECT_INVALID && nTarget < nMaxHenchman)
     {
-        if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr + 2), oHenchman);
+        if(oHenchman == OBJECT_INVALID) break;
+        if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oHenchman);
         oHenchman = GetHenchman(oPC, ++nCntr);
     }
-    SetLocalObject(oCaster, "AI_ALLY_TARGET_7", GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC));
-    SetLocalObject(oCaster, "AI_ALLY_TARGET_8", GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC));
-    SetLocalObject(oCaster, "AI_ALLY_TARGET_9", GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC));
-    SetLocalObject(oCaster, "AI_ALLY_TARGET_10", GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC));
     nCntr = 1;
-    //while(nCntr < 10)
-    //{
-    //    if(AI_DEBUG) ai_Debug("0i_spells", "910", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
-    //             GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
-    //    nCntr++;
-    //}
+    while(nCntr < nMaxHenchman)
+    {
+        if(AI_DEBUG) ai_Debug("0i_spells", "1166", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
+                 GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
+        nCntr++;
+    }
 }
 void ai_SetupAllyHealingTargets(object oCaster, object oPC)
 {
+    int nMaxHenchman = 1;
     if(oPC == OBJECT_INVALID) oPC = oCaster;
     if(ai_GetAIMode(oCaster, AI_MODE_PARTY_HEALING_OFF))
     {
@@ -1180,13 +1200,6 @@ void ai_SetupAllyHealingTargets(object oCaster, object oPC)
         {
             SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCaster);
         }
-        int nCntr = 1;
-        object oHenchman = GetHenchman(oPC, nCntr);
-        while(oHenchman != OBJECT_INVALID && nCntr < 5)
-        {
-            if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oHenchman);
-            oHenchman = GetHenchman(oPC, ++nCntr);
-        }
         object oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
@@ -1195,19 +1208,29 @@ void ai_SetupAllyHealingTargets(object oCaster, object oPC)
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        int nCntr = 1;
+        nMaxHenchman = GetMaxHenchmen() + nTarget;
+        object oHenchman = GetHenchman(oPC, nCntr);
+        while(oHenchman != OBJECT_INVALID && nTarget < nMaxHenchman)
+        {
+            if(oHenchman == OBJECT_INVALID) break;
+            if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oHenchman);
+            oHenchman = GetHenchman(oPC, ++nCntr);
+        }
     }
     int nCntr = 1;
-    while(nCntr <= 10)
+    while(nCntr <= nMaxHenchman)
     {
-        if(AI_DEBUG) ai_Debug("0i_spells", "1097", "AI_ALLY_HEAL_" + IntToString(nCntr) + ": " +
+        if(AI_DEBUG) ai_Debug("0i_spells", "1211", "AI_ALLY_HEAL_" + IntToString(nCntr) + ": " +
                  GetName(GetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(nCntr++))));
     }
 }
 void ai_ClearBuffTargets(object oCaster, string sVariable)
 {
-    if(AI_DEBUG) ai_Debug("0i_spells", "1106", GetName(oCaster) + " is clearing " + sVariable + " targets.");
+    if(AI_DEBUG) ai_Debug("0i_spells", "1216", GetName(oCaster) + " is clearing " + sVariable + " targets.");
     int nIndex;
-    for(nIndex = 1; nIndex < 11; nIndex++)
+    int nMaxTargets = GetMaxHenchmen() + 6;
+    for(nIndex = 1; nIndex < nMaxTargets; nIndex++)
     {
         DeleteLocalObject (oCaster, sVariable + IntToString(nIndex));
     }
@@ -1656,7 +1679,7 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
     // Buff groups are used to prevent a henchmen to cast spells that have the same effect,
     // for example: resist elements and protection from elements are similiar so the henchmen
     // would cast only the most powerful among these if he has them both.
-    if(AI_DEBUG) ai_Debug("0i_spells", "1440", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "1670", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
              " nTarget: " + IntToString(nTarget) + "!");
     struct stSpell stSpell;
     stSpell.oPC = oPC;
@@ -1670,13 +1693,13 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
         while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
         {
             stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-            if(AI_DEBUG) ai_Debug("0i_spells", "1452", "nClass: " + IntToString(stSpell.nClass));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1684", "nClass: " + IntToString(stSpell.nClass));
             if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-            if(AI_DEBUG) ai_Debug("0i_spells", "1454", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1686", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
             if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
             {
                 stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-                if(AI_DEBUG) ai_Debug("0i_spells", "1458", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+                if(AI_DEBUG) ai_Debug("0i_spells", "1692", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
                 if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1991,6 +2014,7 @@ void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location 
         AssignCommand(oAssociate, ActionCastSpellAtLocation(nSpell, lLocation, nMetaMagic, FALSE, 0, FALSE, -1, FALSE, nDomain));
     }
     else AssignCommand(oAssociate, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain));
+
 }
 void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lLocation)
 {
