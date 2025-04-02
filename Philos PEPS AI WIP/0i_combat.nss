@@ -24,6 +24,18 @@ struct stClasses
     int TOTAL;
     int TOTAL_LEVELS;
 };
+struct stTarget
+{
+    object oTarget;
+    int nValue;
+    int nBestValue;
+    int nBestSecondaryValue;
+    float fNearestRange;
+    float fNearestSecondaryRange;
+    int nIndex;
+    int nSecondaryIndex;
+    string sTargetType;
+};
 //******************************************************************************
 //************ GET TARGETS USING THE OBJECT SEARCH FUNCTIONS *******************
 //******************************************************************************
@@ -64,172 +76,164 @@ void ai_ClearCombatState(object oCreature);
 // These functions will find a target or an index to a target based on the
 // combat state variables created by the function ai_SetCombatState.
 
-// Returns the Index of the nearest creature seen within fRange in the combat state.
+// Returns the Index of the nearest creature seen within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetNearestCreatureIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest creature seen wihtin fRange in the combat state.
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetNearestIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest creature seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetNearestTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetNearestTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest creature seen with the lowest combat rating
-// within fRange in the combat state.
+// within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetLowestCRIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest creature seen with the lowest combat rating within fRange
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetLowestCRIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest creature seen with the lowest combat rating within fMaxRange
 // in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetLowestCRTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetLowestCRTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest creature seen with the highest combat rating
-// within fRange in the combat state.
+// within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetHighestCRIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest creature seen with the highest combat rating within fRange
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetHighestCRIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest creature seen with the highest combat rating within fMaxRange
 // in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetHighestCRTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetHighestCRTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the creature seen with the lowest enemies to oCreature that
 // they are in melee with minus the number of allies to the caller they are in
-// melee with within fRange in the combat state.
+// melee with within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetLowestMeleeIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetLowestMeleeIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY);
 // Returns the index of the creature seen with the most enemies to the caller that
 // they are in melee with minus the number of allies to oCreature they are in
-// melee with within fRange in the combat state.
+// melee with within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetHighestMeleeIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY);
-// Returns the index of the creature seen with the lowest combat rating and has
-// a higher health % than AI_HEALTH_BLOODY within fRange in the combat state.
-// Keeps casters from over killing enemies.
-// If no creature is found then it will return an index of 0.
-int ai_GetLowestCRIndexForSpell(object oCreature, float fRange = AI_RANGE_PERCEPTION);
-// Returns the index of the nearest creature seen with the highest combat rating
-// and has a higher health % than AI_HEALTH_BLOODY within fRange in the combat state.
-// Helps to keep casters from over killing enemies.
-// If no creature is found then it will return an index of 0.
-int ai_GetHighestCRIndexForSpell(object oCreature, float fRange = AI_RANGE_PERCEPTION);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetHighestMeleeIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY);
+// Returns a creature of sTargetType where they have the least number of
+// allies and the most number of enemies within fMaxRange in the combat state.
+// Returns OBJECT_INVALID if there is not a good creature to select.
+// sTargetType is either AI_ENEMY, or AI_ALLY.
+object ai_GetGroupedTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY);
 // Returns the index of the nearest creature with the least % of hitpoints within
-// fRange in the combat state.
+// fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetMostWoundedIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the creature with the lowest health seen within fRange in the combat state.
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetMostWoundedIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the creature with the lowest health seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetMostWoundedTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+object ai_GetMostWoundedTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest ally with the least % of hitpoints within
-// fRange in the combat state.
+// fMaxRange in the combat state.
 // This also filters for AI_MODE_PARTY_HEALING_OFF and AI_MODE_SELF_HEALING_OFF.
 // If no ally is found then it will return an index of 0.
-int ai_GetAllyToHealIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION);
-// Returns the ally with the lowest health seen within fRange in the combat state.
+int ai_GetAllyToHealIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
+// Returns the ally with the lowest health seen within fMaxRange in the combat state.
 // This also filters for AI_MODE_PARTY_HEALING_OFF and AI_MODE_SELF_HEALING_OFF.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetAllyToHealTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION);
-// Returns the creature with the lowest fortitude save seen within fRange in the combat state.
+object ai_GetAllyToHealTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
+// Returns the creature with the lowest fortitude save seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetLowestFortitudeSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION);
-// Returns the creature with the lowest reflex save seen within fRange in the combat state.
+object ai_GetLowestFortitudeSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
+// Returns the creature with the lowest reflex save seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetLowestReflexSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION);
-// Returns the creature with the lowest will save seen within fRange in the combat state.
+object ai_GetLowestReflexSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
+// Returns the creature with the lowest will save seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetLowestWillSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION);
+object ai_GetLowestWillSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
 // Returns the creature with the lowest save based on nSpell save type seen
-// within fRange in the combat state.
+// within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-object ai_GetSpellTargetBasedOnSaves(object oCreature, int nSpell, float fRange = AI_RANGE_PERCEPTION);
-// Returns the index of the nearest enemy creature that can see oCreature.
-int ai_GetNearestIndexThatSeesUs(object oCreature);
+object ai_GetSpellTargetBasedOnSaves(object oCreature, int nSpell, float fMaxRange = AI_RANGE_PERCEPTION);
 // Returns the index of the nearest creature seen that is busy attacking an ally
-// within fRange in the combat state.
+// within fMaxRange in the combat state.
 // If none is found then it will return 0.
-int ai_GetBestSneakAttackIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
+int ai_GetSneakAttackIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest creature seen that is busy attacking an ally
-// within fRange in the combat state.
+// within fMaxRange in the combat state.
 // If none is found then it will return 0.
-int ai_GetNearestIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest combat creature seen within fRange in the combat state.
+int ai_GetNearestIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest combat creature seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetNearestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetNearestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest creature seen with the lowest combat rating
-// that is not in a dangerous area of effect within fRange in the combat state.
+// that is not in a dangerous area of effect within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetLowestCRIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the lowest combat creature seen within fRange in the combat state.
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetLowestCRIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the lowest combat creature seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetLowestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetLowestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the nearest creature seen with the highest combat rating
-// that is not in a dangerous area of effect within fRange in the combat state.
+// that is not in a dangerous area of effect within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetHighestCRIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the highest combat creature seen within fRange in the combat state.
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetHighestCRIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the highest combat creature seen within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-object ai_GetHighestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// sTargetType is either AI_ENEMY or AI_ALLY.
+object ai_GetHighestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the index of the creature seen with the most enemies to oCreature that
 // they are in melee with minus the number of allies to oCreature they are in
-// melee with that is not in a dangerous area of effect within fRange in the combat state.
+// melee with that is not in a dangerous area of effect within fMaxRange in the combat state.
 // If no creature is found then it will return an index of 0.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
-int ai_GetHighestMeleeIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY);
-// Returns a creature of sCreatureType where they have the least number of
-// allies and the most number of enemies within fRange in the combat state.
-// Returns OBJECT_INVALID if there is not a good creature to select.
-// sCreatureType is either AI_ENEMY, or AI_ALLY.
-object ai_CheckForGroupedTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY);
-// Returns a creature of sCreatureType where they have the least number of
-// allies and the most number of enemies within fRange that are not in a
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_GetHighestMeleeIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY);
+// Returns a creature of sTargetType where they have the least number of
+// allies and the most number of enemies within fMaxRange that are not in a
 // dangerous area of effect in the combat state.
 // Returns OBJECT_INVALID if there is not a good creature to select.
-// sCreatureType is either AI_ENEMY, or AI_ALLY.
-object ai_CheckForGroupedTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY);
-// Returns the nearest creature seen of nClassType within fRange in the combat state.
+// sTargetType is either AI_ENEMY, or AI_ALLY.
+object ai_GetGroupedTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY);
+// Returns the nearest creature seen of nClassType within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetNearestClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+object ai_GetNearestClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the creature with the lowest combat rating seen of nClassType within
-// fRange in the combat state.
+// fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetLowestCRClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+object ai_GetLowestCRClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the creature with the highest combat rating seen of nClassType within
-// fRange in the combat state.
+// fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetHighestCRClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest creature seen of nRacialType within fRange in the combat state.
+object ai_GetHighestCRClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest creature seen of nRacialType within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetNearestRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+object ai_GetNearestRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the creature with the lowest combat rating seen of nRacialType within
-// fRange in the combat state. Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// fMaxRange in the combat state. Returns OBJECT_INVALID if no creature is found.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetLowestCRRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
+object ai_GetLowestCRRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
 // Returns the creature with the highest combat rating seen of nRacialType within
-// fRange in the combat state. Returns OBJECT_INVALID if no creature is found.
-// sCreatureType is either AI_ENEMY or AI_ALLY.
+// fMaxRange in the combat state. Returns OBJECT_INVALID if no creature is found.
+// sTargetType is either AI_ENEMY or AI_ALLY.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetHighestCRRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE);
-// Returns the nearest enemy creature seen wihtin fRange that is a favored enemy
+object ai_GetHighestCRRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the nearest enemy seen that is attacking an ally with the least
+// number of enemies on them within fMaxRange in the combat state.
+// If none is found then it will return 0.
+object ai_GetFlankTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
+// Returns the nearest enemy creature seen wihtin fMaxRange that is a favored enemy
 // of the caller in the combat state.
 // Returns OBJECT_INVALID if no creature is found.
 // bAlwaysAtk TRUE we attack everything! FALSE we don't attack strong enemies.
-object ai_GetNearestFavoredEnemyTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
+object ai_GetNearestFavoredEnemyTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
 // Returns the nearest creature for melee combat based if we are in melee or not.
 // If not in melee it will get the nearest target that is not in a dangerous
 // area of effect for us to attack in the combat state.
@@ -249,22 +253,24 @@ object ai_GetLowestCRTargetForMeleeCombat(object oCreature, int nInMelee, int bA
 // is not in a dangerous area of effect for us to attack in the combat state.
 // If it returns OBJECT_INVALID then we should stop the attack.
 object ai_GetHighestCRTargetForMeleeCombat(object oCreature, int nInMelee);
-// Returns the nearest enemy seen that is attacking an ally with the least
-// number of enemies on them within fRange in the combat state.
-// If none is found then it will return 0.
-object ai_GetBestEnemyToFlankTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE);
-// Returns the nearest creature attacking the caller within fRange in the combat state.
+// Returns the Index of the nearest creature seen within fMaxRange in the combat state.
+// If no creature is found then it will return an index of 0.
+// sTargetType is either AI_ENEMY or AI_ALLY.
+int ai_MonsterGetNearestIndex(object oMonster, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE);
+// Returns the index of the nearest enemy creature that can see oCreature.
+int ai_GetNearestIndexThatSeesUs(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION);
+// Returns the nearest creature attacking the caller within fMaxRange in the combat state.
 // Returns OBJECT_INVALID if oCreature is not being attacked.
-object ai_GetEnemyAttackingMe(object oCreature, float fRange = AI_RANGE_MELEE);
-// Returns the nearest creature attacking oAlly from oCreature within fRange
+object ai_GetEnemyAttackingMe(object oCreature, float fMaxRange = AI_RANGE_MELEE);
+// Returns the nearest creature attacking oAlly from oCreature within fMaxRange
 // in the combat state.
 // Returns OBJECT_INVALID if oAlly is not being attacked.
-object ai_GetEnemyAttackingMyAlly(object oCreature, object oAlly, float fRange = AI_RANGE_MELEE);
-// Returns the number of enemies within fRange of the caller in the combat state.
-int ai_GetNumOfEnemiesInRange(object oCreature, float fRange = AI_RANGE_MELEE);
-// Returns the best ally target withing fRange for nSpell to be cast on.
+object ai_GetEnemyAttackingMyAlly(object oCreature, object oAlly, float fMaxRange = AI_RANGE_MELEE);
+// Returns the number of enemies within fMaxRange of the caller in the combat state.
+int ai_GetNumOfEnemiesInRange(object oCreature, float fMaxRange = AI_RANGE_MELEE);
+// Returns the best ally target withing fMaxRange for nSpell to be cast on.
 // Uses the ai_spells.2da file to pick a target.
-object ai_GetAllyBuffTarget(object oCreature, int nSpell, float fRange = AI_RANGE_BATTLEFIELD);
+object ai_GetAllyBuffTarget(object oCreature, int nSpell, float fMaxRange = AI_RANGE_BATTLEFIELD);
 
 //******************************************************************************
 //********************  OTHER COMBAT FUNCTIONS  ********************************
@@ -303,9 +309,9 @@ int ai_CheckRacialType(object oCreature, int nRacialType);
 void ai_SetNormalAppearance(object oCreature);
 // Returns the normal appearance of oCreature.
 int ai_GetNormalAppearance(object oCreature);
-// Return the number and levels of all creatures within fRange.
+// Return the number and levels of all creatures within fMaxRange.
 // They are grouped into Fighters, Clerics, Mages, and Monsters.
-struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fRange = AI_RANGE_BATTLEFIELD);
+struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fMaxRange = AI_RANGE_BATTLEFIELD);
 // This will return the class with the most levels.
 // Returns a string of "FIGHTER", "CLERIC", "MAGE", or "MONSTER".
 // Execute with GetFactionsClasses.
@@ -329,8 +335,8 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 int ai_GetIsHidden(object oHidden);
 // Returns TRUE if if oCaster has a good chance of effecting oCreature with nSpell.
 int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell);
-// Returns TRUE if oCreature is in a Dangerous Area of Effect in fRange.
-int ai_IsInADangerousAOE(object oCreature, float fRange = AI_RANGE_BATTLEFIELD);
+// Returns TRUE if oCreature is in a Dangerous Area of Effect in fMaxRange.
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD);
 // Gets the base DC for a dragon.
 int ai_GetDragonDC(object oCreature);
 // Set oCreature's ai scripts based on its first class or the variable "AI_DEFAULT_SCRIPT".
@@ -338,7 +344,7 @@ void ai_SetCreatureAIScript(object oCreature);
 // Returns TRUE if oTarget is immune to sneak attacks.
 int ai_IsImmuneToSneakAttacks(object oCreature, object oTarget);
 // Returns TRUE if iIndex target has a higher combat rating than oCreature.
-int ai_IsStrongThanMe(object oCreature, int iIndex);
+int ai_IsStrongerThanMe(object oCreature, int nIndex);
 // Returns TRUE if oTarget's CR is within nAdj of oCreature's level, otherwise FALSE.
 int ai_StrongOpponent(object oCreature, object oTarget, int nAdj = 2);
 // Returns TRUE if attacking oTarget with Power attack is a good option.
@@ -395,7 +401,7 @@ int ai_GetNumOfEnemiesInGroup(object oCreature, float fDistance = AI_RANGE_MELEE
     object oEnemy = GetFirstObjectInShape(SHAPE_SPHERE, fDistance, lLocation);
     while(oEnemy != OBJECT_INVALID)
     {
-        if(GetReputation(oCreature, oEnemy) < 11 && !GetIsDead(oEnemy)) nCnt++;
+        if(GetIsEnemy(oEnemy, oCreature) && !GetIsDead(oEnemy)) nCnt++;
         oEnemy = GetNextObjectInShape(SHAPE_SPHERE, fDistance, lLocation);
     }
     return nCnt;
@@ -470,116 +476,121 @@ object ai_GetLowestCRAttackerOnMaster(object oCreature)
 object ai_SetCombatState(object oCreature)
 {
     if(AI_DEBUG) ai_Counter_Start();
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
+    object oMaster = GetMaster();
+    if(oMaster == OBJECT_INVALID) oMaster = oCreature;
     int nEnemyNum, nEnemyPower, nAllyNum, nAllyPower, nInMelee, nMagic;
     int nHealth, nNth, nAllies, nPower, nDisabled, bThreat,nObjects;
     int nEnemyHighestPower, nAllyHighestPower;
     float fNearest = AI_RANGE_BATTLEFIELD;
+    float fDistance;
+    float fMaxRange = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+    if(fMaxRange == 0.0) fMaxRange = 20.0;
     string sCnt, sDebugText;
-    location lLocation = GetLocation(oCreature);
+    location lLocation = GetLocation(oMaster);
     object oMelee, oNearestEnemy = OBJECT_INVALID;
-    if(AI_DEBUG) ai_Debug("0i_combat", "450", "************************************************************");
-    if(AI_DEBUG) ai_Debug("0i_combat", "451", "******************* CREATING COMBAT DATA *******************");
-    if(AI_DEBUG) ai_Debug("0i_combat", "452", GetName(oCreature));
+    if(AI_DEBUG) ai_Debug("0i_combat", "491", "************************************************************");
+    if(AI_DEBUG) ai_Debug("0i_combat", "492", "******************* CREATING COMBAT DATA *******************");
+    if(AI_DEBUG) ai_Debug("0i_combat", "493", GetName(oCreature));
     // We want to include ourselves in the combat state.
-    object oObject = oCreature;
+    object oObject = GetFirstObjectInShape(SHAPE_SPHERE, AI_RANGE_BATTLEFIELD, lLocation);
     // Get all creatures within 40 meters(5 meters beyond our perception of 35).
-    float fDistance = GetDistanceBetween(oObject, oCenter);
-    while(oObject != OBJECT_INVALID && fDistance <= AI_RANGE_BATTLEFIELD)
+    // Centered on either the creature or their master.
+    while(oObject != OBJECT_INVALID)
     {
         // Process all enemies.
-        if(GetReputation(oCreature, oObject) < 11)
+        if(GetIsEnemy(oObject, oCreature))
         {
-            if(GetObjectSeen(oObject, oCreature) || GetObjectHeard(oObject, oCreature) ||
-               ai_GetIsInLineOfSight(oCreature, oObject))
+            if(GetObjectSeen(oObject, oCreature) || GetObjectHeard(oObject, oCreature))
             {
-                // ********** Get the Total levels of the Enemy **********
-                nPower = ai_GetCharacterLevels(oObject);
-                if(nPower < 1) nPower = 1;
-                if(nEnemyHighestPower < nPower) nEnemyHighestPower = nPower;
-                nEnemyPower += nPower;
-                // ********** Check if the Enemy is disabled **********
-                bThreat = TRUE;
-                nDisabled = ai_Disabled(oObject);
-                if(nDisabled)
+                fDistance = GetDistanceBetween(oObject, oCreature);
+                if(fDistance <= fMaxRange)
                 {
-                    // !!!! For /DEBUG CODE !!!!
-                    sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
-                    // Decide if they are still a threat: 1 - dead, 2 - Bleeding.
-                    if(nDisabled == 1 || nDisabled == 2 ||
-                       //nDisabled == EFFECT_TYPE_CONFUSED ||
-                       //nDisabled == EFFECT_TYPE_FRIGHTENED ||
-                       //nDisabled == EFFECT_TYPE_PARALYZE ||
-                       nDisabled == EFFECT_TYPE_CHARMED ||
-                       nDisabled == EFFECT_TYPE_PETRIFY)
+                    // ********** Get the Total levels of the Enemy **********
+                    nPower = ai_GetCharacterLevels(oObject);
+                    if(nPower < 1) nPower = 1;
+                    if(nEnemyHighestPower < nPower) nEnemyHighestPower = nPower;
+                    nEnemyPower += nPower;
+                    // ********** Check if the Enemy is disabled **********
+                    bThreat = TRUE;
+                    nDisabled = ai_Disabled(oObject);
+                    if(nDisabled)
                     {
-                        bThreat = FALSE;
-                        if(AI_DEBUG) ai_Debug("0i_combat", "484", "Enemy: " + GetName(oObject) + sDebugText);
+                        if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
+                        // Decide if they are still a threat: 1 - dead, 2 - Bleeding.
+                        if(nDisabled == 1 || nDisabled == 2 ||
+                           //nDisabled == EFFECT_TYPE_CONFUSED ||
+                           //nDisabled == EFFECT_TYPE_FRIGHTENED ||
+                           //nDisabled == EFFECT_TYPE_PARALYZE ||
+                           nDisabled == EFFECT_TYPE_CHARMED ||
+                           nDisabled == EFFECT_TYPE_PETRIFY)
+                        {
+                            bThreat = FALSE;
+                            if(AI_DEBUG) ai_Debug("0i_combat", "527", "Enemy: " + GetName(oObject) + sDebugText);
+                        }
                     }
-                }
-                // If they are using the coward ai then treat them as frightened.
-                // we place it here as an else so we don't overwrite another disabled effect.
-                else if(GetLocalString(oObject, AI_COMBAT_SCRIPT) == "ai_coward")
-                {
-                    nDisabled = 25;
-                    // !!!! For /DEBUG CODE !!!!
-                    sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
-                }
-                if(bThreat)
-                {
-                    sCnt = IntToString(++nEnemyNum);
-                    // ********** Set if the Enemy is disabled **********
-                    SetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt, nDisabled);
-                    // ********** Set the Enemy Object **********
-                    SetLocalObject(oCreature, AI_ENEMY + sCnt, oObject);
-                    // ********** Set the Enemy Combat Rating **********
-                    SetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt, ai_GetMyCombatRating(oObject));
-                    // ********** Set the Enemy Health Percentage **********
-                    nHealth = ai_GetPercHPLoss(oObject);
-                    SetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt, nHealth);
-                    // ********** Set the number of enemies near the enemy **********
-                    nInMelee = 0;
-                    nNth = 1;
-                    oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, nNth);
-                    while(oMelee != OBJECT_INVALID && !GetIsDead(oMelee) &&
-                          GetDistanceBetween(oMelee, oObject) < AI_RANGE_MELEE)
+                    // If they are using the coward ai then treat them as frightened.
+                    // we place it here as an else so we don't overwrite another disabled effect.
+                    else if(GetLocalString(oObject, AI_COMBAT_SCRIPT) == "ai_coward")
                     {
-                        // We add an enemy to the group.
-                        if(GetReputation(oCreature, oMelee) < 11) nInMelee++;
-                        // If they are an ally then we subtract one from the group.
-                        //else nInMelee--;
-                        oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, ++nNth);
+                        nDisabled = EFFECT_TYPE_FRIGHTENED;
+                        // !!!! For /DEBUG CODE !!!!
+                        if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
                     }
-                    SetLocalInt(oCreature, AI_ENEMY_MELEE + sCnt, nInMelee);
-                    // ********** Set the Enemies distance **********
-                    SetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt, GetDistanceBetween(oObject, oCreature));
-                    // ********** Set if the Enemy is perceived **********
-                    if(GetObjectSeen(oObject, oCreature) ||
-                      (GetObjectHeard(oObject, oCreature) && fDistance < AI_RANGE_MELEE &&
-                      ai_GetIsHidden(oObject)))
+                    if(bThreat)
                     {
-                        SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
-                        sDebugText += "**** PERCEIVED Seen: " + IntToString(GetObjectSeen(oObject, oCreature)) +
-                        " Heard: " + IntToString(GetObjectHeard(oObject, oCreature)) + " ****";
-                    }
-                    else SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, FALSE);
-                    // ********** Set the Nearest Enemy seen **********
-                    if(fDistance < fNearest)
-                    {
-                        fNearest = fDistance;
-                        oNearestEnemy = oObject;
+                        sCnt = IntToString(++nEnemyNum);
+                        // ********** Set if the Enemy is disabled **********
+                        SetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt, nDisabled);
+                        // ********** Set the Enemy Object **********
+                        SetLocalObject(oCreature, AI_ENEMY + sCnt, oObject);
+                        // ********** Set the Enemy Combat Rating **********
+                        SetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt, ai_GetMyCombatRating(oObject));
+                        // ********** Set the Enemy Health Percentage **********
+                        nHealth = ai_GetPercHPLoss(oObject);
+                        SetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt, nHealth);
+                        // ********** Set the number of enemies near the enemy **********
+                        nInMelee = 0;
+                        nNth = 1;
+                        oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, nNth);
+                        while(oMelee != OBJECT_INVALID && !GetIsDead(oMelee) &&
+                              GetDistanceBetween(oMelee, oObject) < AI_RANGE_MELEE)
+                        {
+                            // We add an enemy to the group.
+                            if(GetIsEnemy(oMelee, oCreature)) nInMelee++;
+                            oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, ++nNth);
+                        }
+                        SetLocalInt(oCreature, AI_ENEMY_MELEE + sCnt, nInMelee);
+                        // ********** Set the Enemies distance **********
+                        fDistance = GetDistanceBetween(oObject, oCreature);
+                        SetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt, fDistance);
+                        // ********** Set if the Enemy is perceived **********
+                        if(GetObjectSeen(oObject, oCreature) ||
+                          (GetObjectHeard(oObject, oCreature) && fDistance <= AI_RANGE_MELEE &&
+                          ai_GetIsHidden(oObject)))
+                        {
+                            SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
+                            if(AI_DEBUG) sDebugText += "**** PERCEIVED Seen: " +
+                                         IntToString(GetObjectSeen(oObject, oCreature)) +
+                                         " Heard: " + IntToString(GetObjectHeard(oObject, oCreature)) + " ****";
+                        }
+                        else SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, FALSE);
+                        // ********** Set the Nearest Enemy seen **********
+                        if(fDistance < fNearest)
+                        {
+                            fNearest = fDistance;
+                            oNearestEnemy = oObject;
+                        }
                     }
                 }
                 // !!! Debug code !!!
-                if(fDistance < AI_RANGE_MELEE) sDebugText += "**** MELEE ****";
-                if(AI_DEBUG) ai_Debug("0i_combat", "551", "Enemy(" + IntToString(nEnemyNum) + "): " +
+                if(AI_DEBUG && fDistance < AI_RANGE_MELEE) sDebugText += "**** MELEE ****";
+                if(AI_DEBUG) ai_Debug("0i_combat", "587", "Enemy(" + IntToString(nEnemyNum) + "): " +
                          GetName(oObject) + sDebugText);
-                if(AI_DEBUG) ai_Debug("0i_combat", "553", "nHealth: " + IntToString(nHealth) +
+                if(AI_DEBUG) ai_Debug("0i_combat", "589", "nHealth: " + IntToString(nHealth) +
                          " nInMelee: " + IntToString(nInMelee) +
                          " fDistance: " + FloatToString(fDistance, 0, 2) +
-                         " nEnemyNum: " + IntToString(nEnemyNum) +
-                         " nEnemyPower: " + IntToString(nEnemyPower / 2));
+                         " nNum: " + IntToString(nEnemyNum) +
+                         " nPower: " + IntToString(nEnemyPower / 2));
             }
             else
             {
@@ -587,9 +598,10 @@ object ai_SetCombatState(object oCreature)
                 nPower = FloatToInt(ai_GetCharacterLevels(oObject) / 1.5);
                 if(nPower < 1) nPower = 1;
                 nEnemyPower += nPower;
-                if(AI_DEBUG) ai_Debug("0i_combat", "565", "Enemy(NOT PERCEIVED): " +
-                         GetName(oObject) + " fDistance: " + FloatToString(fDistance, 0, 2) +
-                         " nEnemyPower: " + IntToString(nEnemyPower));
+                if(AI_DEBUG) ai_Debug("0i_combat", "601", "Enemy(NOT PERCEIVED): " +
+                         GetName(oObject) + " fDistance: " +
+                         FloatToString(GetDistanceBetween(oObject, oCreature), 0, 2) +
+                         " nPower: " + IntToString(nEnemyPower));
             }
         }
         // Process all Allies.
@@ -619,7 +631,7 @@ object ai_SetCombatState(object oCreature)
                 while(oMelee != OBJECT_INVALID && !GetIsDead(oMelee) &&
                       GetDistanceBetween(oMelee, oObject) < AI_RANGE_MELEE)
                 {
-                    if(GetReputation(oCreature, oMelee) < 11) nInMelee++;
+                    if(GetIsEnemy(oMelee, oCreature)) nInMelee++;
                     //else nInMelee--;
                     oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, ++nNth);
                 }
@@ -632,31 +644,30 @@ object ai_SetCombatState(object oCreature)
                 nPower = ai_GetCharacterLevels(oObject);
                 if(nAllyHighestPower < nPower) nAllyHighestPower = nPower;
                 nAllyPower +=(nPower * nHealth) / 100;
-                if(AI_DEBUG) ai_Debug("0i_combat", "610", "Ally(" + IntToString(nAllyNum) + "): " +
+                if(AI_DEBUG) ai_Debug("0i_combat", "647", "Ally(" + IntToString(nAllyNum) + "): " +
                        GetName(oObject) + sDebugText);
-                if(AI_DEBUG) ai_Debug("0i_combat", "612", "nHealth: " + IntToString(nHealth) +
+                if(AI_DEBUG) ai_Debug("0i_combat", "649", "nHealth: " + IntToString(nHealth) +
                        " nInMelee: " + IntToString(nInMelee) +
                        " fDistance: " + FloatToString(GetDistanceToObject(oObject), 0, 2) +
-                       " nAllyNum: " + IntToString(nAllyNum) +
-                       " nAllyPower: " + IntToString(nAllyPower / 2));
+                       " nNum: " + IntToString(nAllyNum) +
+                       " nPower: " + IntToString(nAllyPower / 2));
             }
         }
-        sDebugText = "";
-        oObject = GetNearestCreature(CREATURE_TYPE_IS_ALIVE, TRUE, oCreature, ++nObjects);
-        fDistance = GetDistanceBetween(oObject, oCenter);
+        if(AI_DEBUG) sDebugText = "";
+        oObject = GetNextObjectInShape(SHAPE_SPHERE, AI_RANGE_BATTLEFIELD, lLocation);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "623", "Nearest Enemy: " + GetName(oNearestEnemy));
-    if(AI_DEBUG) ai_Debug("0i_combat", "624", "****************** FINISHED COMBAT DATA  *******************");
-    if(AI_DEBUG) ai_Debug("0i_combat", "625", "************************************************************");
+    if(AI_DEBUG) ai_Debug("0i_combat", "659", "Nearest Enemy: " + GetName(oNearestEnemy));
+    if(AI_DEBUG) ai_Debug("0i_combat", "660", "****************** FINISHED COMBAT DATA  *******************");
+    if(AI_DEBUG) ai_Debug("0i_combat", "661", "************************************************************");
     // Lets save processing by only clearing previous enemy data we don't overwrite.
     int nPreviousEnd = GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
     int nCnt = nEnemyNum + 1;
-    if(AI_DEBUG) ai_Debug("0i_combat", "629", "Clearing Enemy Combat Data: nPreviousEnd: " +
+    if(AI_DEBUG) ai_Debug("0i_combat", "665", "Clearing Enemy Combat Data: nPreviousEnd: " +
              IntToString(nPreviousEnd) + " nCurrentEnd: " + IntToString(nCnt - 1));
     while(nPreviousEnd >= nCnt)
     {
         sCnt = IntToString(nCnt);
-        if(AI_DEBUG) ai_Debug("0i_combat", "634", "Clearing Enemy Combat Data: " + sCnt + " " +
+        if(AI_DEBUG) ai_Debug("0i_combat", "670", "Clearing Enemy Combat Data: " + sCnt + " " +
                  GetName(GetLocalObject(oCreature, AI_ENEMY + sCnt)));
         DeleteLocalObject(oCreature, AI_ENEMY + sCnt);
         DeleteLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt);
@@ -669,12 +680,12 @@ object ai_SetCombatState(object oCreature)
     // Lets save processing by only clearing previous ally data we don't overwrite.
     nPreviousEnd = GetLocalInt(oCreature, AI_ALLY_NUMBERS);
     nCnt = nAllyNum + 1;
-    if(AI_DEBUG) ai_Debug("0i_combat", "647", "Clearing Ally Combat Data: nPreviousEnd: " +
+    if(AI_DEBUG) ai_Debug("0i_combat", "683", "Clearing Ally Combat Data: nPreviousEnd: " +
              IntToString(nPreviousEnd) + " nCurrentEnd: " + IntToString(nCnt - 1));
     while(nPreviousEnd >= nCnt)
     {
         sCnt = IntToString(nCnt);
-        if(AI_DEBUG) ai_Debug("0i_combat", "652", "Clearing Ally Combat Data: " + sCnt + " " +
+        if(AI_DEBUG) ai_Debug("0i_combat", "688", "Clearing Ally Combat Data: " + sCnt + " " +
                  GetName(GetLocalObject(oCreature, AI_ENEMY + sCnt)));
         DeleteLocalObject(oCreature, AI_ALLY + sCnt);
         DeleteLocalInt(oCreature, AI_ALLY_PERCEIVED + sCnt);
@@ -696,7 +707,7 @@ object ai_SetCombatState(object oCreature)
     // of the highest level ally, only used by associates.
     nAllyPower = (nAllyPower / 2) + nAllyHighestPower;
     SetLocalInt(oCreature, AI_ALLY_POWER, nAllyPower);
-    if(AI_DEBUG) ai_Debug("0i_combat", "674", "nEnemyPower: " + IntToString(nEnemyPower) +
+    if(AI_DEBUG) ai_Debug("0i_combat", "710", "nEnemyPower: " + IntToString(nEnemyPower) +
              " nEnemyHighestPower: " + IntToString(nEnemyHighestPower) +
              " nAllyPower: " + IntToString(nAllyPower) +
              " nAllyHighestPower: " + IntToString(nAllyHighestPower));
@@ -708,7 +719,7 @@ void ai_ClearCombatState(object oCreature)
     int bEnemyDone, bAllyDone, nCnt = 1;
     int nEnemyNum = GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
     int nAllyNum = GetLocalInt(oCreature, AI_ALLY_NUMBERS);
-    if(AI_DEBUG) ai_Debug("0i_combat", "686", "Clearing " + GetName(oCreature) + "'s combat state." +
+    if(AI_DEBUG) ai_Debug("0i_combat", "722", "Clearing " + GetName(oCreature) + "'s combat state." +
              " nEnemyNum: " + IntToString(nEnemyNum) + " nAllyNum: " + IntToString(nAllyNum));
     string sCnt;
     while(!bEnemyDone || !bAllyDone)
@@ -716,7 +727,7 @@ void ai_ClearCombatState(object oCreature)
         sCnt = IntToString(nCnt);
         if(nCnt <= nEnemyNum)
         {
-            if(AI_DEBUG) ai_Debug("0i_combat", "694", "Clearing " + GetName(GetLocalObject(oCreature, AI_ENEMY + sCnt)) + ".");
+            if(AI_DEBUG) ai_Debug("0i_combat", "730", "Clearing " + GetName(GetLocalObject(oCreature, AI_ENEMY + sCnt)) + ".");
             DeleteLocalObject(oCreature, AI_ENEMY + sCnt);
             DeleteLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt);
             DeleteLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt);
@@ -728,7 +739,7 @@ void ai_ClearCombatState(object oCreature)
         else bEnemyDone = TRUE;
         if(nCnt <= nAllyNum)
         {
-            if(AI_DEBUG) ai_Debug("0i_combat", "706", "Clearing " + GetName(GetLocalObject(oCreature, AI_ALLY + sCnt)) + ".");
+            if(AI_DEBUG) ai_Debug("0i_combat", "742", "Clearing " + GetName(GetLocalObject(oCreature, AI_ALLY + sCnt)) + ".");
             DeleteLocalObject(oCreature, AI_ALLY + sCnt);
             DeleteLocalInt(oCreature, AI_ALLY_DISABLED + sCnt);
             DeleteLocalInt(oCreature, AI_ALLY_PERCEIVED + sCnt);
@@ -780,1619 +791,1045 @@ void ai_ClearCombatState(object oCreature)
     ai_EndCombatRound(oCreature);
 }
 //******************************************************************************
-//*************** GET TARGETS USING COMBAT STATE FUNCTIONS *********************
+//*********************** GET TARGETS INTERNAL FUNCTIONS ***********************
+//******************************************************************************
+// These functions are used by the Get Index/ Get Target functions below.
+
+int ai_TargetIsInRangeofCreature(object oCreature, string sTargetType, string sCounter, float fMaxRange)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "796", "fMaxRange: " + FloatToString(fMaxRange, 0, 2) +
+                          " fTargetRange: " + FloatToString(GetLocalFloat(oCreature, sTargetType + "_RANGE" + sCounter), 0, 2));
+    return fMaxRange >= GetLocalFloat(oCreature, sTargetType + "_RANGE" + sCounter);
+}
+int ai_TargetIsInRangeofMaster(object oCreature, object oTarget)
+{
+    object oMaster = GetMaster();
+    if(oMaster == OBJECT_INVALID) return TRUE;
+    float fMaxRange = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
+    if(fMaxRange == 0.0) fMaxRange = 20.0;
+    float fTargetRangefromMaster = GetDistanceBetween(oTarget, oMaster);
+    if(AI_DEBUG) ai_Debug("0i_combat", "807", "fMaxRangefromMaster: " + FloatToString(fMaxRange, 0, 2) +
+                          " fTargetRangefromMaster: " + FloatToString(fTargetRangefromMaster, 0, 2));
+    return fMaxRange >= fTargetRangefromMaster;
+}
+struct stTarget ai_CheckForNearestTarget(object oCreature, struct stTarget sTarget, int nIndex, string sIndex)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "817", "Getting nearest index: " + sIndex +
+                          " fRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestRange: " + FloatToString(sTarget.fNearestRange, 0, 2) +
+                          " fNearestSecondaryRange: " + FloatToString(sTarget.fNearestSecondaryRange, 0, 2));
+    // Lets put any disabled targets and associates if set in a secondary group.
+    if(GetLocalInt(oCreature, sTarget.sTargetType + "_DISABLED" + sIndex) ||
+      (ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) && GetAssociateType(sTarget.oTarget)))
+    {
+        if(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestSecondaryRange)
+        {
+            sTarget.fNearestSecondaryRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+            sTarget.nSecondaryIndex = nIndex;
+        }
+    }
+    else if(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestRange)
+    {
+        sTarget.fNearestRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+        sTarget.nIndex = nIndex;
+    }
+    return sTarget;
+}
+struct stTarget ai_CheckForLowestValueTarget(object oCreature, struct stTarget sTarget, int nIndex, string sIndex)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "835", "Getting lowest value index: " + sIndex +
+                          " fRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestSecondaryRange: " + FloatToString(sTarget.fNearestSecondaryRange, 0, 2) +
+                          " sTarget.nValue: " + IntToString(sTarget.nValue) +
+                          " sTarget.nBestValue: " + IntToString(sTarget.nBestValue) +
+                          " sTarget.nBestSecondaryValue: " + IntToString(sTarget.nBestSecondaryValue));
+    // Lets put any disabled targets and associates if set in a secondary group.
+    if(GetLocalInt(oCreature, sTarget.sTargetType + "_DISABLED" + sIndex) ||
+      (ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) && GetAssociateType(sTarget.oTarget)))
+    {
+        if(sTarget.nValue < sTarget.nBestSecondaryValue ||
+          (sTarget.nValue == sTarget.nBestSecondaryValue &&
+           GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestSecondaryRange))
+        {
+            sTarget.fNearestSecondaryRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+            sTarget.nBestSecondaryValue = sTarget.nValue;
+            sTarget.nSecondaryIndex = nIndex;
+        }
+    }
+    // Has less value or equal value and is closer.
+    else if(sTarget.nValue < sTarget.nBestValue ||
+           (sTarget.nBestValue == sTarget.nValue &&
+           GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestRange))
+    {
+        sTarget.fNearestRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+        sTarget.nBestValue = sTarget.nValue;
+        sTarget.nIndex = nIndex;
+    }
+    return sTarget;
+}
+struct stTarget ai_CheckForHighestValueTarget(object oCreature, struct stTarget sTarget, int nIndex, string sIndex)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "865", "Getting highest value index: " + sIndex +
+                          " fRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestRange: " + FloatToString(sTarget.fNearestRange, 0, 2) +
+                          " fNearestSecondaryRange: " + FloatToString(sTarget.fNearestSecondaryRange, 0, 2) +
+                          " sTarget.nValue: " + IntToString(sTarget.nValue) +
+                          " sTarget.nBestValue: " + IntToString(sTarget.nBestValue) +
+                          " sTarget.nBestSecondaryValue: " + IntToString(sTarget.nBestSecondaryValue));
+    // Lets put any disabled targets and associates if set in a secondary group.
+    if(GetLocalInt(oCreature, sTarget.sTargetType + "_DISABLED" + sIndex) ||
+      (ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) && GetAssociateType(sTarget.oTarget)))
+    {
+        if(sTarget.nValue > sTarget.nBestSecondaryValue ||
+          (sTarget.nValue == sTarget.nBestSecondaryValue &&
+          GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestSecondaryRange))
+        {
+            sTarget.fNearestSecondaryRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+            sTarget.nBestSecondaryValue = sTarget.nValue;
+            sTarget.nSecondaryIndex = nIndex;
+        }
+    }
+    // Has less value or equal value and is closer.
+    else if(sTarget.nValue > sTarget.nBestValue ||
+           (sTarget.nBestValue == sTarget.nValue &&
+            GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestRange))
+    {
+        sTarget.fNearestRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+        sTarget.nBestValue = sTarget.nValue;
+        sTarget.nIndex = nIndex;
+    }
+    return sTarget;
+}
+struct stTarget ai_CheckForNearestAllTarget(object oCreature, struct stTarget sTarget, int nIndex, string sIndex)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "895", "Getting nearest (not disabled) index: " + sIndex +
+                          " fRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestRange: " + FloatToString(sTarget.fNearestRange, 0, 2));
+    // If we are ignoring associates set then ignore them.
+    // Has lower value or equal value and is closer. Familiars/Companions/Summons/Dominated.
+    if(AI_DEBUG) ai_Debug("0i_combat", "911", "IgnoreAss: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES)) +
+                   " Associate? " + IntToString(GetAssociateType(sTarget.oTarget) > 1));
+    if((!ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) || GetAssociateType(sTarget.oTarget) > 1) &&
+       GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestRange)
+    {
+       sTarget.fNearestRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+       sTarget.nIndex = nIndex;
+    }
+    return sTarget;
+}
+struct stTarget ai_CheckForLowestValueAllTarget(object oCreature, struct stTarget sTarget, int nIndex, string sIndex)
+{
+    if(AI_DEBUG) ai_Debug("0i_combat", "923", "Getting lowest value index: " + sIndex +
+                          " fRange: " + FloatToString(GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex), 0, 2) +
+                          " fNearestRange: " + FloatToString(sTarget.fNearestRange, 0, 2) +
+                          " sTarget.nValue: " + IntToString(sTarget.nValue) +
+                          " sTarget.nBestValue: " + IntToString(sTarget.nBestValue));
+    // Has less value or equal value and is closer. Ignoring only Familiars/Companions/Summons/Dominated.
+    if(AI_DEBUG) ai_Debug("0i_combat", "922", "IgnoreAss: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES)) +
+                   " Associate? " + IntToString(GetAssociateType(sTarget.oTarget) > 1));
+    if((!ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) || GetAssociateType(sTarget.oTarget) > 1) &&
+      sTarget.nValue < sTarget.nBestValue ||
+      (sTarget.nBestValue == sTarget.nValue &&
+      GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex) < sTarget.fNearestRange))
+    {
+        sTarget.fNearestRange = GetLocalFloat(oCreature, sTarget.sTargetType + "_RANGE" + sIndex);
+        sTarget.nBestValue = sTarget.nValue;
+        sTarget.nIndex = nIndex;
+    }
+    return sTarget;
+}
+
+//******************************************************************************
+//************ GET INDEX/TARGETs USING COMBAT STATE FUNCTIONS ******************
 //******************************************************************************
 // These functions will find a target based on the combat state variables created
-// by the function ai_SetCombatState.
+// by the function ai_SetCombatState for associates.
 
-int ai_GetNearestCreatureIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+int ai_GetNearestIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    if(d100() <= GetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY))
+    if(GetLocalInt(oCreature, AI_RULE_AI_DIFFICULTY))
     {
-        return ai_GetLowestCRIndex(oCreature, fRange, sCreatureType, bAlwaysAtk);
+        return ai_GetLowestCRIndex(oCreature, fMaxRange, sTargetType, bAlwaysAtk);
     }
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        // Trying a new system where henchman stay closer to the player.
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "744", "Getting Nearest Creature Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)) +
-                 " bAlwaysAtk: " + IntToString(bAlwaysAtk));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "911", "Getting the nearest index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-               !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "918", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(fTargetRange < fLowestDTargetRange)
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Is closer.
-                    else if(fTargetRange < fLowestTargetRange)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a nondisabled target then use our best disabled target.
-    if(nIndex == 0 && nDIndex != 0) nIndex = nDIndex;
-    if(AI_DEBUG) ai_Debug("0i_combat", "781", "NearestCreature: [" + sCreatureType + "] fRange: " + FloatToString(fRange, 0, 2) +
-             " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "931", "Found nearest [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_GetNearestTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetNearestTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    if(AI_DEBUG) ai_Debug("0i_combat", "787", "Checking for nearest target within " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetNearestCreatureIndex(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
+    if(AI_DEBUG) ai_Debug("0i_combat", "936", "Getting the nearest target.");
+    string sIndex = IntToString(ai_GetNearestIndex(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-int ai_GetLowestCRIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+int ai_GetLowestCRIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLCombat = 100, nLDCombat = 100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 100;
+    sTarget.nBestSecondaryValue = 100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "804", "Getting Lowest Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)) +
-                 " bAlwaysAtk: " + IntToString(bAlwaysAtk));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "953", "Getting the lowest CR index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "960", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nLDCombat ||(nCombat == nLDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nLDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has less combat or equal combat and is closer.
-                    else if(nCombat < nLCombat ||(nCombat == nLCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) nIndex = ai_GetLowestCRIndex(oCreature, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "849", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " LowestCombatRating: " + IntToString(nLCombat) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "974", "Found lowest CR [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object  ai_GetLowestCRTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object  ai_GetLowestCRTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "855", "Checking for lowest combat rated target in " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetLowestCRIndex(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
+    if(AI_DEBUG) ai_Debug("0i_combat", "979", "Getting the lowest CR target.");
+    string sIndex = IntToString(ai_GetLowestCRIndex(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-int ai_GetHighestCRIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+int ai_GetHighestCRIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHCombat = -100, nHDCombat = -100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "872", "Getting Highest Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "995", "Getting the highest CR index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1002", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                      (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat > nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nHDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has greater combat or equal combat and is closer.
-                    else if(nCombat > nHCombat ||(nCombat == nHCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nHCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) nIndex = ai_GetHighestCRIndex(oCreature, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "917", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " HighestCombatRating: " + IntToString(nHCombat) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1016", "Found highest CR [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_GetHighestCRTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetHighestCRTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "923", "Checking for highest combat rated target in " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetHighestCRIndex(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
+    if(AI_DEBUG) ai_Debug("0i_combat", "1021", "Getting the highest CR target.");
+    string sIndex = IntToString(ai_GetHighestCRIndex(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-int ai_GetLowestCRIndexForSpell(object oCreature, float fRange = AI_RANGE_PERCEPTION)
+int ai_GetLowestMeleeIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLCombat = 100, nLDCombat = 100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 100;
+    sTarget.nBestSecondaryValue = 100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "940", "Getting Lowest Index for spell: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1037", "Getting the lowest InMelee index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nCombat = GetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt);
-                // Lets put any disabled targets in its own group, if we
-                // ignore associates lets put them here as well.
-                if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                  (bIngnoreAssociates && GetAssociateType(oTarget)))
-                {
-                    if(nCombat < nLDCombat ||(nCombat == nLDCombat && fTargetRange < fLowestDTargetRange))
-                    {
-                        fLowestDTargetRange = fTargetRange;
-                        nLDCombat = nCombat;
-                        nDIndex = nCnt;
-                    }
-                }
-                // Has the lowest combat or equal combat and is closer.
-                else if(nCombat < nLCombat ||(nCombat == nLCombat && fTargetRange < fLowestTargetRange))
-                {
-                    // If this creature has high enough health then change.
-                    if(GetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt) > AI_HEALTH_BLOODY)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                    else
-                    {
-                        object oAttacker = GetLastHostileActor(oTarget);
-                        if(AI_DEBUG) ai_Debug("0i_combat", "976", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                                 "oAttacker: " + GetName(oAttacker));
-                        // Is not being attacked by someone else then change.
-                        if(oAttacker != OBJECT_SELF || !GetIsObjectValid(oAttacker))
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLCombat = nCombat;
-                            nIndex = nCnt;
-                        }
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_MELEE" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a nondisabled target then use our best disabled target.
-    if(nIndex == 0 && nDIndex != 0) nIndex = nDIndex;
-    if(AI_DEBUG) ai_Debug("0i_combat", "994", AI_ENEMY + " fRange: " + FloatToString(fRange, 0, 2) +
-           " LowestCombatRating: " + IntToString(nLCombat) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1058", "Found lowest InMelee [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-int ai_GetHighestCRIndexForSpell(object oCreature, float fRange = AI_RANGE_PERCEPTION)
+int ai_GetHighestMeleeIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHCombat = -100, nHDCombat = -100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1009", "Getting Highest Index for Spell: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1073", "Getting the highest InMelee index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them and they can't be dead or dying.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nCombat = GetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt);
-                // Lets put any disabled targets in its own group, if we
-                // ignore associates lets put them here as well.
-                if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                  (bIngnoreAssociates && GetAssociateType(oTarget)))
-                {
-                    if(nCombat < nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
-                    {
-                        fLowestDTargetRange = fTargetRange;
-                        nHDCombat = nCombat;
-                        nDIndex = nCnt;
-                    }
-                }
-                // Has greater combat or equal combat and is closer.
-                else if(nCombat > nHCombat ||(nCombat == nHCombat && fTargetRange < fLowestTargetRange))
-                {
-                    // If this creature has high enough health then change.
-                    if(GetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt) > AI_HEALTH_BLOODY)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nHCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                    else
-                    {
-                        object oAttacker = GetLastHostileActor(oTarget);
-                        if(AI_DEBUG) ai_Debug("0i_combat", "1045", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                                 "oAttacker: " + GetName(oAttacker));
-                        // Is not being attacked by someone else then change.
-                        if(oAttacker != OBJECT_SELF || !GetIsObjectValid(oAttacker))
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nHCombat = nCombat;
-                            nIndex = nCnt;
-                        }
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_MELEE" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a nondisabled target then use our best disabled target.
-    if(nIndex == 0 && nDIndex != 0) nIndex = nDIndex;
-    if(AI_DEBUG) ai_Debug("0i_combat", "1063", AI_ENEMY + " fRange: " + FloatToString(fRange, 0, 2) +
-           " HighestCombatRating: " + IntToString(nHCombat) + " = " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1094", "Found highest InMelee [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-int ai_GetLowestMeleeIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY)
+object ai_CheckForGroupedTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLMelee = 100, nInMelee, nIndex, nCnt = 1;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    if(AI_DEBUG) ai_Debug("0i_combat", "1124", "Getting the highest InMelee target.");
+    string sIndex = IntToString(ai_GetHighestMeleeIndex(oCreature, fMaxRange, sTargetType));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
+}
+int ai_GetMostWoundedIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
+{
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 200;
+    sTarget.nBestSecondaryValue = 200;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1076", "Getting Lowest Melee Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fTargetRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1113", "Getting the most wounded index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them and they can't be dead or dying.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1120", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                 nInMelee = GetLocalInt(oCreature, sCreatureType + "_MELEE" + sCnt);
-                // Has lower melee or equal melee and is closer.
-                if(nInMelee < nLMelee ||(nInMelee == nLMelee && fTargetRange < fLowestTargetRange))
-                {
-                    fLowestTargetRange = fTargetRange;
-                    nLMelee = nInMelee;
-                    nIndex = nCnt;
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_HEALTH" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1099", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " LowestMeleeTarget: " + IntToString(nLMelee) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1130", "Found most wounded [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-int ai_GetHighestMeleeIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY)
+object ai_GetMostWoundedTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHMelee = -100, nInMelee, nIndex, nCnt = 1;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    if(AI_DEBUG) ai_Debug("0i_combat", "1139", "Getting the most wounded target.");
+    string sIndex = IntToString(ai_GetMostWoundedIndex(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
+}
+int ai_GetAllyToHealIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
+{
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.nBestValue = 200;
+    sTarget.sTargetType = AI_ALLY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTarget.sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1112", "Getting Highest Melee Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) + " fRange: " +
-                 FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1154", "Getting the most wounded ally to heal index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ALLY, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nInMelee = GetLocalInt(oCreature, sCreatureType + "_MELEE" + sCnt);
-                // Has greater melee or equal melee and is closer.
-                if(nInMelee > nHMelee ||(nInMelee == nHMelee && fTargetRange < fLowestTargetRange))
-                {
-                    fLowestTargetRange = fTargetRange;
-                    nHMelee = nInMelee;
-                    nIndex = nCnt;
-                }
+                sTarget.nValue = GetLocalInt(oCreature, AI_ALLY_HEALTH + sCounter);
+                sTarget = ai_CheckForLowestValueAllTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ALLY + sCounter);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1135", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-           " HighestMeleeTarget: " + IntToString(nHMelee) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then we are done..
+    if(AI_DEBUG) ai_Debug("0i_combat", "1187", "Found most wounded ally to heal Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-int ai_GetMostWoundedIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetAllyToHealTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nCnt = 1;
-    int nIndex, nHp, nLHp = 200;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1149", "Getting Most Wounded Index: " + sCnt + " " +
-                 GetName(oTarget) +
-                 " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)) +
-                 " Health: " + IntToString(GetLocalInt(oCreature, sCreatureType + "_HEALTH" + sCnt)));
-        if(fTargetRange <= fRange)
-        {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
-            {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nHp = GetLocalInt(oCreature, sCreatureType + "_HEALTH" + sCnt);
-                    // Has lower health or equal health and is closer.
-                    if(nHp < nLHp ||(nHp == nLHp && fTargetRange < fLowestTargetRange))
-                    {
-                        // If this creature has high enough health then change.
-                        if(nHp > AI_HEALTH_BLOODY)
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLHp = nHp;
-                            nIndex = nCnt;
-                        }
-                        else
-                        {
-                            object oAttacker = GetLastHostileActor(oTarget);
-                            if(AI_DEBUG) ai_Debug("0i_combat", "1177", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                                   " oAttacker: " + GetName(oAttacker));
-                            // Is not being attacked by someone else then change.
-                            if(oAttacker != oCreature || !GetIsObjectValid(oAttacker))
-                            {
-                                fLowestTargetRange = fTargetRange;
-                                nLHp = nHp;
-                                nIndex = nCnt;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1194", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-           " GetMostWoundedTargetForDamage: " + IntToString(nLHp) + " Index: " + IntToString(nIndex));
-    return nIndex;
-}
-object ai_GetMostWoundedTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
-{
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "1200", "Checking for most wounded target in " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetMostWoundedIndex(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
-}
-int ai_GetAllyToHealIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION)
-{
-    int bCheck, nCnt = 1;
-    int nIndex, nHp, nLHp = 200;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ALLY + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        if(AI_DEBUG) ai_Debug("0i_combat", "1252", "oCreature: " + GetName(oCreature) + " oTarget: " +
-                 GetName(oTarget) + " Self Heal: " + IntToString(!ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF)));
-        if(oTarget != oCreature || !ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF))
-        {
-            fTargetRange = GetLocalFloat(oCreature, AI_ALLY_RANGE + sCnt);
-            if(AI_DEBUG) ai_Debug("0i_combat", "1258", "Getting Ally to Heal Index: " + sCnt + " " +
-                     GetName(oTarget) +
-                     " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                     " fRange: " + FloatToString(fRange, 0, 2) +
-                     " Health: " + IntToString(GetLocalInt(oCreature, AI_ALLY_HEALTH + sCnt)));
-            if(fTargetRange <= fRange)
-            {
-                // We see and hear all allies and must be alive..
-                if(!GetIsDead(oTarget))
-                {
-                    nHp = GetLocalInt(oCreature, AI_ALLY_HEALTH + sCnt);
-                    // Has lower health or equal health and is closer.
-                    if(nHp < nLHp ||(nHp == nLHp && fTargetRange < fLowestTargetRange))
-                    {
-                        // If this creature has high enough health then change.
-                        if(nHp > AI_HEALTH_BLOODY)
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLHp = nHp;
-                            nIndex = nCnt;
-                        }
-                        else
-                        {
-                            object oAttacker = GetLastHostileActor(oTarget);
-                            if(AI_DEBUG) ai_Debug("0i_combat", "1285", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                                   " oAttacker: " + GetName(oAttacker));
-                            // Is not being attacked by someone else then change.
-                            if(oAttacker != oCreature || !GetIsObjectValid(oAttacker))
-                            {
-                                fLowestTargetRange = fTargetRange;
-                                nLHp = nHp;
-                                nIndex = nCnt;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ALLY + sCnt);
-        bCheck = FALSE;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1287", "fRange: " + FloatToString(fRange, 0, 2) +
-           " GetAllyToHealTargetForDamage: " + IntToString(nLHp) + " Index: " + IntToString(nIndex));
-    return nIndex;
-}
-object ai_GetAllyToHealTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION)
-{
-    if(AI_DEBUG) ai_Debug("0i_combat", "1293", "Checking for ally to heal target in " +
-             FloatToString(fRange, 0, 2));
-    string sIndex = IntToString(ai_GetAllyToHealIndex(oCreature, fRange));
+    if(AI_DEBUG) ai_Debug("0i_combat", "1192", "Getting the most wounded ally to heal target.");
+    string sIndex = IntToString(ai_GetAllyToHealIndex(oCreature, fMaxRange));
     return GetLocalObject(oCreature, AI_ALLY + sIndex);
 }
-object ai_GetLowestFortitudeSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION)
+object ai_GetLowestFortitudeSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    int nCnt = 1;
-    int nIndex, nDIndex, nFortitude, nLDFortitude = 100, nLFortitude = 100;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestDTargetRange = fRange + 1.0, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 200;
+    sTarget.nBestSecondaryValue = 200;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1217", "Getting Lowest Fort Save: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1113", "Getting the lowest fortitude save index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nFortitude = GetFortitudeSavingThrow(oTarget);
-                // Lets put any disabled targets in its own group, if we
-                // ignore associates lets put them here as well.
-                if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                   (bIngnoreAssociates && GetAssociateType(oTarget)))
-                {
-                    if(nFortitude < nLDFortitude ||(nFortitude == nLDFortitude && fTargetRange < fLowestDTargetRange))
-                    {
-                        fLowestDTargetRange = fTargetRange;
-                        nLDFortitude = nFortitude;
-                        nDIndex = nCnt;
-                    }
-                }
-                // Has lower Fortitude or equal Fortitude and is closer.
-                if(nFortitude < nLFortitude ||(nFortitude == nLFortitude && fTargetRange < fLowestTargetRange))
-                {
-                    // If this creature has high enough health then change.
-                    if(GetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt) > AI_HEALTH_BLOODY)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLFortitude = nFortitude;
-                        nIndex = nCnt;
-                    }
-                    else
-                    {
-                        object oAttacker = GetLastHostileActor(oTarget);
-                        if(AI_DEBUG) ai_Debug("0i_combat", "1253", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                               " oAttacker: " + GetName(oAttacker));
-                        // Is not being attacked by someone else then change.
-                        if(oAttacker != oCreature || !GetIsObjectValid(oAttacker))
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLFortitude = nFortitude;
-                            nIndex = nCnt;
-                        }
-                    }
-                }
+                sTarget.nValue = GetFortitudeSavingThrow(sTarget.oTarget);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetLowestFortitudeSaveTarget(oCreature);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1276", "Fortitude: " + IntToString(nLFortitude) +
-             " Disabled Fortitude: " + IntToString(nLDFortitude) + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, AI_ENEMY + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1232", "Found lowest fortitude save Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, AI_ENEMY + IntToString(sTarget.nIndex));
 }
-object ai_GetLowestReflexSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION)
+object ai_GetLowestReflexSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    int nCnt = 1;
-    int nIndex, nDIndex, nReflex, nLDReflex = 100, nLReflex = 100;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestDTargetRange = fRange + 1.0, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 200;
+    sTarget.nBestSecondaryValue = 200;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1292", "Getting Lowest Refl Save: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1248", "Getting the lowest reflex save index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nReflex = GetReflexSavingThrow(oTarget);
-                // Lets put any disabled targets in its own group, if we
-                // ignore associates lets put them here as well.
-                if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                   (bIngnoreAssociates && GetAssociateType(oTarget)))
-                {
-                    if(nReflex < nLDReflex ||(nReflex == nLDReflex && fTargetRange < fLowestDTargetRange))
-                    {
-                        fLowestDTargetRange = fTargetRange;
-                        nLDReflex = nReflex;
-                        nDIndex = nCnt;
-                    }
-                }
-                // Has lower Fortitude or equal Fortitude and is closer.
-                if(nReflex < nLReflex ||(nReflex == nLReflex && fTargetRange < fLowestTargetRange))
-                {
-                    // If this creature has high enough health then change.
-                    if(GetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt) > AI_HEALTH_BLOODY)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLReflex = nReflex;
-                        nIndex = nCnt;
-                    }
-                    else
-                    {
-                        object oAttacker = GetLastHostileActor(oTarget);
-                        if(AI_DEBUG) ai_Debug("0i_combat", "1328", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                                " oAttacker: " + GetName(oAttacker));
-                        // Is not being attacked by someone else then change.
-                        if(oAttacker != oCreature || !GetIsObjectValid(oAttacker))
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLReflex = nReflex;
-                            nIndex = nCnt;
-                        }
-                    }
-                }
+                sTarget.nValue = GetReflexSavingThrow(sTarget.oTarget);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetLowestFortitudeSaveTarget(oCreature);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1351", "Reflex: " + IntToString(nLReflex) +
-             " Disabled Reflex: " + IntToString(nLDReflex) + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, AI_ENEMY + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1269", "Found lowest reflex save Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, AI_ENEMY + IntToString(sTarget.nIndex));
 }
-object ai_GetLowestWillSaveTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION)
+object ai_GetLowestWillSaveTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    int nCnt = 1;
-    int nIndex, nDIndex, nWill, nLDWill = 100, nLWill = 100;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestDTargetRange = fRange + 1.0, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 200;
+    sTarget.nBestSecondaryValue = 200;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1367", "Getting Lowest Will Save: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1285", "Getting the lowest will save index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nWill = GetWillSavingThrow(oTarget);
-                // Lets put any disabled targets in its own group, if we
-                // ignore associates lets put them here as well.
-                if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                   (bIngnoreAssociates && GetAssociateType(oTarget)))
-                {
-                    if(nWill < nLDWill ||(nWill == nLDWill && fTargetRange < fLowestDTargetRange))
-                    {
-                        fLowestDTargetRange = fTargetRange;
-                        nLDWill = nWill;
-                        nDIndex = nCnt;
-                    }
-                }
-                // Has lower Will or equal Will and is closer.
-                if(nWill < nLWill ||(nWill == nLWill && fTargetRange < fLowestTargetRange))
-                {
-                    // If this creature has high enough health then change.
-                    if(GetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt) > AI_HEALTH_BLOODY)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLWill = nWill;
-                        nIndex = nCnt;
-                    }
-                    else
-                    {
-                        object oAttacker = GetLastHostileActor(oTarget);
-                        if(AI_DEBUG) ai_Debug("0i_combat", "1403", "CurrentHP: " + IntToString(GetCurrentHitPoints(oTarget)) +
-                               " oAttacker: " + GetName(oAttacker));
-                        // Is not being attacked by someone else then change.
-                        if(oAttacker != oCreature || !GetIsObjectValid(oAttacker))
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nLWill = nWill;
-                            nIndex = nCnt;
-                        }
-                    }
-                }
+                sTarget.nValue = GetWillSavingThrow(sTarget.oTarget);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetLowestFortitudeSaveTarget(oCreature);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1426", "Will: " + IntToString(nLWill) +
-             " Disabled Will: " + IntToString(nLDWill) + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, AI_ENEMY + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1306", "Found lowest will save Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, AI_ENEMY + IntToString(sTarget.nIndex));
 }
-object ai_GetSpellTargetBasedOnSaves(object oCreature, int nSpell, float fRange = AI_RANGE_PERCEPTION)
+object ai_GetSpellTargetBasedOnSaves(object oCreature, int nSpell, float fMaxRange = AI_RANGE_PERCEPTION)
 {
     // Check the spells save type in "ai_spells.2da" and find the weakest
     // creature based on that save.
     string sSaveType = Get2DAString("ai_spells", "SaveType", nSpell);
-    if(sSaveType == "Reflex") return ai_GetLowestReflexSaveTarget(oCreature, fRange);
-    if(sSaveType == "Fortitude") return ai_GetLowestFortitudeSaveTarget(oCreature, fRange);
-    if(sSaveType == "Will") return ai_GetLowestWillSaveTarget(oCreature, fRange);
+    if(sSaveType == "Reflex") return ai_GetLowestReflexSaveTarget(oCreature, fMaxRange);
+    if(sSaveType == "Fortitude") return ai_GetLowestFortitudeSaveTarget(oCreature, fMaxRange);
+    if(sSaveType == "Will") return ai_GetLowestWillSaveTarget(oCreature, fMaxRange);
     // If there is no save then lets see if we can find an enemy with the lowest health.
-    return ai_GetMostWoundedTarget(oCreature, fRange);
+    return ai_GetMostWoundedTarget(oCreature, fMaxRange);
 }
-int ai_GetNearestIndexThatSeesUs(object oCreature)
+int ai_GetNearestIndexThatSeesUs(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION)
 {
-    int nIndex, nCnt = 1;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = AI_RANGE_PERCEPTION + 1.0;
-    object oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1451", "Getting Nearest Index that sees us: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " Sees us?: " + IntToString(GetObjectSeen(oCreature, oTarget)));
-        if(GetObjectSeen(oCreature, oTarget))
+        if(AI_DEBUG) ai_Debug("0i_combat", "1334", "Getting the nearest creature that sees us index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            if(fTargetRange < fLowestTargetRange)
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                fLowestTargetRange = fTargetRange;
-                nIndex = nCnt;
-            }
-        }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1465", "Nearest Enemy that sees us: nIndex: " + IntToString (nIndex));
-    return nIndex;
-}
-int ai_GetBestSneakAttackIndex(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
-{
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oAttacking, oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1479", "Getting Sneak Attack Index: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-        if(fTargetRange <= fRange)
-        {
-            // We must be able to see them.
-            // Uncanny Dodge II gives immunity to sneak attack unless attacker
-            // is 4 levels higher. We will assume they are always immune for simplicity.
-            if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                !GetIsDead(oTarget) && !ai_IsImmuneToSneakAttacks(oCreature, oTarget))
-            {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
+                if(AI_DEBUG) ai_Debug("0i_combat", "1373", GetName(sTarget.oTarget) + " can see us? " +
+                            IntToString(GetObjectSeen(oCreature, sTarget.oTarget)));
+                if(GetObjectSeen(oCreature, sTarget.oTarget))
                 {
-                    oAttacking = ai_GetAttackedTarget(oTarget);
-                    if(AI_DEBUG) ai_Debug("0i_combat", "1492", "oTarget: " + GetName(oTarget) +
-                             " is attacking " + GetName(oAttacking));
-                    // They are attacking someone besides us or we are hidden?
-                    if((oAttacking != OBJECT_INVALID && oAttacking != oCreature) ||
-                       GetActionMode(oCreature, ACTION_MODE_STEALTH))
-                    {
-                        // Lets put any disabled targets in its own group, if we
-                        // ignore associates lets put them here as well.
-                        if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                           (bIngnoreAssociates && GetAssociateType(oTarget)))
-                        {
-                            if(fTargetRange < fLowestDTargetRange)
-                            {
-                                fLowestDTargetRange = fTargetRange;
-                                nDIndex = nCnt;
-                            }
-                        }
-                        // Is closer.
-                        else if(fTargetRange < fLowestTargetRange)
-                        {
-                            fLowestTargetRange = fTargetRange;
-                            nIndex = nCnt;
-                        }
-                    }
+                    sTarget = ai_CheckForNearestAllTarget(oCreature, sTarget, nCounter, sCounter);
                 }
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see if
-        // we can move around in combat.
-        if (fRange == AI_RANGE_MELEE && ai_CanIMoveInCombat(oCreature))
-        {
-            nIndex = ai_GetBestSneakAttackIndex(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
-        }
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1535", "Get attacking target (Index: " + IntToString(nIndex) + ")");
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(AI_DEBUG) ai_Debug("0i_combat", "1354", "Found nearest creature that sees us Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-int ai_GetNearestIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+int ai_GetBestSneakAttackIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
 {
-    if(d100() <= GetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY))
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    object oAttacking;
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        ai_GetLowestCRIndexNotInAOE(oCreature, fRange, sCreatureType, bAlwaysAtk);
-    }
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1549", "Getting Nearest Index Not in AOE: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1372", "Getting the best sneak attack index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
         {
-            // We must be able to see them and they can't be in a dangerous AOE.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget) &&
-                !ai_IsInADangerousAOE(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
+                oAttacking = ai_GetAttackedTarget(sTarget.oTarget);
+                if(AI_DEBUG) ai_Debug("0i_combat", "1383", "oTarget: " + GetName(sTarget.oTarget) +
+                                      " is attacking " + GetName(oAttacking));
+                // They are attacking someone besides us or we are hidden?
+                if((oAttacking != OBJECT_INVALID && oAttacking != oCreature) ||
+                   GetActionMode(oCreature, ACTION_MODE_STEALTH))
                 {
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(fTargetRange < fLowestDTargetRange)
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Is closer.
-                    else if(fTargetRange < fLowestTargetRange)
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nIndex = nCnt;
-                    }
+                    sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
                 }
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1398", "Found best sneak attack Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
+}
+int ai_GetNearestIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
+{
+    if(GetLocalInt(oCreature, AI_RULE_AI_DIFFICULTY))
     {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) nIndex = ai_GetNearestIndexNotInAOE(oCreature, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
+        ai_GetLowestCRIndexNotInAOE(oCreature, fMaxRange, sTargetType, bAlwaysAtk);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1592", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " Index: " + IntToString(nIndex));
-    return nIndex;
-}
-object ai_GetNearestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
-{
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "1598", "Getting nearest target not in an AOE within " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetNearestIndexNotInAOE(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
-}
-int ai_GetLowestCRIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
-{
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLCombat = 100, nLDCombat = 100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1615", "Getting Lowest Index Not in AOE: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1416", "Getting the nearest not in AOE index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && !ai_IsInADangerousAOE(sTarget.oTarget))
         {
-            // We must be able to see them and they can't be dead or dying.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget) &&
-                !ai_IsInADangerousAOE(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nLDCombat ||(nCombat == nLDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nLDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // has less combat or equal combat and is closer.
-                    else if(nCombat < nLCombat ||(nCombat == nLCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) nIndex = ai_GetLowestCRIndexNotInAOE(oCreature, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1661", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " LowestCombatRating: " + IntToString(nLCombat) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1434", "Found nearest not in AOE Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_GetLowestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetNearestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "1667", "Getting lowest target not in an AOE within " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetLowestCRIndexNotInAOE(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
+    if(AI_DEBUG) ai_Debug("0i_combat", "1439", "Getting the nearest not in AOE target.");
+    string sIndex = IntToString(ai_GetNearestIndexNotInAOE(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-int ai_GetHighestCRIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+int ai_GetLowestCRIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHCombat = 0, nHDCombat = 0, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 100;
+    sTarget.nBestSecondaryValue = 100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1684", "Getting Highest Index Not in AOE: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1456", "Getting the lowest CR not in AOE index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && !ai_IsInADangerousAOE(sTarget.oTarget))
         {
-            // We must be able to see them and they can't be dead or dying.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget) &&
-                !ai_IsInADangerousAOE(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1463", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat > nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nHDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // has less combat or equal combat and is closer.
-                    else if(nCombat > nHCombat ||(nCombat == nHCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nHCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) nIndex = ai_GetHighestCRIndexNotInAOE(oCreature, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1730", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1477", "Found lowest CR not in AOE [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_GetHighestTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetLowestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    if(AI_DEBUG) ai_Debug("0i_combat", "1736", "Getting highest target not in an AOE within " +
-             FloatToString(fRange, 0, 2) + " CreatureType: " + sCreatureType +
-             " AlwaysAtk: " + IntToString(bAlwaysAtk));
-    string sIndex = IntToString(ai_GetNearestIndexNotInAOE(oCreature, fRange, sCreatureType, bAlwaysAtk));
-    return GetLocalObject(oCreature, sCreatureType + sIndex);
+    if(AI_DEBUG) ai_Debug("0i_combat", "1482", "Getting the lowest cr not in AOE target.");
+    string sIndex = IntToString(ai_GetLowestCRIndexNotInAOE(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-int ai_GetHighestMeleeIndexNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY)
+int ai_GetHighestCRIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHMelee = -100, nInMelee, nIndex, nCnt = 1;
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1751", "Getting Highest Melee Index Not in AOE: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " +
-                 FloatToString(fTargetRange, 0, 2) + " fRange: " + FloatToString(fRange, 0, 2) +
-                 " Seen: " + IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1499", "Getting the highest CR not in AOE index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && !ai_IsInADangerousAOE(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget) &&
-                !ai_IsInADangerousAOE(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1506", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                nInMelee = GetLocalInt(oCreature, sCreatureType + "_MELEE" + sCnt);
-                // Has greater melee and equal melee and is closer.
-                if(nInMelee > nHMelee ||(nInMelee == nHMelee && fTargetRange < fLowestTargetRange))
-                {
-                    fLowestTargetRange = fTargetRange;
-                    nHMelee = nInMelee;
-                    nIndex = nCnt;
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1775", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " HighestMeleeTarget: " + IntToString(nHMelee) + " Index: " + IntToString(nIndex));
-    return nIndex;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1520", "Found highest CR not in AOE [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_CheckForGroupedTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY)
+object ai_GetHighestTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    // Lets see if we can find a creature with the most enemies around them.
-    string sIndex = IntToString(ai_GetHighestMeleeIndex(oCreature, fRange, sCreatureType));
-    int nInMelee = GetLocalInt(oCreature, sCreatureType + "_MELEE" + sIndex);
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sIndex);
-    if(AI_DEBUG) ai_Debug("0i_combat", "1811", "Getting Grouped Target: oTarget: " +
-             GetName(oTarget) + " :" + IntToString(nInMelee));
-    return oTarget;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1525", "Getting the highest cr not in AOE target.");
+    string sIndex = IntToString(ai_GetHighestCRIndexNotInAOE(oCreature, fMaxRange, sTargetType, bAlwaysAtk));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
 }
-object ai_CheckForGroupedTargetNotInAOE(object oCreature, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY)
+int ai_GetHighestMeleeIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY)
 {
-    object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
-    if(oPCTarget != OBJECT_INVALID) return oPCTarget;
-    // Lets see if we can find a creature with the most enemies around them.
-    string sIndex = IntToString(ai_GetHighestMeleeIndexNotInAOE(oCreature, fRange, sCreatureType));
-    int nInMelee = GetLocalInt(oCreature, sCreatureType + "_MELEE" + sIndex);
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sIndex);
-    if(AI_DEBUG) ai_Debug("0i_combat", "1822", "Getting Group Target Not in AOE: oTarget: " +
-             GetName(oTarget) + " :" + IntToString(nInMelee));
-    return oTarget;
-}
-object ai_GetNearestClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
-{
-    if(d100() <= GetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY))
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        ai_GetLowestCRClassTarget(oCreature, nClassType, fRange, sCreatureType, bAlwaysAtk);
-    }
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1819", "Getting Nearest Class Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1542", "Getting the highest InMelee not in AOE index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && !ai_IsInADangerousAOE(sTarget.oTarget))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(fTargetRange < fLowestDTargetRange &&
-                            ai_CheckClassType(oTarget, nClassType))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Is closer.
-                    else if(fTargetRange < fLowestTargetRange &&
-                             ai_CheckClassType(oTarget, nClassType))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_MELEE" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetNearestClassTarget(oCreature, nClassType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1863", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " Index: " + IntToString(nIndex));
-    return GetLocalObject(OBJECT_SELF, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1563", "Found highest InMelee not in AOE [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return sTarget.nIndex;
 }
-object ai_GetLowestCRClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_CheckForGroupedTargetNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLCombat = 100, nLDCombat = 100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    if(AI_DEBUG) ai_Debug("0i_combat", "1574", "Getting the highest InMelee not in AOE target.");
+    string sIndex = IntToString(ai_GetHighestMeleeIndexNotInAOE(oCreature, fMaxRange, sTargetType));
+    return GetLocalObject(oCreature, sTargetType + sIndex);
+}
+object ai_GetNearestClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
+{
+    if(GetLocalInt(oCreature, AI_RULE_AI_DIFFICULTY))
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1878", "Getting Lowest Class Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(OBJECT_SELF, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange && ai_CheckClassType(oTarget, nClassType))
+        ai_GetLowestCRClassTarget(oCreature, nClassType, fMaxRange, sTargetType, bAlwaysAtk);
+    }
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
+    {
+        if(AI_DEBUG) ai_Debug("0i_combat", "1591", "Getting the nearest class index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckClassType(sTarget.oTarget, nClassType))
         {
-            // We must be able to see them.
-            if(GetLocalInt(OBJECT_SELF, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1598", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nLDCombat ||(nCombat == nLDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nLDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has less combat or equal combat and is closer.
-                    else if(nCombat < nLCombat ||(nCombat == nLCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        //if (fRange == AI_RANGE_MELEE) return ai_GetLowestCRClassTarget(oCreature, nClassType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1923", "Class: " + IntToString(nClassType) +
-             " CreatureType: " + sCreatureType + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1611", "Found nearest class Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
 }
-object ai_GetHighestCRClassTarget(object oCreature, int nClassType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetLowestCRClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHCombat = -100, nHDCombat = -100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 100;
+    sTarget.nBestSecondaryValue = 100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        // fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "1939", "Getting Highest Class Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange && ai_CheckClassType(oTarget, nClassType))
+        if(AI_DEBUG) ai_Debug("0i_combat", "1626", "Getting the lowest CR class index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckClassType(sTarget.oTarget, nClassType))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1634", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nHDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has greater combat or equal combat and is closer.
-                    else if(nCombat > nHCombat ||(nCombat == nHCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nHCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetHighestCRClassTarget(oCreature, nClassType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "1984", "Class: " + IntToString(nClassType) +
-             " CreatureType: " + sCreatureType + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1648", "Found lowest CR class [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
 }
-object ai_GetNearestRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetHighestCRClassTarget(object oCreature, int nClassType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    if(d100() <= GetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY))
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        ai_GetLowestCRRacialTarget(oCreature, nRacialType, fRange, sCreatureType, bAlwaysAtk);
-    }
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
-    {
-        // fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "2000", "Getting Nearest Racial Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(OBJECT_SELF, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange)
+        if(AI_DEBUG) ai_Debug("0i_combat", "1664", "Getting the highest CR class index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckClassType(sTarget.oTarget, nClassType))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1671", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(fTargetRange < fLowestDTargetRange &&
-                           ai_CheckRacialType(oTarget, nRacialType))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Is closer.
-                    else if(fTargetRange < fLowestTargetRange &&
-                            ai_CheckRacialType(oTarget, nRacialType))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetNearestRacialTarget(oCreature, nRacialType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2044", sCreatureType + " fRange: " + FloatToString(fRange, 0, 2) +
-             " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1685", "Found highest CR class [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
 }
-object ai_GetLowestCRRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetNearestRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nLCombat = 100, nLDCombat = 100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    if(GetLocalInt(oCreature, AI_RULE_AI_DIFFICULTY))
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "2059", "Getting Lowest Racial Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(OBJECT_SELF, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange && ai_CheckRacialType(oTarget, nRacialType))
+        ai_GetLowestCRRacialTarget(oCreature, nRacialType, fMaxRange, sTargetType, bAlwaysAtk);
+    }
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
+    {
+        if(AI_DEBUG) ai_Debug("0i_combat", "1703", "Getting the nearest race index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckRacialType(sTarget.oTarget, nRacialType))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1710", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nLDCombat ||(nCombat == nLDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nLDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has less combat or equal combat and is closer.
-                    else if(nCombat < nLCombat ||(nCombat == nLCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nLCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetLowestCRRacialTarget(oCreature, nRacialType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2104", "Race: " + IntToString(nRacialType) +
-             " CreatureType: " + sCreatureType + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1723", "Found nearest race Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
 }
-object ai_GetHighestCRRacialTarget(object oCreature, int nRacialType, float fRange = AI_RANGE_PERCEPTION, string sCreatureType = AI_ENEMY, int bAlwaysAtk = TRUE)
+object ai_GetLowestCRRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    object oCenter = GetMaster();
-    if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-    int nHCombat = -100, nHDCombat = -100, nCombat, nIndex, nDIndex, nCnt = 1;
-    int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    string sCnt = "1";
-    float fTargetRange, fLowestTargetRange = fRange + 1.0;
-    float fLowestDTargetRange = fRange + 1.0;
-    object oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
-    while(oTarget != OBJECT_INVALID)
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = 100;
+    sTarget.nBestSecondaryValue = 100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
     {
-        //fTargetRange = GetLocalFloat(oCreature, sCreatureType + "_RANGE" + sCnt);
-        fTargetRange = GetDistanceBetween(oTarget, oCenter);
-        if(AI_DEBUG) ai_Debug("0i_combat", "2120", "Getting Highest Racial Target: " + sCnt + " " +
-                 GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                 IntToString(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt)));
-        if(fTargetRange <= fRange && ai_CheckRacialType(oTarget, nRacialType))
+        if(AI_DEBUG) ai_Debug("0i_combat", "1739", "Getting the lowest CR race index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckRacialType(sTarget.oTarget, nRacialType))
         {
-            // We must be able to see them.
-            if(GetLocalInt(oCreature, sCreatureType + "_PERCEIVED" + sCnt) &&
-                !GetIsDead(oTarget))
+            if(AI_DEBUG) ai_Debug("0i_combat", "1746", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
-                if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                {
-                    nCombat = GetLocalInt(oCreature, sCreatureType + "_COMBAT" + sCnt);
-                    // Lets put any disabled targets in its own group, if we
-                    // ignore associates lets put them here as well.
-                    if(GetLocalInt(oCreature, sCreatureType + "_DISABLED" + sCnt) ||
-                       (bIngnoreAssociates && GetAssociateType(oTarget)))
-                    {
-                        if(nCombat < nHDCombat ||(nCombat == nHDCombat && fTargetRange < fLowestDTargetRange))
-                        {
-                            fLowestDTargetRange = fTargetRange;
-                            nHDCombat = nCombat;
-                            nDIndex = nCnt;
-                        }
-                    }
-                    // Has greater combat or equal combat and is closer.
-                    else if(nCombat > nHCombat ||(nCombat == nHCombat && fTargetRange < fLowestTargetRange))
-                    {
-                        fLowestTargetRange = fTargetRange;
-                        nHCombat = nCombat;
-                        nIndex = nCnt;
-                    }
-                }
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForLowestValueTarget(oCreature, sTarget, nCounter, sCounter);
             }
         }
-        sCnt = IntToString(++nCnt);
-        oTarget = GetLocalObject(oCreature, sCreatureType + sCnt);
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
     }
-    // If we do not have a good target then lets see if there are more targets.
-    if(nIndex == 0 && nDIndex != 0)
-    {
-        // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetHighestCRRacialTarget(oCreature, nRacialType, AI_RANGE_PERCEPTION, sCreatureType, bAlwaysAtk);
-        else nIndex = nDIndex;
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2165", "Race: " + IntToString(nRacialType) +
-             " CreatureType: " + sCreatureType + " fRange: " +
-             FloatToString(fRange, 0, 2) + " Index: " + IntToString(nIndex));
-    return GetLocalObject(oCreature, sCreatureType + IntToString(nIndex));
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1760", "Found lowest CR race [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
 }
-object ai_GetNearestFavoredEnemyTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
+object ai_GetHighestCRRacialTarget(object oCreature, int nRacialType, float fMaxRange = AI_RANGE_PERCEPTION, string sTargetType = AI_ENEMY, int bAlwaysAtk = TRUE)
 {
-    int nRace, nRacialType, nIndex, nDIndex, nCnt = 1;
-    string sCnt;
-    float fFinalTargetRange = fRange + 1.0, fTargetRange, fLowestTargetRange, fLowestDTargetRange;
-    object oTarget, oFinalTarget;
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = sTargetType;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
+    {
+        if(AI_DEBUG) ai_Debug("0i_combat", "1776", "Getting the highest CR race index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, sTargetType + "_PERCEIVED" + sCounter) &&
+           !GetIsDead(sTarget.oTarget) && ai_CheckRacialType(sTarget.oTarget, nRacialType))
+        {
+            if(AI_DEBUG) ai_Debug("0i_combat", "1783", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, sTargetType, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
+            {
+                sTarget.nValue = GetLocalInt(oCreature, sTargetType + "_COMBAT" + sCounter);
+                sTarget = ai_CheckForHighestValueTarget(oCreature, sTarget, nCounter, sCounter);
+            }
+        }
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, sTargetType + sCounter);
+    }
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1797", "Found highest CR race [" + sTargetType + "] Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, sTargetType + IntToString(sTarget.nIndex));
+}
+object ai_GetNearestFavoredEnemyTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
+{
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.nBestValue = -100;
+    sTarget.nBestSecondaryValue = -100;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    int nRace, nRacialType;
     while(nRace < 24)
     {
         // Find which favored enemies we have.
@@ -2519,84 +1956,117 @@ object ai_GetNearestFavoredEnemyTarget(object oCreature, float fRange = AI_RANGE
         else nRace = 25;
         if(nRace < 25)
         {
-            object oCenter = GetMaster();
-            if(oCenter == OBJECT_INVALID) oCenter = oCreature;
-            // Now find the creature of the race we have.
-            int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-            sCnt = "1";
-            fLowestTargetRange = fRange + 1.0;
-            fLowestDTargetRange = fRange + 1.0;
-            oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-            while(oTarget != OBJECT_INVALID)
+            sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+            while(sTarget.oTarget != OBJECT_INVALID)
             {
-                //fTargetRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt);
-                fTargetRange = GetDistanceBetween(oTarget, oCenter);
-                if(AI_DEBUG) ai_Debug("0i_combat", "2310", "Getting Nearest Favored Enemy: " + sCnt + " " +
-                         GetName(oTarget) + " fTargetRange: " + FloatToString(fTargetRange, 0, 2) +
-                         " fRange: " + FloatToString(fRange, 0, 2) + " Seen: " +
-                         IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt)));
-                if(fTargetRange <= fRange)
+                if(AI_DEBUG) ai_Debug("0i_combat", "1940", "Getting the nearest favored race index: " +
+                                      sCounter + " " + GetName(sTarget.oTarget) +
+                                      " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                                      " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+                if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+                   !GetIsDead(sTarget.oTarget) && ai_CheckRacialType(sTarget.oTarget, nRacialType))
                 {
-                    // We must be able to see them.
-                    if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt) &&
-                        !GetIsDead(oTarget))
+                    if(AI_DEBUG) ai_Debug("0i_combat", "1947", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+                    if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+                       ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+                       ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
                     {
-                        if(bAlwaysAtk || !ai_IsStrongThanMe(oCreature, nCnt))
-                        {
-                            // Lets put any disabled targets in its own group, if we
-                            // ignore associates lets put them here as well.
-                            if(GetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt) ||
-                               (bIngnoreAssociates && GetAssociateType(oTarget)))
-                            {
-                                if(fTargetRange < fLowestDTargetRange &&
-                                   ai_CheckRacialType(oTarget, nRacialType))
-                                {
-                                    fLowestDTargetRange = fTargetRange;
-                                    nDIndex = nCnt;
-                                }
-                            }
-                            // Is closer.
-                            else if(fTargetRange < fLowestTargetRange &&
-                                    ai_CheckRacialType(oTarget, nRacialType))
-                            {
-                                fLowestTargetRange = fTargetRange;
-                                nIndex = nCnt;
-                            }
-                        }
+                        sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
                     }
                 }
-                sCnt = IntToString(++nCnt);
-                oTarget = GetLocalObject(oCreature, AI_ENEMY + sCnt);
-            }
-            // If we do not have a good target then lets see if there are more targets.
-            if(nIndex == 0 && nDIndex != 0)
-            {
-                // If we just checked within melee then lets check what we can see.
-                if (fRange == AI_RANGE_MELEE) oFinalTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
-                else if(fLowestDTargetRange < fFinalTargetRange)
-                {
-                    oFinalTarget = GetLocalObject(oCreature, AI_ENEMY + IntToString(nDIndex));
-                    fFinalTargetRange = fLowestDTargetRange;
-                }
-            }
-            else if(fLowestTargetRange < fFinalTargetRange)
-            {
-                oFinalTarget = GetLocalObject(oCreature, AI_ENEMY + IntToString(nIndex));
-                fFinalTargetRange = fLowestTargetRange;
+                sCounter = IntToString(++nCounter);
+                sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
             }
         }
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2357", "Finding favored enemy oFinalTarget: " + GetName(oFinalTarget) + " fRange: " +
-             FloatToString(fRange, 0, 2) + " nIndex: " + IntToString(nIndex));
-    return oFinalTarget;
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "1962", "Found nearest favored race Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, AI_ENEMY + IntToString(sTarget.nIndex));
+}
+object ai_GetFlankTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
+{
+    int nCnt = 1, nInMelee, nHighestMelee;
+    string sCnt = "1";
+    float fAllyRange;
+    object oTarget, oAlly = GetLocalObject(oCreature, AI_ALLY + sCnt);
+    while(oAlly != OBJECT_INVALID)
+    {
+        fAllyRange = GetLocalFloat(oCreature, AI_ALLY_RANGE + sCnt);
+        if(AI_DEBUG) ai_Debug("0i_combat", "1974", "Getting Ally being Flanked Index: " + sCnt + " " +
+                 GetName(oAlly) + " fAllyRange: " + FloatToString(fAllyRange, 0, 2) +
+                 " fMaxRange: " + FloatToString(fMaxRange, 0, 2));
+        if(fAllyRange <= fMaxRange)
+        {
+            nInMelee = GetLocalInt(oCreature, AI_ALLY_MELEE + sCnt);
+            if(AI_DEBUG) ai_Debug("0i_combat", "1980", "nInMelee: " + IntToString(nInMelee));
+            if(!GetIsDead(oAlly) && nInMelee > nHighestMelee)
+            {
+                oTarget = ai_GetEnemyAttackingMyAlly(oCreature, oAlly, fMaxRange);
+                if(oTarget != OBJECT_INVALID) nHighestMelee = nInMelee;
+            }
+        }
+        sCnt = IntToString(++nCnt);
+        oAlly = GetLocalObject(oCreature, AI_ALLY + sCnt);
+    }
+    // If we do not have a good target then lets see if there are more targets.
+    if(oTarget == OBJECT_INVALID)
+    {
+        // If we just checked within melee then lets check what we can see if
+        // we can move around in combat.
+        if (fMaxRange == AI_RANGE_MELEE && ai_CanIMoveInCombat(oCreature))
+        {
+            oTarget = ai_GetFlankTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
+        }
+    }
+    if(AI_DEBUG) ai_Debug("0i_combat", "2000", "oTarget " + GetName(oTarget) +
+               " is attacking " + GetName(oAlly));
+    return oTarget;
+}
+object ai_GetRangedTarget(object oCreature, float fMaxRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
+{
+    struct stTarget sTarget;
+    sTarget.fNearestRange = fMaxRange + 1.0;
+    sTarget.fNearestSecondaryRange = sTarget.fNearestRange;
+    sTarget.sTargetType = AI_ENEMY;
+    int nCounter = 1;
+    string sCounter = "1";
+    sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    while(sTarget.oTarget != OBJECT_INVALID)
+    {
+        if(AI_DEBUG) ai_Debug("0i_combat", "2037", "Getting the nearest ranged index: " +
+                              sCounter + " " + GetName(sTarget.oTarget) +
+                              " Seen: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter)) +
+                              " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
+        if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
+           !GetIsDead(sTarget.oTarget))
+        {
+            if(AI_DEBUG) ai_Debug("0i_combat", "2044", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
+            if(bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter) &&
+               ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
+               ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
+            {
+                if(ai_GetIsRangeWeapon(GetItemInSlot(INVENTORY_SLOT_LEFTHAND, sTarget.oTarget)))
+                {
+                    sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
+                }
+            }
+        }
+        sCounter = IntToString(++nCounter);
+        sTarget.oTarget = GetLocalObject(oCreature, AI_ENEMY + sCounter);
+    }
+    // If we do not have a normal target then use our best secondary target.
+    if(sTarget.nIndex == 0 && sTarget.nSecondaryIndex != 0) sTarget.nIndex = sTarget.nSecondaryIndex;
+    if(AI_DEBUG) ai_Debug("0i_combat", "2060", "Found nearest ranged Index: " + IntToString(sTarget.nIndex));
+    return GetLocalObject(oCreature, AI_ENEMY + IntToString(sTarget.nIndex));
 }
 object ai_GetNearestTargetForMeleeCombat(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
 {
     object oPCTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
     if(oPCTarget != OBJECT_INVALID) return oPCTarget;
     string sIndex;
-    // Are we in melee? If so try to get the weakest enemy in melee.
-    if(nInMelee > 0) sIndex = IntToString(ai_GetNearestCreatureIndex(oCreature, AI_RANGE_MELEE));
+    // Are we in melee? If so try to get the nearest enemy in melee.
+    if(nInMelee > 0) sIndex = IntToString(ai_GetNearestIndex(oCreature, AI_RANGE_MELEE));
     // If not then lets go find someone to attack!
     else
     {
@@ -2605,12 +2075,12 @@ object ai_GetNearestTargetForMeleeCombat(object oCreature, int nInMelee, int bAl
         // If we didn't get a target then get any target within range.
         if(sIndex == "0")
         {
-            sIndex = IntToString(ai_GetNearestCreatureIndex(oCreature, AI_RANGE_PERCEPTION, AI_ENEMY, bAlwaysAtk));
+            sIndex = IntToString(ai_GetNearestIndex(oCreature, AI_RANGE_PERCEPTION, AI_ENEMY, bAlwaysAtk));
         }
     }
     object oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
     // We might not have a target this is fine as sometimes we don't want to attack!
-    if(AI_DEBUG) ai_Debug("0i_combat", "2379", GetName(oTarget) + " is the nearest target for melee combat!");
+    if(AI_DEBUG) ai_Debug("0i_combat", "2024", GetName(oTarget) + " is the nearest target for melee combat!");
     return oTarget;
 }
 object ai_GetLowestCRTargetForMeleeCombat(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
@@ -2634,7 +2104,7 @@ object ai_GetLowestCRTargetForMeleeCombat(object oCreature, int nInMelee, int bA
     }
     object oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
     // We might not have a target this is fine as sometimes we don't want to attack!
-    if(AI_DEBUG) ai_Debug("0i_combat", "2400", GetName(oTarget) + " is the weakest target for melee combat!");
+    if(AI_DEBUG) ai_Debug("0i_combat", "2048", GetName(oTarget) + " is the weakest target for melee combat!");
     return oTarget;
 }
 object ai_GetHighestCRTargetForMeleeCombat(object oCreature, int nInMelee)
@@ -2656,49 +2126,10 @@ object ai_GetHighestCRTargetForMeleeCombat(object oCreature, int nInMelee)
     }
     object oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
     // We might not have a target this is fine as sometimes we don't want to attack!
-    if(AI_DEBUG) ai_Debug("0i_combat", "2418", GetName(oTarget) + " is the strongest target for melee combat!");
+    if(AI_DEBUG) ai_Debug("0i_combat", "2070", GetName(oTarget) + " is the strongest target for melee combat!");
     return oTarget;
 }
-object ai_GetBestEnemyToFlankTarget(object oCreature, float fRange = AI_RANGE_PERCEPTION, int bAlwaysAtk = TRUE)
-{
-    int nCnt = 1, nInMelee, nHighestMelee;
-    string sCnt = "1";
-    float fAllyRange;
-    object oTarget, oAlly = GetLocalObject(oCreature, AI_ALLY + sCnt);
-    while(oAlly != OBJECT_INVALID)
-    {
-        fAllyRange = GetLocalFloat(oCreature, AI_ALLY_RANGE + sCnt);
-        if(AI_DEBUG) ai_Debug("0i_combat", "2598", "Getting Ally being Flanked Index: " + sCnt + " " +
-                 GetName(oAlly) + " fAllyRange: " + FloatToString(fAllyRange, 0, 2) +
-                 " fRange: " + FloatToString(fRange, 0, 2));
-        if(fAllyRange <= fRange)
-        {
-            nInMelee = GetLocalInt(oCreature, AI_ALLY_MELEE + sCnt);
-            if(AI_DEBUG) ai_Debug("0i_combat", "2604", "nInMelee: " + IntToString(nInMelee));
-            if(!GetIsDead(oAlly) && nInMelee > nHighestMelee)
-            {
-                oTarget = ai_GetEnemyAttackingMyAlly(oCreature, oAlly, fRange);
-                if(oTarget != OBJECT_INVALID) nHighestMelee = nInMelee;
-            }
-        }
-        sCnt = IntToString(++nCnt);
-        oAlly = GetLocalObject(oCreature, AI_ALLY + sCnt);
-    }
-    // If we do not have a good target then lets see if there are more targets.
-    if(oTarget == OBJECT_INVALID)
-    {
-        // If we just checked within melee then lets check what we can see if
-        // we can move around in combat.
-        if (fRange == AI_RANGE_MELEE && ai_CanIMoveInCombat(oCreature))
-        {
-            oTarget = ai_GetBestEnemyToFlankTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
-        }
-    }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2625", "oTarget " + GetName(oTarget) +
-               " is attacking " + GetName(oAlly));
-    return oTarget;
-}
-object ai_GetEnemyAttackingMe(object oCreature, float fRange = AI_RANGE_MELEE)
+object ai_GetEnemyAttackingMe(object oCreature, float fMaxRange = AI_RANGE_MELEE)
 {
     int nCtr = 1;
     float fDistance;
@@ -2710,17 +2141,17 @@ object ai_GetEnemyAttackingMe(object oCreature, float fRange = AI_RANGE_MELEE)
         if(!ai_Disabled(oEnemy))
         {
             fDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCtr);
-            if(AI_DEBUG) ai_Debug("0i_combat", "2431", "Getting Enemy Attacking Me: " + sCtr + " " +
+            if(AI_DEBUG) ai_Debug("0i_combat", "2084", "Getting Enemy Attacking Me: " + sCtr + " " +
                              GetName(oEnemy) + " fTargetRange: " + FloatToString(fDistance, 0, 2) +
-                             " fRange: " + FloatToString(fRange, 0, 2) + " Attacking: " +
+                             " fMaxRange: " + FloatToString(fMaxRange, 0, 2) + " Attacking: " +
                              GetName(ai_GetAttackedTarget(oEnemy)));
-            if(fDistance <= fRange)
+            if(fDistance <= fMaxRange)
             {
                 oAttacked = ai_GetAttackedTarget(oEnemy);
                 // If an enemy isn't attacking someone we must assume we are next!
                 if(oAttacked == oCreature || oAttacked == OBJECT_INVALID)
                 {
-                    if(AI_DEBUG) ai_Debug("0i_combat", "2441", "Enemy attacking me: " + GetName(oEnemy) + " has attacked: " + GetName(ai_GetAttackedTarget(oEnemy)));
+                    if(AI_DEBUG) ai_Debug("0i_combat", "2095", "Enemy attacking me: " + GetName(oEnemy) + " has attacked: " + GetName(ai_GetAttackedTarget(oEnemy)));
                     return oEnemy;
                 }
             }
@@ -2730,27 +2161,27 @@ object ai_GetEnemyAttackingMe(object oCreature, float fRange = AI_RANGE_MELEE)
     }
     return OBJECT_INVALID;
 }
-object ai_GetEnemyAttackingMyAlly(object oCreature, object oAlly, float fRange = AI_RANGE_MELEE)
+object ai_GetEnemyAttackingMyAlly(object oCreature, object oAlly, float fMaxRange = AI_RANGE_MELEE)
 {
     int nCtr = 1, nIndex, nDIndex;
     int bIngnoreAssociates = ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES);
-    float fEnemyRange, fNearestEnemyRange = fRange + 1.0;
-    float fNearestDEnemyRange = fRange + 1.0;
+    float fEnemyRange, fNearestEnemyRange = fMaxRange + 1.0;
+    float fNearestDEnemyRange = fMaxRange + 1.0;
     string sCtr = "1";
     object oAttacked;
     object oEnemy = GetLocalObject(oCreature, AI_ENEMY + "1");
     while(oEnemy != OBJECT_INVALID)
     {
         fEnemyRange = GetLocalFloat(oCreature, AI_ENEMY_RANGE + sCtr);
-        if(AI_DEBUG) ai_Debug("0i_combat", "2672", "Getting Enemy Attacking Ally:" +
+        if(AI_DEBUG) ai_Debug("0i_combat", "2117", "Getting Enemy Attacking Ally:" +
                          GetName(oAlly) + ": " + sCtr + " InMelee:" +
                          GetName(oEnemy) + " fEnemyRange: " + FloatToString(fEnemyRange, 0, 2) +
-                         " fRange: " + FloatToString(fRange, 0, 2) + " Attacking: " +
+                         " fMaxRange: " + FloatToString(fMaxRange, 0, 2) + " Attacking: " +
                          GetName(ai_GetAttackedTarget(oEnemy)));
-        if(fEnemyRange <= fRange)
+        if(fEnemyRange <= fMaxRange)
         {
             oAttacked = ai_GetAttackedTarget(oEnemy);
-            if(AI_DEBUG) ai_Debug("0i_combat", "2680", "Enemy attacking " +
+            if(AI_DEBUG) ai_Debug("0i_combat", "2125", "Enemy attacking " +
                        GetName(oAlly) + ": " + GetName(oEnemy) +
                        " has attacked: " + GetName(ai_GetAttackedTarget(oEnemy)));
             // If an enemy isn't attacking someone we must assume we are next!
@@ -2781,63 +2212,63 @@ object ai_GetEnemyAttackingMyAlly(object oCreature, object oAlly, float fRange =
     if(nIndex == 0 && nDIndex != 0)
     {
         // If we just checked within melee then lets check what we can see.
-        if (fRange == AI_RANGE_MELEE) return ai_GetEnemyAttackingMyAlly(oCreature, oAlly, AI_RANGE_PERCEPTION);
+        if (fMaxRange == AI_RANGE_MELEE) return ai_GetEnemyAttackingMyAlly(oCreature, oAlly, AI_RANGE_PERCEPTION);
         else nIndex = nDIndex;
     }
     return GetLocalObject(oCreature, AI_ENEMY + IntToString(nIndex));
 }
-int ai_GetNumOfEnemiesInRange(object oCreature, float fRange = AI_RANGE_MELEE)
+int ai_GetNumOfEnemiesInRange(object oCreature, float fMaxRange = AI_RANGE_MELEE)
 {
     int nNumOfEnemies, nCnt = 1;
     float fDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + "1");
     while(fDistance != 0.0)
     {
-        if(fDistance < fRange) nNumOfEnemies ++;
+        if(fDistance < fMaxRange) nNumOfEnemies ++;
         fDistance = GetLocalFloat(oCreature, AI_ENEMY_RANGE + IntToString(++nCnt));
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2459", IntToString (nNumOfEnemies) + " enemies within " + FloatToString(fRange, 0, 2) + " meters.");
+    if(AI_DEBUG) ai_Debug("0i_combat", "2459", IntToString (nNumOfEnemies) + " enemies within " + FloatToString(fMaxRange, 0, 2) + " meters.");
     return nNumOfEnemies;
 }
-object ai_GetAllyBuffTarget(object oCreature, int nSpell, float fRange = AI_RANGE_BATTLEFIELD)
+object ai_GetAllyBuffTarget(object oCreature, int nSpell, float fMaxRange = AI_RANGE_BATTLEFIELD)
 {
     // Make sure we don't over extend our movement running across the
     // battlefield to cast a spell on someone does not look good.
     float fNearestEnemy = GetDistanceBetween(oCreature, GetLocalObject(oCreature, AI_ENEMY_NEAREST)) - 3.0f;
     // If we are in melee then extend to melee incase an ally is just past the enemy.
     if(fNearestEnemy <= AI_RANGE_MELEE) fNearestEnemy = AI_RANGE_MELEE;
-    if(fRange > fNearestEnemy) fRange = fNearestEnemy;
+    if(fMaxRange > fNearestEnemy) fMaxRange = fNearestEnemy;
     // Now lets get the best target based on the spell data in ai_spells.2da
     string sBuffTarget = Get2DAString("ai_spells", "Buff_Target", nSpell);
-    if(AI_DEBUG) ai_Debug("0i_combat", "2596", "sBuffTarget: " + sBuffTarget + " fRange: " + FloatToString(fRange, 0, 2));
+    if(AI_DEBUG) ai_Debug("0i_combat", "2596", "sBuffTarget: " + sBuffTarget + " fMaxRange: " + FloatToString(fMaxRange, 0, 2));
     if(sBuffTarget == "0") return oCreature;
     if(sBuffTarget == "1")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_STRENGTH, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_STRENGTH, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "2")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_DEXTERITY, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_DEXTERITY, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "3")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CONSTITUTION, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CONSTITUTION, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "4")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_INTELLIGENCE, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_INTELLIGENCE, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "5")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_WISDOM, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_WISDOM, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "6")
-        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CHARISMA, "", fRange, AI_ALLY);
+        return ai_BuffHighestAbilityScoreTarget(oCreature, nSpell, ABILITY_CHARISMA, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "7")
-        return ai_BuffLowestACTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestACTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "8")
-        return ai_BuffLowestACWithOutACBonus(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestACWithOutACBonus(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "9")
-        return ai_BuffHighestAttackTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffHighestAttackTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "10")
-        return ai_BuffMostWoundedTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffMostWoundedTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "11")
-        return ai_BuffLowestFortitudeSaveTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestFortitudeSaveTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "12")
-        return ai_BuffLowestReflexSaveTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestReflexSaveTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "13")
-        return ai_BuffLowestWillSaveTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestWillSaveTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     else if(sBuffTarget == "14")
-        return ai_BuffLowestSaveTarget(oCreature, nSpell, "", fRange, AI_ALLY);
+        return ai_BuffLowestSaveTarget(oCreature, nSpell, "", fMaxRange, AI_ALLY);
     return OBJECT_INVALID;
 }
 
@@ -2859,8 +2290,8 @@ int ai_GetDifficulty(object oCreature)
     if(nDifficulty < 1) nDifficulty = 1;
     if(AI_DEBUG) ai_Debug("0i_combat", "2474", "(Difficulty: Enemy Power: " + IntToString(GetLocalInt(oCreature, AI_ENEMY_POWER)) +
              " - Ally Power: " + IntToString(GetLocalInt(oCreature, AI_ALLY_POWER)) +
-             ") + nRoll: 10 + nAdj: " + IntToString(nAdjustment) +
-             " = " + IntToString(nDifficulty));
+             ") + 13 + nAdj: " + IntToString(nAdjustment) +
+             " = " + IntToString(nDifficulty) + "(Min of 1)");
     return nDifficulty;
 }
 int ai_GetMyCombatRating(object oCreature)
@@ -2963,14 +2394,14 @@ int ai_GetNormalAppearance(object oCreature)
     }
     return nForm;
 }
-struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fRange = AI_RANGE_BATTLEFIELD)
+struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, float fMaxRange = AI_RANGE_BATTLEFIELD)
 {
     struct stClasses sCount;
     int nCnt = 1, nPosition, nClass, nLevels;
     object oTarget;
     if(bEnemy) oTarget = ai_GetNearestEnemy(oCreature, 1, 7, 7);
     else oTarget = ai_GetNearestAlly(oCreature, 1, 7, 7);
-    while(oTarget != OBJECT_INVALID && GetDistanceBetween(oTarget, oCreature) <= fRange)
+    while(oTarget != OBJECT_INVALID && GetDistanceBetween(oTarget, oCreature) <= fMaxRange)
     {
         for(nPosition = 1; nPosition <= AI_MAX_CLASSES_PER_CHARACTER; nPosition++)
         {
@@ -3024,7 +2455,7 @@ struct stClasses ai_GetFactionsClasses(object oCreature, int bEnemy = TRUE, floa
         if(bEnemy) oTarget = ai_GetNearestEnemy(oCreature, ++nCnt, 7, 7);
         else oTarget = ai_GetNearestAlly(oCreature, ++nCnt, 7, 7);
     }
-    if(AI_DEBUG) ai_Debug("0i_combat", "2627", "Enemy: " + IntToString(bEnemy) + " fRange: " + FloatToString(fRange, 0, 2) +
+    if(AI_DEBUG) ai_Debug("0i_combat", "2627", "Enemy: " + IntToString(bEnemy) + " fMaxRange: " + FloatToString(fMaxRange, 0, 2) +
               " CLERICS: " + IntToString(sCount.CLERICS) + "(" + IntToString(sCount.CLERIC_LEVELS) +
               ") FIGHTERS: " +IntToString(sCount.FIGHTERS) + "(" + IntToString(sCount.FIGHTER_LEVELS) +
               ") MAGES: " +IntToString(sCount.MAGES) + "(" + IntToString(sCount.MAGE_LEVELS) +
@@ -3583,13 +3014,13 @@ int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell)
     else if(sSave == "Will") return (nSpellLvl > GetWillSavingThrow(oCreature));
     return TRUE;
 }
-int ai_IsInADangerousAOE(object oCreature, float fRange = AI_RANGE_BATTLEFIELD)
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD)
 {
     int nSpell, nCnt = 1;
     string sAOEType;
     object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
     float fRadius, fDistance = GetDistanceBetween(oCreature, oAOE);
-    while(oAOE != OBJECT_INVALID && fDistance <= fRange)
+    while(oAOE != OBJECT_INVALID && fDistance <= fMaxRange)
     {
         // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
         // I check vs those labels to see if the AOE is offensive.
@@ -3620,7 +3051,16 @@ int ai_IsInADangerousAOE(object oCreature, float fRange = AI_RANGE_BATTLEFIELD)
         // fRadius > 0.0 keeps them from tiggering that they are in a dangerous
         // AOE due to having an AOE on them.
         if(fRadius > 0.0 && fDistance <= fRadius &&
-           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell)) return TRUE;
+           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell))
+        {
+            if(nSpell == SPELL_WEB || nSpell == SPELL_ENTANGLE)
+            {
+                if(ai_HasRangedWeaponWithAmmo(oCreature)) return FALSE;
+                if(GetReflexSavingThrow(oCreature) + GetAbilityModifier(ABILITY_DEXTERITY, oCreature) >= ai_GetCharacterLevels(oCreature))
+                    return FALSE;
+            }
+            return TRUE;
+        }
         oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
         fDistance = GetDistanceBetween(oCreature, oAOE);
     }
@@ -3660,15 +3100,15 @@ void ai_SetCreatureAIScript(object oCreature)
     {
         // They should have skill ranks equal to their level + 1 to use a special AI.
         int nSkillNeeded = GetHitDice(oCreature) + 1;
-        // Ambusher: requires either Improved Invisibility or Invisibility.
+        /*/ Ambusher: requires either Improved Invisibility or Invisibility.
         if(GetHasSpell(SPELL_IMPROVED_INVISIBILITY, oCreature) ||
            GetHasSpell(SPELL_INVISIBILITY, oCreature))
         {
             int bCast = ai_TryToCastSpell(oCreature, SPELL_IMPROVED_INVISIBILITY, oCreature);
             if(!bCast) bCast = ai_TryToCastSpell(oCreature, SPELL_INVISIBILITY, oCreature);
             if(bCast) sCombatAI = "ai_ambusher";
-        }
-        else if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature, TRUE))
+        } */
+        if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature, TRUE) && Random(100) < 33)
         {
             sCombatAI = "ai_flanker";
         }
@@ -3690,10 +3130,8 @@ void ai_SetCreatureAIScript(object oCreature)
         {
             sCombatAI = "ai_cntrspell";
         }
-        else if(ai_GetIsSpellCaster(oCreature) && ai_GetCharacterLevels(oCreature) > 5)
-        {
-            sCombatAI = "ai_ranged";
-        }
+        else if(ai_CheckClassType(oCreature, AI_CLASS_TYPE_ARCANE) &&
+               ai_GetCharacterLevels(oCreature) > 4) sCombatAI = "ai_ranged";
         else if(ai_EquipBestRangedWeapon(oCreature)) sCombatAI = "ai_ranged";
     }
     if(sCombatAI == "")
@@ -3750,13 +3188,13 @@ int ai_IsImmuneToSneakAttacks(object oCreature, object oTarget)
     if(ai_GetHasItemProperty(oSkin, ITEM_PROPERTY_IMMUNITY_MISCELLANEOUS, IP_CONST_IMMUNITYMISC_BACKSTAB)) return TRUE;
     return FALSE;
 }
-int ai_IsStrongThanMe(object oCreature, int iIndex)
+int ai_IsStrongerThanMe(object oCreature, int nIndex)
 {
-    int nECombat = GetLocalInt(oCreature, AI_ENEMY_COMBAT + IntToString(iIndex));
-    int nOCombat = ai_GetMyCombatRating(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_combat", "3213", GetName(oCreature) + " nOCombat: " +
-           IntToString(nOCombat) + " nECombat: " + IntToString(nECombat));
-    return (nECombat > nOCombat);
+    int nEnemyCombat = GetLocalInt(oCreature, AI_ENEMY_COMBAT + IntToString(nIndex));
+    int nCreatureCombat = ai_GetMyCombatRating(oCreature);
+    if(AI_DEBUG) ai_Debug("0i_combat", "3955", "IsStrongerThanMe: nCreatureCombat: " +
+           IntToString(nCreatureCombat) + " nEnemyCombat: " + IntToString(nEnemyCombat));
+    return (nEnemyCombat > nCreatureCombat);
 }
 int ai_StrongOpponent(object oCreature, object oTarget, int nAdj = 2)
 {
@@ -3769,17 +3207,18 @@ int ai_StrongOpponent(object oCreature, object oTarget, int nAdj = 2)
 }
 int ai_PowerAttackGood(object oCreature, object oTarget, float fAdj)
 {
-    int nDmg = ai_GetWeaponDamage(oCreature, 2);
-    if(AI_DEBUG) ai_Debug("0i_combat", "3412", "nDmg: " + IntToString(nDmg) +
-             " > Target HP: " + IntToString(GetCurrentHitPoints(oTarget)));
-    if(nDmg > GetCurrentHitPoints(oTarget)) return FALSE;
-    float fDmg = IntToFloat(nDmg);
+    int nAvgDmg = ai_GetWeaponDamage(oCreature, 2);
+    if(AI_DEBUG) ai_Debug("0i_combat", "3412", "PowerAttack: (nAvgDmg: " + IntToString(nAvgDmg) +
+             " > Target HP: " + IntToString(GetCurrentHitPoints(oTarget)) +
+             ") Skip: " + IntToString(nAvgDmg > GetCurrentHitPoints(oTarget)));
+    if(nAvgDmg > GetCurrentHitPoints(oTarget)) return FALSE;
+    float fAvgDmg = IntToFloat(nAvgDmg);
     float fTargetAC = IntToFloat(GetAC(oTarget));
     float fCreatureAtk = IntToFloat(ai_GetCreatureAttackBonus(oCreature));
-    float fNormalChance = fDmg * ((21.0-(fTargetAC - fCreatureAtk))/20.0);
+    float fNormalChance = fAvgDmg * ((21.0-(fTargetAC - fCreatureAtk))/20.0);
     // Our chance to hit is already minimum of 5% so this doesn't hurt our chance!
     if(fNormalChance <= 0.05) return TRUE;
-    float fAdjChance = (fDmg + fAdj) * ((21.0-(fTargetAC - fCreatureAtk + fAdj))/20);
+    float fAdjChance = (fAvgDmg + fAdj) * ((21.0-(fTargetAC - fCreatureAtk + fAdj))/20);
     if(AI_DEBUG) ai_Debug("0i_combat", "3420", "fNormalChance: " + FloatToString(fNormalChance, 0, 2) +
              " < fAdjChance: " + FloatToString(fAdjChance, 0, 2) + " = " + IntToString(fNormalChance < fAdjChance));
     return fNormalChance < fAdjChance;
@@ -3962,8 +3401,11 @@ int ai_CheckCombatPosition(object oCreature, object oTarget, int nInMelee, int n
 {
     if(AI_DEBUG) ai_Debug("0i_combat", "3460", "|-----> Checking position in combat: " +
              GetName(oCreature) + " nMelee: " + IntToString(nInMelee) +
-             " Action: " + IntToString(nAction) + " Use Advanced Movement: " +
-             IntToString(GetLocalInt(GetModule(), AI_RULE_ADVANCED_MOVEMENT)));
+             " Action: " + IntToString(nAction) +
+             " Hold mode: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND)) +
+             " Use Advanced Movement: " + IntToString(GetLocalInt(GetModule(), AI_RULE_ADVANCED_MOVEMENT)));
+    // We don't want to move around in combat if we were told to hold.
+    if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND)) return FALSE;
     if(!GetLocalInt(GetModule(), AI_RULE_ADVANCED_MOVEMENT)) return FALSE;
     if(ai_CompareLastAction(oCreature, AI_LAST_ACTION_MOVE)) return FALSE;
     // We are not in melee combat so lets see how close we should get.

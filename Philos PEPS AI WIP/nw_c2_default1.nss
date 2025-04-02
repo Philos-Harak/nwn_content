@@ -6,21 +6,15 @@
   This will usually fire every 6 seconds (1 game round).
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_module"
-#include "x2_inc_switches"
 void main()
 {
     // If not runnning normal or better AI then exit for performance reasons
     if (GetAILevel(OBJECT_SELF) == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
     // We run our OnSpawn in the heartbeat so the creator can use the original
-    // OnSpawn for their game.
-    if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT))
-    {
-        // This can be moved to the OnModuleLoad script event.
-        if(!GetLocalInt(GetModule(), AI_RULES_SET)) ai_SetAIRules();
-        ai_OnMonsterSpawn(oCreature, GetCreatureFlag(OBJECT_SELF, CREATURE_VAR_IS_INCORPOREAL));
-    }
-    if(AI_DEBUG) ai_Debug("nw_c2_default1", "21", GetName(oCreature) + " Heartbeat." +
+    // OnSpawn for their own use.
+    ai_OnMonsterSpawn(oCreature);
+    if(AI_DEBUG) ai_Debug("nw_c2_default1", "18", GetName(oCreature) + " Heartbeat." +
              " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
     {

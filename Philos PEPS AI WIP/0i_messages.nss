@@ -65,7 +65,7 @@ void ai_Debug(string sScriptName, string sLineNumber, string sMessage)
     //SendMessageToPC(GetFirstPC(), sMessage);
     //WriteTimestampedLogEntry(sMessage);
     //if(GetLocalInt(OBJECT_SELF, "AI_DEBUG")) WriteTimestampedLogEntry(sMessage);
-    //if(GetName(OBJECT_SELF) == "Drakonis Baronas") WriteTimestampedLogEntry(sMessage);
+    //if(GetName(OBJECT_SELF) == "Kirrin") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Dorna Trapspringer") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Dire Spider") WriteTimestampedLogEntry(sMessage);
     //if(GetName(OBJECT_SELF) == "Shadow Priest") WriteTimestampedLogEntry(sMessage);

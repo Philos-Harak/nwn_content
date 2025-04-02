@@ -44,9 +44,9 @@ void main()
         return;
     }
     if(AI_DEBUG) ai_Debug("nw_ch_ac2", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
-                 " Enemy? " + IntToString(GetReputation(oCreature, oLastPerceived)));
+                 " Enemy? " + IntToString(GetIsEnemy(oLastPerceived, oCreature)));
     if(ai_Disabled(oCreature)) return;
-    if(GetIsDead(oLastPerceived) || GetReputation(oCreature, oLastPerceived) > 10) return;
+    if(GetIsDead(oLastPerceived) || !GetIsEnemy(oLastPerceived, oCreature)) return;
     // All code below assumes the perceived creature is an enemy and is alive!
     // **************************** ENEMY HEARD ********************************
     if(GetLastPerceptionHeard())
@@ -63,7 +63,7 @@ void main()
             }
             ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_SEE_AN_ENEMY);
         }
-        ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
+        else ai_AssociateEvaluateNewThreat(oCreature, oLastPerceived, AI_I_HEARD_AN_ENEMY);
         return;
     }
     // **************************** ENEMY SEEN *********************************
@@ -83,14 +83,14 @@ void main()
     {
         // Lets keep a mental note of the invisible creature.
         SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "74", " We saw " + GetName(oLastPerceived) + " disappear!");
+        if(AI_DEBUG) ai_Debug("nw_ch_ac2", "86", " We saw " + GetName(oLastPerceived) + " disappear!");
         if(ai_GetIsBusy(oCreature)) return;
         // If in combat check to see if our target disappeared.
         // If they have and we are not in melee with them then reevaluate combat
         // since we lost our target.
         if(ai_GetIsInCombat(oCreature))
         {
-            if(AI_DEBUG) ai_Debug("nw_ch_ac2", "81", "Is this our target? " +
+            if(AI_DEBUG) ai_Debug("nw_ch_ac2", "93", "Is this our target? " +
                          IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
             if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
             {

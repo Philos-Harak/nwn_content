@@ -26,16 +26,16 @@ void main()
     // Add row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 ******************************************************************* 500 / 101
+    // Row 2 ******************************************************************* 500 / 129
+    jRow = JsonArray();
+    sText = "Module: " + GetModuleName() + " [" + GetTag(GetModule()) + "]";
+    CreateLabel(jRow, sText, "lbl_module_name", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    // Row 3 ******************************************************************* 500 / 101
     jRow = JsonArray();
     sText = "Monster AI (nw_c2_default1): " + ResManGetAliasFor("nw_c2_default1", RESTYPE_NCS);
     CreateLabel(jRow, sText, "monster_1_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
-    // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 ******************************************************************* 500 / 129
-    jRow = JsonArray();
-    sText = "Monster AI (x2_def_heartbeat): " + ResManGetAliasFor("x2_def_heartbeat", RESTYPE_NCS);
-    CreateLabel(jRow, sText, "monster_2_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 500 / 157
@@ -53,20 +53,22 @@ void main()
     // Row 6 ******************************************************************* 500 / 241
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Display Target Info", "btn_info", 150.0f, 20.0f, -1.0, "btn_info_tooltip");
+    CreateButton(jRow, "Set NPC's scripts", "btn_npc_scripts", 150.0f, 20.0f, -1.0, "btn_npc_scripts_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Player Ghost mode", "btn_ghost_mode", 150.0f, 20.0f, -1.0, "btn_ghost_mode_tooltip");
+    CreateButton(jRow, "Set Reputations", "btn_set_reputation", 150.0f, 20.0f, -1.0, "btn_set_reputation_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Clear Reputation", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
+    CreateButton(jRow, "Clear Party Rep.", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 7 ******************************************************************* 500 / 269
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Dump Object's Json to Log", "btn_obj_json", 230.0f, 20.0f, -1.0, "btn_obj_json_tooltip");
+    CreateButton(jRow, "Display Target Info", "btn_info", 150.0f, 20.0f, -1.0, "btn_info_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "List Object's Variables", "btn_obj_var", 230.0f, 20.0f, -1.0, "btn_obj_var_tooltip");
+    CreateButton(jRow, "Dump Object to Json", "btn_obj_json", 150.0f, 20.0f, -1.0, "btn_obj_json_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "List Object Variables", "btn_obj_var", 150.0f, 20.0f, -1.0, "btn_obj_var_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -124,6 +126,8 @@ void main()
         if(sScript == "nw_c2_default1") sText = GetName(oDebugCreature) + " is using monster AI scripts (" + sScript + ").";
         else if(sScript == "nw_ch_ac1") sText = GetName(oDebugCreature) + " is using associate AI scripts (" + sScript + ").";
         else if(sScript == "xx_pc_1_hb") sText = GetName(oDebugCreature) + " is using player AI scripts (" + sScript + ").";
+        else if(sScript == "0e_id_events") sText = GetName(oDebugCreature) + " is using Infinite Dungeons AI scripts (" + sScript + ").";
+        else if(sScript == "0e_prc_id_events") sText = GetName(oDebugCreature) + " is using PRC Infinite Dungeons AI scripts (" + sScript + ").";
         else sText = GetName(oDebugCreature) + " is using unknown AI scripts (" + sScript + ").";
         CreateLabel(jGroupRow, sText, "debug_info", 455.0f, 20.0f, NUI_HALIGN_CENTER);
         // Add group row to the group column.
@@ -152,15 +156,18 @@ void main()
                              -1.0, -1.0, 500.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_debug");
     // Set all binds, events, and watches.
     // Row 1 - Version label.
-    // Row 2 - 5 Script warning checks.
+    // Row 2 Module Name.
+    // Row 3 - 5 Script locations.
     // Row 6
+    NuiSetBind(oPC, nToken, "btn_npc_scripts_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_npc_scripts_tooltip", JsonString("  Forces NPC to use Philos AI scripts!"));
+    NuiSetBind(oPC, nToken, "btn_set_reputation_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_set_reputation_tooltip", JsonString("  Sets a creatures faction to neutral for all standard factions."));
+    NuiSetBind(oPC, nToken, "btn_clear_reputation_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_clear_reputation_tooltip", JsonString("  Clears the party's reputation with creature's faction."));
+    // Row 7
     NuiSetBind(oPC, nToken, "btn_info_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_info_tooltip", JsonString("  Displays a target object's information to the log screen."));
-    NuiSetBind(oPC, nToken, "btn_ghost_mode_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString("  Turns on/off player in ghost mode."));
-    NuiSetBind(oPC, nToken, "btn_clear_reputation_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_clear_reputation_tooltip", JsonString("  Clears reputation with creature's faction."));
-    // Row 7
     NuiSetBind(oPC, nToken, "btn_obj_json_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_obj_json_tooltip", JsonString("  Sends a Json Dump to the log file for the targeted object."));
     NuiSetBind(oPC, nToken, "btn_obj_var_event", JsonBool(TRUE));

@@ -74,7 +74,7 @@ void ai_SetCampaignDbJson(string sDataField, json jData, string sName = "PEPS_DA
 json ai_GetCampaignDbJson(string sDataField, string sName = "PEPS_DATA", string sTable = AI_TABLE);
 // Checks if oMaster has the Table created for Associate data.
 // If no table found then the table is created and then initialized.
-void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType);
+void ai_CheckAssociateDataAndInitialize(object oPlayer, string sAssociateType);
 // Returns the associatetype int string format for oAssociate.
 // They are pc, familar, companion, summons, henchman is the henchmans tag
 string ai_GetAssociateType(object oPlayer, object oAssociate);
@@ -117,6 +117,7 @@ void ai_StartupPlugins(object oPC);
 void ai_SetAIRules()
 {
     object oModule = GetModule();
+    if(GetLocalInt(oModule, AI_RULES_SET)) return;
     SetLocalInt(oModule, AI_RULES_SET, TRUE);
     ai_CheckCampaignDataAndInitialize();
     json jRules = ai_GetCampaignDbJson("rules");
@@ -198,6 +199,12 @@ void ai_SetAIRules()
         JsonObjectSetInplace(jRules, AI_RULE_PARTY_SCALE, JsonInt(AI_PARTY_SCALE));
         SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, JsonArray());
         JsonObjectSetInplace(jRules, AI_RULE_RESTRICTED_SPELLS, JsonArray());
+        // Variable name set to allow access to widget buttons for the players.
+        SetLocalInt(oModule, sDMWidgetAccessVarname, AI_DM_WIDGET_ACCESS_BUTTONS);
+        JsonObjectSetInplace(jRules, sDMWidgetAccessVarname, JsonInt(AI_DM_WIDGET_ACCESS_BUTTONS));
+        // Variable name set to allow access to widget buttons for the players.
+        SetLocalInt(oModule, sDMAIAccessVarname, AI_DM_AI_ACCESS_BUTTONS);
+        JsonObjectSetInplace(jRules, sDMAIAccessVarname, JsonInt(AI_DM_AI_ACCESS_BUTTONS));
         ai_SetCampaignDbJson("rules", jRules);
     }
     else
@@ -295,6 +302,12 @@ void ai_SetAIRules()
             ai_SetCampaignDbJson("rules", jRules);
         }
         SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
+        // Variable name set to allow access to widget buttons for the players.
+        bValue = JsonGetInt(JsonObjectGet(jRules, sDMWidgetAccessVarname));
+        SetLocalInt(oModule, sDMWidgetAccessVarname, bValue);
+        // Variable name set to allow access to widget buttons for the players.
+        bValue = JsonGetInt(JsonObjectGet(jRules, sDMAIAccessVarname));
+        SetLocalInt(oModule, sDMAIAccessVarname, bValue);
    }
 }
 int ai_GetIsCharacter(object oCreature)
@@ -551,7 +564,6 @@ void ai_CheckCampaignDataTableAndCreateTable()
     sqlquery sql = SqlPrepareQueryCampaign(AI_CAMPAIGN_DATABASE, sQuery);
     SqlBindString(sql, "@table", AI_TABLE);
     if(!SqlStep(sql)) ai_CreateCampaignDataTable();
-    //else if(AI_DEBUG) ai_Debug("0i_main", "490", We have a database with table [" + AI_TABLE + "].");
 }
 void ai_InitializeCampaignData()
 {
@@ -561,8 +573,6 @@ void ai_InitializeCampaignData()
     SqlBindString(sql, "@name", "PEPS_DATA");
     SqlBindJson(sql, "@plugins", JsonArray());
     SqlBindJson(sql, "@rules", JsonObject());
-    //if(AI_DEBUG) ai_Debug("0i_main", "363", "We are initializing campaign " +
-    //         " data for table[" + AI_TABLE + "].");
     SqlStep(sql);
 }
 void ai_CheckCampaignDataAndInitialize()
@@ -580,7 +590,7 @@ void ai_CreateDMDataTable()
         "name              TEXT, " +
         "buttons           TEXT, " +
         "plugins           TEXT, " +
-        "locations          TEXT, " +
+        "locations         TEXT, " +
         "options           TEXT, " +
         "saveslots         TEXT, " +
        "PRIMARY KEY(name));");
@@ -652,7 +662,7 @@ void ai_CreateAssociateDataTable(object oPlayer)
         "locations         TEXT, " +
         "PRIMARY KEY(name));");
     SqlStep(sql);
-    //ai_Debug("0i_main", "489", GetName(oPlayer) + " is creating a table [" +
+    //ai_Debug("0i_main", "665", GetName(oPlayer) + " is creating a table [" +
     //         AI_TABLE + "] in the database.");
 }
 void ai_CheckDataTableAndCreateTable(object oPlayer)
@@ -662,7 +672,7 @@ void ai_CheckDataTableAndCreateTable(object oPlayer)
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString(sql, "@table", AI_TABLE);
     if(!SqlStep(sql)) ai_CreateAssociateDataTable (oPlayer);
-    //else ai_Debug("0i_main", "499", GetName(oPlayer) + " has a database with table [" + AI_TABLE + "].");
+    //else SendMessageToPC(oPlayer, "0i_main, 675, " + GetName(oPlayer) + " has a database with table [" + AI_TABLE + "].");
 }
 void ai_InitializeAssociateData(object oPlayer, string sAssociateType)
 {
@@ -677,17 +687,19 @@ void ai_InitializeAssociateData(object oPlayer, string sAssociateType)
     SqlBindJson(sql, "@lootfilters", JsonArray());
     SqlBindJson(sql, "@plugins", JsonArray());
     SqlBindJson(sql, "@locations", JsonObject());
-    //ai_Debug("0i_main", "514", GetName(oPlayer) + " is initializing associate " +
-    //         sAssociateType + " data for table[" + AI_TABLE + "].");
+    //SendMessageToPC(oPlayer, "0i_main, 690, " + GetName(oPlayer) + " is initializing associate " +
+    //         sAssociateType + " data for table [" + AI_TABLE + "].");
     SqlStep(sql);
 }
-void ai_CheckDataAndInitialize(object oPlayer, string sAssociateType)
+void ai_CheckAssociateDataAndInitialize(object oPlayer, string sAssociateType)
 {
     ai_CheckDataTableAndCreateTable(oPlayer);
     string sQuery = "SELECT name FROM " + AI_TABLE + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject (oPlayer, sQuery);
     SqlBindString(sql, "@name", sAssociateType);
     if(!SqlStep(sql)) ai_InitializeAssociateData(oPlayer, sAssociateType);
+    //else SendMessageToPC(oPlayer, "0i_main, 701, sAssociateType: " + sAssociateType +
+    //                    " returns: " + SqlGetString(sql, 0));
 }
 string ai_GetAssociateType(object oPlayer, object oAssociate)
 {
@@ -702,6 +714,7 @@ string ai_GetAssociateType(object oPlayer, object oAssociate)
         else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) sAITag =  "dominated";
         else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN) sAITag =  GetTag(oAssociate);
         string sCurrentAITag;
+        // Check for duplicate tags and change.
         int nIndex;
         object oCreature;
         for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
@@ -762,7 +775,7 @@ float ai_GetAssociateDbFloat(object oPlayer, string sAssociatetype, string sData
 }
 void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, json jData, string sTable = AI_TABLE)
 {
-    //ai_Debug("0i_main", "629", "Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
+    //SendMessageToPC(oPlayer, "0i_main, 629, Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
     string sQuery = "UPDATE " + sTable + " SET " + sDataField +
                     " = @data WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
@@ -772,14 +785,14 @@ void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
 }
 json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, string sTable = AI_TABLE)
 {
-    //ai_Debug("0i_main", "638", "Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
+    //SendMessageToPC(oPlayer, "0i_main, 638, Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
     string sQuery = "SELECT " + sDataField + " FROM " + sTable + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString (sql, "@name", sAssociateType);
     if(SqlStep(sql))
     {
         json jReturn = SqlGetJson(sql, 0);
-        //ai_Debug("0i_main", "646", JsonDump(jReturn, 1));
+        //SendMessageToPC(oPlayer, "0i_main, 646 jReturn: " + JsonDump(jReturn, 1));
         if(JsonGetType(jReturn) == JSON_TYPE_NULL) return JsonArray();
         return jReturn;
     }
@@ -794,16 +807,6 @@ void aiSaveAssociateModesToDb(object oPlayer, object oAssociate)
     int nMagicMode = GetLocalInt(oAssociate, sMagicModeVarname);
     jModes = JsonArraySet(jModes, 1, JsonInt(nMagicMode));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "modes", jModes);
-}
-void ai_CheckPlayerForData(object oPlayer)
-{
-    // If the player has no data then lets create some.
-    string sQuery = "SELECT name FROM sqlite_master WHERE type ='table' " +
-                    "AND name =@table;";
-    sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
-    SqlBindString(sql, "@table", AI_TABLE);
-    if(!SqlStep(sql)) ai_CheckDataAndInitialize(oPlayer, "pc");
-    ai_CheckAssociateData(oPlayer, oPlayer, "pc");
 }
 void ai_SetupModes(object oPlayer, object oAssociate, string sAssociateType)
 {
@@ -873,20 +876,26 @@ void ai_SetupLocations(object oPlayer, object oAssociate, string sAssociateType)
     json jNUI = JsonObject();
     jNUI = JsonObjectSet(jNUI, "x", JsonFloat(-1.0));
     jNUI = JsonObjectSet(jNUI, "y", JsonFloat(-1.0));
-    jLocations = JsonObjectSet(jLocations, AI_MAIN_NUI, jNUI);
-    jLocations = JsonObjectSet(jLocations, AI_COMMAND_NUI, jNUI);
-    jLocations = JsonObjectSet(jLocations, AI_NUI, jNUI);
-    jLocations = JsonObjectSet(jLocations, AI_LOOTFILTER_NUI, jNUI);
-    jLocations = JsonObjectSet(jLocations, AI_COPY_NUI, jNUI);
-    if(ai_GetIsCharacter(oAssociate)) jLocations = JsonObjectSet(jLocations, AI_PLUGIN_NUI, jNUI);
-    jNUI = JsonObjectSet(jLocations, "x", JsonFloat(1.0));
-    jNUI = JsonObjectSet(jLocations, "y", JsonFloat(1.0));
-    jLocations = JsonObjectSet(jLocations, AI_WIDGET_NUI, jNUI);
+    if(ai_GetIsCharacter(oAssociate))
+    {
+        jLocations = JsonObjectSet(jLocations, AI_MAIN_NUI, jNUI);
+        jLocations = JsonObjectSet(jLocations, AI_PLUGIN_NUI, jNUI);
+    }
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_COMMAND_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_LOOTFILTER_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_COPY_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_QUICK_WIDGET_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_SPELL_MEMORIZE_NUI, jNUI);
+    jNUI = JsonObjectSet(jNUI, "x", JsonFloat(0.0));
+    jNUI = JsonObjectSet(jNUI, "y", JsonFloat(0.0));
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_WIDGET_NUI, jNUI);
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_TABLE);
 }
 void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateType)
 {
     //ai_Debug("0i_main", "744", GetName(oAssociate) + " is initializing associate data.");
+    ai_CheckAssociateDataAndInitialize(oPlayer, sAssociateType);
     // Default behavior for associates at start.
     ai_SetupModes(oPlayer, oAssociate, sAssociateType);
     ai_SetupButtons(oPlayer, oAssociate, sAssociateType);
@@ -910,10 +919,10 @@ void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType
     // ********** Buttons **********
     json jButtons = JsonArray();
     // Command buttons (0).
-    nValue = GetLocalInt(oAssociate, sWidgetButtonsVarname + sAssociateType);
+    nValue = GetLocalInt(oAssociate, sWidgetButtonsVarname);
     jButtons = JsonArrayInsert(jButtons, JsonInt(nValue));
     // AI buttons Group 1 (1).
-    nValue = GetLocalInt(oAssociate, sAIButtonsVarname + sAssociateType);
+    nValue = GetLocalInt(oAssociate, sAIButtonsVarname);
     jButtons = JsonArrayInsert(jButtons, JsonInt(nValue));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "buttons", jButtons, AI_TABLE);
     // ********** AI Data **********
@@ -979,10 +988,12 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     {
         if(!bLoad) return;
         // If the database gets destroyed lets drop an error and restore values
-        // From the locals.
+        // from the locals.
+        ai_CheckAssociateDataAndInitialize(oPlayer, sAssociateType);
         ai_RestoreDatabase(oPlayer, oAssociate, sAssociateType);
+        return;
     }
-    ai_CheckDataAndInitialize(oPlayer, sAssociateType);
+    ai_CheckAssociateDataAndInitialize(oPlayer, sAssociateType);
     // ********** Modes **********
     json jModes = ai_GetAssociateDbJson(oPlayer, sAssociateType, "modes");
     if(JsonGetType(JsonArrayGet(jModes, 0)) == JSON_TYPE_NULL)
@@ -1004,12 +1015,10 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     {
         // ********** Associate Command Buttons **********
         int nWidgetButtons = JsonGetInt(JsonArrayGet(jButtons, 0));
-        string sWidgetButtonName = sWidgetButtonsVarname + sAssociateType;
-        if(nWidgetButtons) SetLocalInt(oAssociate, sWidgetButtonName, nWidgetButtons);
+        if(nWidgetButtons) SetLocalInt(oAssociate, sWidgetButtonsVarname, nWidgetButtons);
         // ********** Associate AI Buttons **********
         int nAIButtons = JsonGetInt(JsonArrayGet(jButtons, 1));
-        string sAIButtonName = sAIButtonsVarname + sAssociateType;
-        if(nAIButtons) SetLocalInt(oAssociate, sAIButtonName, nAIButtons);
+        if(nAIButtons) SetLocalInt(oAssociate, sAIButtonsVarname, nAIButtons);
     }
     // ********** AI Data **********
     json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
@@ -1186,7 +1195,7 @@ json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript)
     return jPlugins;
 }
 // Temporary function to addapt old plugin json to new plugin json.
-void ai_CheckOldPluginJson(object oPC)
+json ai_CheckOldPluginJson(object oPC)
 {
     json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
     int nIndex;
@@ -1204,17 +1213,14 @@ void ai_CheckOldPluginJson(object oPC)
 
         }
         ai_SetAssociateDbJson(oPC, "pc", "plugins", jNewPlugins);
+        return jNewPlugins;
     }
+    return jPlugins;
 }
 json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
 {
     // Check if the server is running or single player.
-    ai_CheckDataAndInitialize(oPC, "pc");
-    if(!AI_SERVER)
-    {
-        ai_CheckOldPluginJson(oPC);
-        return ai_GetAssociateDbJson(oPC, "pc", "plugins");
-    }
+    if(!AI_SERVER) return ai_CheckOldPluginJson(oPC);
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
     string sScript, sName, sIcon;
     json jServerPlugins = ai_GetCampaignDbJson("plugins");

@@ -13,14 +13,17 @@ void main()
     object oObject = GetBlockingDoor();
     if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
-    if(nObjectType == OBJECT_TYPE_CREATURE && GetReputation(oCreature, oObject) < 11)
+    if(nObjectType == OBJECT_TYPE_CREATURE)
     {
-        if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
+        if(GetIsEnemy(oObject, oCreature))
         {
-            ai_DoMonsterCombatRound(oCreature);
-            return;
+            if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
+            {
+                ai_DoMonsterCombatRound(oCreature);
+                return;
+            }
+            if(ai_CheckForCombat(oCreature, TRUE)) return;
         }
-        if(ai_CheckForCombat(oCreature, TRUE)) return;
     }
     // Anything below blocking us is a door.
     if(nObjectType != OBJECT_TYPE_DOOR) return;
@@ -46,3 +49,5 @@ void main()
         return;
     }
 }
+
+

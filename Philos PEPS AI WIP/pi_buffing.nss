@@ -12,8 +12,8 @@
  UI to save a players buff spells to be cast after resting.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
-
 const int BUFF_MAX_SPELLS = 50;
+const string FB_NO_MONSTER_CHECK = "FB_NO_MONSTER_CHECK";
 
 // Does startup check if the game has just been loaded.
 int StartingUp(object oPC);
@@ -68,8 +68,12 @@ void main()
     // Row 2 (Buttons) ********************************************************* 101
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateCheckBox(jRow, "Fast Buff Widget", "buff_widget", 140.0, 20.0f, "buff_widget_tooltip");
-    CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 100.0, 20.0f, "lock_buff_widget_tooltip");
+    CreateCheckBox(jRow, "Buff Widget", "buff_widget", 110.0, 20.0f, "buff_widget_tooltip");
+    CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 110.0, 20.0f, "lock_buff_widget_tooltip");
+    if(!AI_SERVER)
+    {
+        CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 20.0f, "chbx_no_monster_check_tooltip");
+    }
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add the row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -135,10 +139,23 @@ void main()
     NuiSetBind(oPC, nToken, "buff_widget_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(nValue));
     NuiSetBindWatch(oPC, nToken, "buff_widget_check", TRUE);
+    string sText = "  Creates a set of 4 buttons on the screen for quick buffing.";
+    NuiSetBind(oPC, nToken, "buff_widget_tooltip", JsonString(sText));
     nValue = JsonGetInt(JsonArrayGet(jMenuData, 4));
     NuiSetBind(oPC, nToken, "lock_buff_widget_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "lock_buff_widget_check", JsonBool(nValue));
     NuiSetBindWatch(oPC, nToken, "lock_buff_widget_check", TRUE);
+    sText = "  Locks the buffing widget in place reducing its size.";
+    NuiSetBind(oPC, nToken, "lock_buff_widget_tooltip", JsonString(sText));
+    if(!AI_SERVER)
+    {
+        NuiSetBind(oPC, nToken, "chbx_no_monster_check_event", JsonBool(TRUE));
+        nValue = GetLocalInt(oPC, FB_NO_MONSTER_CHECK);
+        NuiSetBind(oPC, nToken, "chbx_no_monster_check_check", JsonBool(nValue));
+        NuiSetBindWatch(oPC, nToken, "chbx_no_monster_check_check", TRUE);
+        sText = "  Turns on/off checks for nearby monsters.";
+        NuiSetBind(oPC, nToken, "chbx_no_monster_check_tooltip", JsonString(sText));
+    }
     // Create buttons with spells listed.
     int nSpell, nClass, nLevel, nMetamagic, nDomain;
     string sName, sTargetName, sResRef;

@@ -25,10 +25,17 @@ void main()
     // to take advantage of them as often as possible.
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
-    //**************************  SKILL FEATURES  ******************************
+    //****************************  SKILL FEATURES  ****************************
     if(ai_TryAnimalEmpathy(oCreature)) return;
-    // ************************** CLASS FEATURES *******************************
+    //****************************  CLASS FEATURES  ****************************
+    if(ai_TryBarbarianRageFeat(oCreature)) return;
     if(ai_TryBardSongFeat(oCreature)) return;
+    if(ai_TryTurningTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
@@ -46,11 +53,12 @@ void main()
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
-            if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-            // Lets pick off the weaker targets.
+            // Lets pick off the ranged then nearest targets.
             if(!nInMelee)
             {
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
+                if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature);
             }
             else

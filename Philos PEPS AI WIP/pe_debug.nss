@@ -13,6 +13,10 @@
 void debug_GetObjectVariable(object oPC, object oTarget, string sDesc = "");
 // Lists the variables from oTarget to the screen.
 void debug_ListObjectVariables(object oPC, object oTarget);
+// Force event script change to default for oCreature.
+void ai_ForceAssociateEventScriptsToDefault(object oPC, object oCreature);
+// Reverts event script change from default for oCreature.
+void ai_RevertAssociateEventScriptsToDefault(object oPC, object oCreature);
 void main()
 {
     // Get the last player to use targeting mode
@@ -45,7 +49,6 @@ void main()
         else if(sTargetMode == "CLEAR_REPUTATION")
         {
             int nReputation = GetFactionAverageReputation(oTarget, oPC);
-            int nAdjustment = 50 - nReputation;
             object oPCMember = GetFirstFactionMember(oPC, FALSE);
             while(GetIsObjectValid(oPCMember))
             {
@@ -53,6 +56,14 @@ void main()
                 oPCMember = GetNextFactionMember(oPC, FALSE);
             }
             ai_SendMessages("Your reputation with " + GetName(oTarget) + " has been set to neutral.", AI_COLOR_YELLOW, oPC);
+        }
+        else if(sTargetMode == "SET_REPUTATION")
+        {
+            SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 50, oTarget);
+            SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 50, oTarget);
+            SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 50, oTarget);
+            SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 50, oTarget);
+            ai_SendMessages(GetName(oTarget) + " has been set to a neutral reputation.", AI_COLOR_YELLOW, oPC);
         }
         else if(sTargetMode == "DEBUG_INFO")
         {
@@ -351,6 +362,14 @@ void main()
                 }
             }*/
         }
+        else if(sTargetMode == "SET_NPC_SCRIPTS")
+        {
+            if(GetLocalString(oTarget, "AI_ON_HEARTBEAT") == "")
+            {
+                ai_ForceAssociateEventScriptsToDefault(oPC, oTarget);
+            }
+            else ai_RevertAssociateEventScriptsToDefault(oPC, oTarget);
+        }
         else if(sTargetMode == "DEBUG_JSON_DUMP")
         {
             json jObject = ObjectToJson(oTarget, TRUE);
@@ -458,32 +477,25 @@ void main()
         //if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
         if(sEvent == "click")
         {
-            if(sElem == "btn_info")
+            if(sElem == "btn_npc_scripts")
             {
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
-                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_INFO");
+                SetLocalString(oPC, AI_TARGET_MODE, "SET_NPC_SCRIPTS");
                 NuiDestroy(oPC, nToken);
-                ai_SendMessages("Select an object to send it's information to the players screen.", AI_COLOR_YELLOW, oPC);
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+                ai_SendMessages("Select an npc to change scripts for.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
             }
-            else if(sElem == "btn_ghost_mode")
+            else if(sElem == "btn_set_reputation")
             {
-                if(GetLocalInt(oPC, sGhostModeVarname))
-                {
-                    ai_RemoveASpecificEffect(oPC, EFFECT_TYPE_CUTSCENEGHOST);
-                    DeleteLocalInt(oPC, sGhostModeVarname);
-                    ai_SendMessages("Ghost mode has been turned off for " + GetName(oPC) + ".", AI_COLOR_GREEN, oPC);
-                }
-                else
-                {
-                    effect eGhost = EffectCutsceneGhost();
-                    ApplyEffectToObject(DURATION_TYPE_PERMANENT, eGhost, oPC);
-                    SetLocalInt(oPC, sGhostModeVarname, TRUE);
-                    ai_SendMessages("Ghost mode has been turned on for " + GetName(oPC) + ".", AI_COLOR_GREEN, oPC);
-                }
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalString(oPC, AI_TARGET_MODE, "SET_REPUTATION");
                 NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select a creature to set all standard reputations to neutral.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_clear_reputation")
             {
@@ -494,6 +506,16 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_SendMessages("Select a creature to clear your PC's reputation with that creature's faction.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
+            else if(sElem == "btn_info")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_INFO");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select an object to send it's information to the players screen.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_obj_json")
             {
@@ -748,3 +770,100 @@ void debug_ListObjectVariables(object oPC, object oTarget)
     }
     if(!nIndex) ai_SendMessages("No variables to list!", AI_COLOR_YELLOW, oPC);
 }
+void ai_ForceAssociateEventScriptsToDefault(object oPC, object oCreature)
+{
+    ai_SendMessages("Changing " + GetName(oCreature) + "'s event scripts to default event scripts!", AI_COLOR_YELLOW, oPC);
+    ai_SendMessages("Use this tool on them again to revert this creatures event scripts back!", AI_COLOR_YELLOW, oPC);
+    //********** On Heartbeat **********
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
+    if(sScript == "0e_id_events" || sScript == "0e_prc_id_events")
+    {
+        ai_SendMessages("You cannot use this on creatures in Infinite Dungeons!");
+        return;
+    }
+    SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_ch_ac1");
+    //********** On Perception **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
+    SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "nw_ch_ac2");
+    //********** On End Combat Round **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
+    SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "nw_ch_ac3");
+    //********** On Dialogue **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
+    SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "nw_ch_ac4");
+    //********** On Melee Attacked **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
+    SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "nw_ch_ac5");
+    //********** On Damaged **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
+    SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "nw_ch_ac6");
+    //********** On Disturbed **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
+    SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "nw_ch_ac8");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //********** On Rested **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED);
+    SetLocalString(oCreature, "AI_ON_RESTED", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "nw_ch_aca");
+    //********** On Spell Cast At **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
+    SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "nw_ch_acb");
+    //********** On Blocked **********
+    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
+    SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "nw_ch_acb");
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
+}
+void ai_RevertAssociateEventScriptsToDefault(object oPC, object oCreature)
+{
+    ai_SendMessages("Changing " + GetName(oCreature) + "'s event scripts back to original!", AI_COLOR_YELLOW, oPC);
+    //********** On Heartbeat **********
+    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
+    if(sScript == "0e_id_events" || sScript == "0e_prc_id_events")
+    {
+        ai_SendMessages("You cannot use this on creatures in Infinite Dungeons!", AI_COLOR_RED, oPC);
+        return;
+    }
+    sScript = GetLocalString(oCreature, "AI_ON_HEARTBEAT");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, sScript);
+    //********** On Perception **********
+    sScript = GetLocalString(oCreature, "AI_ON_NOTICE");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, sScript);
+    //********** On End Combat Round **********
+    sScript = GetLocalString(oCreature, "AI_ON_END_COMBATROUND");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, sScript);
+    //********** On Dialogue **********
+    sScript = GetLocalString(oCreature, "AI_ON_DIALOGUE");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, sScript);
+    //********** On Melee Attacked **********
+    sScript = GetLocalString(oCreature, "AI_ON_MELEE_ATTACKED");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, sScript);
+    //********** On Damaged **********
+    sScript = GetLocalString(oCreature, "AI_ON_DAMAGED");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, sScript);
+    //********** On Disturbed **********
+    sScript = GetLocalString(oCreature, "AI_ON_DISTURBED");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, sScript);
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //********** On Rested **********
+    sScript = GetLocalString(oCreature, "AI_ON_RESTED");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, sScript);
+    //********** On Spell Cast At **********
+    sScript = GetLocalString(oCreature, "AI_ON_SPELLCASTAT");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
+    //********** On Blocked **********
+    sScript = GetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR");
+    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, sScript);
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
+}
+

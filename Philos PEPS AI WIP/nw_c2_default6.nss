@@ -16,7 +16,8 @@ void main()
     // Send the user-defined event signal
     if(GetSpawnInCondition(NW_FLAG_DAMAGED_EVENT))
     {
-        SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_DAMAGED));
+        SignalEvent(oCreature, EventUserDefined(EVENT_DAMAGED));
+        return;
     }
     if(ai_Disabled(oCreature)) return;
     // Make sure to clear wounded shout limit if we take damage. See ai_TryHealing.

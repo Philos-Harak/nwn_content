@@ -20,9 +20,9 @@ void ai_SelectTrap(object oPC, object oAssociate, object oItem);
 // Place the selected trap at the location selected by the player for OBJECT_SELF.
 void ai_PlaceTrap(object oPC, location lLocation);
 // Adds a creature to nGroup for oDM
-void ai_AddToGroup(object oDM, object oTarget, int nGroup);
+void ai_AddToGroup(object oDM, object oTarget, string sTargetMode);
 // Has nGroup perform an action based on the selected target or location.
-void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup);
+void ai_DMAction(object oDM, object oTarget, location lLocation, string sTargetMode);
 // Get oPC to select a spell target for oAssociate.
 void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem);
 // Updates oAssociates widget by destroying the current one and rebuilding.
@@ -193,7 +193,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         {
             AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE)));
         }
-        else if(GetReputation(oAssociate, oTarget) < 11)
+        else if(GetIsEnemy(oTarget, oAssociate))
         {
             // Lock them into attacking this target only.
             SetLocalObject(oAssociate, AI_PC_LOCKED_TARGET, oTarget);
@@ -431,13 +431,16 @@ void ai_PlaceTrap(object oPC, location lLocation)
     }
     else ai_SendMessages("This trap kit does not have a trap property!", AI_COLOR_YELLOW, oPC);
 }
-void ai_AddToGroup(object oDM, object oTarget, int nGroup)
+void ai_AddToGroup(object oDM, object oTarget, string sTargetMode)
 {
-    string sGroup = IntToString(nGroup);
+    string sGroup = GetStringRight(sTargetMode, 1);
     if(oDM == oTarget)
     {
-        ai_SendMessages("Group" + sGroup + " has been cleared.", AI_COLOR_YELLOW, oDM);
-        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString("Group" + sGroup));
+        ai_SendMessages("Group " + sGroup + " has been cleared.", AI_COLOR_YELLOW, oDM);
+        string sText = "Group " + sGroup;
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " (Left Action/Right Add)"));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " (Left Action/Right Add)"));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_label", JsonString(sText));
         DeleteLocalJson(oDM, "DM_GROUP" + sGroup);
         return;
     }
@@ -446,28 +449,42 @@ void ai_AddToGroup(object oDM, object oTarget, int nGroup)
     if(JsonGetType(jGroup) == JSON_TYPE_NULL)
     {
         string sText = sName + "'s group";
-        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " [Run]"));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " [Run]"));
+        NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_label", JsonString(sText));
         jGroup = JsonArray();
+        JsonArrayInsertInplace(jGroup, JsonInt(1));
     }
     string sUUID = GetObjectUUID(oTarget);
+    int nIndex = 1;
+    string sListUUID = JsonGetString(JsonArrayGet(jGroup, nIndex));
+    while(sListUUID != "")
+    {
+        if(sListUUID == sUUID)
+        {
+            ai_SendMessages("This creature is already in the group!", AI_COLOR_RED, oDM);
+            return;
+        }
+        sListUUID = JsonGetString(JsonArrayGet(jGroup, ++nIndex));
+    }
     JsonArrayInsertInplace(jGroup, JsonString(sUUID));
     ai_SendMessages(sName + " has been saved to group" + sGroup, AI_COLOR_YELLOW, oDM);
     SetLocalJson(oDM, "DM_GROUP" + sGroup, jGroup);
     EnterTargetingMode(oDM, OBJECT_TYPE_CREATURE, MOUSECURSOR_PICKUP, MOUSECURSOR_PICKUP_DOWN);
 }
-void ai_MonsterAction(object oPC, object oTarget, location lLocation)
+void ai_MonsterAction(object oDM, object oTarget, location lLocation, int bRun, int nIndex)
 {
     object oCreature = OBJECT_SELF;
     int nObjectType = GetObjectType(oTarget);
     ai_ClearCreatureActions(TRUE);
-    if(oTarget == GetArea(oPC))
+    if(oTarget == GetArea(oDM))
     {
-        ActionMoveToLocation(lLocation, FALSE);
+        ActionMoveToLocation(lLocation, bRun);
     }
     else if(nObjectType == OBJECT_TYPE_CREATURE)
     {
         if(GetIsDead(oTarget)) return;
-        else if(GetReputation(oCreature, oTarget) < 11)
+        else if(GetIsEnemy(oTarget, oCreature))
         {
             // Lock them into attacking this target only.
             SetLocalObject(oCreature, AI_PC_LOCKED_TARGET, oTarget);
@@ -482,7 +499,31 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
                 ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
                 ai_StartMonsterCombat(oCreature);
             }
-            ai_SendMessages(GetName(oCreature) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
+            if(nIndex == 1)
+            {
+                ai_SendMessages(GetName(oCreature) + "'s group is attacking " + GetName(oTarget), AI_COLOR_RED, oDM);
+            }
+        }
+        else if(oTarget == oDM)
+        {
+            if(GetLocalInt(oCreature, "AI_FOLLOWING_DM"))
+            {
+                ClearAllActions(FALSE, oCreature);
+                DeleteLocalInt(oCreature, "AI_FOLLOWING_DM");
+                if(nIndex == 1)
+                {
+                    ai_SendMessages(GetName(oCreature) + "'s group has stopped following you.", AI_COLOR_RED, oDM);
+                }
+            }
+            else
+            {
+                ActionForceFollowObject(oDM, 4.0);
+                SetLocalInt(oCreature, "AI_FOLLOWING_DM", TRUE);
+                if(nIndex == 1)
+                {
+                    ai_SendMessages(GetName(oCreature) + "'s group is following you.", AI_COLOR_RED, oDM);
+                }
+            }
         }
         else
         {
@@ -490,17 +531,21 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
             // Player will be stuck with this variable if they are not using the AI.
             DeleteLocalInt(oTarget, "AI_I_AM_BEING_HEALED");
             ActionDoCommand(ai_ActionTryHealing(oCreature, oTarget));
+            if(nIndex == 1)
+            {
+                ai_SendMessages(GetName(oCreature) + "'s group is moving to and attempting to heal " + GetName(oTarget), AI_COLOR_RED, oDM);
+            }
         }
     }
     else if(nObjectType == OBJECT_TYPE_DOOR)
     {
         if(GetIsTrapped(oTarget))
         {
-            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+            if(GetTrapDetectedBy(oTarget, oDM)) SetTrapDetectedBy(oTarget, oCreature);
             if(GetTrapDetectedBy(oTarget, oCreature))
             {
                 ai_ReactToTrap(oCreature, oTarget, TRUE);
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                EnterTargetingMode(oDM, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
             else if(GetLocked(oTarget)) ai_AttemptToByPassLock(oCreature, oTarget);
@@ -523,11 +568,11 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
         {
             if(GetIsTrapped(oTarget))
             {
-                if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+                if(GetTrapDetectedBy(oTarget, oDM)) SetTrapDetectedBy(oTarget, oCreature);
                 if(GetTrapDetectedBy(oTarget, oCreature))
                 {
                     ai_ReactToTrap(oCreature, oTarget, TRUE);
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                    EnterTargetingMode(oDM, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
                 if(GetLocked(oTarget))
@@ -536,7 +581,7 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
                     {
                         AssignCommand(oCreature, ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTarget) + " is locked!"));
                     }
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                    EnterTargetingMode(oDM, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                     return;
                 }
                 DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
@@ -547,10 +592,10 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
                 {
                     AssignCommand(oCreature, ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTarget) + " is locked!"));
                 }
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                EnterTargetingMode(oDM, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            ActionDoCommand(ai_SearchObject(oCreature, oTarget, oPC, TRUE));
+            ActionDoCommand(ai_SearchObject(oCreature, oTarget, oDM, TRUE));
         }
         DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
@@ -558,23 +603,24 @@ void ai_MonsterAction(object oPC, object oTarget, location lLocation)
     {
         if(GetIsTrapped(oTarget))
         {
-            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oCreature);
+            if(GetTrapDetectedBy(oTarget, oDM)) SetTrapDetectedBy(oTarget, oCreature);
             if(GetTrapDetectedBy(oTarget, oCreature)) ai_ReactToTrap(oCreature, oTarget, TRUE);
         }
     }
-    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+    EnterTargetingMode(oDM, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
 }
-void ai_DMAction(object oDM, object oTarget, location lLocation, int nGroup)
+void ai_DMAction(object oDM, object oTarget, location lLocation, string sTargetMode)
 {
-    string sGroup = IntToString(nGroup);
+    string sGroup = GetStringRight(sTargetMode, 1);
     json jGroup = GetLocalJson(oDM, "DM_GROUP" + sGroup);
-    int nIndex;
+    int bRun = JsonGetInt(JsonArrayGet(jGroup, 0));
+    int nIndex = 1;
     string sUUID = JsonGetString(JsonArrayGet(jGroup, nIndex));
     object oCreature;
     while(sUUID != "")
     {
         oCreature = GetObjectByUUID(sUUID);
-        AssignCommand(oCreature, ai_MonsterAction(oDM, oTarget, lLocation));
+        AssignCommand(oCreature, ai_MonsterAction(oDM, oTarget, lLocation, bRun, nIndex));
         sUUID = JsonGetString(JsonArrayGet(jGroup, ++nIndex));
     }
     if(nIndex == 0) ai_SendMessages("Group" + sGroup + " is empty!", AI_COLOR_RED, oDM);
@@ -591,8 +637,8 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     json jWidget = JsonArrayGet(jSpells, 2);
     json jSpell = JsonArrayGet(jWidget, nIndex);
     int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-    int nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-    if(nDomain == -1)
+    int nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
+    if(nLevel == -1)
     {
         int nSpellID = StringToInt(Get2DAString("feat", "SPELLID", nSpell));
         if(Get2DAString("spells", "Range", nSpellID) == "P" || // Self

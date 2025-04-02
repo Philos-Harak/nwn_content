@@ -27,7 +27,18 @@ void main()
         float fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
         if(fDistance > fPerceptionDistance) return;
     }
-    if(!ai_CanIAttack(oCreature)) return;
+    if(!ai_CanIAttack(oCreature))
+    {
+        // We should defend ourselves if we are in Hold mode.
+        if(!ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND)) return;
+        // Only defend against melee attacks.
+        float fDistance = GetDistanceBetween(oCreature, oAttacker);
+        if(fDistance > AI_RANGE_MELEE) return;
+        if(GetSpawnInCondition(NW_FLAG_ATTACK_EVENT))
+        {
+            SignalEvent(OBJECT_SELF, EventUserDefined(1005));
+        }
+    }
     // The only way to get here is to not be in combat thus we have not
     // perceived them so lets look for them.
     if(GetDistanceBetween(oCreature, oAttacker) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);

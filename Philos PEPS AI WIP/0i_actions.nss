@@ -154,6 +154,9 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
     if(GetIsDead(GetLocalObject(oCreature, AI_PC_LOCKED_TARGET))) DeleteLocalObject(oCreature, AI_PC_LOCKED_TARGET);
     // Setup the combat state for this round of combat.
     object oNearestEnemy = ai_SetCombatState(oCreature);
+    // If we are in standground mode we only fight if the enemy is near us.
+    if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) &&
+       ai_GetEnemyAttackingMe(oCreature) != OBJECT_INVALID) oNearestEnemy = OBJECT_INVALID;
     // If we found an Enemy or we have a Target then continue into the combat round.
     if(oNearestEnemy != OBJECT_INVALID || oTarget != OBJECT_INVALID)
     {
@@ -164,18 +167,22 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
         }
         ai_SetCombatRound(oCreature);
         string sAI = GetLocalString(oCreature, AI_COMBAT_SCRIPT);
-        if(AI_DEBUG) ai_Debug("0i_actions", "99", " AI not Coward/Peaceful: " +
+        if(AI_DEBUG) ai_Debug("0i_actions", "167", " AI not Coward/Peaceful: " +
                     IntToString(sAI != "ai_coward" && sAI != "ai_a_peaceful"));
         // If we are using a normal AI script and are polymorphed we should use
         // the polymorph AI script.
         if(sAI != "ai_coward" && sAI != "ai_a_peaceful")
         {
-            if(AI_DEBUG) ai_Debug("0i_actions", "122", "Should we use polymorph?" +
-                     " Appearance: " + IntToString(GetAppearanceType(oCreature)) +
-                     " Normal Appearance: " + IntToString(ai_GetNormalAppearance(oCreature)));
-            if(AI_DEBUG) ai_Debug("0i_actions", "129", "Should we use invisibility?" +
-                            " Are we hidden? " + IntToString(ai_GetIsHidden(oCreature)) +
-                            " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
+            if(AI_DEBUG) ai_Debug("0i_actions", "173", "Should we use polymorph? " +
+                     IntToString(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)));
+            if(AI_DEBUG)
+            {
+                if(ai_GetIsHidden(oCreature))
+                {
+                    ai_Debug("0i_actions", "179", "We are hidden!" +
+                             " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
+                }
+            }
             if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
             {
                 sAI = "ai_a_polymorphed";
@@ -183,9 +190,8 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
             else if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
         }
         if(sAI == "") sAI = "ai_a_default";
-        if(AI_DEBUG) ai_Debug("0i_actions", "105", "********** " + GetName (oCreature) + " **********");
-        if(AI_DEBUG) ai_Debug("0i_actions", "106", "********** " + sAI + " **********");
-        if(oTarget != OBJECT_INVALID) SetLocalObject(oCreature, "AI_TARGET", oTarget);
+        if(AI_DEBUG) ai_Debug("0i_actions", "190", "********** " + GetName (oCreature) + " **********");
+        if(AI_DEBUG) ai_Debug("0i_actions", "191", "********** " + sAI + " **********");
         ai_ClearCreatureActions();
         if(AI_DEBUG) ai_Counter_Start();
         // Execute this creatures AI routine.
@@ -194,19 +200,10 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
         return;
     }
     // We have exhausted our check for an enemy. Combat is over.
-    if(AI_DEBUG) ai_Debug("0i_actions", "136", "---------- " + GetName (OBJECT_SELF) + "'s combat has ended! ----------");
+    if(AI_DEBUG) ai_Debug("0i_actions", "200", "---------- " + GetName (OBJECT_SELF) + "'s combat has ended! ----------");
     ai_ClearCombatState(oCreature);
-    ai_TryHealing(oCreature, oCreature);
-    // In command mode we let the player tell us what to do.
-    if(!ai_GetAIMode(oCreature, AI_MODE_COMMANDED))
-    {
-        if(ai_CheckNearbyObjects(oCreature)) return;
-        if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
-        {
-            ai_ScoutAhead(oCreature);
-            return;
-        }
-    }
+    // Run the heartbeat script so we start doing our actions out of combat.
+    ExecuteScript("nw_ch_ac1", oCreature);
 }
 void ai_StartAssociateCombat(object oAssociate, object oTarget = OBJECT_INVALID)
 {
@@ -233,8 +230,8 @@ void ai_DoMonsterCombatRound(object oMonster)
             else if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
         }
         if(sAI == "") sAI = "ai_default";
-        if(AI_DEBUG) ai_Debug("0i_actions", "243", "********** " + GetName (oMonster) + " **********");
-        if(AI_DEBUG) ai_Debug("0i_actions", "244", "********** " + sAI + " **********");
+        if(AI_DEBUG) ai_Debug("0i_actions", "230", "********** " + GetName (oMonster) + " **********");
+        if(AI_DEBUG) ai_Debug("0i_actions", "231", "********** " + sAI + " **********");
         // We clear actions here and setup multiple actions to the queue for oCreature.
         ai_ClearCreatureActions();
         ai_Counter_Start();
@@ -248,8 +245,9 @@ void ai_DoMonsterCombatRound(object oMonster)
     // We have exhausted our check for an enemy. Combat is over.
     ai_EndCombatRound(oMonster);
     ai_ClearCombatState(oMonster);
-    ai_TryHealing(oMonster, oMonster);
-    if(AI_DEBUG) ai_Debug("0i_actions", "259", GetName(oMonster) + "'s combat has ended!");
+    // Run the heartbeat script so we start doing our actions out of combat.
+    ExecuteScript("nw_c2_default1", oMonster);
+    if(AI_DEBUG) ai_Debug("0i_actions", "247", GetName(oMonster) + "'s combat has ended!");
     return;
 }
 void ai_StartMonsterCombat(object oMonster)
@@ -266,9 +264,10 @@ float ai_GetFollowDistance(object oCreature)
 }
 int ai_StayClose(object oCreature)
 {
-    if(ai_GetIsCharacter(oCreature)) return FALSE;
-    if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) ||
-        GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward") return FALSE;
+    if(ai_GetIsCharacter(oCreature) ||
+       ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) ||
+       GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_a_peaceful" ||
+       GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward") return FALSE;
     object oMaster = GetMaster(oCreature);
     // We stay within our perception range of who we are following.
     float fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
@@ -584,7 +583,7 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell)
         case SPELL_STORM_OF_VENGEANCE:
         {
             // This only harms our enemies!
-            return (oCaster != oCreature && GetReputation(oCreature, oCaster) < 11);
+            return (oCaster != oCreature && GetIsEnemy(oCaster, oCreature));
         }
         case SPELL_SILENCE:
         {
@@ -644,14 +643,13 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell)
 void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray)
 {
     if(ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK)) return;
-    if(nRoll = 0)
+    if(nRoll == 0)
     {
         // Some races shouldn't talk.
         int nRacialType = GetRacialType(oCreature);
         if(nRacialType == RACIAL_TYPE_ANIMAL || nRacialType == RACIAL_TYPE_BEAST ||
            nRacialType == RACIAL_TYPE_MAGICAL_BEAST || nRacialType == RACIAL_TYPE_OOZE ||
            nRacialType == RACIAL_TYPE_UNDEAD || nRacialType == RACIAL_TYPE_VERMIN) return;
-        SendMessageToPC(oCreature, sVoiceChatArray);
         SpeakString(sVoiceChatArray);
         return;
     }
@@ -798,7 +796,7 @@ int ai_InCombatEquipBestMeleeWeapon(object oCreature)
     {
         // We delay 1 second since ActionEquip is not an action we can check for.
         // This keeps event scripts from clearing before we actually equip.
-        SetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS, 1);
+        SetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS, 2);
         ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
         return TRUE;
     }
@@ -1089,10 +1087,10 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
         while(GetIsEffectValid(eEffect))
         {
             nEffectType = GetEffectType(eEffect);
-            if(AI_DEBUG) ai_Debug("0i_actions", "831", "nEffectType: " + IntToString(nEffectType));
+            if(AI_DEBUG) ai_Debug("0i_actions", "1094", "Checking to cure(31/32/39) nEffectType: " + IntToString(nEffectType));
             if(nEffectType == EFFECT_TYPE_DISEASE)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "831", "I am diseased!");
+                if(AI_DEBUG) ai_Debug("0i_actions", "1097", "I am diseased!");
                 if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_DISEASED)) return TRUE;
                 if(oCreature == oTarget)
                 {
@@ -1102,7 +1100,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             }
             else if(nEffectType == EFFECT_TYPE_POISON)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "843", "I am poisoned!");
+                if(AI_DEBUG) ai_Debug("0i_actions", "1107", "I am poisoned!");
                 if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_POISONED)) return TRUE;
                 if(oCreature == oTarget)
                 {
@@ -1112,7 +1110,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             }
             else if(nEffectType == EFFECT_TYPE_ABILITY_DECREASE)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "865", "I am weak!");
+                if(AI_DEBUG) ai_Debug("0i_actions", "1117", "I am weak!");
                 if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_WEAK)) return TRUE;
                 if(oCreature == oTarget)
                 {
@@ -2134,7 +2132,7 @@ void ai_Actions()
     ClearAllActions();
     // Check for chance to do an action to keep things interesting.
     int nRoll = Random(100);
-    if(fMaxDistance == 0.0)
+    if(fMaxDistance < 2.0)
     {
         if(nRoll < 51) AnimActionPlayRandomAnimation();
         return;

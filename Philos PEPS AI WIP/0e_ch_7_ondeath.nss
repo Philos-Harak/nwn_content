@@ -12,7 +12,8 @@ void main()
     // Added code to allow for permanent associates in the battle!
     if(AI_DEBUG) ai_Debug("0e_ch_7_ondeath", "13", GetName(oCreature) + " has died!" +
                  " AI_RULE_PERM_ASSOC: " + IntToString(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC)));
-    if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
+    object oModule = GetModule();
+    if(GetLocalInt(oModule, AI_RULE_PERM_ASSOC))
     {
         object oAssociate;
         int nIndex;

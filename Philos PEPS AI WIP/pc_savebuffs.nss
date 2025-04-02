@@ -23,6 +23,9 @@ void SetBuffDatabaseJson(object oPlayer, string sDataField, json jData, string s
 // sDataField should be one of the data fields for the table.
 // Returns a string of the data stored.
 json GetBuffDatabaseJson(object oPlayer, string sDataField, string sTag = "");
+// Returns the level if this spell has a domain spell on nLevel, or 0.
+int GetHasDomainSpell(object oCaster, int nClass, int nLevel, int nSpell);
+
 // We do some crazy hack to get all the correct information when casting spells.
 // GetLastSpellCastClass() will only give the class if this script is running
 //                         on the actual caster, i.e. our PC.
@@ -88,9 +91,10 @@ void main()
     int nClass = GetLastSpellCastClass();
     int nLevel = GetLastSpellLevel();
     // Everything below saves the spell to the database with all our now correct info.
-    int nDomain;
+    int nDomain = GetHasDomainSpell(oPC, nClass, nLevel, nSpell);
     int nMetaMagic = GetMetaMagicFeat();
     string sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+    if(nDomain) sName += " [Domain]";
     if(nMetaMagic > 0 && StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
         // We must add the level of the metamagic to the spells level to get the spells correct level.
@@ -156,4 +160,23 @@ json GetBuffDatabaseJson (object oPlayer, string sDataField, string sTag)
     SqlBindString (sql, "@tag", sTag);
     if (SqlStep (sql)) return SqlGetJson (sql, 0);
     else return JsonArray ();
+}
+int GetHasDomainSpell(object oCaster, int nClass, int nLevel, int nSpell)
+{
+    int nIndex, nMaxIndex, nMSpell, nMmSpell, bDomain, nSubRadSpell, nSubSpell;
+    string sSubRadSpell;
+    if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
+    {
+        nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
+        while(nIndex < nMaxIndex)
+        {
+            nMSpell = GetMemorizedSpellId(oCaster, nClass, nLevel, nIndex);
+            if(nSpell == nMSpell)
+            {
+                if(GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex)) return nLevel;
+            }
+            nIndex ++;
+        }
+    }
+    return 0;
 }

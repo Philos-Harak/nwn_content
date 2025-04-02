@@ -128,7 +128,8 @@ int ai_IsNonliving(int nRacialType)
 }
 int ai_GetIsInCombat(object oCreature)
 {
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "110", "Is in Combat: Enemy Numbers = " + IntToString(GetLocalInt(oCreature, AI_ENEMY_NUMBERS)));
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "110", GetName(oCreature) + " is in Combat: Enemy Numbers = " + IntToString(GetLocalInt(oCreature, AI_ENEMY_NUMBERS)));
+
     return GetLocalInt(oCreature, AI_ENEMY_NUMBERS);
 }
 void ai_SetCombatRound(object oCreature)
@@ -144,12 +145,12 @@ void ai_EndCombatRound(object oCreature)
 int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_SECONDS)
 {
     int nCombatRoundStart = GetLocalInt(oCreature, "AI_COMBAT_ROUND_START");
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "126", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "148", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
     if(!nCombatRoundStart) return FALSE;
     // New combat round calculator. If 6 seconds has passed then we are on a new round!
     int nSQLTime = SQLite_GetTimeStamp();
     int nCombatRoundTime = nSQLTime - nCombatRoundStart;
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "131", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "153", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
              "(" + IntToString(nSQLTime - nCombatRoundStart) + ")");
     if(nCombatRoundTime < nCombatRound) return TRUE;
     ai_EndCombatRound(oCreature);

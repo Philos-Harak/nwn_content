@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:03.07.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04.01.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -17,7 +17,7 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:03
 // Turn On/Off Debug. You can only use the debug with the pi_debug/pe_debug scripts.
 // This will only work if you are using the PEPS menu system.
 const int AI_DEBUG = TRUE;
-// Defines if we are compiling for single player or a server. Always on for server!
+// Defines if we are compiling for single player or a server. Always on for servers!
 const int AI_SERVER = FALSE;
 // The number of classes allowed for a creature to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 3;
@@ -81,6 +81,19 @@ const int AI_PARTY_SCALE = FALSE;
 const int AI_HENCHMAN_WIDGET = TRUE;
 // Change the Custom token number if it conflicts with your server.
 const int AI_BASE_CUSTOM_TOKEN = 1000;
+// The constant the server wants set to allow players to use specific widgets buttons.
+// 0 Allows all buttons. See ASSOCIATE_WIDGET_BUTTONS below for values needed to be
+// added to block those buttons.
+// Example: BTN_CMD_GHOST_MODE = 0x00000800; To remove you would put 2048 below.
+// Since Hex 800 is Decimal 2048.
+const int AI_DM_WIDGET_ACCESS_BUTTONS = 0;
+// The constant the server wants set to allow players to use specific AI buttons.
+// 0 Allows all buttons. See ASSOCIATE_AI_BUTTONS below for values needed to be
+// added to block those buttons.
+// Example: BTN_AI_MAGIC_LEVEL = 0x00000040; To remove you would put 64 below.
+// Since Hex 40 is Decimal 64. Adding BTN_AI_LOOT = 0x00001000; to that would be
+// 64 + 4096 = 4160 to Block Magic Level and Auto Looting.
+const int AI_DM_AI_ACCESS_BUTTONS = 0;
 //**************************  CONVERSATION CONSTANTS  **************************
 // Player's can tell their associates to ignore enemy associates.
 const int AI_IGNORE_ASSOCIATES_ON = TRUE;
@@ -390,6 +403,7 @@ const int BTN_CMD_STEALTH      = 0x00080000; // Command all associates to use st
 const int BTN_CMD_SCOUT        = 0x00100000; // Command associate to scout ahead of the part.
 const int BTN_CMD_SPELL_WIDGET = 0x00200000; // Allows adding or removing spells from Spell Widget.
 const int BTN_CMD_JUMP_TO      = 0x00400000; // Player can make associates jump to them.
+const int BTN_WIDGET_VERTICAL  = 0x80000000; // Widget will be displayed vertical.
 // Bitwise menu constants for Associate AI buttons that are used with Get/SetAssociateAIButtons().
 const string sAIButtonsVarname = "ASSOCIATE_AI_BUTTONS";
 const int BTN_AI_FOR_PC             = 0x00000001; // PC use AI. PC widget only.
@@ -413,13 +427,17 @@ const int BTN_AI_OPEN_DOORS         = 0x00020000; // AI will open all closed doo
 const int BTN_AI_STOP_SELF_HEALING  = 0x00040000; // Stops AI from using any healing on self.
 const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any healing on party.
 const int BTN_AI_IGNORE_ASSOCIATES  = 0x00100000; // AI will deprioritize enemy associates.
-//const int BTN_AI                    = 0x00200000; // Not used.
+//const int BTN_AI_                   = 0x00200000; // Not used.
 //const int BTN_AI                    = 0x00400000; // Not used.
 //const int BTN_AI                    = 0x00800000; // Not used.
 //const int BTN_AI                    = 0x01000000; // Not used.
 //const int BTN_AI                    = 0x02000000; // Not used.
 const int BTN_AI_BASH_LOCKS         = 0x04000000; // AI will attempt to bash any locks they can't get past.
 const int BTN_AI_REDUCE_SPEECH      = 0x08000000; // Reduce the associates speaking.
+// Bitwise menu constants for DM access for players Widget buttons uses BTN_CMD and BTN_BUFF bitwise see above.
+const string sDMWidgetAccessVarname = "AI_RULES_WIDGET_BUTTONS_ACCESS";
+// Bitwise menu constants for DM access for players AI buttons uses BTN_AI bitwise see above.
+const string sDMAIAccessVarname = "AI_RULES_AI_BUTTONS_ACCESS";
 // Variable name for DM widget buttons.
 const string sDMWidgetButtonVarname = "DM_WIDGET_BUTTONS";
 // DM Widget buttons states.
@@ -433,6 +451,7 @@ const int BTN_DM_CMD_GROUP5     = 0x00000040; // Does all the group 5 commands.
 const int BTN_DM_CMD_GROUP6     = 0x00000080; // Does all the group 6 commands.
 const int BTN_DM_CMD_CAMERA     = 0x00000100; // Selects new object to hold the camera view.
 const int BTN_DM_CMD_INVENTORY  = 0x00000200; // Selects a creature to open the inventory of.
+const int BTN_DM_CMD_MEMORIZE   = 0x00000400; // Allows associate to change memorized spells.
 // Bitwise constants for Associate loot options that are used with Get/SetAssociateLootMode().
 const string sLootFilterVarname = "ASSOCIATE_LOOT_MODES";
 const int AI_LOOT_PLOT              = 0x00000001;
@@ -480,9 +499,9 @@ const string AI_TRAP_CHECK_RANGE = "AI_TRAP_CHECK_RANGE";
 const string AI_FOLLOW_RANGE = "AI_FOLLOW_RANGE";
 // Variable that holds the target for an associate to follow.
 const string AI_FOLLOW_TARGET = "AI_FOLLOW_TARGET";
-// Variable that holds the perception range of associates.
+// Variable that holds the perception range of associates i.e. 8, 9, 10, 11.
 const string AI_ASSOCIATE_PERCEPTION = "AI_PERCEPTION_RANGE";
-// Variable that holds the perception distance of associates.
+// Variable that holds the perception distance of associates i.e. 30.0 meters.
 const string AI_ASSOC_PERCEPTION_DISTANCE = "AI_ASSOC_PERCEPTION_DISTANCE";
 // Variable that holds the open doors range of the henchman.
 const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";

@@ -21,10 +21,13 @@ void main()
         ai_CreateWidgetNUI(oPC, oPC);
         ai_SetNormalAppearance(oPC);
     }
-    if(GetIsDM(oPC) || GetIsPlayerDM(oPC))
+    if(AI_SERVER && (GetIsDM(oPC) || GetIsPlayerDM(oPC)))
     {
+        ai_SetAIRules();
+        ai_StartupPlugins(oPC);
         ai_CheckDMData(oPC);
         ai_CreateDMWidgetNUI(oPC);
+        ai_SetupPlayerTarget(oPC);
     }
 }
 

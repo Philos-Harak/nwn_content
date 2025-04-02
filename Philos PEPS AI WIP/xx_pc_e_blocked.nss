@@ -13,14 +13,17 @@ void main()
     object oObject = GetBlockingDoor();
     if(AI_DEBUG) ai_Debug("xx_pc_e_blocked", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
-    if(nObjectType == OBJECT_TYPE_CREATURE && GetReputation(oCreature, oObject) < 11)
+    if(nObjectType == OBJECT_TYPE_CREATURE)
     {
-        if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
+        if(GetIsEnemy(oObject, oCreature))
         {
-            ai_DoAssociateCombatRound(oCreature);
-            return;
+            if(ai_CanIAttack(oCreature) && ai_GetIsInCombat(oCreature))
+            {
+                ai_DoAssociateCombatRound(oCreature);
+                return;
+            }
+            if(ai_CheckForCombat(oCreature, FALSE)) return;
         }
-        if(ai_CheckForCombat(oCreature, FALSE)) return;
     }
     // Anything below blocking us is a door.
     if(nObjectType != OBJECT_TYPE_DOOR) return;

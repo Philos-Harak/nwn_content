@@ -18,8 +18,11 @@ void main()
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     if(nInMelee && ai_MoralCheck(oCreature)) return;
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
+    //****************************  SKILL FEATURES  ****************************
+    if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
     if(ai_TryBardSongFeat(oCreature)) return;
+    if(ai_TryTurningTalent(oCreature)) return;
     if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
     {
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
