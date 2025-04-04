@@ -52,21 +52,11 @@ void main()
             }
         }
         else if(sTargetMode == "TEST_ID_TARGET") SetIdentified(oTarget, !GetIdentified(oTarget));
-        else if(sTargetMode == "TEST_CLEAR_TARGET")
-        {
-            ClearAllActions(TRUE, oTarget);
-        }
         else if(sTargetMode == "TEST_KILL_TARGET")
         {
             effect eDmg = EffectDamage(10000);
             ApplyEffectToObject(DURATION_TYPE_INSTANT, eDmg, oTarget);
             ai_SendMessages(GetName(oTarget) + " has been killed.", AI_COLOR_RED, oPC);
-        }
-        else if(sTargetMode == "TEST_REMOVE_TARGET")
-        {
-            SetIsDestroyable(TRUE, FALSE, FALSE, oTarget);
-            DestroyObject(oTarget);
-            ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
         }
     }
     // Run all non-targeting code here, usually NUI events.

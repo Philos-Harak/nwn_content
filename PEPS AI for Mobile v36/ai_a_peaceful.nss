@@ -22,10 +22,10 @@ void main()
         {
             if(AI_DEBUG) ai_Debug("ai_a_peaceful", "23", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
                          "[" + FloatToString(AI_RANGE_MELEE - fDistance + 1.0, 0, 2) + "]" + " to use a ranged weapon.");
-            //ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
+            ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
             // Lets move just out of melee range!
             int bRun = ai_CanIMoveInCombat(oCreature);
-            ActionMoveAwayFromObject(oNearestEnemy, bRun, AI_RANGE_MELEE - fDistance + 2.0);
+            ActionMoveAwayFromObject(oNearestEnemy, bRun, AI_RANGE_CLOSE + 2.0);
             ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
             return;
         }
@@ -44,13 +44,13 @@ void main()
         ai_DoPhysicalAttackOnNearest(oCreature, nInMelee);
         return;
     }
-    if(fDistance <= AI_RANGE_CLOSE)
+    if(fDistance <= AI_RANGE_LONG)
     {
         if(AI_DEBUG) ai_Debug("ai_a_peaceful", "49", GetName(oCreature) + " is moving away from " + GetName(oNearestEnemy) +
                      "[" + FloatToString(AI_RANGE_LONG - fDistance, 0, 2) + "]" + ".");
         ai_SetLastAction(oCreature, AI_LAST_ACTION_MOVE);
-        // Lets move out of cloe range!
-        ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG - fDistance);
+        // Lets move out of close range!
+        ActionMoveAwayFromObject(oNearestEnemy, TRUE, AI_RANGE_LONG + 2.0);
         ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
         return;
     }

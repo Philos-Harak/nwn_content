@@ -17,7 +17,7 @@ void main()
     // Set window to not save until it has been created.
     SetLocalInt (oPC, "AI_NO_NUI_SAVE", TRUE);
     DelayCommand (0.5f, DeleteLocalInt (oPC, "AI_NO_NUI_SAVE"));
-    // Row 1 (Buttons) ********************************************************* 468 / 73
+    // Row 1 (Buttons) ********************************************************* 775 / 73
     json jRow = JsonArray();
     CreateButtonSelect(jRow, "Party 1", "btn_party1", 90.0f, 20.0f);
     JsonArrayInsertInplace(jRow, NuiSpacer());
@@ -36,20 +36,20 @@ void main()
     // Add the row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 (Options)********************************************************** 875 / 101
+    // Row 2 (Options)********************************************************** 775 / 101
     jRow = JsonArray();
     CreateButton(jRow, "Clear Party", "btn_clear_party", 120.0f, 20.0f, -1.0, "btn_clear_party_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Party Join", "btn_join_party", 120.0f, 20.0f, -1.0, "btn_join_party_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Add NPC Henchman", "btn_npc_henchman", 160.0f, 20.0f, "btn_npc_henchman_tooltip");
+    CreateButtonSelect(jRow, "Create NPC Henchman", "btn_npc_henchman", 200.0f, 20.0f, "btn_npc_henchman_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Save Party", "btn_save_party", 120.0f, 20.0f, -1.0, "btn_save_party_tooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     CreateButton(jRow, "Remove Party", "btn_remove_party", 120.0f, 20.0f, -1.0, "btn_remove_party_tooltip");
     // Add the row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 (Names and List titles) ******************************************* 875 / 124
+    // Row 3 (Names and List titles) ******************************************* 775 / 124
     jRow = JsonArray();
     CreateLabel(jRow, "", "lbl_save_char", 150.0, 15.0, 0, 0);
     CreateLabel(jRow, "", "lbl_save_list", 200.0, 15.0, 0, 0);
@@ -57,7 +57,7 @@ void main()
     CreateLabel(jRow, "", "lbl_game_char", 150.0, 15.0, 0, 0);
     // Add the row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 (List Characters) ************************************************* 875 / 488 (364)
+    // Row 4 (List Characters) ************************************************* 775 / 488 (364)
     // Saved Characters for Party #
     // ***** Adding character saved group next to the button list **************
     jRow = JsonArray();
@@ -110,7 +110,7 @@ void main()
     CreateButton(jGroupRow, "Remove", "btn_cur_remove", 75.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = JsonArray();
-    CreateButton(jGroupRow, "Level Up", "btn_cur_edit", 150.0, 20.0);
+    CreateButton(jGroupRow, "Edit", "btn_cur_edit", 150.0, 20.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add the row to the column.
@@ -132,7 +132,7 @@ void main()
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow (oPC, jLayout, "henchman_nui", sName + " party",
-                            fX, fY, 875.0, 488.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
+                            fX, fY, 775.0, 488.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
     // Lets set MaxHenchman here.
     if(GetMaxHenchmen() < 6) SetMaxHenchmen(6);
     // Setup watch for saving location.
@@ -220,3 +220,4 @@ int StartingUp(object oPC)
     if(!GetLocalInt(oPC, AI_STARTING_UP)) return FALSE;
     return TRUE;
 }
+

@@ -11,6 +11,7 @@ void main()
     object oPC = OBJECT_SELF;
     if(StartingUp(oPC)) return;
     ForceRest(oPC);
+    DeleteLocalInt(oPC, "HF_REST_LAST_TIME");
     int nIndex;
     int nMaxHenchman = GetMaxHenchmen();
     object oAssociate;
@@ -18,6 +19,7 @@ void main()
     {
         oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
         ForceRest(oAssociate);
+        DeleteLocalInt(oAssociate, "HF_REST_LAST_TIME");
         if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_AFTER_REST))
         {
             DelayCommand(1.0, ai_HenchmanCastDefensiveSpells(oAssociate, oPC));

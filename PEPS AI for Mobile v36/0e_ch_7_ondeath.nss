@@ -12,7 +12,8 @@ void main()
     // Added code to allow for permanent associates in the battle!
     if(AI_DEBUG) ai_Debug("0e_ch_7_ondeath", "13", GetName(oCreature) + " has died!" +
                  " AI_RULE_PERM_ASSOC: " + IntToString(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC)));
-    if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
+    object oModule = GetModule();
+    if(GetLocalInt(oModule, AI_RULE_PERM_ASSOC))
     {
         object oAssociate;
         int nIndex;
@@ -28,9 +29,12 @@ void main()
     }
     // Remove the widget!
     object oPC = GetMaster(oCreature);
-    NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oCreature) + AI_WIDGET_NUI));
-    DelayCommand(0.5, ai_CheckXPPartyScale(oCreature));
-    DelayCommand(2.0, ai_ClearCreatureActions(TRUE));
+    if(oPC != OBJECT_INVALID)
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oCreature) + AI_WIDGET_NUI));
+        DelayCommand(0.5, ai_CheckXPPartyScale(oCreature));
+        DelayCommand(2.0, ai_ClearCreatureActions(TRUE));
+    }
     DelayCommand(2.0, ai_ClearCombatState(oCreature));
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

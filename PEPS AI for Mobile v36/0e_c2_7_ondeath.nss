@@ -10,7 +10,8 @@ void main()
 {
     object oCreature = OBJECT_SELF;
     // Added code to allow for permanent associates in the battle!
-    if(GetLocalInt(GetModule(), AI_RULE_PERM_ASSOC))
+    object oModule = GetModule();
+    if(GetLocalInt(oModule, AI_RULE_PERM_ASSOC))
     {
         object oAssociate;
         int nIndex;
@@ -24,6 +25,7 @@ void main()
             }
         }
     }
+    if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY)) SetIsDestroyable(FALSE, FALSE, TRUE);
     ai_ClearCombatState(oCreature);
     ExecuteScript(GetLocalString(oCreature, "AI_ON_DEATH"));
 }

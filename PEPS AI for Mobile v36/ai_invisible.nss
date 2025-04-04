@@ -28,8 +28,6 @@ void main()
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     }
-    if(ai_TryBarbarianRageFeat(oCreature)) return;
-    if(ai_TryBardSongFeat(oCreature)) return;
     // ******************* OFFENSIVE AOE TALENTS ***********************
     // Check the battlefield for a group of enemies to shoot a big spell at!
     // We are checking here since these opportunities are rare and we need

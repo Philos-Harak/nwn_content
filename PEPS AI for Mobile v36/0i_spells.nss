@@ -2008,12 +2008,12 @@ void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location 
     int nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
     int nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
     int nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-    if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+    if(GetCurrentAction(oAssociate) != ACTION_CASTSPELL) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
     if(!GetIsObjectValid(oTarget))
     {
         AssignCommand(oAssociate, ActionCastSpellAtLocation(nSpell, lLocation, nMetaMagic, FALSE, 0, FALSE, -1, FALSE, nDomain));
     }
-    else AssignCommand(oAssociate, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain, 0, TRUE));
+    else AssignCommand(oAssociate, ActionCastSpellAtObject(nSpell, oTarget, nMetaMagic, FALSE, nDomain));
 
 }
 void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lLocation)

@@ -551,7 +551,7 @@ void ai_SetAura(object oCreature)
 void ai_UseSkill(object oCreature, int nSkill, object oTarget)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_SKILL);
-    if(GetReputation(oCreature, oTarget) < 11) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
+    if(GetIsEnemy(oTarget, oCreature)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     if(AI_DEBUG) ai_Debug("0i_talents", "498", GetName(oCreature) + " is using skill: " +
              GetStringByStrRef(StringToInt(Get2DAString("skills", "Name", nSkill))) +
              " on " + GetName(oTarget));
@@ -652,7 +652,7 @@ int ai_TryAnimalEmpathy(object oCreature, object oTarget = OBJECT_INVALID)
 void ai_UseFeat(object oCreature, int nFeat, object oTarget, int nSubFeat = 0)
 {
     ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_FEAT);
-    if(GetReputation(oCreature, oTarget) < 11) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
+    if(GetIsEnemy(oTarget, oCreature)) SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
     if(AI_DEBUG) ai_Debug("0i_talents", "600", GetName(oCreature) + " is using feat: " +
              GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat))) +
              " on " + GetName(oTarget));
@@ -691,6 +691,7 @@ int ai_TryBardSongFeat(object oCreature)
 }
 int ai_TryCalledShotFeat(object oCreature, object oTarget)
 {
+    if(!GetHasFeat(FEAT_CALLED_SHOT, oCreature)) return FALSE;
     // Called shot has a -4 to hit adjustment.
     if(!ai_AttackPenaltyOk(oCreature, oTarget, -4.0)) return FALSE;
     ai_UseFeat(oCreature, FEAT_CALLED_SHOT, oTarget);
@@ -698,6 +699,7 @@ int ai_TryCalledShotFeat(object oCreature, object oTarget)
 }
 int ai_TryDisarmFeat(object oCreature, object oTarget)
 {
+    if(!GetHasFeat(FEAT_DISARM, oCreature)) return FALSE;
     // If we can't disarm them then get out!
     if(!GetIsCreatureDisarmable(oTarget)) return FALSE;
     int nEAC = GetAC(oTarget);
@@ -799,15 +801,16 @@ int ai_TryImprovedPowerAttackFeat(object oCreature, object oTarget)
     // If we cannot hit or will kill in one hit then maybe we should use Power Attack instead.
     if(ai_PowerAttackGood(oCreature, oTarget, 10.0))
     {
-        SetActionMode(oCreature, ACTION_MODE_IMPROVED_POWER_ATTACK, FALSE);
-        DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
-        return ai_TryPowerAttackFeat(oCreature, oTarget);
+        ai_UseFeatAttackMode(oCreature, ACTION_MODE_IMPROVED_POWER_ATTACK, AI_LAST_ACTION_MELEE_ATK, oTarget);
+        return TRUE;
     }
-    ai_UseFeatAttackMode(oCreature, ACTION_MODE_IMPROVED_POWER_ATTACK, AI_LAST_ACTION_MELEE_ATK, oTarget);
-    return TRUE;
+    SetActionMode(oCreature, ACTION_MODE_IMPROVED_POWER_ATTACK, FALSE);
+    DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
+    return ai_TryPowerAttackFeat(oCreature, oTarget);
 }
 int ai_TryKiDamageFeat(object oCreature, object oTarget)
 {
+    if(!GetHasFeat(FEAT_KI_DAMAGE, oCreature)) return FALSE;
     // Must have > 40 hitpoints AND
     // Damage reduction OR damage resistance
     // or just have over 200 hitpoints
@@ -829,6 +832,7 @@ int ai_TryKiDamageFeat(object oCreature, object oTarget)
 }
 int ai_TryKnockdownFeat(object oCreature, object oTarget)
 {
+    if(!GetHasFeat(FEAT_KNOCKDOWN, oCreature)) return FALSE;
     int nMySize = GetCreatureSize(oCreature);
     if(GetHasFeat(FEAT_IMPROVED_KNOCKDOWN, oCreature)) nMySize++;
     // Prevent silly use of knockdown on immune or too-large targets.
@@ -935,12 +939,12 @@ int ai_TryPowerAttackFeat(object oCreature, object oTarget)
     // Power Attack has a -5 atk adjustment.
     if(ai_PowerAttackGood(oCreature, oTarget, 5.0))
     {
-        SetActionMode(oCreature, ACTION_MODE_POWER_ATTACK, FALSE);
-        DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
-        return FALSE;
+        ai_UseFeatAttackMode(oCreature, ACTION_MODE_POWER_ATTACK, AI_LAST_ACTION_MELEE_ATK, oTarget);
+        return TRUE;
     }
-    ai_UseFeatAttackMode(oCreature, ACTION_MODE_POWER_ATTACK, AI_LAST_ACTION_MELEE_ATK, oTarget);
-    return TRUE;
+    SetActionMode(oCreature, ACTION_MODE_POWER_ATTACK, FALSE);
+    DeleteLocalInt(oCreature, AI_CURRENT_ACTION_MODE);
+    return FALSE;
 }
 int ai_TryQuiveringPalmFeat(object oCreature, object oTarget)
 {
@@ -966,6 +970,7 @@ int ai_TryRapidShotFeat(object oCreature, object oTarget, int nInMelee)
 }
 int ai_TrySapFeat(object oCreature, object oTarget)
 {
+    if(!GetHasFeat(FEAT_SAP, oCreature)) return FALSE;
     // Does not work on creatures that cannot be hit by criticals or stunned.
     // Sap has a -4 atk adjustment.
     if(GetIsImmune(oTarget, IMMUNITY_TYPE_CRITICAL_HIT) ||
@@ -1097,7 +1102,7 @@ int ai_TryTurningTalent(object oCreature)
     object oEnemy = GetNearestCreature(7, 7, oCreature, nCnt);
     while(oEnemy != OBJECT_INVALID && nHDCount < nTurnHD && GetDistanceBetween(oEnemy, oCreature) <= 20.0)
     {
-        if(GetReputation(oCreature, oEnemy) < 11 && !ai_Disabled(oEnemy))
+        if(GetIsEnemy(oEnemy, oCreature) && !ai_Disabled(oEnemy))
         {
             nRacial = GetRacialType(oEnemy);
             nHD = 0;
@@ -1131,7 +1136,7 @@ int ai_TryTurningTalent(object oCreature)
         while(oEnemy != OBJECT_INVALID && nHDCount2 < nTurnHD && GetDistanceBetween(oEnemy, oNearestEnemy) <= 20.0)
         {
             if(AI_DEBUG) ai_Debug("0i_talents", "1129", GetName(oEnemy));
-            if(GetReputation(oCreature, oEnemy) < 11 && !ai_Disabled(oEnemy))
+            if(GetIsEnemy(oEnemy, oCreature) && !ai_Disabled(oEnemy))
             {
                 nRacial = GetRacialType(oEnemy);
                 nHD = 0;
@@ -1274,8 +1279,8 @@ void ai_DragonMeleeAttack(object oCreature, object oTarget, string sDmgDice, str
                       ai_AddColorToText(sText + "attacks " + GetName(oTarget) + " : " + sHit + " :(" +
                       IntToString(nRoll) + " + " + IntToString(nAB) +
                       " = " + IntToString(nRoll + nAB) + ")", AI_COLOR_DARK_ORANGE);
-    SendMessageToPC(oCreature, sMessage);
-    SendMessageToPC(oTarget, sMessage);
+    if(ai_GetIsCharacter(oTarget)) SendMessageToPC(oCreature, sMessage);
+    if(ai_GetIsCharacter(oTarget)) SendMessageToPC(oTarget, sMessage);
     if(AI_DEBUG) ai_Debug("0i_talents", "965", "nAB: " + IntToString(nAB) +
               " nAC: " + IntToString(nAC) + " nRoll: " + IntToString(nRoll) +
               " nCheck: " + IntToString(nCheck) + " nDmg: " + IntToString(nDmg));
@@ -1314,7 +1319,7 @@ int ai_TryWingAttacks(object oCreature)
     while(oTarget != OBJECT_INVALID)
     {
         if(AI_DEBUG) ai_Debug("0i_talents", "1002", "oTarget: " + GetName(oTarget));
-        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
+        if(GetIsEnemy(oTarget, oCreature) && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lWing);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " right wing ");
@@ -1324,7 +1329,7 @@ int ai_TryWingAttacks(object oCreature)
     while(oTarget != OBJECT_INVALID)
     {
         if(AI_DEBUG) ai_Debug("0i_talents", "1012", "oTarget: " + GetName(oTarget));
-        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
+        if(GetIsEnemy(oTarget, oCreature) && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lWing);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " left wing ");
@@ -1358,7 +1363,7 @@ int ai_TryTailSlap(object oCreature)
     object oTarget = GetFirstObjectInShape(SHAPE_SPHERE, fSize, lTail);
     while(oTarget != OBJECT_INVALID)
     {
-        if(GetReputation(oCreature, oTarget) < 11 && !GetIsDead(oTarget)) break;
+        if(GetIsEnemy(oTarget, oCreature) && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lTail);
     }
     if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " tail ");\
@@ -1411,7 +1416,7 @@ void ai_CrushEffect(object oCreature, object oBaseTarget, int nHitDice)
             {
                 sMessage =  ai_AddColorToText(GetName(oTarget), AI_COLOR_LIGHT_MAGENTA) +
                       ai_AddColorToText(" dodges the crush attack from " + GetName(oTarget) + ".", AI_COLOR_DARK_ORANGE);
-                SendMessageToPC(oTarget, sMessage);
+                if(ai_GetIsCharacter(oTarget)) SendMessageToPC(oTarget, sMessage);
             }
         }
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lImpact);
@@ -1517,7 +1522,7 @@ int ai_TrySneakAttack(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
             sIndex = IntToString(ai_GetBestSneakAttackIndex(oCreature, AI_RANGE_MELEE));
         }
         // Ok we are in a serious fight so lets not give attack of opportunities.
-        else sIndex = IntToString(ai_GetNearestCreatureIndex(oCreature, AI_RANGE_MELEE));
+        else sIndex = IntToString(ai_GetNearestIndex(oCreature, AI_RANGE_MELEE));
         oTarget = GetLocalObject(oCreature, AI_ENEMY + sIndex);
     }
     if(oTarget == OBJECT_INVALID) return FALSE;
@@ -2215,8 +2220,8 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
         {
             if(AI_DEBUG) ai_Debug("0i_talents", "1925", "Using a non-healing potion nInMelee: " + IntToString(nInMelee));
             if(nInMelee > 1) return FALSE;
-            // Don't use potions on allies that are not within 5'.
-            if(GetDistanceBetween(oCreature, oTarget) > AI_RANGE_MELEE) return FALSE;
+            // Don't use potions on allies that are not within 3 meters.
+            if(GetDistanceBetween(oCreature, oTarget) > 3.1) return FALSE;
         }
         // For now we are allowing creatures to use "give" potions to others
         // unless the player is using a healing potion and has party healing turned off.

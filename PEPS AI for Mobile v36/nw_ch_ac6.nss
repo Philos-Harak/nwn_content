@@ -18,6 +18,10 @@ void main()
     DeleteLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT");
     object oDamager = GetLastDamager(oCreature);
     if(AI_DEBUG) ai_Debug("nw_ch_ac6", "18", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
+    if(GetSpawnInCondition(NW_FLAG_DAMAGED_EVENT))
+    {
+        SignalEvent(OBJECT_SELF, EventUserDefined(1006));
+    }
     if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
     {
         if(ai_IsInADangerousAOE(oCreature))
@@ -27,6 +31,7 @@ void main()
         }
     }
     if(ai_GetIsBusy(oCreature) || ai_GetIsInCombat(oCreature)) return;
+    if(!ai_CanIAttack(oCreature)) return;
     if(GetDistanceBetween(oCreature, oDamager) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
     else ActionMoveToObject(oDamager, TRUE, AI_RANGE_CLOSE - 1.0);
 }

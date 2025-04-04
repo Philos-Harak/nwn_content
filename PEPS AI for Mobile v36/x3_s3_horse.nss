@@ -8,8 +8,7 @@
 
     This still allows the horse feats to function normally.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_menus"
-#include "0i_player_target"
+#include "0i_module"
 //::///////////////////////////////////////////////
 //:: Horse Feat Control System
 //:: x3_s3_horse
@@ -41,12 +40,7 @@ void main()
 {
    object oPC = OBJECT_SELF;
    //*********** Philos Player Setup *********
-   ai_SetAIRules();
-   ai_StartupPlugins(oPC);
-   ai_CheckAssociateData(oPC, oPC, "pc");
-   ai_CreateWidgetNUI(oPC, oPC);
-   ai_SetupPlayerTarget(oPC);
-   ai_SetNormalAppearance(oPC);
+   if(!AI_SERVER) ai_CheckPCStart(oPC, TRUE);
    //*********** Philos Player Setup *********
    object oTarget=GetSpellTargetObject();
    object oHorse;

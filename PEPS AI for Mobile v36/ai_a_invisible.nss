@@ -44,8 +44,8 @@ void main()
             // If we have used all the valid defensive talents then lets move on to offense!
         }
         // ************************** CLASS FEATURES ***************************
-        if(ai_TryBarbarianRageFeat(oCreature)) return;
-        if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)

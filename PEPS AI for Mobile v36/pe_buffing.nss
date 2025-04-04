@@ -7,6 +7,7 @@
 #include "0i_nui"
 
 const int BUFF_MAX_SPELLS = 50;
+const string FB_NO_MONSTER_CHECK = "FB_NO_MONSTER_CHECK";
 
 // sDataField should be one of the data fields for that table.
 // sData is the string data to be saved.
@@ -193,6 +194,11 @@ void main()
                 NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(TRUE));
                 PopupWidgetBuffGUIPanel(oPC);
             }
+            if(sElem == "chbx_no_monster_check_check")
+            {
+                int bNoCheckMonsters = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                SetLocalInt(oPC, FB_NO_MONSTER_CHECK, bNoCheckMonsters);
+            }
         }
     }
     //**************************************************************************
@@ -298,9 +304,13 @@ void CastSavedBuffSpells(object oPC)
         if(nMainWindow) NuiSetBind(oPC, nMainWindow, "btn_save", JsonBool(FALSE));
         ai_SendMessages("Saving spells to the list has been turned off.", AI_COLOR_YELLOW, oPC);
     }
-    // Check for monsters! We cannot let them buff if they are close to the enemy!
-    object oEnemy = GetNearestCreature(CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_ENEMY, oPC);
-    float fDistance = GetDistanceBetween(oPC, oEnemy);
+    float fDistance;
+    if(!GetLocalInt(oPC, FB_NO_MONSTER_CHECK))
+    {
+        // Check for monsters! We cannot let them buff if they are close to the enemy!
+        object oEnemy = GetNearestCreature(CREATURE_TYPE_REPUTATION, REPUTATION_TYPE_ENEMY, oPC);
+        fDistance = GetDistanceBetween(oPC, oEnemy);
+    }
     if(fDistance > 30.0f || fDistance == 0.0)
     {
         string sName;
@@ -350,12 +360,8 @@ void CastSavedBuffSpells(object oPC)
                         else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
                     }
                     nSpellReady = GetSpellReady(oPC, nSpell, nClass, nLevel, nMetamagic, nDomain);
-                    if(nSpellReady > -1)
+                    if(nSpellReady)
                     {
-                        // Right now we cannot save the domain status. So we just assume
-                        // the domain status of the spell that has the same ID.
-                        // This is returned in GetSpellReady.
-                        nDomain = nSpellReady;
                         DelayCommand(fDelay, CastBuffSpell(oPC, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName));
                     }
                     else if(nSpellReady == -1)
@@ -402,8 +408,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
                 {
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
-                        if(nDSpell) return nLevel;
-                        return 0;
+                        if(nDSpell == nDomain) return TRUE;
                     }
                 }
             }
@@ -417,8 +422,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
                 {
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
-                        if(nDSpell) return nLevel;
-                        return 0;
+                        if(nDSpell == nDomain) return TRUE;
                     }
                 }
             }

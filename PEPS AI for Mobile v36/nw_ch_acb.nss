@@ -15,7 +15,14 @@ void main()
     if(ai_Disabled(oCreature)) return;
     if(!GetLastSpellHarmful()) return;
     // If the spell came from an ally, we don't want to hold it against them.
-    if(GetFactionEqual(oCaster, oCreature)) ClearPersonalReputation(oCaster, oCreature);
+    if(GetFactionEqual(oCaster, oCreature))
+    {
+        ClearPersonalReputation(oCaster, oCreature);
+        if(GetSpawnInCondition(NW_FLAG_SPELL_CAST_AT_EVENT))
+        {
+            SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_SPELL_CAST_AT));
+        }
+    }
     // Lets see what kind of area of effect this is and select an appropriate action.
     int nSpell = GetLastSpell();
     if(AI_DEBUG) ai_Debug("nw_ch_acb", "21", GetName(OBJECT_SELF) + " has been hit by a harmful spell(" +

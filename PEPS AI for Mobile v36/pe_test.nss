@@ -55,7 +55,7 @@ void main()
         else if(sTargetMode == "TEST_ID_TARGET") SetIdentified(oTarget, !GetIdentified(oTarget));
         else if(sTargetMode == "TEST_CLEAR_TARGET")
         {
-            ClearAllActions(TRUE, oTarget);
+            AssignCommand(oTarget, ClearAllActions(TRUE));
         }
         else if(sTargetMode == "TEST_KILL_TARGET")
         {
@@ -71,8 +71,8 @@ void main()
         }
         else if(sTargetMode == "TEST_REMOVE_TARGET")
         {
-            SetIsDestroyable(TRUE, FALSE, FALSE, oTarget);
-            DestroyObject(oTarget);
+            AssignCommand(oTarget, SetIsDestroyable(TRUE, FALSE, FALSE));
+            DestroyObject(oTarget, 0.5);
             ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
         }
         else if(sTargetMode == "TEST_JUMP")

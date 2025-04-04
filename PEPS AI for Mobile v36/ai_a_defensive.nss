@@ -43,8 +43,12 @@ void main()
     // DIFFICULT+ - Class talents, Offensive AOE's, Defensive talents, and Potion talents.
     if(nDifficulty >= AI_COMBAT_MODERATE)
     {
+        //**************************  SKILL FEATURES  **************************
+        if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
         if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
         if(bUseMagic && !ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
         {
             // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ****************

@@ -15,19 +15,8 @@ void main()
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     // Has our master told us to not use magic?
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
-    //***************************  HEALING & CURES  ****************************
-    if(bUseMagic)
-    {
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
-    // Check for moral and get the maximum spell level we should use.
-    if(ai_GetDifficulty(oCreature) >= AI_COMBAT_EFFORTLESS)
-    {
-        if(nInMelee && ai_MoralCheck(oCreature)) return;
-    }
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
-    if(AI_DEBUG) ai_Debug("ai_a_ambusher", "15", GetName(oCreature) + " is using ambusher tactics: " +
+    if(AI_DEBUG) ai_Debug("ai_a_ambusher", "19", GetName(oCreature) + " is using ambusher tactics: " +
              " oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " +
              FloatToString(GetDistanceBetween(oNearestEnemy, oCreature), 0, 2));
     if(GetDistanceBetween(oNearestEnemy, oCreature) > AI_RANGE_CLOSE)
@@ -101,11 +90,11 @@ void main()
         // The enemy can see through stealth so lets drop it.
         else SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
     }
-    // We are not in stealth mode so lets get there.
+    // We are not in stealth mode so and no one sees us so lets hide.
     else if(!GetActionMode(oCreature, ACTION_MODE_STEALTH))
     {
         // Use any hiding talents we have
-        if(AI_DEBUG) ai_Debug("ai_a_ambusher", "93", GetName(oCreature) + " is trying to hide!");
+        if(AI_DEBUG) ai_Debug("ai_a_ambusher", "97", GetName(oCreature) + " is trying to hide!");
         SetActionMode(oCreature, ACTION_MODE_STEALTH, TRUE);
         SetLocalInt(oCreature, AI_TRIED_TO_HIDE, 3);
         return;

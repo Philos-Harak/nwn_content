@@ -33,6 +33,13 @@ void main()
     {
         // *************************** SPELL TALENTS ***************************
         if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
+        //**************************  SKILL FEATURES  **************************
+        if(ai_TryAnimalEmpathy(oCreature)) return;
+        // ************************** CLASS FEATURES ***************************
+        if(ai_TryBarbarianRageFeat(oCreature)) return;
+        if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
@@ -52,11 +59,11 @@ void main()
     // Lets get the nearest target that is attacking someone besides me. We want to flank!
     if(oTarget == OBJECT_INVALID)
     {
-        if(!nInMelee) oTarget = ai_GetBestEnemyToFlankTarget(oCreature);
+        if(!nInMelee) oTarget = ai_GetFlankTarget(oCreature);
         // If there are few enemies then we can safely move around.
         else if(nInMelee < 3 || ai_CanIMoveInCombat(oCreature))
         {
-            oTarget = ai_GetBestEnemyToFlankTarget(oCreature, AI_RANGE_MELEE);
+            oTarget = ai_GetFlankTarget(oCreature, AI_RANGE_MELEE);
         }
         // Ok we are in a serious fight so lets not give attack of opportunities.
         else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);

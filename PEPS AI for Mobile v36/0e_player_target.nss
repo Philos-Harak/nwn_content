@@ -31,6 +31,7 @@ void main()
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
         object oAssociate = GetLocalObject(oPC, AI_TARGET_ASSOCIATE);
         string sTargetMode = GetLocalString(oPC, AI_TARGET_MODE);
+        // ********************* Exiting Target Actions ************************
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())
         {
@@ -57,8 +58,10 @@ void main()
                 else
                 {
                     ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, FALSE);
-                    if(ai_GetAIMode(oPC, AI_MODE_GHOST))
+                    if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) && !ai_GetAIMode(oPC, AI_MODE_GHOST) &&
+                       GetLocalInt(oAssociate, sGhostModeVarname))
                     {
+
                         ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
                         DeleteLocalInt(oAssociate, sGhostModeVarname);
                     }
@@ -80,62 +83,66 @@ void main()
             }
             return;
         }
-        // This action makes an associates move to vTarget.
-        if(sTargetMode == "ASSOCIATE_ACTION_ALL")
+        // ************************* Targeted Actions **************************
+        else
         {
-            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
+            // This action makes an associates move to vTarget.
+            if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
-                ai_OriginalActionAllAssociates(oPC, oTarget, lLocation);
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
+                {
+                    ai_OriginalActionAllAssociates(oPC, oTarget, lLocation);
+                }
+                else ai_ActionAllAssociates(oPC, oTarget, lLocation);
             }
-            else ai_ActionAllAssociates(oPC, oTarget, lLocation);
-        }
-        else if(sTargetMode == "ASSOCIATE_ACTION")
-        {
-            if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
+            else if(sTargetMode == "ASSOCIATE_ACTION")
             {
-                AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
+                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
+                {
+                    AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
+                }
+                else AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
             }
-            else AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
-        }
-        else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectFollowTarget(oPC, oAssociate, oTarget);
-        else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);
-        else if(sTargetMode == "ASSOCIATE_PLACE_TRAP") AssignCommand(oAssociate, ai_PlaceTrap(oPC, lLocation));
-        else if(sTargetMode == "ASSOCIATE_USE_FEAT")
-        {
-            if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
-            ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
-            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-        }
-        else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
-        {
-            if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
-            ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
-            DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-        }
-        else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
-        {
-            AttachCamera(oPC, oTarget);
-            ai_SendMessages(GetName(oPC) + " has changed the cavera view to " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
-        }
-        else if(sTargetMode == "DM_SELECT_OPEN_INVENTORY")
-        {
-            if(LineOfSightObject(oPC, oTarget))
+            else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectFollowTarget(oPC, oAssociate, oTarget);
+            else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);
+            else if(sTargetMode == "ASSOCIATE_PLACE_TRAP") AssignCommand(oAssociate, ai_PlaceTrap(oPC, lLocation));
+            else if(sTargetMode == "ASSOCIATE_USE_FEAT")
             {
-                OpenInventory(oTarget, oPC);
-                ai_SendMessages("You have opened the inventory of "+ GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+                if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
+                ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
+                DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
-            else ai_SendMessages(GetName(oTarget) + " is not in your line of sight!", AI_COLOR_YELLOW, oPC);
+            else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
+            {
+                if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
+                ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
+                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            }
+            else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
+            {
+                AttachCamera(oPC, oTarget);
+                ai_SendMessages(GetName(oPC) + " has changed the cavera view to " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+            }
+            else if(sTargetMode == "DM_SELECT_OPEN_INVENTORY")
+            {
+                if(LineOfSightObject(oPC, oTarget))
+                {
+                    OpenInventory(oTarget, oPC);
+                    ai_SendMessages("You have opened the inventory of "+ GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+                }
+                else ai_SendMessages(GetName(oTarget) + " is not in your line of sight!", AI_COLOR_YELLOW, oPC);
+            }
+            else if(GetStringLeft(sTargetMode, 15) == "DM_SELECT_GROUP")
+            {
+                ai_AddToGroup(oPC, oTarget, sTargetMode);
+            }
+            else if(GetStringLeft(sTargetMode, 15) == "DM_ACTION_GROUP")
+            {
+                ai_DMAction(oPC, oTarget, lLocation, sTargetMode);
+            }
+            // Get saved module player target script and execute it for pass through compatibility.
+            string sModuleTargetScript = GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT);
+            ExecuteScript(sModuleTargetScript);
         }
-        else if(GetStringLeft(sTargetMode, 15) == "DM_SELECT_GROUP")
-        {
-            ai_AddToGroup(oPC, oTarget, StringToInt(GetStringRight(sTargetMode, 1)));
-        }
-        else if(GetStringLeft(sTargetMode, 15) == "DM_ACTION_GROUP")
-        {
-            ai_DMAction(oPC, oTarget, lLocation, StringToInt(GetStringRight(sTargetMode, 1)));
-        }
-        // Get saved module player target script and execute it for pass through compatibility.
-        string sModuleTargetScript = GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT);
-        ExecuteScript(sModuleTargetScript);
     }
 }

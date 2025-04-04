@@ -21,8 +21,6 @@ void main()
     object oCreature = OBJECT_SELF;
     int nEvent = GetCurrentlyRunningEvent();
     int bFollower = GetLocalInt(oCreature, "bFollower");
-    //WriteTimestampedLogEntry("0e_prc_id_events [24] " + GetName(oCreature) + " nEvent: " + IntToString(nEvent) +
-    //                         " bFollower: " + IntToString(bFollower));
     switch (nEvent)
     {
         case EVENT_SCRIPT_CREATURE_ON_HEARTBEAT:

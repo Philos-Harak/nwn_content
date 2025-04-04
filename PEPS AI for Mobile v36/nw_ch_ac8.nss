@@ -11,6 +11,10 @@
 void main()
 {
     if(AI_DEBUG) ai_Debug("nw_ch_ac8", "13", GetName(OBJECT_SELF) + " is been disturbed!");
+    if(GetSpawnInCondition(NW_FLAG_DISTURBED_EVENT))
+    {
+        SignalEvent(OBJECT_SELF, EventUserDefined(1008));
+    }
     // We do nothing at the moment... lets not mess up our factions ok?
     // This should be defined by the server admins and is commented out.
     //if(ai_GetIsBusy(OBJECT_SELF, FALSE) || ai_Disabled()) return;

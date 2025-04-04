@@ -6,8 +6,8 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
 #include "nw_inc_gff"
-// Return TRUE if the associate can attack based on current modes and actions.
-int ai_CanIAttack(object oAssociate);
+// Return TRUE if oCreature can attack based on current modes and actions.
+int ai_CanIAttack(object oCreature);
 // Returns the nearest locked object from oMaster.
 object ai_GetNearestLockedObject(object oCreature);
 // Will look for the oTarget or go to the oSpeaker depending on the situation.
@@ -97,6 +97,7 @@ void ai_Heal_Button(object oPC, object oAssociate, int nIncrement, string sVar, 
 // Button action for turning healing on/off.
 void ai_Heal_OnOff(object oPC, object oAssociate, string sAssociateType, int nMode);
 // Button action for selecting a target to follow.
+// Button action for selecting a target to follow.
 void ai_FollowTarget(object oPC, object oAssociate);
 // Button action for giving commands to associates.
 void ai_DoCommand(object oPC, object oAssociate, int nCommand);
@@ -108,6 +109,8 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociate, int nToken = 
 void ai_HavePCPlaceTrap(object oPC, object oAssociate);
 // Jumps oAssociate to oPC, if oPC == oAssociate it jumps all oAssocites to oPC.
 void ai_JumpToPC(object oPC, object oAssociate);
+// Allow oAssociate to use no clipping.
+void ai_GhostMode(object oPC, object oAssociate, int nToken, string sAssociateType);
 // Changes the camera view from either the player to the associate or back.
 void ai_ChangeCameraView(object oPC, object oAssociate);
 // Checks that the oAssociate is within sight and then opens the inventory.
@@ -115,12 +118,16 @@ void ai_OpenInventory(object oAssociate, object oPC);
 // Executes an installed plugin.
 void ai_Plugin_Execute(object oPC, string sElem, int bUser = 0);
 
-int ai_CanIAttack(object oAssociate)
+int ai_CanIAttack(object oCreature)
 {
-    if(ai_GetIsCharacter(oAssociate)) return TRUE;
-    int nAction = GetCurrentAction(oAssociate);
-    return (!ai_GetAIMode(oAssociate, AI_MODE_STAND_GROUND) &&
-        !ai_GetAIMode(oAssociate, AI_MODE_FOLLOW) &&
+    if(AI_DEBUG) ai_Debug("0i_associate", "122", "Can I attack? Hold mode: " +
+                IntToString(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND)) +
+                " Follow mode: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
+                " Action (19/4): " + IntToString(GetCurrentAction(oCreature)));
+    if(ai_GetIsCharacter(oCreature)) return TRUE;
+    int nAction = GetCurrentAction(oCreature);
+    return (!ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) &&
+        !ai_GetAIMode(oCreature, AI_MODE_FOLLOW) &&
         nAction != ACTION_ITEMCASTSPELL &&
         nAction != ACTION_CASTSPELL);
 }
@@ -157,6 +164,8 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
         }
         ai_HaveCreatureSpeak(oCreature, 8, ":43:6:9:10:23:42:");
     }
+    if(GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_a_peaceful" ||
+       GetLocalString(oCreature, AI_COMBAT_SCRIPT) == "ai_coward") return;
     float fDistance, fPerceptionDistance;
     if(bMonster)
     {
@@ -168,12 +177,9 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
     {
         // We want to use the distance between the PC and target not us.
         fDistance = GetDistanceBetween(GetMaster(), oTarget);
-        int nPerceptionRange = GetLocalInt(oCreature, AI_ASSOCIATE_PERCEPTION);
-        if(nPerceptionRange == 8) fPerceptionDistance = 10.0;
-        else if(nPerceptionRange == 10) fPerceptionDistance = 35.0;
-        else fPerceptionDistance = 20.0;
+        fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
     }
-    if(AI_DEBUG) ai_Debug("0i_associates", "174", " fDistance: " + FloatToString(fDistance, 0, 2) +
+    if(AI_DEBUG) ai_Debug("0i_associates", "175", " fDistance: " + FloatToString(fDistance, 0, 2) +
              " fPerceptionDistance: " + FloatToString(fPerceptionDistance, 0, 2) +
              " Hiding? " + IntToString(GetStealthMode(oTarget)));
     if(fDistance <= fPerceptionDistance)
@@ -216,10 +222,11 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
             AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
             return;
         }
-        if(AI_DEBUG) ai_Debug("0i_associates", "182", "No line of sight for " + GetName(oTarget) + ". Moving towards " + GetName(oSpeaker));
+        if(AI_DEBUG) ai_Debug("0i_associates", "218", "No line of sight for " + GetName(oTarget) + ". Moving towards " + GetName(oSpeaker));
         ActionMoveToObject(oSpeaker, TRUE);
         AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
     }
+
 }
 void ai_ReactToAssociate(object oCreature, object oCommander, int bMonster)
 {
@@ -417,7 +424,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                nCommand == AI_ALLY_HEARD_AN_ENEMY)
             {
                 if(AI_DEBUG) ai_Debug("0i_associates", "282", GetName(oCreature) + " receives notice that " +
-                         GetName(oCommander) + " has seen/heard an enemy!" +
+                         GetName(oCommander) + " has seen1/heard2(" + IntToString(nCommand) + " an enemy: " +
                          GetName(GetLocalObject(oCommander, AI_MY_TARGET)) + "!");
                 ai_ReactToAssociate(oCreature, oCommander, FALSE);
                 return;
@@ -770,7 +777,7 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
 {
     if(!ai_CanIAttack(oCreature)) return;
     int nAction = GetCurrentAction(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_associates", "750", "Our current action: " + IntToString(nAction));
+    if(AI_DEBUG) ai_Debug("0i_associates", "775", "Our current action: " + IntToString(nAction));
     switch(nAction)
     {
         // These actions are uninteruptable.
@@ -829,12 +836,13 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
-        if(ai_CanIAttack(oCreature)) ai_StartAssociateCombat(oCreature);
+        ai_StartAssociateCombat(oCreature);
     }
     else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived, FALSE);
 }
 void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string sPerception)
 {
+    if(!ai_CanIAttack(oCreature)) return;
     int nAction = GetCurrentAction(oCreature);
     if(AI_DEBUG) ai_Debug("0i_associates", "672", "nAction: " + IntToString(nAction));
     switch(nAction)
@@ -1961,9 +1969,11 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
     if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "")
     {
         string sScript = GetLocalString(oAssociate, AI_COMBAT_SCRIPT);
+        string sIcon = "ir_scommand";
         if(sScript == "ai_a_ambusher")
         {
             sScript = "ai_a_flanker";
+            sIcon = "ir_invite";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using flanking tactics in combat.", AI_COLOR_YELLOW, oPC);
@@ -1972,6 +1982,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
         else if(sScript == "ai_a_flanker")
         {
             sScript = "ai_a_peaceful";
+            sIcon = "ir_ignore";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using peaceful tactics in combat.", AI_COLOR_YELLOW, oPC);
@@ -1980,6 +1991,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
         else if(sScript == "ai_a_peaceful")
         {
             sScript = "ai_a_defensive";
+            sIcon = "ir_knockdwn";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using defensive tactics in combat.", AI_COLOR_YELLOW, oPC);
@@ -1988,6 +2000,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
         else if(sScript == "ai_a_defensive")
         {
             sScript = "ai_a_ranged";
+            sIcon = "ir_ranger";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using ranged tactics in combat.", AI_COLOR_YELLOW, oPC);
@@ -1996,6 +2009,7 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
         else if(sScript == "ai_a_ranged")
         {
             sScript = "ai_a_cntrspell";
+            sIcon = "ir_dcaster";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using counter spell tactics in combat.", AI_COLOR_YELLOW, oPC);
@@ -2012,11 +2026,13 @@ void ai_AIScript(object oPC, object oAssociate, string sAssociateType, int nToke
         else
         {
             sScript = "ai_a_ambusher";
+            sIcon = "ir_rogue";
             SetLocalString(oAssociate, AI_DEFAULT_SCRIPT, sScript);
             SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
             ai_SendMessages(GetName(oAssociate) + " is now using ambush tactics in combat.", AI_COLOR_YELLOW, oPC);
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_ai_script_tooltip", "  Ambusher: Attacks from a hidden position");
         }
+        NuiSetBind(oPC, nToken, "btn_cmd_ai_script_image", JsonString(sIcon));
         NuiSetBind(oPC, nToken, "btn_cmd_ai_script_label", JsonString("Tactics: " + sScript));
         json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
         if(JsonGetType(JsonArrayGet(jAIData, 8)) == JSON_TYPE_NULL) JsonArrayInsertInplace(jAIData, JsonString(sScript));
@@ -2132,6 +2148,28 @@ void ai_JumpToPC(object oPC, object oAssociate)
             oHenchman = GetAssociate(nAssociateType, oPC, 1);
             if(oHenchman != OBJECT_INVALID) AssignCommand(oHenchman, ai_JumpAssociateToPC(oPC));
         }
+    }
+}
+void ai_GhostMode(object oPC, object oAssociate, int nToken, string sAssociateType)
+{
+   string sText;
+   if(ai_GetAIMode(oAssociate, AI_MODE_GHOST))
+    {
+        ai_SetAIMode(oAssociate, AI_MODE_GHOST, FALSE);
+        ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
+        sText = "  Turn On clipping through creatures for " + GetName(oAssociate);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ghost_mode_tooltip", sText);
+        ai_SendMessages(GetName(oAssociate) + " is not in Ghost Mode and will run into creatures.", AI_COLOR_YELLOW, oPC);
+    }
+    else
+    {
+        ai_SetAIMode(oAssociate, AI_MODE_GHOST, TRUE);
+        effect eGhost = EffectCutsceneGhost();
+        eGhost = UnyieldingEffect(eGhost);
+        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eGhost, oAssociate);
+        sText = "  Turn Off clipping through creatures for " + GetName(oAssociate);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ghost_mode_tooltip", sText);
+        ai_SendMessages(GetName(oAssociate) + " is now in Ghost Mode and will clip through creatures.", AI_COLOR_YELLOW, oPC);
     }
 }
 void ai_ChangeCameraView(object oPC, object oAssociate)

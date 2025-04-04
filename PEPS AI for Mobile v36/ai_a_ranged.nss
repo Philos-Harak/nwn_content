@@ -30,12 +30,15 @@ void main()
         nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
     }
     // Skill, Class, Offensive AOE's, and Defensive talents.
-    if(nDifficulty >= AI_COMBAT_EASY)
+    if(nDifficulty >= AI_COMBAT_MODERATE)
     {
         //**************************  SKILL FEATURES  **************************
         if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
+        if(ai_TryBarbarianRageFeat(oCreature)) return;
         if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
         if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
     }
@@ -60,12 +63,13 @@ void main()
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
-            if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-            // Lets pick off the weaker targets.
+            // Lets defend master, nearest favored enemy, ranged, sneak, weakest targets.
             if(!nInMelee)
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
+                if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
             }
             else

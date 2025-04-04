@@ -30,17 +30,17 @@ void main()
 {
     if (GetAILevel(OBJECT_SELF) == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
-    ai_Counter_Start();
+    if(AI_DEBUG) ai_Counter_Start();
     // We run our OnSpawn in the heartbeat so the creator can use the original
-    // OnSpawn for their game.
-    if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) ai_OnAssociateSpawn(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "35", GetName(oCreature) + " Heartbeat." +
+    // OnSpawn for their own use.
+    ai_OnAssociateSpawn(oCreature);
+    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "37", GetName(oCreature) + " Heartbeat." +
                  " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
                  " Action: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     // If we are an associate and don't have a master then exit.
     object oMaster = GetMaster(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "41", "oMaster: " + GetName(oMaster));
+    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "43", "oMaster: " + GetName(oMaster));
     if(oMaster == OBJECT_INVALID)
     {
         if(ai_GetIsInCombat(oCreature))
@@ -56,6 +56,7 @@ void main()
     {
         string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
         ai_CheckAssociateData(oMaster, oCreature, sAssociateType);
+        ai_CheckPCStart(oMaster);
         if(AI_HENCHMAN_WIDGET)
         {
             // This keeps widgets from disappearing and reappearing.
@@ -93,11 +94,11 @@ void main()
         // In command mode we let the player tell us what to do.
         if(!ai_GetAIMode(oCreature, AI_MODE_COMMANDED))
         {
-            ai_Counter_End(GetName(oCreature) + ": Heartbeat");
+            if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat");
             if(ai_TryHealing(oCreature, oCreature)) return;
-            ai_Counter_End(GetName(oCreature) + ": Heartbeat: TryHealing");
+            if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat: TryHealing");
             if(ai_CheckNearbyObjects(oCreature)) return;
-            ai_Counter_End(GetName(oCreature) + ": Heartbeat: CheckNearbyObjects");
+            if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat: CheckNearbyObjects");
             if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
             {
                 ai_ScoutAhead(oCreature);
@@ -145,5 +146,9 @@ void main()
                 ai_ActionFollow(oCreature, oTarget);
             }
         }
+    }
+    if(GetSpawnInCondition(NW_FLAG_HEARTBEAT_EVENT))
+    {
+        SignalEvent(OBJECT_SELF, EventUserDefined(1001));
     }
 }

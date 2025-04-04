@@ -45,7 +45,7 @@ void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch)
     {
         if(AI_DEBUG) ai_Debug("nw_c2_default4", "46", GetName(oCreature) + " heard " +
                      GetName(oSpeaker) + " has seen an enemy!");
-        ai_FindTheEnemy(oCreature, oSpeaker, oTarget, TRUE);
+        if(ai_CanIAttack(oCreature)) ai_FindTheEnemy(oCreature, oSpeaker, oTarget, TRUE);
     }
     else if(nMatch == AI_ALLY_ATKED_BY_WEAPON ||
             nMatch == AI_ALLY_ATKED_BY_SPELL)
@@ -53,7 +53,7 @@ void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch)
         if(AI_DEBUG) ai_Debug("nw_c2_default4", "53", GetName(oCreature) + " heard " +
                      GetName(oSpeaker) + " has been attacked by " +
                      GetName(GetLocalObject(oSpeaker, AI_MY_TARGET)) + "!");
-        ai_FindTheEnemy(oCreature, oSpeaker, oTarget, TRUE);
+        if(ai_CanIAttack(oCreature)) ai_FindTheEnemy(oCreature, oSpeaker, oTarget, TRUE);
     }
     else if(nMatch == AI_ALLY_IS_WOUNDED)
     {

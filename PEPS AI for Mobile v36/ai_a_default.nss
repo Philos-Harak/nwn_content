@@ -39,14 +39,6 @@ void main()
     // Skill, Class, Offensive AOE's, and Defensive talents.
     if(nDifficulty >= AI_COMBAT_MODERATE)
     {
-        //**************************  SKILL FEATURES  **************************
-        if(ai_TryAnimalEmpathy(oCreature)) return;
-        // ************************** CLASS FEATURES ***************************
-        if(ai_TryBarbarianRageFeat(oCreature)) return;
-        if(ai_TryBardSongFeat(oCreature)) return;
-        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
-        if(ai_TrySummonFamiliarTalent(oCreature)) return;
-        if(ai_TrySummonFamiliarTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
         if(bUseMagic)
         {
@@ -70,6 +62,13 @@ void main()
                 if(ai_TryDivineMightFeat(oCreature, nInMelee)) return;
             }
         }
+        //**************************  SKILL FEATURES  **************************
+        if(ai_TryAnimalEmpathy(oCreature)) return;
+        // ************************** CLASS FEATURES ***************************
+        if(ai_TryBarbarianRageFeat(oCreature)) return;
+        if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)

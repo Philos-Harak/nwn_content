@@ -14,17 +14,6 @@ void main()
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     // Has our master told us to not use magic?
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
-    //***************************  HEALING & CURES  ****************************
-    if(bUseMagic)
-    {
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
-    // Check for moral and get the maximum spell level we should use.
-    if(ai_GetDifficulty(oCreature) >= AI_COMBAT_EFFORTLESS)
-    {
-        if(nInMelee && ai_MoralCheck(oCreature)) return;
-    }
     // Rule used to disable ambush if the player wants to.
     if(!GetLocalInt(GetModule(), AI_RULE_AMBUSH))
     {

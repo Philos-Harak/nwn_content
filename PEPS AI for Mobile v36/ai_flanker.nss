@@ -29,17 +29,28 @@ void main()
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
+    //****************************  SKILL FEATURES  ****************************
+    if(ai_TryAnimalEmpathy(oCreature)) return;
+    //****************************  CLASS FEATURES  ****************************
+    if(ai_TryBarbarianRageFeat(oCreature)) return;
+    if(ai_TryBardSongFeat(oCreature)) return;
+    if(ai_TryTurningTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
+    {
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+    }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
     // ************************** Melee feat attacks *************************
     // Lets get the nearest target that is attacking someone besides me. We want to flank!
     if(oTarget == OBJECT_INVALID)
     {
-        if(!nInMelee) oTarget = ai_GetBestEnemyToFlankTarget(oCreature);
+        if(!nInMelee) oTarget = ai_GetFlankTarget(oCreature);
         // If there are few enemies then we can safely move around.
         else if(nInMelee < 3 || ai_CanIMoveInCombat(oCreature))
         {
-            oTarget = ai_GetBestEnemyToFlankTarget(oCreature, AI_RANGE_MELEE);
+            oTarget = ai_GetFlankTarget(oCreature, AI_RANGE_MELEE);
         }
         // Ok we are in a serious fight so lets not give attack of opportunities.
         else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
