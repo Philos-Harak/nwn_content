@@ -39,7 +39,8 @@ void ai_OnMonsterSpawn(object oCreature)
     if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     object oModule = GetModule();
-    // DOES NOT WORK IN VERSION 36!
+    int nPRCID;
+    // If you are running a server this will not affect the module.
     if(!AI_SERVER)
     {
         ai_CheckPCStart();
@@ -47,6 +48,7 @@ void ai_OnMonsterSpawn(object oCreature)
         if(sModuleName == "Neverwinter Nights - Infinite Dungeons" ||
            sModuleName == "Infinite Dungeons [PRC8]")
         {
+            nPRCID = TRUE;
             if(GetLocalInt(oModule, AI_USING_PRC))
             {
                 ai_SetPRCIDMonsterEventScripts(oCreature);
@@ -61,12 +63,17 @@ void ai_OnMonsterSpawn(object oCreature)
             }
         }
     }
+    // DOES NOT WORK IN VERSION 36!
     // Do changes before we adjust anything on the creature via Json!
     //oCreature = ai_ChangeMonster(oCreature, oModule);
-    // We change this script so we can setup permanent summons on/off.
-    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    // PRC and Infinite dungeons has issues with Ondeath script so we just leave it alone.
+    if(!nPRCID)
+    {
+        // We change this script so we can setup permanent summons on/off.
+        string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+        SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+        SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
+    }
     if(GetCreatureFlag(oCreature, CREATURE_VAR_IS_INCORPOREAL))
     {
         string sCombatAI = GetLocalString(oCreature, AI_DEFAULT_SCRIPT);
@@ -116,19 +123,25 @@ void ai_OnAssociateSpawn(object oCreature)
 {
     if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
+    int nPRCID;
     // If you are running a server this will not affect the module.
     if(!AI_SERVER)
     {
         if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
         {
+            nPRCID = TRUE;
             ai_SetPRCAssociateEventScripts(oCreature);
         }
     }
-    // We change this script so we can setup permanent summons on/off.
-    // If you don't use this you may remove the next three lines.
-    string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+    // PRC and has issues with Ondeath script so we just leave it alone.
+    if(!nPRCID)
+    {
+        // We change this script so we can setup permanent summons on/off.
+        // If you don't use this you may remove the next three lines.
+        string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+        SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+        SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+    }
     // Initialize Associate modes for basic use.
     ai_SetListeningPatterns(oCreature);
     ai_SetNormalAppearance(oCreature);
@@ -269,11 +282,11 @@ void ai_SetIDMonsterEventScripts(object oCreature)
     else if(sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_id_events");
     else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    // This is always set incase they have permanent summons turned on.
+    // We don't set OnDeath for Infinite Dungeons!
     //********** On Death **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_id_events");
+    //sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    //SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_id_events");
     //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
@@ -351,11 +364,11 @@ void ai_SetPRCIDMonsterEventScripts(object oCreature)
     else if(sScript == "nw_c2_default6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_id_events");
     else if(sScript == "") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_id_events");
     else WriteTimestampedLogEntry("ON_DAMAGED_SCRIPT ERROR: AI did not capture " + sScript + " script for " + GetName(oCreature) + ".");
-    // This is always set incase they have permanent summons turned on.
+    // We don't set OnDeath for PRC or Infinite dungeons.
     //********** On Death **********
-    sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-    SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-    SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_id_events");
+    //sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
+    //SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+    //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_prc_id_events");
     //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);

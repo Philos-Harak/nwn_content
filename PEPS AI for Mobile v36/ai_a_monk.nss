@@ -12,15 +12,10 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
-    if(bUseMagic)
-    {
-        if(ai_TryWholenessOfBodyFeat(oCreature)) return;
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
+    if(ai_TryWholenessOfBodyFeat(oCreature)) return;
+    if(ai_TryHealingTalent(oCreature, nInMelee)) return;
+    if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     int nDifficulty = ai_GetDifficulty(oCreature);
     int nMaxLevel;
     // Check for moral and get the maximum spell level we should use.
@@ -33,13 +28,13 @@ void main()
     if(nDifficulty >= AI_COMBAT_MODERATE)
     {
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
+        if(ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && !ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
+        if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
             if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;

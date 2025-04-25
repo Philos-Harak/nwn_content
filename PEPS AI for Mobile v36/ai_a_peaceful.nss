@@ -55,14 +55,14 @@ void main()
         return;
     }
     //*************************  OUT OF COMBAT  **************************
+    //***************************  HEALING & CURES  ****************************
+    if(ai_TryHealingTalent(oCreature, 0, oCreature)) return;
+    if(ai_TryCureConditionTalent(oCreature, 0)) return;
+    //**************************  DEFENSIVE TALENTS  ***************************
     // Has our master told us to not use magic?
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     if(bUseMagic)
     {
-        //***************************  HEALING & CURES  ****************************
-        if(ai_TryHealingTalent(oCreature, 0, oCreature)) return;
-        if(ai_TryCureConditionTalent(oCreature, 0)) return;
-        //**************************  DEFENSIVE TALENTS  ***************************
         // If can turn invisible then we should probably do that!
         if(ai_UseTalent(oCreature, SPELL_IMPROVED_INVISIBILITY, oCreature)) return;
         if(ai_UseTalent(oCreature, SPELL_INVISIBILITY, oCreature)) return;

@@ -64,6 +64,8 @@ int ai_GetWeaponAtkBonus(object oWeapon);
 int ai_GetArmorBonus(object oArmor);
 // Returns the maximum gold value that an item can have to be equiped.
 int ai_GetMaxItemValueThatCanBeEquiped(int nLevel);
+// Returns the minimum level that is required to equip this item.
+int ai_GetMinimumEquipLevel(object oItem);
 // Returns oCreatures total attack bonus with melee weapon (Mostly).
 int ai_GetCreatureAttackBonus(object oCreature);
 // Returns TRUE if oCreature can use oItem based on Class, Race, and Alignment
@@ -462,11 +464,32 @@ int ai_GetArmorBonus(object oArmor)
 {
     int nTorsoValue = GetItemAppearance(oArmor, ITEM_APPR_TYPE_ARMOR_MODEL, ITEM_APPR_ARMOR_MODEL_TORSO);
     //ai_Debug("0i_items", "444", "Armor Bonus: " + Get2DAString("parts_chest.2da", "ACBONUS", nTorsoValue));
-    return StringToInt(Get2DAString("parts_chest.2da", "ACBONUS", nTorsoValue));
+    return StringToInt(Get2DAString("parts_chest", "ACBONUS", nTorsoValue));
 }
 int ai_GetMaxItemValueThatCanBeEquiped(int nLevel)
 {
     return StringToInt(Get2DAString("itemvalue", "MAXSINGLEITEMVALUE", nLevel - 1));
+}
+int ai_GetMinimumEquipLevel(object oItem)
+{
+    int nIndex, nUnIdentified;
+    if(!GetIdentified(oItem))
+    {
+        nUnIdentified = TRUE;
+        SetIdentified(oItem, TRUE);
+    }
+    int nGoldValue = GetGoldPieceValue(oItem);
+    if(nUnIdentified) SetIdentified(oItem, FALSE);
+    int n2daMaxRow = Get2DARowCount("itemvalue");
+    while(nIndex < n2daMaxRow)
+    {
+        if(nGoldValue <= StringToInt(Get2DAString("itemvalue", "MAXSINGLEITEMVALUE", nIndex)))
+        {
+            return nIndex + 1;
+        }
+        nIndex++;
+    }
+    return nIndex;
 }
 int ai_GetCreatureAttackBonus(object oCreature)
 {
@@ -1193,4 +1216,29 @@ int prc_IsProficient(object oCreature, int nBaseItem)
     }
     return TRUE;
 }
+int ai_GetItemUses(object oItem, int nItemPropertySubType)
+{
+    int nUses;
+    itemproperty ipProperty = GetFirstItemProperty(oItem);
+    while(GetIsItemPropertyValid(ipProperty))
+    {
+        if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_HEALERS_KIT) return GetItemStackSize(oItem);
+        if(nItemPropertySubType > -1)
+        {
+            if(GetItemPropertySubType(ipProperty) == nItemPropertySubType)
+            {
+                // Get how they use the item (charges or uses per day).
+                nUses = GetItemPropertyCostTableValue(ipProperty);
+                if(nUses == 1) return GetItemStackSize(oItem);
+                else if(nUses > 1 && nUses < 7) return GetItemCharges(oItem);
+                else if(nUses == 7 || nUses == 13) return 999;
+                else if(nUses > 7 && nUses < 13) return GetItemPropertyUsesPerDayRemaining(oItem, ipProperty);
+            }
+        }
+        else return TRUE;
+        ipProperty = GetNextItemProperty(oItem);
+    }
+    return FALSE;
+}
+
 

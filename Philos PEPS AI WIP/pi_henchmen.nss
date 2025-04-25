@@ -209,7 +209,7 @@ int StartingUp(object oPC)
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_henchmen"));
         jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
-        jPlugin = JsonArrayInsert(jPlugin, JsonString("Henchman"));
+        jPlugin = JsonArrayInsert(jPlugin, JsonString("Henchmen Menu"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_creator"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);
         jPlugins = JsonArrayInsert(jPlugins, jPlugin);

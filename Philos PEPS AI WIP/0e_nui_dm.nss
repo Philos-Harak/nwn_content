@@ -104,7 +104,7 @@ void main()
                 NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
                 ai_CreateDMWidgetNUI(oDM);
             }
-            else if(sElem == "btn_options")
+            else if(sElem == "btn_main_menu")
             {
                 NuiDestroy(oDM, nToken);
                 ai_CreateDMOptionsNUI(oDM);

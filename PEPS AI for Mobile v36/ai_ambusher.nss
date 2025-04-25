@@ -12,8 +12,6 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     // Rule used to disable ambush if the player wants to.
     if(!GetLocalInt(GetModule(), AI_RULE_AMBUSH))
     {

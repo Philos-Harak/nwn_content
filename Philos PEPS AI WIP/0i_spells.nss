@@ -44,6 +44,10 @@ int ai_IsCureSpell(int nSpell);
 int ai_IsInflictSpell(int nSpell);
 // Returns TRUE if nSpell is an area of effect spell.
 int ai_IsAreaOfEffectSpell(int nSpell);
+// Returns TRUE if oCreature is in a Dangerous Area of Effect in fMaxRange.
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD);
+// Have oCreature move out of an area effect based on the creatures in the battle.
+void ai_MoveOutOfAOE(object oCreature, object oCaster);
 // Returns 1(TRUE) if oAssociate is a spellcaster.
 // Rturns 2(TRUE) if oAssociate is a memorizing spellcaster.
 int ai_GetIsSpellCaster(object oAssociate);
@@ -64,7 +68,7 @@ int ai_GetHasEffectType(object oCreature, int nEffectType);
 // Checks oCreature for special abilities have a long duration.
 void ai_CheckCreatureSpecialAbilities(object oCreature);
 // Checks oCreature for the silence effect and if the spell only has a somatic component.
-int ai_IsNotSilenced(object oCreature, int nSpell);
+int ai_IsSilenced(object oCreature, int nSpell);
 // Returns TRUE if ArcaneSpellFailure is too high to chance casting the spell.
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot);
 // Returns TRUE if oCaster casts nSpell on oTarget.
@@ -141,8 +145,12 @@ int ai_CastInMelee(object oCreature, int nSpell, int nInMelee);
 float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell);
 // Returns TRUE if nSpell is a cure spell and will not over heal for nDamage.
 int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage);
-// Casts the spell on the current target.
+// Casts the spell on the current target for oAssociate.
 void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location lLocation);
+// Uses the feat on the current target for oAssociate.
+void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lLocation);
+// Uses the item on the current target for oAssociate.
+void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lLocation);
 
 int ai_GetCanCastSpell(object oCreature, int nSpell, int nClass, int nLevel, int nMetaMagic = 0, int nDomain = 0)
 {
@@ -308,6 +316,76 @@ int ai_IsAreaOfEffectSpell(int nSpell)
             return TRUE;
     }
     return FALSE;
+}
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD)
+{
+    int nSpell, nCnt = 1;
+    string sAOEType;
+    object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
+    float fRadius, fDistance = GetDistanceBetween(oCreature, oAOE);
+    while(oAOE != OBJECT_INVALID && fDistance <= fMaxRange)
+    {
+        // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
+        // I check vs those labels to see if the AOE is offensive.
+        // Below is the list of Offensive AOE effects.
+        sAOEType = GetTag(oAOE);
+        if(sAOEType == "VFX_PER_WEB") { fRadius = 6.7; nSpell = SPELL_WEB; }
+        else if(sAOEType == "VFX_PER_ENTANGLE") { fRadius = 5.0; nSpell = SPELL_ENTANGLE; }
+        else if(sAOEType == "VFX_PER_GREASE") { fRadius = 6.0; nSpell = SPELL_GREASE; }
+        else if(sAOEType == "VFX_PER_EVARDS_BLACK_TENTACLES")
+             { fRadius = 5.0; nSpell = SPELL_EVARDS_BLACK_TENTACLES; }
+        //else if(sAOEType == "VFX_PER_DARKNESS") { fRadius = 6.7; nSpell = SPELL_DARKNESS; }
+        //else if(sAOEType == "VFX_MOB_SILENCE") { fRadius = 4.0; nSpell = SPELL_SILENCE; }
+        else if(sAOEType == "VFX_PER_FOGSTINK") { fRadius = 6.7; nSpell = SPELL_STINKING_CLOUD; }
+        else if(sAOEType == "VFX_PER_FOGFIRE") { fRadius = 5.0; nSpell = SPELL_INCENDIARY_CLOUD; }
+        else if(sAOEType == "VFX_PER_FOGKILL") { fRadius = 5.0; nSpell = SPELL_CLOUDKILL; }
+        else if(sAOEType == "VFX_PER_FOGMIND") { fRadius = 5.0; nSpell = SPELL_MIND_FOG; }
+        else if(sAOEType == "VFX_PER_CREEPING_DOOM") { fRadius = 6.7; nSpell = SPELL_CREEPING_DOOM; }
+        else if(sAOEType == "VFX_PER_FOGACID") { fRadius = 5.0; nSpell = SPELL_ACID_FOG; }
+        else if(sAOEType == "VFX_PER_FOGBEWILDERMENT") { fRadius = 5.0; nSpell = SPELL_CLOUD_OF_BEWILDERMENT; }
+        else if(sAOEType == "VFX_PER_WALLFIRE") { fRadius = 10.0; nSpell = SPELL_WALL_OF_FIRE; }
+        else if(sAOEType == "VFX_PER_WALLBLADE") { fRadius = 10.0; nSpell = SPELL_BLADE_BARRIER; }
+        else if(sAOEType == "VFX_PER_DELAY_BLAST_FIREBALL") { fRadius = 2.0; nSpell = SPELL_DELAYED_BLAST_FIREBALL; }
+        else if(sAOEType == "VFX_PER_GLYPH") { fRadius = 2.5; nSpell = SPELL_GLYPH_OF_WARDING; }
+        else fRadius = 0.0;
+        if(AI_DEBUG) ai_Debug("0i_combat", "3088", GetName(oCreature) + " distance from AOE is " + FloatToString(fDistance, 0, 2) +
+                " AOE Radius: " + FloatToString(fRadius, 0, 2) +
+                " AOE Type: " + GetTag(oAOE));
+        // fRadius > 0.0 keeps them from tiggering that they are in a dangerous
+        // AOE due to having an AOE on them.
+        if(fRadius > 0.0 && fDistance <= fRadius &&
+           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell))
+        {
+            if(nSpell == SPELL_WEB || nSpell == SPELL_ENTANGLE)
+            {
+                if(ai_HasRangedWeaponWithAmmo(oCreature)) return FALSE;
+                if(GetReflexSavingThrow(oCreature) + GetAbilityModifier(ABILITY_DEXTERITY, oCreature) >= ai_GetCharacterLevels(oCreature))
+                    return FALSE;
+            }
+            return TRUE;
+        }
+        oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
+        fDistance = GetDistanceBetween(oCreature, oAOE);
+    }
+    return FALSE;
+}
+void ai_MoveOutOfAOE(object oCreature, object oCaster)
+{
+    location lLocation;
+    object oMaster = GetMaster(oCreature);
+    // If the caster is not dead and not in an effect then go to them.
+    if(oCaster != OBJECT_INVALID &&
+       GetObjectSeen(oCaster, oCreature) &&
+       !GetIsDead(oCaster) &&
+       !ai_IsInADangerousAOE(oCaster)) lLocation = GetLocation(oCaster);
+    // Else if our master is not in a AOE then go to them.
+    else if(oMaster != OBJECT_INVALID &&
+            !ai_IsInADangerousAOE(oMaster)) lLocation = GetLocation(oMaster);
+    //else get a random location!
+    else lLocation = GetRandomLocation(GetArea(oCreature), oCreature, 10.0);
+    ai_ClearCreatureActions();
+    if(AI_DEBUG) ai_Debug("0i_actions", "345", GetName(oCreature) + " is moving out of area of effect!");
+    ActionMoveToLocation(lLocation, TRUE);
 }
 int ai_GetIsSpellCaster(object oAssociate)
 {
@@ -572,10 +650,11 @@ void ai_CheckCreatureSpecialAbilities(object oCreature)
         }
     }
 }
-int ai_IsNotSilenced(object oCreature, int nSpell)
+int ai_IsSilenced(object oCreature, int nSpell)
 {
-    string sComponents = Get2DAString("spells", "VS", nSpell);
-    return (sComponents == "s" || !ai_GetHasEffectType(oCreature, EFFECT_TYPE_SILENCE));
+    if(Get2DAString("spells", "VS", nSpell) == "s") return FALSE;
+    if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SILENCE)) return TRUE;
+    return TRUE;
 }
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot)
 {
@@ -613,6 +692,9 @@ void ai_ClearSpellsCastGroups(object oCreature)
 }
 int ai_CanUseSpell(object oCaster, object oTarget, int nSpell, int nTargetType)
 {
+    // Should we ignore associates?
+    if(ai_GetAIMode(oCaster, AI_MODE_IGNORE_ASSOCIATES) &&
+       GetAssociateType(oTarget) > 1) return FALSE;
     // For ability scores we return a bonus to the ability to be checked against
     // the target with the highest ability getting the spell first.
     if(nTargetType == 1) // Ability score buff for strength.
@@ -741,16 +823,21 @@ object ai_BuffHighestAbilityScoreTarget(object oCaster, int nSpell, int nAbility
         if(!GetHasSpellEffect(nSpell, oMaster) &&
            ai_SpellGroupNotCast(oMaster, sBuffGroup)) return oMaster;
     }
-    int nCntr = 1, nAB, nHighAB, nTarget;
+    int nCntr = 1, nAB, nHighAB, nTarget, nUseSpell;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
     {
         if(oTarget != OBJECT_INVALID && !GetHasSpellEffect(nSpell, oTarget) &&
            GetDistanceBetween(oCaster, oTarget) <= fRange)
         {
-            nAB = GetAbilityScore(oTarget, nAbilityScore) + ai_CanUseSpell(oCaster, oTarget, nSpell, nAbilityScore + 1);
-            if(nAB > nHighAB)
-            {nHighAB = nAB; nTarget = nCntr; }
+            nUseSpell = ai_CanUseSpell(oCaster, oTarget, nSpell, nAbilityScore + 1);
+            if(nUseSpell == 0) {}
+            else
+            {
+                nAB = GetAbilityScore(oTarget, nAbilityScore) + nUseSpell;
+                if(nAB > nHighAB)
+                {nHighAB = nAB; nTarget = nCntr; }
+            }
         }
         oTarget = GetLocalObject(oCaster, sTargetType + IntToString(++nCntr));
     }
@@ -849,14 +936,17 @@ object ai_BuffMostWoundedTarget(object oCaster, int nSpell, string sBuffGroup, f
     {
         object oMaster = GetMaster();
         if(!GetHasSpellEffect(nSpell, oMaster) &&
-           ai_SpellGroupNotCast(oMaster, sBuffGroup)) return oMaster;
+           ai_SpellGroupNotCast(oMaster, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oMaster, nSpell, 9)) return oMaster;
     }
     int nCntr = 1, nDmg, nMostDmg, nHp, nLowHp = 10000, nTarget, nHpTarget;
     object oTarget = GetLocalObject(oCaster, sTargetType + IntToString(nCntr));
     while (nCntr < 10)
     {
         if(oTarget != OBJECT_INVALID && !GetHasSpellEffect(nSpell, oTarget) &&
-           GetDistanceBetween(oCaster, oTarget) <= fRange && ai_SpellGroupNotCast(oTarget, sBuffGroup))
+           GetDistanceBetween(oCaster, oTarget) <= fRange &&
+           ai_SpellGroupNotCast(oTarget, sBuffGroup) &&
+           ai_CanUseSpell(oCaster, oTarget, nSpell, 10))
         {
             nHp = GetCurrentHitPoints(oTarget);
             nDmg = GetMaxHitPoints(oTarget) - nHp;
@@ -1152,28 +1242,36 @@ void ai_SetupMonsterBuffTargets(object oCaster)
 void ai_SetupAllyTargets(object oCaster, object oPC)
 {
     // Setup our targets.
-    if(oCaster != oPC) SetLocalObject (oCaster, "AI_ALLY_TARGET_1", oPC);
-    SetLocalObject(oCaster, "AI_ALLY_TARGET_2", oCaster);
-    int nTarget = 2;
+    int nTarget;
+    if(oCaster != oPC) SetLocalObject (oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oPC);
+    SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCaster);
     object oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
-    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oCaster);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
     oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
-    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oCaster);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
     oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
-    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oCaster);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
     oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
-    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
+    oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oCaster);
+    if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oCreature);
     int nCntr = 1;
     int nMaxHenchman = GetMaxHenchmen() + nTarget;
     object oHenchman = GetHenchman(oPC, nCntr);
-    while(oHenchman != OBJECT_INVALID && nTarget < nMaxHenchman)
+    while(oHenchman != OBJECT_INVALID && nCntr <= nMaxHenchman)
     {
         if(oHenchman == OBJECT_INVALID) break;
         if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(++nTarget), oHenchman);
         oHenchman = GetHenchman(oPC, ++nCntr);
     }
     nCntr = 1;
-    while(nCntr < nMaxHenchman)
+    while(nCntr <= nMaxHenchman)
     {
         if(AI_DEBUG) ai_Debug("0i_spells", "1166", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
                  GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
@@ -1202,16 +1300,24 @@ void ai_SetupAllyHealingTargets(object oCaster, object oPC)
         }
         object oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oCaster);
+        if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
+        if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oCaster);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oCaster);
+        if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+        if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
+        oCreature = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oCaster);
         if(oCreature != OBJECT_INVALID) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oCreature);
         int nCntr = 1;
         nMaxHenchman = GetMaxHenchmen() + nTarget;
         object oHenchman = GetHenchman(oPC, nCntr);
-        while(oHenchman != OBJECT_INVALID && nTarget < nMaxHenchman)
+        while(oHenchman != OBJECT_INVALID && nTarget <= nMaxHenchman)
         {
             if(oHenchman == OBJECT_INVALID) break;
             if(oHenchman != oCaster) SetLocalObject(oCaster, "AI_ALLY_HEAL_" + IntToString(++nTarget), oHenchman);
@@ -1722,6 +1828,7 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
 }
 int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
 {
+    if(ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC)) return FALSE;
     if(ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE)) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_spells", "1643", GetName(oCreature) + " is looking to cast a spontaneous cure spell.");
     if(!GetLevelByClass(CLASS_TYPE_CLERIC, oCreature)) return FALSE;
@@ -2008,6 +2115,10 @@ void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location 
     int nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
     int nMetaMagic = JsonGetInt(JsonArrayGet(jSpell, 3));
     int nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
+    //SendMessageToPC(oPC, "nSpell: " + IntToString(nSpell) +
+    //                     " oTarget: " + GetName(oTarget) +
+    //                     " nMetaMagic: " + IntToString(nMetaMagic) +
+    //                     " nDomain: " + IntToString(nDomain));
     if(GetCurrentAction(oAssociate) != ACTION_CASTSPELL) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
     if(!GetIsObjectValid(oTarget))
     {
@@ -2033,4 +2144,39 @@ void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lL
     }
     else AssignCommand(oAssociate, ActionUseFeat(nFeat, oTarget));
 }
-
+void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lLocation)
+{
+    int nIndex = GetLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    DeleteLocalInt(oAssociate, "AI_WIDGET_SPELL_INDEX");
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    json jWidget = JsonArrayGet(jSpells, 2);
+    json jItem = JsonArrayGet(jWidget, nIndex);
+    int nSpell = JsonGetInt(JsonArrayGet(jItem, 0));
+    int nIprpSubType = JsonGetInt(JsonArrayGet(jItem, 4));
+    object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jItem, 5)));
+    itemproperty ipProperty;
+    if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+    if(nSpell == SPELL_HEALINGKIT)
+    {
+        ipProperty = GetFirstItemProperty(oItem);
+        if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_HEALERS_KIT)
+        {
+           if(ai_GetIsCharacter(oPC)) ai_SendMessages(GetName(oAssociate) + " uses " + GetName(oItem) + " on " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+           AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oTarget));
+           return;
+        }
+    }
+    ipProperty = GetFirstItemProperty(oItem);
+    while(GetIsItemPropertyValid(ipProperty))
+    {
+        if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
+        ipProperty = GetNextItemProperty(oItem);
+    }
+    if(!GetIsObjectValid(oTarget))
+    {
+        AssignCommand(oAssociate, ActionUseItemAtLocation(oItem, ipProperty, lLocation));
+    }
+    else AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oTarget));
+}

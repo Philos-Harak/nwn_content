@@ -295,7 +295,7 @@ void ai_CreateDMOptionsNUI(object oPC)
     // Row 4 ******************************************************************* 500 / 157
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "AI RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
+    CreateLabel(jRow, "SERVER RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -571,7 +571,7 @@ void ai_CreateDMCommandNUI(object oPC)
     CreateButtonSelect(jRow, "Lock Widget", "btn_widget_lock", 200.0, 20.0, "btn_widget_lock_tooltip");
     CreateLabel(jRow, "", "blank_label_1", 25.0, 20.0);
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Main Options", "btn_options", 200.0, 20.0, -1.0, "btn_options_tooltip");
+    CreateButton(jRow, "Main Menu", "btn_main_menu", 200.0, 20.0, -1.0, "btn_main_menu_tooltip");
     CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -682,9 +682,9 @@ void ai_CreateDMCommandNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_widget_lock", JsonBool(bAIWidgetLock));
     NuiSetBind(oPC, nToken, "btn_widget_lock_tooltip", JsonString(
                "  Locks widget to the current location."));
-    NuiSetBind(oPC, nToken, "btn_options_event", JsonBool (TRUE));
-    NuiSetBind(oPC, nToken, "btn_options", JsonInt(TRUE));
-    NuiSetBind(oPC, nToken, "btn_options_tooltip", JsonString("  Additional options"));
+    NuiSetBind(oPC, nToken, "btn_main_menu_event", JsonBool (TRUE));
+    NuiSetBind(oPC, nToken, "btn_main_menu", JsonInt(TRUE));
+    NuiSetBind(oPC, nToken, "btn_main_menu_tooltip", JsonString("  Server menu options"));
     NuiSetBind(oPC, nToken, "btn_group_options_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_group_options", JsonInt(TRUE));
     //NuiSetBind(oPC, nToken, "btn_empty_button_event", JsonBool (TRUE));

@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04.03.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04.25.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -16,7 +16,7 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04
 //**********************************  SERVER ***********************************
 // Turn On/Off Debug. You can only use the debug with the pi_debug/pe_debug scripts.
 // This will only work if you are using the PEPS menu system.
-const int AI_DEBUG = FALSE;
+const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
 const int AI_SERVER = FALSE;
 // The number of classes allowed for a creature to take in the server/module.

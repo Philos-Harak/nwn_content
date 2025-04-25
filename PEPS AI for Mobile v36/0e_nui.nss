@@ -491,27 +491,22 @@ void main()
             }
             else if(sElem == "btn_widget_lock")
             {
-                if(ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType))
+                int bLocked = !ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, bLocked);
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                 {
-                    ai_SendMessages(GetName(oAssociate) + " AI widget unlocked.", AI_COLOR_YELLOW, oPC);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, FALSE);
-                    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
-                    {
-                        NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
-                        ai_CreateWidgetNUI(oPC, oAssociate);
-                    }
+                    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+                    ai_CreateWidgetNUI(oPC, oAssociate);
                 }
-                else
+            }
+            if(sElem == "btn_vertical_widget")
+            {
+                int bVertical = !ai_GetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType, bVertical);
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                 {
-                    //int nWidgetToken = NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI);
-                    //ai_SaveWindowLocation(oPC, nWidgetToken, sAssociateType, sAssociateType + AI_WIDGET_NUI);
-                    ai_SendMessages(GetName(oAssociate) + " AI widget locked.", AI_COLOR_YELLOW, oPC);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, TRUE);
-                    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
-                    {
-                        NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
-                        ai_CreateWidgetNUI(oPC, oAssociate);
-                    }
+                    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+                    ai_CreateWidgetNUI(oPC, oAssociate);
                 }
             }
             else if(sElem == "btn_copy_settings")
@@ -543,17 +538,17 @@ void main()
             else if(sElem == "btn_buff_short")
             {
                 ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_long")
             {
                 ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_all")
             {
                 ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
             else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
@@ -772,7 +767,10 @@ void main()
             {
                 if(sElem == "btn_ai")
                 {
-                    if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb") ai_TurnOff(oPC, oAssociate, sAssociateType);
+                    if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb")
+                    {
+                        ai_TurnOff(oPC, oAssociate, sAssociateType);
+                    }
                     else ai_TurnOn(oPC, oAssociate, sAssociateType);
                 }
                 else if(sElem == "btn_quiet") ai_ReduceSpeech(oPC, oAssociate, sAssociateType);
@@ -796,17 +794,17 @@ void main()
                 else if(sElem == "btn_buff_short")
                 {
                     ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                    DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
                 }
                 else if(sElem == "btn_buff_long")
                 {
                     ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                    DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
                 }
                 else if(sElem == "btn_buff_all")
                 {
                     ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                    DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
                 }
                 else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
                 else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
@@ -841,6 +839,7 @@ void main()
                 else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType, nToken);
                 else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
                 else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
+                else if(sElem == "btn_update_widget") ai_UpdateAssociateWidget(oPC, oAssociate);
                 else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
                 else if(GetStringLeft(sElem, 11) == "btn_widget_") ai_SelectWidgetSpellTarget(oPC, oAssociate, sElem);
             }
@@ -911,7 +910,7 @@ void main()
                     int bSpell = JsonGetInt(JsonArrayGet(jSpell, 2));
                     if(bSpell == -1) bSpell = FALSE;
                     else bSpell = TRUE;
-                    ai_CreateDescriptionNUI(oPC, nSpell, bSpell);
+                    ai_CreateDescriptionNUI(oPC, jSpell);
                 }
             }
         }
@@ -1292,10 +1291,9 @@ void main()
                 json jQuickListArray = JsonArrayGet(jData, 1);
                 json jSpell = JsonArrayGet(jQuickListArray, nIndex);
                 int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-                int bSpell = JsonGetInt(JsonArrayGet(jSpell, 2));
-                if(bSpell == -1) bSpell = FALSE;
-                else bSpell = TRUE;
-                ai_CreateDescriptionNUI(oPC, nSpell, bSpell);
+                int nFeat = JsonGetInt(JsonArrayGet(jSpell, 5));
+                int bSpell;
+                ai_CreateDescriptionNUI(oPC, jSpell);
             }
             else if(GetStringLeft(sElem, 11) == "btn_widget_")
             {
@@ -1386,9 +1384,9 @@ void main()
             {
                 json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
                 json jSpells = JsonArrayGet(jAIData, 10);
-                json jSpellArray = JsonArrayGet(jData, 1);
-                int nSpell = JsonGetInt(JsonArrayGet(jSpellArray, nIndex));
-                ai_CreateDescriptionNUI(oPC, nSpell, TRUE);
+                json jSpell = JsonArrayGet(jData, 1);
+                int nSpell = JsonGetInt(JsonArrayGet(jSpell, nIndex));
+                ai_CreateDescriptionNUI(oPC, jSpell);
             }
             else if(GetStringLeft(sElem, 14) == "btn_memorized_")
             {

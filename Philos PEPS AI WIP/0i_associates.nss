@@ -217,7 +217,8 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
             }
             if(AI_DEBUG) ai_Debug("0i_associates", "176", "Moving and searching for " + GetName(oTarget));
             SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
-            ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
+            ActionMoveToLocation(GetLocation(oTarget), FALSE);
+        //ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
             AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
             return;
         }
@@ -829,7 +830,9 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
         if(nEnemyPower < nPower) ai_DoAssociateCombatRound(oCreature);
         return;
     }
-    if(sPerception == AI_I_SEE_AN_ENEMY)
+    // Heard fires first, but Heard and Seen are both set at the same time.
+    // So lets skip the hearing code if they are also seen.
+    if(sPerception == AI_I_SEE_AN_ENEMY || GetObjectSeen(oLastPerceived, oCreature))
     {
         // We are not in combat and we see the enemy so alert our allies!
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
@@ -1143,69 +1146,69 @@ void ai_UseOffensiveMagic(object oPC, object oAssociate, int bDefensive, int bOf
 {
     if(bOffensive)
     {
-        if(ai_GetAIMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING))
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING))
         {
             ai_SendMessages(GetName(oAssociate) + " has stopped using offensive magic in combat.", AI_COLOR_YELLOW, oPC);
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_off_magic_tooltip", "  Offensive Magic Off");
-            ai_SetAIMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
+            ai_SetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
         }
         else
         {
             ai_SendMessages(GetName(oAssociate) + " is now using offensive magic in combat.", AI_COLOR_YELLOW, oPC);
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_off_magic_tooltip", "  Offensive Magic On");
-            ai_SetAIMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, TRUE);
+            ai_SetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, TRUE);
         }
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_def_magic_tooltip", "  Defensive Magic Off");
-        ai_SetAIMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
     }
     else if(bDefensive)
     {
-        if(ai_GetAIMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING))
+        if(ai_GetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING))
         {
             ai_SendMessages(GetName(oAssociate) + " has stopped using defensive magic in combat.", AI_COLOR_YELLOW, oPC);
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_def_magic_tooltip", "  Defensive Magic Off");
-            ai_SetAIMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
+            ai_SetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, FALSE);
         }
         else
         {
             ai_SendMessages(GetName(oAssociate) + " is now using defensive magic in combat.", AI_COLOR_YELLOW, oPC);
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_def_magic_tooltip", "  Defensive Magic On");
-            ai_SetAIMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, TRUE);
+            ai_SetMagicMode(oAssociate, AI_MAGIC_DEFENSIVE_CASTING, TRUE);
         }
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_off_magic_tooltip", "  Offensive Magic Off");
-        ai_SetAIMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_OFFENSIVE_CASTING, FALSE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
 void ai_UseMagic(object oPC, object oAssociate, string sAssociateType)
 {
-    if(ai_GetAIMode(oAssociate, AI_MAGIC_NO_MAGIC))
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC))
     {
         ai_SendMessages(GetName(oAssociate) + " is now using magic in combat.", AI_COLOR_YELLOW, oPC);
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_magic_tooltip", "  Magic On");
-        ai_SetAIMode(oAssociate, AI_MAGIC_NO_MAGIC, FALSE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC, FALSE);
     }
     else
     {
         ai_SendMessages(GetName(oAssociate) + " has stopped using magic in combat.", AI_COLOR_YELLOW, oPC);
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_magic_tooltip", "  Magic Off");
-        ai_SetAIMode(oAssociate, AI_MAGIC_NO_MAGIC, TRUE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC, TRUE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
 void ai_UseMagicItems(object oPC, object oAssociate, string sAssociateType)
 {
-    if(ai_GetAIMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS))
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS))
     {
         ai_SendMessages(GetName(oAssociate) + " is now using magic items in combat.", AI_COLOR_YELLOW, oPC);
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_magic_items_tooltip", "  Magic Items On");
-        ai_SetAIMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS, FALSE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS, FALSE);
     }
     else
     {
         ai_SendMessages(GetName(oAssociate) + " has stopped using magic items in combat.", AI_COLOR_YELLOW, oPC);
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_magic_items_tooltip", "  Magic Items Off");
-        ai_SetAIMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS, TRUE);
+        ai_SetMagicMode(oAssociate, AI_MAGIC_NO_MAGIC_ITEMS, TRUE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }

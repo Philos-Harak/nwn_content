@@ -12,8 +12,6 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     // We are not in melee combat then we don't attack.
     int bAttack = nInMelee;
     if(!bAttack)
@@ -23,7 +21,7 @@ void main()
         if(!stClasses.CLERICS && !stClasses.MAGES) bAttack = TRUE;
     }
     // If we are not attacking and using magic then setup for counter spelling.
-    if(!bAttack && !bUseMagic)
+    if(!bAttack && !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
     {
         //***************************  HEALING & CURES  ****************************
         if(ai_TryHealingTalent(oCreature, nInMelee)) return;

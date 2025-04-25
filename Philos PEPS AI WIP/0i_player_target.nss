@@ -83,8 +83,8 @@ void ai_OriginalActionAssociate(object oPC, object oTarget, location lLocation)
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
-            else if(GetLocked(oTarget)) bkAttemptToOpenLock(oTarget);
         }
+        if(GetLocked(oTarget)) bkAttemptToOpenLock(oTarget);
         if(GetIsOpen(oTarget))
         {
             ActionCloseDoor(oTarget, TRUE);
@@ -220,22 +220,22 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
     }
     else if(nObjectType == OBJECT_TYPE_DOOR)
     {
-        if(GetIsTrapped(oTarget) && ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS))
+        if(GetIsTrapped(oTarget))
         {
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
             if(GetTrapDetectedBy(oTarget, oAssociate))
             {
-                ai_ReactToTrap(oAssociate, oTarget, TRUE);
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                return;
+                int bStopAction = !GetLocalInt(oTarget, "AI_CANNOT_TRAP_" + GetTag(oAssociate));
+                if(ai_ReactToTrap(oAssociate, oTarget, TRUE)) bStopAction = TRUE;
+                if(bStopAction)
+                {
+                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                    return;
+                }
             }
-            else if(GetLocked(oTarget)) ai_AttemptToByPassLock(oAssociate, oTarget);
         }
-        else if(GetLocked(oTarget)) ai_AttemptToByPassLock(oAssociate, oTarget);
-        else if(GetIsOpen(oTarget))
-        {
-            ActionCloseDoor(oTarget, TRUE);
-        }
+        if(GetLocked(oTarget)) ai_AttemptToByPassLock(oAssociate, oTarget, TRUE);
+        else if(GetIsOpen(oTarget)) ActionCloseDoor(oTarget, TRUE);
         else ActionOpenDoor(oTarget, TRUE);
     }
     else if(nObjectType == OBJECT_TYPE_ITEM)
@@ -247,46 +247,27 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
         ActionMoveToObject(oTarget, TRUE);
         if(GetHasInventory(oTarget))
         {
-            if(GetIsTrapped(oTarget) && ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS))
+            if(GetIsTrapped(oTarget))
             {
                 if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
                 if(GetTrapDetectedBy(oTarget, oAssociate))
                 {
-                    ai_ReactToTrap(oAssociate, oTarget, TRUE);
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                    return;
-                }
-                if(GetLocked(oTarget))
-                {
-                    if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS) ||
-                       ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS))
+                    if(ai_ReactToTrap(oAssociate, oTarget, TRUE))
                     {
-                        ai_AttemptToByPassLock(oAssociate, oTarget);
+                        EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                        return;
                     }
-                    else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                    return;
+
                 }
-                DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
             }
-            else if(GetLocked(oTarget))
-            {
-                if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS) ||
-                   ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS))
-                {
-                    ai_AttemptToByPassLock(oAssociate, oTarget);
-                }
-                else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                return;
-            }
-            ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE));
+            if(GetLocked(oTarget)) ai_AttemptToByPassLock(oAssociate, oTarget, TRUE);
+            else ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE));
         }
-        DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
+        else DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
     }
     else if(nObjectType == OBJECT_TYPE_TRIGGER)
     {
-        if(GetIsTrapped(oTarget) && ai_GetAIMode(oAssociate, AI_MODE_DISARM_TRAPS))
+        if(GetIsTrapped(oTarget))
         {
             if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
             if(GetTrapDetectedBy(oTarget, oAssociate)) ai_ReactToTrap(oAssociate, oTarget, TRUE);
@@ -637,30 +618,68 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     json jWidget = JsonArrayGet(jSpells, 2);
     json jSpell = JsonArrayGet(jWidget, nIndex);
     int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-    int nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
-    if(nLevel == -1)
+    int nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+    if(nClass == -1) // This is an Item.
     {
-        int nSpellID = StringToInt(Get2DAString("feat", "SPELLID", nSpell));
-        if(Get2DAString("spells", "Range", nSpellID) == "P" || // Self
-           nSpell == FEAT_SUMMON_FAMILIAR || nSpell == FEAT_ANIMAL_COMPANION)
+        object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jSpell, 5)));
+        int nBaseItemType = GetBaseItemType(oItem);
+        if(Get2DAString("spells", "Range", nSpell) == "P" || // Self
+           nBaseItemType == BASE_ITEM_ENCHANTED_POTION ||
+           nBaseItemType == BASE_ITEM_POTIONS)
         {
+            int nIprpSubType = JsonGetInt(JsonArrayGet(jSpell, 4));
+            itemproperty ipProperty = GetFirstItemProperty(oItem);
+            while(GetIsItemPropertyValid(ipProperty))
+            {
+                if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
+                ipProperty = GetNextItemProperty(oItem);
+            }
             if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
-            AssignCommand(oAssociate, ActionUseFeat(nSpell, oAssociate));
+            AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oAssociate));
+            DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             return;
         }
-        SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_FEAT");
-        nSpell = nSpellID;
+        SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_ITEM");
+        if(nSpell == SPELL_HEALINGKIT)
+        {
+            EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
+            return;
+        }
     }
     else
     {
-        if(Get2DAString("spells", "Range", nSpell) == "P") // Self
+        int nFeat = JsonGetInt(JsonArrayGet(jSpell, 5));
+        if(nFeat)
         {
-            if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
-            ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
-            DelayCommand(2.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-            return;
+            if(Get2DAString("spells", "Range", nSpell) == "P" || // Self
+               nFeat == FEAT_SUMMON_FAMILIAR || nFeat == FEAT_ANIMAL_COMPANION)
+            {
+                if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+                if(nFeat == FEAT_WILD_SHAPE) nSpell += 607;
+                if(nFeat == FEAT_ELEMENTAL_SHAPE)
+                {
+                    if(nSpell == 397) nSpell == SUBFEAT_ELEMENTAL_SHAPE_FIRE;
+                    else if(nSpell == 398) nSpell == SUBFEAT_ELEMENTAL_SHAPE_WATER;
+                    else if(nSpell == 399) nSpell == SUBFEAT_ELEMENTAL_SHAPE_EARTH;
+                    else if(nSpell == 400) nSpell == SUBFEAT_ELEMENTAL_SHAPE_AIR;
+                }
+                AssignCommand(oAssociate, ActionUseFeat(nFeat, oAssociate, nSpell));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                return;
+            }
+            SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_FEAT");
         }
-        SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
+        else
+        {
+            if(Get2DAString("spells", "Range", nSpell) == "P") // Self
+            {
+                if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+                ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                return;
+            }
+            SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
+        }
     }
     SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     string sTarget = Get2DAString("spells", "TargetType", nSpell);
@@ -710,6 +729,18 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
 void ai_UpdateAssociateWidget(object oPC, object oAssociate)
 {
     int nUIToken = NuiFindWindow(oPC, ai_GetAssociateType(oPC, oAssociate) + AI_WIDGET_NUI);
-    NuiDestroy(oPC, nUIToken);
-    ai_CreateWidgetNUI(oPC, oAssociate);
+    if(nUIToken)
+    {
+        NuiDestroy(oPC, nUIToken);
+        ai_CreateWidgetNUI(oPC, oAssociate);
+        if(oPC != oAssociate)
+        {
+            nUIToken = NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI);
+            if(nUIToken)
+            {
+                NuiDestroy(oPC, nUIToken);
+                ai_CreateWidgetNUI(oPC, oPC);
+            }
+        }
+    }
 }

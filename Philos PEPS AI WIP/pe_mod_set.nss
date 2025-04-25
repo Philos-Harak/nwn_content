@@ -4,6 +4,8 @@
 ////////////////////////////////////////////////////////////////////////////////
     PEPS Plugin to set module and area settings.
 /*//////////////////////////////////////////////////////////////////////////////
+const string AI_MODULE_HEARTBEAT_SCRIPT = "AI_MODULE_HEARTBEAT_SCRIPT";
+
 #include "0i_main"
 void main()
 {
@@ -91,6 +93,24 @@ void main()
                     oArea = GetNextArea();
                 }
                 ai_SendMessages(GetModuleName() + " has had the combat music removed. Save your game or you may loose this change!", AI_COLOR_GREEN, oPC);
+            }
+            if(sElem == "btn_night_to_day")
+            {
+                object oModule = GetModule();
+                string sScript = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_HEARTBEAT);
+                if(sScript == "pc_mod_set")
+                {
+                    sScript = GetLocalString(oPC, AI_MODULE_HEARTBEAT_SCRIPT);
+                    SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_HEARTBEAT, sScript);
+                    DeleteLocalString(oPC, AI_MODULE_HEARTBEAT_SCRIPT);
+                    SendMessageToPC(oPC, "Module has been set to use normal time passage!");
+                }
+                else
+                {
+                    SetLocalString(oPC, AI_MODULE_HEARTBEAT_SCRIPT, sScript);
+                    SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_HEARTBEAT, "pc_mod_set");
+                    SendMessageToPC(oPC, "Module has been set to pass through nighttime to make it morning!");
+                }
             }
         }
     }

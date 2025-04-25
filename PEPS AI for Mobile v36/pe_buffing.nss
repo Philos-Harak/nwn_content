@@ -322,7 +322,7 @@ void CastSavedBuffSpells(object oPC)
         while(nIndex <= BUFF_MAX_SPELLS)
         {
             jSpell = JsonArrayGet(jSpells, nIndex);
-            if (JsonGetType(jSpell) != JSON_TYPE_NULL)
+            if(JsonGetType(jSpell) != JSON_TYPE_NULL)
             {
                 nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
                 nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
@@ -360,7 +360,8 @@ void CastSavedBuffSpells(object oPC)
                         else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
                     }
                     nSpellReady = GetSpellReady(oPC, nSpell, nClass, nLevel, nMetamagic, nDomain);
-                    if(nSpellReady)
+                    SendMessageToPC(GetFirstPC(), "nSpellReady: " + IntToString(nSpellReady));
+                    if(nSpellReady == TRUE)
                     {
                         DelayCommand(fDelay, CastBuffSpell(oPC, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName));
                     }
@@ -371,6 +372,14 @@ void CastSavedBuffSpells(object oPC)
                     else if(nSpellReady == -2)
                     {
                         DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because it is not memorized!", AI_COLOR_RED, oPC));
+                    }
+                    else if(nSpellReady == -3)
+                    {
+                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because there are no spell slots of that level left!", AI_COLOR_RED, oPC));
+                    }
+                    else if(nSpellReady == -4)
+                    {
+                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because that spell is not known.", AI_COLOR_RED, oPC));
                     }
                     fDelay += 0.1f;
                 }
@@ -388,7 +397,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
     string sSubRadSpell;
     if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
-        nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
+        int nSpellMemorized;
         while(nIndex < nMaxIndex)
         {
             nMSpell = GetMemorizedSpellId(oCaster, nClass, nLevel, nIndex);
@@ -406,6 +415,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
                 //  ((nDomain > 0 && nDSpell == TRUE) || nDomain == 0 && nDSpell == FALSE))
                 if(nMmSpell == nMetamagic)
                 {
+                    nSpellMemorized = TRUE;
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
                         if(nDSpell == nDomain) return TRUE;
@@ -418,8 +428,13 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
                 if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell)))
                 nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
                 nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
+                ai_Debug("pe_buffing", "421", "nMmSpell: " + IntToString(nMmSpell) +
+                         " nMetamagic: " + IntToString(nMetamagic) +
+                         " nDomain: " + IntToString(nDomain) +
+                         " nDSpell: " + IntToString(nDSpell));
                 if(nMmSpell == nMetamagic)
                 {
+                    nSpellMemorized = TRUE;
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
                         if(nDSpell == nDomain) return TRUE;
@@ -428,28 +443,36 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             }
             nIndex ++;
         }
+        if(nSpellMemorized) return -1;
         return -2;
     }
     else
     {
+        int nSpellKnown;
         nMaxIndex = GetKnownSpellCount(oCaster, nClass, nLevel);
         while(nIndex < nMaxIndex)
         {
             nMSpell = GetKnownSpellId(oCaster, nClass, nLevel, nIndex);
             if(nSpell == nMSpell)
             {
-                if(GetSpellUsesLeft(oCaster, nClass, nSpell)) return 0;
+                nSpellKnown = TRUE;
+                if(GetSpellUsesLeft(oCaster, nClass, nSpell)) return TRUE;
             }
             for(nSubRadSpell = 1; nSubRadSpell < 5; nSubRadSpell++)
             {
                 sSubRadSpell = "SubRadSpell" + IntToString(nSubRadSpell);
-                if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell))) return 0;
+                if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell)))
+                {
+                    nSpellKnown = TRUE;
+                    if(GetSpellUsesLeft(oCaster, nClass, nSpell)) return TRUE;
+                }
             }
             nIndex ++;
         }
-        return -2;
+        if(nSpellKnown) return -3;
+        return -4;
     }
-    return -1;
+    return -2;
 }
 void PopupWidgetBuffGUIPanel(object oPC)
 {
@@ -458,10 +481,11 @@ void PopupWidgetBuffGUIPanel(object oPC)
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
     json jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_level1", "btn_one", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level2", "btn_two", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level3", "btn_three", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level4", "btn_four", 30.0f, 30.0f, 0.0);
+
+    CreateButtonImage(jRow, "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
     // Add the row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -475,10 +499,22 @@ void PopupWidgetBuffGUIPanel(object oPC)
         fX = 10.0f;
         fY = 10.0f;
     }
+    float fGUI_Scale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0;
     if(bAIBuffWidgetLock)
     {
-        fX = fX + 4.0f;
-        fY = fY + 45.0f;
+        fX += 4.0f;
+        // GUI scales are a mess, I just figured them out per scale to keep the widget from moving.
+        if(fGUI_Scale == 1.0) fY += 37.0;
+        else if(fGUI_Scale == 1.1) fY += 38.0;
+        else if(fGUI_Scale == 1.2) fY += 40.0;
+        else if(fGUI_Scale == 1.3) fY += 42.0;
+        else if(fGUI_Scale == 1.4) fY += 43.0;
+        else if(fGUI_Scale == 1.5) fY += 45.0;
+        else if(fGUI_Scale == 1.6) fY += 47.0;
+        else if(fGUI_Scale == 1.7) fY += 48.0;
+        else if(fGUI_Scale == 1.8) fY += 50.0;
+        else if(fGUI_Scale == 1.9) fY += 52.0;
+        else if(fGUI_Scale == 2.0) fY += 54.0;
     }
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);

@@ -10,17 +10,22 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
 #include "0i_items"
+#include "nw_inc_gff"
 const string CRAFT_JSON = "CRAFT_JSON";
 const string CRAFT_COOL_DOWN = "CRAFT_COOL_DOWN";
 const string CRAFT_ITEM_SELECTION = "CRAFT_ITEM_SELECTION";
 const string CRAFT_MATERIAL_SELECTION = "CRAFT_MATERIAL_SELECTION";
 const string CRAFT_MODEL_SELECTION = "CRAFT_MODEL_SELECTION";
-const string CRAFT_MODEL = "CRAFT_MODEL";
 const string CRAFT_COLOR_PALLET = "CRAFT_COLOR_PALLET";
 const string CRAFT_LEFT_PART_COLOR = "CRAFT_LEFT_PART_COLOR";
 const string CRAFT_ALL_COLOR = "CRAFT_ALL_COLOR";
 const string CRAFT_RIGHT_PART_COLOR = "CRAFT_RIGHT_PART_COLOR";
 const string CRAFT_TARGET = "CRAFT_TARGET";
+// Tag used in effects to freeze player.
+const string CRAFT_FREEZE = "CRAFT_FREEZE";
+// Tag used in lighting effects.
+const string CRAFT_HIGHLIGHT = "CRAFT_HIGHLIGHT";
+const string CRAFT_ULTRALIGHT = "CRAFT_ULTRALIGHT";
 
 void CreateItemCombo(object oPC, json jRow, string sComboBind);
 void CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind);
@@ -31,6 +36,8 @@ void SetMaterialButtons(object oPC, int nToken, int nMaterial);
 // Returns the correct item based on the crafting menu selected item.
 object GetSelectedItem(object oTarget, int nItemSelected);
 int GetArmorModelSelected(object oPC);
+// Returns True if oItem, nPart has a per part color for sSide.
+int GetHasPartColor(object oItem, int nPart, string sSide);
 // Does startup check if the game has just been loaded.
 int StartingUp(object oPC);
 void main()
@@ -40,148 +47,160 @@ void main()
     if(oTarget == OBJECT_INVALID) oTarget = oPC;
     if(StartingUp(oPC)) return;
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
-    // Row 1 (Object Name)****************************************************** 400 / 73
+    // Row 1 (Object Name)****************************************************** 508 / 83
     json jRow = JsonArray();
-    CreateTextEditBox(jRow, "plc_hold_bind", "txt_item_name", 50, FALSE, 400.0f, 20.0f);
+    CreateTextEditBox(jRow, "plc_hold_bind", "txt_item_name", 50, FALSE, 486.0f, 30.0f);  // 419
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 (Object Name)****************************************************** 400 / 101
+    // Row 2 (Object Name)****************************************************** 508 / 121
     jRow = JsonArray();
-    CreateButton(jRow, "Information", "btn_info", 129.0f, 20.0f, -1.0, "btn_info_tooltip");
-    CreateButton(jRow, "Open Dresser", "btn_open_dresser", 130.0f, 20.0f, -1.0, "btn_open_dresser_tooltip");
-    CreateButton(jRow, "Randomize", "btn_randomize", 129.0f, 20.0f, -1.0, "btn_randomize_tooltip");
+    CreateButton(jRow, "Information", "btn_info", 160.0f, 30.0f, -1.0, "btn_info_tooltip");
+    CreateButton(jRow, "Wardrobe", "btn_wardrobe", 158.0f, 30.0f, -1.0, "btn_wardrobe_tooltip");
+    CreateButtonSelect(jRow, "Add Light", "btn_highlight", 160.0f, 30.0f, "btn_highlight_tooltip");
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 3 (Object Name)****************************************************** 400 / 129
+    // Row 3 (Object Name)****************************************************** 508 / 159
     jRow = JsonArray();
-    CreateButton(jRow, "Save", "btn_save", 129.0f, 20.0f, -1.0, "btn_save_tooltip");
-    CreateButton(jRow, "Select Target", "btn_select_target", 130.0f, 20.0f);
-    CreateButton(jRow, "", "btn_cancel", 129.0f, 20.0f, -1.0, "btn_cancel_tooltip");
+    CreateButton(jRow, "Save", "btn_save", 160.0f, 30.0f, -1.0, "btn_save_tooltip");
+    CreateButton(jRow, "Select Target", "btn_select_target", 158.0f, 30.0f);
+    CreateButton(jRow, "", "btn_cancel", 160.0f, 30.0f, -1.0, "btn_cancel_tooltip");
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 (labels)*********************************************************** 400 / 147
+    // Row 4 (labels)*********************************************************** 508 / 177
     jRow = JsonArray();
-    CreateLabel(jRow, "Model", "module_title", 127.0f, 10.0f);
-    CreateLabel(jRow, "Color", "color_title", 273.0f, 10.0f);
+    CreateLabel(jRow, "Model", "module_title", 143.0f, 10.0f);
+    CreateLabel(jRow, "Color", "color_title", 339.0f, 10.0f);
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     // Row 5 (groups)
-    // Row 51 (title)********************************************************** 400 / 165 / 18
+    // Row 51 (title)*********************************************************** 508 / 195 / 18
     jRow = JsonArray();
     json jGroupRow = JsonArray();
     json jGroupCol = JsonArray();
-    CreateLabel(jGroupRow, "Item", "item__cmb_title", 110.0f, 10.0f);
+    CreateLabel(jGroupRow, "Item", "item__cmb_title", 128.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 52 (combo)********************************************************** 400 / 198 / 51
+    // Row 52 (combo)*********************************************************** 508 / 233 / 56
     jGroupRow = JsonArray();
     CreateItemCombo(oPC, jGroupRow, "item_combo");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 53 (title)********************************************************** 400 / 216 / 69
+    // Row 53 (title)*********************************************************** 508 / 251 / 74
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "Model", "model_cmb_title",110.0f, 10.0f);
+    CreateLabel(jGroupRow, "Model", "model_cmb_title",128.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 54 (combo)********************************************************** 400 / 249 / 102
+    // Row 54 (combo)*********************************************************** 508 / 289 / 112
     jGroupRow = JsonArray();
     CreateModelCombo(oPC, oTarget, jGroupRow, "model_combo");
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 55 (title)********************************************************** 400 / 267 / 120
+    // Row 55 (title)*********************************************************** 508 / 307 / 120
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "top_title",110.0f, 10.0f);
+    CreateLabel(jGroupRow, "", "top_title",128.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 56 (top)********************************************************** 400 / 307 / 160
+    // Row 56 (top)************************************************************* 508 / 355 / 168
     jGroupRow = JsonArray();
-    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_t", 32.0f, 32.0f);
-    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_t", 3, FALSE, 40.0, 32.0);
-    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_t", 32.0f, 32.0f);
+    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_t", 40.0f, 40.0f);
+    // Removed TextEditBox for mobile
+    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_t", 3, FALSE, 40.0, 40.0);
+    //CreateLabel(jGroupRow, "", "txt_model_number_t", 40.0, 40.0);
+    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_t", 40.0f, 40.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 57 (title)********************************************************** 400 / 325 / 178
+    // Row 57 (title)*********************************************************** 508 / 373 / 186
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "middle_title",110.0f, 10.0f);
+    CreateLabel(jGroupRow, "", "middle_title",128.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 58 (middle)********************************************************** 400 / 365 / 218
+    // Row 58 (middle)********************************************************** 508 / 421 /234
     jGroupRow = JsonArray();
-    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_m", 32.0f, 32.0f);
-    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_m", 3, FALSE, 40.0, 32.0);
-    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_m", 32.0f, 32.0f);
+    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_m", 40.0f, 40.0f);
+    // Removed TextEditBox for mobile
+    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_m", 3, FALSE, 40.0, 40.0);
+    //CreateLabel(jGroupRow, "", "txt_model_number_m", 40.0, 40.0);
+    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_m", 40.0f, 40.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 59 (title)********************************************************** 400 / 383 / 236
+    // Row 59 (title)*********************************************************** 508 / 439 / 252
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "bottom_title",110.0f, 10.0f);
+    CreateLabel(jGroupRow, "", "bottom_title",128.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 510 (bottom)********************************************************** 400 / 423 / 276
+    // Row 510 (bottom)********************************************************* 508 / 487 /300
     jGroupRow = JsonArray();
-    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_b", 32.0f, 32.0f);
-    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_b", 3, FALSE, 40.0, 32.0);
-    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_b", 32.0f, 32.0f);
+    CreateButtonImage(jGroupRow, "nui_shld_left", "btn_prev_b", 40.0f, 40.0f);
+    // Removed TextEditBox for mobile
+    CreateTextEditBox(jGroupRow, "place_holder", "txt_model_number_b", 3, FALSE, 40.0, 40.0);
+    //CreateLabel(jGroupRow, "", "txt_model_number_b", 40.0, 40.0);
+    CreateButtonImage(jGroupRow, "nui_shld_right", "btn_next_b", 40.0f, 40.0f);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    // Row 511 (blank spacer)
+    jGroupRow = JsonArray();
+    CreateLabel(jGroupRow, "", "blank_space",128.0f, 20.0f);
+    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    // Row 512 (light)********************************************************** 508 / 487 /300
+    jGroupRow = JsonArray();
+    CreateButtonSelect(jGroupRow, "Randomize", "btn_randomize", 128.0f, 30.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     JsonArrayInsertInplace(jGroupCol, NuiSpacer());
-    JsonArrayInsertInplace(jRow, NuiHeight(NuiWidth(NuiGroup(NuiCol(jGroupCol)), 127.0), 350.0));
+    JsonArrayInsertInplace(jRow, NuiHeight(NuiWidth(NuiGroup(NuiCol(jGroupCol)), 143.0), 442.0));
     // Make the Color Group.
     jGroupRow = JsonArray();
     jGroupCol = JsonArray();
-    // Row 511 (groups)********************************************************** 400 / 331 / 184
-    CreateImage(jGroupRow, "", "color_pallet", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 256.0f, 176.0f, -1.0, "color_pallet_tooltip");
+    // Row 550 (groups)********************************************************* 508 / 361 / 184
+    json jImage = NuiEnabled(NuiId(NuiImage(NuiBind("color_pallet_image"), JsonInt(0), JsonInt(0), JsonInt(1)), "color_pallet"), NuiBind("color_pallet_event"));
+    jImage = NuiWidth(jImage, 320.0);  // 256 + 64
+    jImage = NuiHeight(jImage, 220.0); // 176 + 44
+    jImage = NuiTooltip(jImage, NuiBind("color_pallet_tooltip"));
+    json jIndicator = JsonArrayInsert(JsonArray(), NuiDrawListRect(JsonBool(TRUE), NuiColor(255,255,255), JsonBool(FALSE), JsonFloat(2.0), NuiBind("color_pallet_pointer")));
+    jImage = NuiDrawList(jImage, JsonBool(FALSE), jIndicator);
+    JsonArrayInsertInplace(jGroupRow, jImage);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 512 (groups)********************************************************** 400 / 349 / 202
+    // Row 551 (groups)********************************************************* 508 / 379 /202
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "Part to Color", "lbl_color_parts", 255.0f, 10.0f);
+    CreateLabel(jGroupRow, "Part To Color", "lbl_color_parts", 320.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 513 (groups)********************************************************** 400 / 377 / 230
+    // Row 552 (groups)********************************************************* 508 / 417 /240
     jGroupRow = JsonArray();
+    CreateButtonSelect(jGroupRow, "Right", "btn_right_part_color", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Right", "btn_right_part_color", 82.0, 20.0);
+    CreateButtonSelect(jGroupRow, "All", "btn_all_color", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "All", "btn_all_color", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Left", "btn_left_part_color", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
+    CreateButtonSelect(jGroupRow, "Left", "btn_left_part_color", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 514 (groups)********************************************************** 400 / 395 / 248
+    // Row 553 (groups)********************************************************* 508 / 435 / 258
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "Part Color to Reset", "lbl_reset_parts", 255.0f, 10.0f);
+    CreateLabel(jGroupRow, "Part Color To Reset", "lbl_reset_parts", 320.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 515 (groups)********************************************************** 400 / 423 / 276
+    // Row 554 (groups)********************************************************* 508 / 473 /296
     jGroupRow = JsonArray();
+    CreateButton(jGroupRow, "Right", "btn_right_part_reset", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton(jGroupRow, "Right", "btn_right_part_reset", 100.0, 20.0);
-    //JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    //CreateButton(jGroupRow, "All", "btn_all_reset", 82.0, 20.0);
+    CreateButton(jGroupRow, "All", "btn_all_reset", 50.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton(jGroupRow, "Left", "btn_left_part_reset", 100.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
+    CreateButton(jGroupRow, "Left", "btn_left_part_reset", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 516 (groups)********************************************************** 400 / 395 / 248
+    // Row 555 (groups)********************************************************* 508 / 491 / 314
     jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "Material to Color", "lbl_material_color", 255.0f, 10.0f);
+    CreateLabel(jGroupRow, "Material to Color", "lbl_material_color", 320.0f, 10.0f);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 517 (groups)********************************************************** 400 / 451 / 304
+    // Row 556 (groups)********************************************************* 508 / 529 /352
     jGroupRow = JsonArray();
+    CreateButtonSelect(jGroupRow, "Cloth 1", "btn_material_0", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Cloth 1", "btn_material_0", 82.0, 20.0);
+    CreateButtonSelect(jGroupRow, "Leather 1", "btn_material_2", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Leather 1", "btn_material_2", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Metal 1", "btn_material_4", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
+    CreateButtonSelect(jGroupRow, "Metal 1", "btn_material_4", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Row 518 (groups)********************************************************** 400 / 479 / 332
+    // Row 557 (groups)********************************************************* 508 / 567 / 390
     jGroupRow = JsonArray();
+    CreateButtonSelect(jGroupRow, "Cloth 2", "btn_material_1", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Cloth 2", "btn_material_1", 82.0, 20.0);
+    CreateButtonSelect(jGroupRow, "Leather 2", "btn_material_3", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Leather 2", "btn_material_3", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButtonSelect(jGroupRow, "Metal 2", "btn_material_5", 82.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
+    CreateButtonSelect(jGroupRow, "Metal 2", "btn_material_5", 98.0, 30.0);
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     JsonArrayInsertInplace(jGroupCol, NuiSpacer());
-    JsonArrayInsertInplace(jRow, NuiHeight(NuiWidth(NuiGroup(NuiCol(jGroupCol)), 275.0), 350.0));
+    JsonArrayInsertInplace(jRow, NuiHeight(NuiWidth(NuiGroup(NuiCol(jGroupCol)), 339.0), 442.0));  // 275 398
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     json jLayout = NuiCol(jCol);
     // Get the window location to restore it from the database.
-    json jGeometry = JsonObjectGet(jCraft, "Geometry");
+    json jGeometry = JsonObjectGet(jCraft, "CRAFT_MENU");
     float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
     float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
     string sPCWindow;
     int nToken = SetWindow(oPC, jLayout, "crafting_nui", "Crafting",
-                 fX, fY, 440.0, 540.0, FALSE, FALSE, FALSE, FALSE, TRUE, "pe_crafting");
+                 fX, fY, 508.0, 700.0, FALSE, FALSE, FALSE, FALSE, TRUE, "pe_crafting");  // 444 645
     // Set all binds, events, and watches.
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
     int nItem = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
@@ -193,10 +212,12 @@ void main()
     // Row 2
     NuiSetBind(oPC, nToken, "btn_info_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_info_tooltip", JsonString("  Look at and change item information"));
-    NuiSetBind(oPC, nToken, "btn_open_dresser_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_open_dresser_tooltip", JsonString("  Open your dresser to save/load items appearances"));
-    NuiSetBind(oPC, nToken, "btn_randomize_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_randomize_tooltip", JsonString("  Randomize the selected items appearance"));
+    NuiSetBind(oPC, nToken, "btn_wardrobe_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_wardrobe_tooltip", JsonString("  Use your wardrobe to save/load item appearances"));
+    int nLight = GetLocalInt(oPC, CRAFT_HIGHLIGHT) + GetLocalInt(oPC, CRAFT_ULTRALIGHT);
+    NuiSetBind(oPC, nToken, "btn_highlight", JsonBool(nLight));
+    NuiSetBind(oPC, nToken, "btn_highlight_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_highlight_tooltip", JsonString("  Left click for White light, Right click for Ultravision"));
     // Row 3
     NuiSetBind(oPC, nToken, "btn_save_event", JsonBool(FALSE));
     NuiSetBind(oPC, nToken, "btn_save_tooltip", JsonString("  Save current changes"));
@@ -243,24 +264,27 @@ void main()
         // Row 55
         NuiSetBind(oPC, nToken, "top_title_label", JsonString("Top"));
         // Row 56
-        NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(TRUE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_model_number_t", JsonString(sModelTop));
         NuiSetBind(oPC, nToken, "btn_prev_t_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_next_t_event", JsonBool(TRUE));
         // Row 57
         NuiSetBind(oPC, nToken, "middle_title_label", JsonString("Middle"));
         // Row 58
-        NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_model_number_m", JsonString(sModelMiddle));
         NuiSetBind(oPC, nToken, "btn_prev_m_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_next_m_event", JsonBool(TRUE));
         // Row 59
         NuiSetBind(oPC, nToken, "bottom_title_label", JsonString("Bottom"));
         // Row 510
-        NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(TRUE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_model_number_b", JsonString(sModelBottom));
         NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(TRUE));
+        // Row 511
+        NuiSetBind(oPC, nToken, "btn_randomize_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_randomize_tooltip", JsonString("  Randomize the selected weapon"));
     }
     // Armor and clothing
     else if(nItem == 0)
@@ -277,21 +301,21 @@ void main()
             // Row 55
             NuiSetBind(oPC, nToken, "top_title_label", JsonString(""));
             // Row 56
-            NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(FALSE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(FALSE));
             NuiSetBind(oPC, nToken, "txt_model_name_t", JsonString(""));
             NuiSetBind(oPC, nToken, "btn_prev_t_event", JsonBool(FALSE));
             NuiSetBind(oPC, nToken, "btn_next_t_event", JsonBool(FALSE));
             // Row 57
             NuiSetBind(oPC, nToken, "middle_title_label", JsonString("Model"));
             // Row 58
-            NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "txt_model_number_m", JsonString(sModelMiddle));
             NuiSetBind(oPC, nToken, "btn_prev_m_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_next_m_event", JsonBool(TRUE));
             // Row 59
             NuiSetBind(oPC, nToken, "bottom_title_label", JsonString(""));
             // Row 510
-            NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(FALSE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(FALSE));
             NuiSetBind(oPC, nToken, "txt_model_number_b", JsonString(""));
             NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(FALSE));
             NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(FALSE));
@@ -305,25 +329,28 @@ void main()
             // Row 55
             NuiSetBind(oPC, nToken, "top_title_label", JsonString("Right"));
             // Row 56
-            NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(TRUE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "txt_model_number_t", JsonString(sModelTop));
             NuiSetBind(oPC, nToken, "btn_prev_t_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_next_t_event", JsonBool(TRUE));
             // Row 57
             NuiSetBind(oPC, nToken, "middle_title_label", JsonString("Right & Left"));
             // Row 58
-            NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "txt_model_number_m", JsonString(sModelTop));
             NuiSetBind(oPC, nToken, "btn_prev_m_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_next_m_event", JsonBool(TRUE));
             // Row 59
             NuiSetBind(oPC, nToken, "bottom_title_label", JsonString("Left"));
             // Row 510
-            NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(TRUE));
+            //NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "txt_model_number_b", JsonString(sModelBottom));
             NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(TRUE));
         }
+        // Row 511
+        NuiSetBind(oPC, nToken, "btn_randomize_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_randomize_tooltip", JsonString("  Randomize the selected armor"));
     }
     // Shields, Cloaks, and Helmets.
     else
@@ -332,24 +359,27 @@ void main()
             // Row 55
         NuiSetBind(oPC, nToken, "top_title_label", JsonString(""));
             // Row 56
-        NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(FALSE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_t_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "txt_model_number_t", JsonString(""));
         NuiSetBind(oPC, nToken, "btn_prev_t_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_next_t_event", JsonBool(FALSE));
             // Row 57
         NuiSetBind(oPC, nToken, "middle_title_label", JsonString("Model"));
             // Row 58
-        NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_m_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_model_number_m", JsonString(sModelMiddle));
         NuiSetBind(oPC, nToken, "btn_prev_m_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_next_m_event", JsonBool(TRUE));
             // Row 59
         NuiSetBind(oPC, nToken, "bottom_title_label", JsonString(""));
             // Row 510
-        NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(FALSE));
+        //NuiSetBind(oPC, nToken, "txt_model_number_b_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "txt_model_number_b", JsonString(""));
         NuiSetBind(oPC, nToken, "btn_prev_b_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(FALSE));
+        // Row 511
+        NuiSetBind(oPC, nToken, "btn_randomize_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_randomize_tooltip", JsonString("  Randomize the selected item"));
     }
     // Color Group
     if(ai_GetIsWeapon(oItem) || ai_GetIsShield(oItem))
@@ -366,7 +396,7 @@ void main()
         // Row 514 - Label Part Color to Reset
         // Row 515
         NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(FALSE));
-        //NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(FALSE));
+        NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
         // Row 516 - Label Material to Color
         // Row 517
@@ -384,13 +414,25 @@ void main()
     {
         string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
         if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+        int nModelSelected = GetArmorModelSelected(oPC);
+        int nColor;
+        if(!JsonGetInt(NuiGetBind(oPC, nToken, "btn_all_color")))
+        {
+            int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+            nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex);
+        }
+        else nColor == 255;
+        if(nColor == 255) nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected);
+        float fPointX = IntToFloat((nColor - ((nColor / 16) * 16)) * 20);
+        float fPointY = IntToFloat((nColor / 16) * 20);
+        NuiSetBind(oPC, nToken, "color_pallet_pointer", NuiRect(fPointX, fPointY, 20.0, 20.0));
         // Row 511
         NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
         NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
         NuiSetBindWatch(oPC, nToken, "txt_color_l", TRUE);
-        int nModelSelected = GetArmorModelSelected(oPC);
-        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+        int nSelectedRight, nSelectedAll, nSelectedLeft;
         string sColorAll = IntToString(GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected));
         // These models only have one side so make sure we are not linked.
         if (nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
@@ -401,38 +443,54 @@ void main()
         {
             // Row 512 - Label Part to Color
             // Row 5l3
-            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
-            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelected));
+            nSelectedRight = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+            nSelectedAll = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+            if(!nSelectedRight && !nSelectedAll)
+            {
+                nSelectedAll = TRUE;
+                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
+                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonBool(FALSE));
+            }
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelectedRight));
             NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
-            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
-            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelectedAll));
             NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
             NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
             // Row 514 - Label Part Color to Reset
             // Row 5l5
-            NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(TRUE));
-            //NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(TRUE));
+            nSelectedRight = GetHasPartColor(oItem, nModelSelected, "Right");
+            nSelectedAll = nSelectedRight;
+            NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(nSelectedRight));
+            NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nSelectedAll));
             NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
         }
         else
         {
             // Row 512 - Label Part to Color
             // Row 5l3
-            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
-            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelected));
+            nSelectedRight = JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
+            nSelectedAll = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
+            nSelectedLeft = JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
+            if(!nSelectedRight && !nSelectedAll && !nSelectedLeft)
+            {
+                nSelectedAll = TRUE;
+                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
+            }
+            NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelectedRight));
             NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
-            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ALL_COLOR));
-            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nSelectedAll));
             NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
-            nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
-            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nSelected));
+            NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nSelectedLeft));
             NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(TRUE));
             // Row 514 - Label Part Color to Reset
             // Row 5l5
-            NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(TRUE));
-            //NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(TRUE));
-            NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(TRUE));
+            nSelectedRight = GetHasPartColor(oItem, nModelSelected, "Right");
+            nSelectedLeft = GetHasPartColor(oItem, nModelSelected, "Left");
+            nSelectedAll = nSelectedRight || nSelectedLeft;
+            NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(nSelectedRight));
+            NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nSelectedAll));
+            NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(nSelectedLeft));
         }
         // Row 516 - Label Material to Color
         // Row 517 & 518
@@ -445,6 +503,12 @@ void main()
         // Row 511
         string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
         if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+        int nModelSelected = GetArmorModelSelected(oPC);
+        int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected);
+        float fPointX = IntToFloat((nColor - ((nColor / 16) * 16)) * 20);
+        float fPointY = IntToFloat((nColor / 16) * 20);
+        NuiSetBind(oPC, nToken, "color_pallet_pointer", NuiRect(fPointX, fPointY, 20.0, 20.0));
         NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
         NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
@@ -453,7 +517,7 @@ void main()
         NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_all_color_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "btn_left_part_color_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
         // Row 514 - Label Part Color to Reset
@@ -467,7 +531,7 @@ void main()
         SetMaterialButtons(oPC, nToken, nSelected);
     }
     // Lets make sure we clean up any cool down variables.
-    DeleteLocalInt(oPC, CRAFT_COOL_DOWN);
+    //DeleteLocalInt(oPC, CRAFT_COOL_DOWN);
 }
 void CreateItemCombo(object oPC, json jRow, string sComboBind)
 {
@@ -479,7 +543,7 @@ void CreateItemCombo(object oPC, json jRow, string sComboBind)
     JsonArrayInsertInplace(jCombo, NuiComboEntry("Headgear", 2));
     JsonArrayInsertInplace(jCombo, NuiComboEntry("Right hand", 3));
     JsonArrayInsertInplace(jCombo, NuiComboEntry("Left hand", 4));
-    CreateCombo(jRow, jCombo, sComboBind, 110.0, 25.0);
+    CreateCombo(jRow, jCombo, sComboBind, 128.0, 40.0);
 }
 void CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind)
 {
@@ -551,7 +615,7 @@ void CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind)
         }
         else JsonArrayInsertInplace(jCombo, NuiComboEntry("Weapon", 0));
     }
-    CreateCombo(jRow, jCombo, sComboBind, 110.0, 25.0);
+    CreateCombo(jRow, jCombo, sComboBind, 128.0, 40.0);
 }
 void SetMaterialButtons(object oPC, int nToken, int nMaterial)
 {
@@ -592,6 +656,25 @@ int GetArmorModelSelected(object oPC)
     if(nModelSelected == 9) return ITEM_APPR_ARMOR_MODEL_RSHIN;
     if(nModelSelected == 10) return ITEM_APPR_ARMOR_MODEL_RFOOT;
     return ITEM_APPR_ARMOR_MODEL_ROBE;
+}
+int GetHasPartColor(object oItem, int nPart, string sSide)
+{
+    json jItem = ObjectToJson(oItem);
+    string sPartName = "APart_";
+    if(sSide == "Left")
+    {
+        // Note: Right Thigh and Left Thigh are backwards so this fixes that!
+        if (nPart == ITEM_APPR_ARMOR_MODEL_RTHIGH) nPart--;
+        else nPart++;
+    }
+    sPartName += IntToString(nPart) + "_Col_";
+    int nPartColor = JsonGetInt(GffGetByte(jItem, sPartName + "0"));
+    nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "1"));
+    nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "2"));
+    nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "3"));
+    nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "4"));
+    nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "5"));
+    return nPartColor;
 }
 int StartingUp(object oPC)
 {

@@ -5,6 +5,15 @@ void ai_UpdateAssociateWidget(object oMaster, object oAssociate, int nUIToken)
 {
     if(nUIToken) NuiDestroy(oMaster, nUIToken);
     ai_CreateWidgetNUI(oMaster, oAssociate);
+    if(oMaster != oAssociate)
+    {
+        nUIToken = NuiFindWindow(oMaster, "pc" + AI_WIDGET_NUI);
+        if(nUIToken)
+        {
+            NuiDestroy(oMaster, nUIToken);
+            ai_CreateWidgetNUI(oMaster, oMaster);
+        }
+    }
 }
 void main()
 {

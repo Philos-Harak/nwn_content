@@ -335,8 +335,6 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 int ai_GetIsHidden(object oHidden);
 // Returns TRUE if if oCaster has a good chance of effecting oCreature with nSpell.
 int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell);
-// Returns TRUE if oCreature is in a Dangerous Area of Effect in fMaxRange.
-int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD);
 // Gets the base DC for a dragon.
 int ai_GetDragonDC(object oCreature);
 // Set oCreature's ai scripts based on its first class or the variable "AI_DEFAULT_SCRIPT".
@@ -3014,58 +3012,6 @@ int ai_CastOffensiveSpellVsTarget(object oCaster, object oCreature, int nSpell)
     else if(sSave == "Will") return (nSpellLvl > GetWillSavingThrow(oCreature));
     return TRUE;
 }
-int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD)
-{
-    int nSpell, nCnt = 1;
-    string sAOEType;
-    object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
-    float fRadius, fDistance = GetDistanceBetween(oCreature, oAOE);
-    while(oAOE != OBJECT_INVALID && fDistance <= fMaxRange)
-    {
-        // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
-        // I check vs those labels to see if the AOE is offensive.
-        // Below is the list of Offensive AOE effects.
-        sAOEType = GetTag(oAOE);
-        if(sAOEType == "VFX_PER_WEB") { fRadius = 6.7; nSpell = SPELL_WEB; }
-        else if(sAOEType == "VFX_PER_ENTANGLE") { fRadius = 5.0; nSpell = SPELL_ENTANGLE; }
-        else if(sAOEType == "VFX_PER_GREASE") { fRadius = 6.0; nSpell = SPELL_GREASE; }
-        else if(sAOEType == "VFX_PER_EVARDS_BLACK_TENTACLES")
-             { fRadius = 5.0; nSpell = SPELL_EVARDS_BLACK_TENTACLES; }
-        //else if(sAOEType == "VFX_PER_DARKNESS") { fRadius = 6.7; nSpell = SPELL_DARKNESS; }
-        else if(sAOEType == "VFX_MOB_SILENCE") { fRadius = 4.0; nSpell = SPELL_SILENCE; }
-        else if(sAOEType == "VFX_PER_FOGSTINK") { fRadius = 6.7; nSpell = SPELL_STINKING_CLOUD; }
-        else if(sAOEType == "VFX_PER_FOGFIRE") { fRadius = 5.0; nSpell = SPELL_INCENDIARY_CLOUD; }
-        else if(sAOEType == "VFX_PER_FOGKILL") { fRadius = 5.0; nSpell = SPELL_CLOUDKILL; }
-        else if(sAOEType == "VFX_PER_FOGMIND") { fRadius = 5.0; nSpell = SPELL_MIND_FOG; }
-        else if(sAOEType == "VFX_PER_CREEPING_DOOM") { fRadius = 6.7; nSpell = SPELL_CREEPING_DOOM; }
-        else if(sAOEType == "VFX_PER_FOGACID") { fRadius = 5.0; nSpell = SPELL_ACID_FOG; }
-        else if(sAOEType == "VFX_PER_FOGBEWILDERMENT") { fRadius = 5.0; nSpell = SPELL_CLOUD_OF_BEWILDERMENT; }
-        else if(sAOEType == "VFX_PER_WALLFIRE") { fRadius = 10.0; nSpell = SPELL_WALL_OF_FIRE; }
-        else if(sAOEType == "VFX_PER_WALLBLADE") { fRadius = 10.0; nSpell = SPELL_BLADE_BARRIER; }
-        else if(sAOEType == "VFX_PER_DELAY_BLAST_FIREBALL") { fRadius = 2.0; nSpell = SPELL_DELAYED_BLAST_FIREBALL; }
-        else if(sAOEType == "VFX_PER_GLYPH") { fRadius = 2.5; nSpell = SPELL_GLYPH_OF_WARDING; }
-        else fRadius = 0.0;
-        if(AI_DEBUG) ai_Debug("0i_combat", "3088", GetName(oCreature) + " distance from AOE is " + FloatToString(fDistance, 0, 2) +
-                " AOE Radius: " + FloatToString(fRadius, 0, 2) +
-                " AOE Type: " + GetTag(oAOE));
-        // fRadius > 0.0 keeps them from tiggering that they are in a dangerous
-        // AOE due to having an AOE on them.
-        if(fRadius > 0.0 && fDistance <= fRadius &&
-           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell))
-        {
-            if(nSpell == SPELL_WEB || nSpell == SPELL_ENTANGLE)
-            {
-                if(ai_HasRangedWeaponWithAmmo(oCreature)) return FALSE;
-                if(GetReflexSavingThrow(oCreature) + GetAbilityModifier(ABILITY_DEXTERITY, oCreature) >= ai_GetCharacterLevels(oCreature))
-                    return FALSE;
-            }
-            return TRUE;
-        }
-        oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
-        fDistance = GetDistanceBetween(oCreature, oAOE);
-    }
-    return FALSE;
-}
 int ai_GetDragonDC(object oCreature)
 {
     int nDC, nHitDice = GetHitDice(oCreature);
@@ -3108,7 +3054,7 @@ void ai_SetCreatureAIScript(object oCreature)
             if(!bCast) bCast = ai_TryToCastSpell(oCreature, SPELL_INVISIBILITY, oCreature);
             if(bCast) sCombatAI = "ai_ambusher";
         } */
-        if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature, TRUE) && Random(100) < 33)
+        if(GetHasFeat(FEAT_SNEAK_ATTACK, oCreature, TRUE))
         {
             sCombatAI = "ai_flanker";
         }
@@ -3133,6 +3079,7 @@ void ai_SetCreatureAIScript(object oCreature)
         else if(ai_CheckClassType(oCreature, AI_CLASS_TYPE_ARCANE) &&
                ai_GetCharacterLevels(oCreature) > 4) sCombatAI = "ai_ranged";
         else if(ai_EquipBestRangedWeapon(oCreature)) sCombatAI = "ai_ranged";
+        else if(GetSkillRank(SKILL_TAUNT, oCreature) >= nSkillNeeded) sCombatAI = "ai_taunter";
     }
     if(sCombatAI == "")
     {
@@ -3349,7 +3296,7 @@ int ai_CheckRangedCombatPosition(object oCreature, object oTarget, int nAction)
             ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
             return TRUE;
         }
-    }
+}
     return FALSE;
 }
 int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, int nBaseItemType = 0)

@@ -15,11 +15,8 @@ void main()
     // Has our master told us to not use magic?
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
-    if(bUseMagic)
-    {
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
+    if(ai_TryHealingTalent(oCreature, nInMelee)) return;
+    if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     int nDifficulty = ai_GetDifficulty(oCreature);
     int nMaxLevel;
     // Check for moral and get the maximum spell level we should use.
@@ -32,17 +29,13 @@ void main()
     if(nDifficulty >= AI_COMBAT_EASY)
     {
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic)
-        {
-            if(ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING)) return;
-            // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ************
-            // Does our master want to be buffed first?
-            object oTarget = OBJECT_INVALID;
-            if(ai_GetMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
-            int nRound = ai_GetCurrentRound(oCreature);
-            if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound, oTarget)) return;
-            // If we have used all the valid defensive talents then lets move on to offense!
-        }
+        if(ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING)) return;
+        // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ************
+        // Does our master want to be buffed first?
+        object oTarget = OBJECT_INVALID;
+        if(ai_GetMagicMode(oCreature, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oCreature);
+        int nRound = ai_GetCurrentRound(oCreature);
+        if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound, oTarget)) return;
         // ************************** CLASS FEATURES ***************************
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
@@ -51,7 +44,7 @@ void main()
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
     {
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && !ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
+        if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
             // ******************* OFFENSIVE AOE TALENTS ***********************
             // Check the battlefield for a group of enemies to shoot a big spell at!

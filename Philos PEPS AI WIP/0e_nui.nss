@@ -56,23 +56,26 @@ void ai_SaveWindowLocation(object oPC, int nToken, string sAssociateType, string
 }
 void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, object oAssociate, string sAssociateType)
 {
-    string sText, sName = GetName(oAssociate);
+    string sText, sText2, sName = GetName(oAssociate);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int bWidget = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType);
     ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType, bWidget);
-    NuiSetBind(oPC, nToken, "btn_options", JsonBool (!bWidget));
+    NuiSetBind(oPC, nToken, "btn_widget_onoff", JsonBool (!bWidget));
     if(bWidget)
     {
         sText = "on";
+        sText2 = "Off";
         IsWindowClosed(oPC, sAssociateType + AI_WIDGET_NUI);
     }
     else
     {
         sText = "off";
+        sText2 = "On";
         ai_CreateWidgetNUI(oPC, oAssociate);
     }
-    NuiSetBind(oPC, nToken, "btn_options_tooltip", JsonString("  Turn " + sName + " widget " + sText));
+    NuiSetBind(oPC, nToken, "btn_widget_onoff_label", JsonString("Widget " + sText2));
+    NuiSetBind(oPC, nToken, "btn_widget_onoff_tooltip", JsonString("  Turn " + sName + " widget " + sText));
 }
 void main()
 {
@@ -474,6 +477,16 @@ void main()
                 NuiDestroy(oPC, nToken);
                 ai_CreateAssociateAINUI(oPC, oAssociate);
             }
+            if(sElem == "btn_vertical_widget")
+            {
+                int bVertical = !ai_GetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType, bVertical);
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
+                {
+                    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+                    ai_CreateWidgetNUI(oPC, oAssociate);
+                }
+            }
             else if(sElem == "btn_main_menu")
             {
                 if(ai_GetIsCharacter(oAssociate)) ai_CreateAIMainNUI(oPC);
@@ -484,27 +497,12 @@ void main()
             }
             else if(sElem == "btn_widget_lock")
             {
-                if(ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType))
+                int bLocked = !ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, bLocked);
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                 {
-                    ai_SendMessages(GetName(oAssociate) + " AI widget unlocked.", AI_COLOR_YELLOW, oPC);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, FALSE);
-                    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
-                    {
-                        NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
-                        ai_CreateWidgetNUI(oPC, oAssociate);
-                    }
-                }
-                else
-                {
-                    //int nWidgetToken = NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI);
-                    //ai_SaveWindowLocation(oPC, nWidgetToken, sAssociateType, sAssociateType + AI_WIDGET_NUI);
-                    ai_SendMessages(GetName(oAssociate) + " AI widget locked.", AI_COLOR_YELLOW, oPC);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, TRUE);
-                    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
-                    {
-                        NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
-                        ai_CreateWidgetNUI(oPC, oAssociate);
-                    }
+                    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+                    ai_CreateWidgetNUI(oPC, oAssociate);
                 }
             }
             else if(sElem == "btn_copy_settings")
@@ -534,17 +532,17 @@ void main()
             else if(sElem == "btn_buff_short")
             {
                 ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_long")
             {
                 ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_all")
             {
                 ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
-                DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
             else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
             else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
@@ -629,11 +627,8 @@ void main()
         {
             if(sElem == "btn_command_menu")
             {
-                if(ai_GetIsCharacter(oAssociate))
-                {
-                    ai_CreateAssociateCommandNUI(oPC, oAssociate);
-                    NuiDestroy(oPC, nToken);
-                }
+                ai_CreateAssociateCommandNUI(oPC, oAssociate);
+                NuiDestroy(oPC, nToken);
             }
             if(sElem == "btn_main_menu")
             {
@@ -745,6 +740,8 @@ void main()
                     IsWindowClosed(oPC, sAssociateType + AI_NUI);
                     IsWindowClosed(oPC, sAssociateType + AI_LOOTFILTER_NUI);
                     IsWindowClosed(oPC, sAssociateType + AI_COPY_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_SPELL_MEMORIZE_NUI);
                     if(ai_GetIsCharacter(oAssociate))
                     {
                         IsWindowClosed(oPC, AI_MAIN_NUI);
@@ -752,85 +749,83 @@ void main()
                     }
                 }
             }
-            else
+            else if(sElem == "btn_ai")
             {
-                if(sElem == "btn_ai")
+                if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb")
                 {
-                    if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb")
-                    {
-                        ai_TurnOff(oPC, oAssociate, sAssociateType);
-                    }
-                    else ai_TurnOn(oPC, oAssociate, sAssociateType);
+                    ai_TurnOff(oPC, oAssociate, sAssociateType);
                 }
-                else if(sElem == "btn_quiet") ai_ReduceSpeech(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_ranged") AssignCommand(oAssociate, ai_Ranged(oPC, oAssociate, sAssociateType));
-                else if(sElem == "btn_ignore_assoc") ai_Ignore_Associates(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_search") ai_Search(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_stealth") ai_Stealth(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1);
-                else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2);
-                else if(sElem == "btn_magic_minus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
-                else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
-                else if(sElem == "btn_magic") ai_UseMagic(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_magic_items") ai_UseMagicItems(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_def_magic") ai_UseOffensiveMagic(oPC, oAssociate, TRUE, FALSE, sAssociateType);
-                else if(sElem == "btn_off_magic") ai_UseOffensiveMagic(oPC, oAssociate, FALSE, TRUE, sAssociateType);
-                else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
-                else if(sElem == "btn_spontaneous") ai_Spontaneous(oPC, oAssociate, sAssociateType);
-                else if(sElem == "btn_buff_short")
-                {
-                    ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                }
-                else if(sElem == "btn_buff_long")
-                {
-                    ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                }
-                else if(sElem == "btn_buff_all")
-                {
-                    ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
-                    DelayCommand(4.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                }
-                else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
-                else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
-                else if(sElem == "btn_ghost_mode") ai_GhostMode(oPC, oAssociate, nToken, sAssociateType);
-                else if(sElem == "btn_camera") ai_ChangeCameraView(oPC, oAssociate);
-                else if(sElem == "btn_inventory") ai_OpenInventory(oAssociate, oPC);
-                else if(sElem == "btn_familiar")
-                {
-                    if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oAssociate))
-                    {
-                        DecrementRemainingFeatUses(oAssociate, FEAT_SUMMON_FAMILIAR);
-                        SummonFamiliar(oAssociate);
-                    }
-                }
-                else if(sElem == "btn_companion")
-                {
-                    if(GetHasFeat(FEAT_ANIMAL_COMPANION, oAssociate))
-                    {
-                        DecrementRemainingFeatUses(oAssociate, FEAT_ANIMAL_COMPANION);
-                        SummonAnimalCompanion(oAssociate);
-                    }
-                }
-                else if(sElem == "btn_heals_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 1);
-                else if(sElem == "btn_healp_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 2);
-                else if(sElem == "btn_cmd_action") ai_Action(oPC, oAssociate);
-                else if(sElem == "btn_cmd_guard") ai_DoCommand(oPC, oAssociate, 1);
-                else if(sElem == "btn_cmd_hold") ai_DoCommand(oPC, oAssociate, 3);
-                else if(sElem == "btn_cmd_search") ai_DoCommand(oPC, oAssociate, 5);
-                else if(sElem == "btn_cmd_stealth") ai_DoCommand(oPC, oAssociate, 6);
-                else if(sElem == "btn_cmd_attack") ai_DoCommand(oPC, oAssociate, 4);
-                else if(sElem == "btn_cmd_follow") ai_DoCommand(oPC, oAssociate, 2);
-                else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType, nToken);
-                else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
-                else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
-                else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
-                else if(GetStringLeft(sElem, 11) == "btn_widget_") ai_SelectWidgetSpellTarget(oPC, oAssociate, sElem);
+                else ai_TurnOn(oPC, oAssociate, sAssociateType);
             }
+            else if(sElem == "btn_quiet") ai_ReduceSpeech(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_ranged") AssignCommand(oAssociate, ai_Ranged(oPC, oAssociate, sAssociateType));
+            else if(sElem == "btn_ignore_assoc") ai_Ignore_Associates(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_search") ai_Search(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_stealth") ai_Stealth(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_open_door") ai_OpenDoor(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_traps") ai_Traps(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_pick_locks") ai_Locks(oPC, oAssociate, sAssociateType, 1);
+            else if(sElem == "btn_bash_locks") ai_Locks(oPC, oAssociate, sAssociateType, 2);
+            else if(sElem == "btn_magic_minus") ai_MagicIncrement(oPC, oAssociate, -1, sAssociateType);
+            else if(sElem == "btn_magic_plus") ai_MagicIncrement(oPC, oAssociate, 1, sAssociateType);
+            else if(sElem == "btn_magic") ai_UseMagic(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_magic_items") ai_UseMagicItems(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_def_magic") ai_UseOffensiveMagic(oPC, oAssociate, TRUE, FALSE, sAssociateType);
+            else if(sElem == "btn_off_magic") ai_UseOffensiveMagic(oPC, oAssociate, FALSE, TRUE, sAssociateType);
+            else if(sElem == "btn_loot") ai_Loot(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_perc_range") ai_Perc_Range(oPC, oAssociate, nToken, sAssociateType);
+            else if(sElem == "btn_spontaneous") ai_Spontaneous(oPC, oAssociate, sAssociateType);
+            else if(sElem == "btn_buff_short")
+            {
+                ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            }
+            else if(sElem == "btn_buff_long")
+            {
+                ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            }
+            else if(sElem == "btn_buff_all")
+            {
+                ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
+                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+            }
+            else if(sElem == "btn_buff_rest") ai_Buff_Button(oPC, oAssociate, 0, sAssociateType);
+            else if(sElem == "btn_jump_to") ai_JumpToPC(oPC, oAssociate);
+            else if(sElem == "btn_ghost_mode") ai_GhostMode(oPC, oAssociate, nToken, sAssociateType);
+            else if(sElem == "btn_camera") ai_ChangeCameraView(oPC, oAssociate);
+            else if(sElem == "btn_inventory") ai_OpenInventory(oAssociate, oPC);
+            else if(sElem == "btn_familiar")
+            {
+                if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oAssociate))
+                {
+                    DecrementRemainingFeatUses(oAssociate, FEAT_SUMMON_FAMILIAR);
+                    SummonFamiliar(oAssociate);
+                }
+            }
+            else if(sElem == "btn_companion")
+            {
+                if(GetHasFeat(FEAT_ANIMAL_COMPANION, oAssociate))
+                {
+                    DecrementRemainingFeatUses(oAssociate, FEAT_ANIMAL_COMPANION);
+                    SummonAnimalCompanion(oAssociate);
+                }
+            }
+            else if(sElem == "btn_heals_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 1);
+            else if(sElem == "btn_healp_onoff") ai_Heal_OnOff(oPC, oAssociate, sAssociateType, 2);
+            else if(sElem == "btn_cmd_action") ai_Action(oPC, oAssociate);
+            else if(sElem == "btn_cmd_guard") ai_DoCommand(oPC, oAssociate, 1);
+            else if(sElem == "btn_cmd_hold") ai_DoCommand(oPC, oAssociate, 3);
+            else if(sElem == "btn_cmd_search") ai_DoCommand(oPC, oAssociate, 5);
+            else if(sElem == "btn_cmd_stealth") ai_DoCommand(oPC, oAssociate, 6);
+            else if(sElem == "btn_cmd_attack") ai_DoCommand(oPC, oAssociate, 4);
+            else if(sElem == "btn_cmd_follow") ai_DoCommand(oPC, oAssociate, 2);
+            else if(sElem == "btn_cmd_ai_script") ai_AIScript(oPC, oAssociate, sAssociateType, nToken);
+            else if(sElem == "btn_cmd_place_trap") ai_HavePCPlaceTrap(oPC, oAssociate);
+            else if(sElem == "btn_follow_target") ai_FollowTarget(oPC, oAssociate);
+            else if(sElem == "btn_update_widget") ai_UpdateAssociateWidget(oPC, oAssociate);
+            else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
+            else if(GetStringLeft(sElem, 11) == "btn_widget_") ai_SelectWidgetSpellTarget(oPC, oAssociate, sElem);
         }
         if(sEvent == "mousescroll")
         {
@@ -872,6 +867,7 @@ void main()
             int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
             if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
             {
+                AssignCommand(oPC, PlaySound("gui_button"));
                 if(sElem == "btn_open_main")
                 {
                     // If all the AI buttons are blocked then don't load the menu.
@@ -881,6 +877,16 @@ void main()
                         {
                             ai_CreateAssociateAINUI(oPC, oAssociate);
                         }
+                    }
+                    IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_LOOTFILTER_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_COPY_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_SPELL_MEMORIZE_NUI);
+                    if(ai_GetIsCharacter(oAssociate))
+                    {
+                        IsWindowClosed(oPC, AI_MAIN_NUI);
+                        IsWindowClosed(oPC, AI_PLUGIN_NUI);
                     }
                 }
                 else if(sElem == "btn_follow_range") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
@@ -892,11 +898,7 @@ void main()
                     json jSpells = JsonArrayGet(jAIData, 10);
                     json jWidget = JsonArrayGet(jSpells, 2);
                     json jSpell = JsonArrayGet(jWidget, nIndex);
-                    int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-                    int bSpell = JsonGetInt(JsonArrayGet(jSpell, 2));
-                    if(bSpell == -1) bSpell = FALSE;
-                    else bSpell = TRUE;
-                    ai_CreateDescriptionNUI(oPC, nSpell, bSpell);
+                    ai_CreateDescriptionNUI(oPC, jSpell);
                 }
             }
         }
@@ -1276,11 +1278,7 @@ void main()
             {
                 json jQuickListArray = JsonArrayGet(jData, 1);
                 json jSpell = JsonArrayGet(jQuickListArray, nIndex);
-                int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
-                int bSpell = JsonGetInt(JsonArrayGet(jSpell, 2));
-                if(bSpell == -1) bSpell = FALSE;
-                else bSpell = TRUE;
-                ai_CreateDescriptionNUI(oPC, nSpell, bSpell);
+                ai_CreateDescriptionNUI(oPC, jSpell);
             }
             else if(GetStringLeft(sElem, 11) == "btn_widget_")
             {
@@ -1371,9 +1369,8 @@ void main()
             {
                 json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
                 json jSpells = JsonArrayGet(jAIData, 10);
-                json jSpellArray = JsonArrayGet(jData, 1);
-                int nSpell = JsonGetInt(JsonArrayGet(jSpellArray, nIndex));
-                ai_CreateDescriptionNUI(oPC, nSpell, TRUE);
+                json jSpell = JsonArrayGet(jData, 1);
+                ai_CreateDescriptionNUI(oPC, jSpell);
             }
             else if(GetStringLeft(sElem, 14) == "btn_memorized_")
             {

@@ -20,12 +20,20 @@ void main()
     // Row 1 ******************************************************************* 450 / 73
     json jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 200.0f, 20.0f, -1.0, "btn_combat_music_offtooltip");
+    CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 300.0f, 20.0f, -1.0, "btn_combat_music_offtooltip");
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
     float fHeight = 73.0;
+    // Row 2 ******************************************************************* 450 / 73
+    jRow = JsonArray();
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    CreateButton(jRow, "Auto Daytime", "btn_night_to_day", 300.0f, 20.0f, -1.0, "btn_night_to_day_tooltip");
+    JsonArrayInsertInplace(jRow, NuiSpacer());
+    // Add row to the column.
+    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    fHeight += 28.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = GetName(oPC);
@@ -37,6 +45,9 @@ void main()
     // Row 1
     NuiSetBind(oPC, nToken, "btn_combat_music_off_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_combat_music_off_tooltip", JsonString("  Removes the combat music from every area in the module."));
+    // Row 2
+    NuiSetBind(oPC, nToken, "btn_night_to_day_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_night_to_day_tooltip", JsonString("  Automatically passes nighttime to make it morning!"));
 }
 int StartingUp(object oPC)
 {

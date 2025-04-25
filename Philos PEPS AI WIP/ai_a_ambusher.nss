@@ -13,8 +13,6 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     if(AI_DEBUG) ai_Debug("ai_a_ambusher", "19", GetName(oCreature) + " is using ambusher tactics: " +
              " oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance: " +

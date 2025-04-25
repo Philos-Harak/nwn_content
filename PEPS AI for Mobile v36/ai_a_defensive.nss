@@ -24,14 +24,9 @@ void main()
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     if(AI_DEBUG) ai_Debug("ai_a_defensive", "25", "oNearest Enemy: " + GetName(oNearestEnemy) +
                  " Distance to Nearest Enemy: " + FloatToString(GetDistanceToObject(oNearestEnemy), 0, 2));
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     // ALWAYS - Check for healing and cure talents.
-    if(bUseMagic)
-    {
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
+    if(ai_TryHealingTalent(oCreature, nInMelee)) return;
+    if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     int nDifficulty = ai_GetDifficulty(oCreature);
     int nMaxLevel;
     // SIMPLE+ - Check for moral and get what spell power we should be using.
@@ -49,7 +44,7 @@ void main()
         if(ai_TryBardSongFeat(oCreature)) return;
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
-        if(bUseMagic && !ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
+        if(!ai_GetMagicMode(oCreature, AI_MAGIC_OFFENSIVE_CASTING))
         {
             // ********** PROTECTION/ENHANCEMENT/SUMMON TALENTS ****************
             // Does our master want to be buffed first?

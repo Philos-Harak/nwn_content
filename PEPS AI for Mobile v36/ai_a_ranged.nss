@@ -13,14 +13,9 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    // Has our master told us to not use magic?
-    int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     //***************************  HEALING & CURES  ****************************
-    if(bUseMagic)
-    {
-        if(ai_TryHealingTalent(oCreature, nInMelee)) return;
-        if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    }
+    if(ai_TryHealingTalent(oCreature, nInMelee)) return;
+    if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     int nDifficulty = ai_GetDifficulty(oCreature);
     int nMaxLevel;
     // Check for moral and get the maximum spell level we should use.
@@ -40,7 +35,7 @@ void main()
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
+        if(ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
@@ -48,7 +43,7 @@ void main()
         // ************************** CLASS FEATURES ***************************
         if(ai_TryTurningTalent(oCreature)) return;
         // *************************** SPELL TALENTS ***************************
-        if(bUseMagic && !ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
+        if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
             if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
@@ -57,40 +52,42 @@ void main()
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
     // ************************** Ranged feat attacks **************************
-    if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
-       !ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) &&
-       (nInMelee < 3))
+    if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED))
     {
-        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
+           nInMelee < 3)
         {
-            // Lets defend master, nearest favored enemy, ranged, sneak, weakest targets.
-            if(!nInMelee)
+            if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
-                if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
-                if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                // Lets defend master, nearest favored enemy, ranged, sneak, weakest targets.
+                if(!nInMelee)
+                {
+                    if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
+                    if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                }
+                else
+                {
+                    if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                }
+                if(oTarget != OBJECT_INVALID)
+                {
+                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                    return;
+                }
+                else
+                {
+                    ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
+                    return;
+                }
             }
-            else
-            {
-                if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
-            }
-            if(oTarget != OBJECT_INVALID)
-            {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
-                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
-                return;
-            }
-            else
-            {
-                ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
-                return;
-            }
+            else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
         }
-        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
     }
     // ************************** Melee feat attacks *************************
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);

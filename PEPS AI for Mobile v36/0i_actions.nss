@@ -78,8 +78,6 @@ int ai_BashDoorCheck(object oCreature);
 // bMonster needs to be set for monsters otherwise we do associate perception checks.
 // fRange is how close we want to get to hidden targets.
 int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oHidden = OBJECT_INVALID, float fRange = 1.0);
-// Have oCreature move out of an area effect based on the creatures in the battle.
-void ai_MoveOutOfAOE(object oCreature, object oCaster);
 // Returns TRUE if oCreature fails a moral check.
 // We only make moral checks once we are below AI_HEALTH_WOUNDED health percent.
 // If we are at AI_HEALTH_BLOODY hp percent then add + AI_MORAL_INC_DC to the Check.
@@ -92,7 +90,7 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell);
 // sVoiceChatArray is an array of VOICE_CHAT_* numbers over nRoll.
 // example(4, ":3:4:8:7:") will roll a d4() picking from 3,4,8,7 of VOICE_CHAT_*.
 // if nRoll is higher than the number of VOICE_CHAT_* then it will not speak.
-void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray);
+void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray, int bImportant = FALSE);
 // Returns if a spell talent was used.
 // This is a common set of AI scripts ran on associate spell casters.
 int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel, int nRound = 0);
@@ -124,13 +122,15 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
 // Have oCreature search through nearby placeables for items to pickup.
 int ai_AssociateRetrievingItems(object oCreature);
 // Returns TRUE if oCreature disarms oTrap.
-// bForce if TRUE oCreature will try to disarm the trap even if they have before.
+// bForce if TRUE, oCreature will try to disarm the trap even if they have tried before.
 int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE);
 // Returns TRUE if oCreature opens oLocked object.
 // This will make oCreature open oLocked either by picking or casting a spell.
-int ai_AttemptToByPassLock(object oCreature, object oLocked);
+// bForce if TRUE, oCreature will try to pick the lock even if they have tried before.
+int ai_AttemptToByPassLock(object oCreature, object oLocked, int bForce = FALSE);
 // Returns TRUE if oCreature opens oDoor.
-int ai_AttemptToOpenDoor(object oCreature, object oDoor);
+// bForce if TRUE, oCreature will try to open the door even if they have tried before.
+int ai_AttemptToOpenDoor(object oCreature, object oDoor, int bForce = FALSE);
 // Action for Checking nearby objects for traps, locks and loot.
 void ai_ActionCheckNearbyObjects(object oCreature);
 // oCreature will check nearby objects and see what they should do based upon
@@ -156,7 +156,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
     object oNearestEnemy = ai_SetCombatState(oCreature);
     // If we are in standground mode we only fight if the enemy is near us.
     if(ai_GetAIMode(oCreature, AI_MODE_STAND_GROUND) &&
-       ai_GetEnemyAttackingMe(oCreature) != OBJECT_INVALID) oNearestEnemy = OBJECT_INVALID;
+       ai_GetEnemyAttackingMe(oCreature) == OBJECT_INVALID) oNearestEnemy = OBJECT_INVALID;
     // If we found an Enemy or we have a Target then continue into the combat round.
     if(oNearestEnemy != OBJECT_INVALID || oTarget != OBJECT_INVALID)
     {
@@ -467,7 +467,9 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
                 if(AI_DEBUG) ai_Debug("0i_actions", "447", " Using Detect mode and moving up.");
                 SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
                 SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
-                ActionMoveToObject(oInvisible, FALSE, fRange);
+                // We use to move to the object but that is creepy!
+                //ActionMoveToObject(oInvisible, FALSE, fRange);
+                ActionMoveToLocation(GetLocation(oInvisible), FALSE);
                 ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
                 if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
                 return TRUE;
@@ -477,7 +479,9 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
              // Probably behind a wall or door.
         {
             SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
-            ActionMoveToObject(oInvisible, FALSE, fRange);
+            // We use to move to the object but that is creepy!
+            //ActionMoveToObject(oInvisible, FALSE, fRange);
+            ActionMoveToLocation(GetLocation(oInvisible), FALSE);
             ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING));
             if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
             return TRUE;
@@ -487,30 +491,14 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
     {
         if(AI_DEBUG) ai_Debug("0i_actions", "469", "Moving towards invisible creature from a distance: " + GetName(oInvisible));
         SetLocalInt(oCreature, AI_AM_I_SEARCHING, TRUE);
-        ActionMoveToObject(oInvisible, TRUE, 14.0);
+        // We use to move to the object but that is creepy!
+        //ActionMoveToObject(oInvisible, TRUE, 14.0);
+        ActionMoveToLocation(GetLocation(oInvisible), FALSE);
         AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
         if(ai_GetIsInCombat(oCreature)) ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
         return TRUE;
     }
     return FALSE;
-}
-void ai_MoveOutOfAOE(object oCreature, object oCaster)
-{
-    location lLocation;
-    object oMaster = GetMaster(oCreature);
-    // If the caster is not dead and not in an effect then go to them.
-    if(oCaster != OBJECT_INVALID &&
-       GetObjectSeen(oCaster, oCreature) &&
-       !GetIsDead(oCaster) &&
-       !ai_IsInADangerousAOE(oCaster)) lLocation = GetLocation(oCaster);
-    // Else if our master is not in a AOE then go to them.
-    else if(oMaster != OBJECT_INVALID &&
-            !ai_IsInADangerousAOE(oMaster)) lLocation = GetLocation(oMaster);
-    //else get a random location!
-    else lLocation = GetRandomLocation(GetArea(oCreature), oCreature, 10.0);
-    ai_ClearCreatureActions();
-    if(AI_DEBUG) ai_Debug("0i_actions", "345", GetName(oCreature) + " is moving out of area of effect!");
-    ActionMoveToLocation(lLocation, TRUE);
 }
 int ai_MoralCheck(object oCreature)
 {
@@ -585,11 +573,8 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell)
             // This only harms our enemies!
             return (oCaster != oCreature && GetIsEnemy(oCaster, oCreature));
         }
-        case SPELL_SILENCE:
-        {
-            // If we can cast spells we should get out!
-            return (ai_CheckClassType(oCreature, AI_CLASS_TYPE_CASTER));
-        }
+        // They should only flee Silence if they want to cast a spell!
+        //case SPELL_SILENCE:
         case SPELL_BLADE_BARRIER:
         case SPELL_WALL_OF_FIRE:
         case SPELL_INCENDIARY_CLOUD:
@@ -640,9 +625,9 @@ int ai_GetInAOEReaction(object oCreature, object oCaster, int nSpell)
    }
    return FALSE;
 }
-void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray)
+void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray, int bImportant = FALSE)
 {
-    if(ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK)) return;
+    if(ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK) && !bImportant) return;
     if(nRoll == 0)
     {
         // Some races shouldn't talk.
@@ -864,8 +849,17 @@ int ai_CheckItemForHealing(object oCreature, object oTarget, object oItem, int n
     }
     return FALSE;
 }
-int ai_HealSickness(object oCreature, object oTarget, object oPC, int nSickness)
+int ai_HealSickness(object oCreature, object oTarget, object oPC, int nSickness, int bForce = FALSE)
 {
+    // If the player is not forcing a check.
+    if(!bForce)
+    {
+        // Do we have no magic on?
+        if(ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC)) return FALSE;
+        // Should we ignore associates?
+        if(ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) &&
+           GetAssociateType(oTarget) > 1) return FALSE;
+    }
     // Check for spells.
     if(nSickness == AI_ALLY_IS_DISEASED)
     {
@@ -961,30 +955,29 @@ int ai_HealSickness(object oCreature, object oTarget, object oPC, int nSickness)
                     ipProp = GetFirstItemProperty(oItem);
                     while(GetIsItemPropertyValid(ipProp))
                     {
-                        nIprpSubType = GetItemPropertySubType(ipProp);
                         nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
                         if(nSpell == SPELL_REMOVE_DISEASE && nSickness == AI_ALLY_IS_DISEASED)
                         {
                             if(AI_DEBUG) ai_Debug("0i_actions", "786", "Using a potion of Remove Disease.");
-                            ActionUseItemOnObject(oItem, ipProp, oTarget, nIprpSubType);
+                            ActionUseItemOnObject(oItem, ipProp, oTarget);
                             return TRUE;
                         }
                         if(nSpell == SPELL_NEUTRALIZE_POISON && nSickness == AI_ALLY_IS_POISONED)
                         {
                             if(AI_DEBUG) ai_Debug("0i_actions", "786", "Using a potion of Neturalize Poison.");
-                            ActionUseItemOnObject(oItem, ipProp, oTarget, nIprpSubType);
+                            ActionUseItemOnObject(oItem, ipProp, oTarget);
                             return TRUE;
                         }
                         if(nSpell == SPELL_LESSER_RESTORATION && nSickness == AI_ALLY_IS_WEAK)
                         {
                             if(AI_DEBUG) ai_Debug("0i_actions", "781", "Using a potion of Lesser Restoration.");
-                            ActionUseItemOnObject(oItem, ipProp, oTarget, nIprpSubType);
+                            ActionUseItemOnObject(oItem, ipProp, oTarget);
                             return TRUE;
                         }
                         if(nSpell == SPELL_RESTORATION && nSickness == AI_ALLY_IS_WEAK)
                         {
                             if(AI_DEBUG) ai_Debug("0i_actions", "791", "Using a potion of Restoration.");
-                            ActionUseItemOnObject(oItem, ipProp, oTarget, nIprpSubType);
+                            ActionUseItemOnObject(oItem, ipProp, oTarget);
                             return TRUE;
                         }
                         ipProp = GetNextItemProperty(oItem);
@@ -1027,14 +1020,11 @@ int ai_UseHealingItem(object oCreature, object oTarget, object oPC)
                 {
                     if(!GetLocalInt(GetModule(), AI_RULE_HEALERSKITS)) return FALSE;
                     ipProp = GetFirstItemProperty(oItem);
-                    while(GetIsItemPropertyValid(ipProp))
+                    if(GetItemPropertyType(ipProp) == ITEM_PROPERTY_HEALERS_KIT)
                     {
-                        if(GetItemPropertyType(ipProp) == ITEM_PROPERTY_HEALERS_KIT)
-                        {
-                            if(ai_GetIsCharacter(oPC)) ai_SendMessages(GetName(oCreature) + " uses " + GetName(oItem) + " on " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
-                            ActionUseItemOnObject(oItem, ipProp, oTarget);
-                            return TRUE;
-                        }
+                        if(ai_GetIsCharacter(oPC)) ai_SendMessages(GetName(oCreature) + " uses " + GetName(oItem) + " on " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+                        ActionUseItemOnObject(oItem, ipProp, oTarget);
+                        return TRUE;
                     }
                 }
                 // Do we want Player AI and Associates to use potions on others?
@@ -1064,6 +1054,13 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
              " No Self Healing: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF)) +
              " AI_I_AM_BEING_HEALED: " + IntToString(GetLocalInt(oTarget, "AI_I_AM_BEING_HEALED")) +
              " Undead: " + IntToString(GetRacialType(oTarget) == RACIAL_TYPE_UNDEAD));
+    // If the player is not forcing a check.
+    if(!bForce)
+    {
+        // Should we ignore associates?
+        if(ai_GetAIMode(oCreature, AI_MODE_IGNORE_ASSOCIATES) &&
+           GetAssociateType(oTarget) > 1) return FALSE;
+    }
     // Limits the number of times a wounded creature will ask for help.
     if(GetLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT") > 3) return FALSE;
     // This keeps everyone from healing the same character in one round and over healing!
@@ -1079,7 +1076,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
     if(bForce && nHpLost < 100) nHpLost = 0;
     if(AI_DEBUG) ai_Debug("0i_actions", "743", "nHpLost: " + IntToString(nHpLost) +
              " limit: " + IntToString(ai_GetHealersHpLimit(oTarget, FALSE)));
-    if(nHpLost > ai_GetHealersHpLimit(oTarget, FALSE))
+    if(nHpLost >= ai_GetHealersHpLimit(oTarget, FALSE))
     {
         // Check to see if we need poison, disease, or ability drain removed.
         int nEffectType;
@@ -1091,7 +1088,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             if(nEffectType == EFFECT_TYPE_DISEASE)
             {
                 if(AI_DEBUG) ai_Debug("0i_actions", "1097", "I am diseased!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_DISEASED)) return TRUE;
+                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_DISEASED, bForce)) return TRUE;
                 if(oCreature == oTarget)
                 {
                     if(!d20()) ai_HaveCreatureSpeak(oCreature, 5, ":43:4:14:15:16:");
@@ -1101,7 +1098,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             else if(nEffectType == EFFECT_TYPE_POISON)
             {
                 if(AI_DEBUG) ai_Debug("0i_actions", "1107", "I am poisoned!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_POISONED)) return TRUE;
+                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_POISONED, bForce)) return TRUE;
                 if(oCreature == oTarget)
                 {
                     if(!d20()) ai_HaveCreatureSpeak(oCreature, 6, ":43:4:14:15:16:19:");
@@ -1111,7 +1108,7 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             else if(nEffectType == EFFECT_TYPE_ABILITY_DECREASE)
             {
                 if(AI_DEBUG) ai_Debug("0i_actions", "1117", "I am weak!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_WEAK)) return TRUE;
+                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_WEAK, bForce)) return TRUE;
                 if(oCreature == oTarget)
                 {
                     if(!d20()) ai_HaveCreatureSpeak(oCreature, 3, ":43:4:5:");
@@ -1133,32 +1130,36 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
         }
     }
     object oMaster = ai_GetPlayerMaster(oCreature);
-    int nClass, nPosition = 1;
-    string sMemorized;
-    while(nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
+    // Do we have no magic on?
+    if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
     {
-        nClass = GetClassByPosition(nPosition, oCreature);
-        if(AI_DEBUG) ai_Debug("0i_actions", "753", "nClass: " + IntToString(nClass));
-        if(nClass == CLASS_TYPE_INVALID) break;
-        sMemorized = Get2DAString("classes", "MemorizesSpells", nClass);
-        // If Memorized column is "" then they are not a caster.
-        if(sMemorized != "")
+        int nClass, nPosition = 1;
+        string sMemorized;
+        while(nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
         {
-            if(sMemorized == "1")
+            nClass = GetClassByPosition(nPosition, oCreature);
+            if(AI_DEBUG) ai_Debug("0i_actions", "753", "nClass: " + IntToString(nClass));
+            if(nClass == CLASS_TYPE_INVALID) break;
+            sMemorized = Get2DAString("classes", "MemorizesSpells", nClass);
+            // If Memorized column is "" then they are not a caster.
+            if(sMemorized != "")
             {
-                if(ai_CastMemorizedHealing(oCreature, oTarget, oMaster, nClass))
+                if(sMemorized == "1")
+                {
+                    if(ai_CastMemorizedHealing(oCreature, oTarget, oMaster, nClass))
+                    {
+                        SetLocalInt(oTarget, "AI_I_AM_BEING_HEALED", TRUE);
+                        return TRUE;
+                    }
+                }
+                else if(ai_CastKnownHealing(oCreature, oTarget, oMaster, nClass))
                 {
                     SetLocalInt(oTarget, "AI_I_AM_BEING_HEALED", TRUE);
                     return TRUE;
                 }
             }
-            else if(ai_CastKnownHealing(oCreature, oTarget, oMaster, nClass))
-            {
-                SetLocalInt(oTarget, "AI_I_AM_BEING_HEALED", TRUE);
-                return TRUE;
-            }
+            nPosition++;
         }
-        nPosition++;
     }
     // We have exhausted all attempts to use normal healing spells.
     if(ai_UseHealingItem(oCreature, oTarget, oMaster))
@@ -1489,40 +1490,43 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
 }
 int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
 {
-    if(AI_DEBUG) ai_Debug("0i_actions", "1407", "Reacting to trap on " +
-                          GetName(oTrap) + " [AI_OBJECT_IN_USE: " +
-                          IntToString(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) + "].");
-    // Adding checks to stop AI from walking over a trap!
+    if(AI_DEBUG) ai_Debug("0i_actions", "1520", "Reacting to trap on " + GetName(oTrap) +
+                          " bForce: " + IntToString(bForce) +
+                          " [AI_OBJECT_IN_USE: " + IntToString(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) + "].");
     string sTag = GetTag(oCreature);
-    if(ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
+    if(bForce || ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
     {
         if(GetTrapDisarmable(oTrap))
         {
             if(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) return FALSE;
-            int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
-            int nTrapDC = GetTrapDisarmDC(oTrap);
-            if(AI_DEBUG) ai_Debug("0i_actions", "1416", "nSkill: " + IntToString(nSkill) +
-                     " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
-            if(nSkill + 20 >= nTrapDC)
+            // We must have ranks in disable traps to actually disable the trap!
+            if(GetSkillRank(SKILL_DISABLE_TRAP, oCreature, TRUE))
             {
-                SetLocalInt(oTrap, AI_OBJECT_IN_USE, TRUE);
-                DelayCommand(18.0, DeleteLocalInt(oTrap, AI_OBJECT_IN_USE));
-                AssignCommand(oCreature, ai_ClearCreatureActions());
-                AssignCommand(oCreature, ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0));
-                // Let them know we did it!
-                AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:")));
-                AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oTrap, AI_OBJECT_IN_USE)));
-                // Continue checking for traps, locks, and loot.
-                AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
-                return TRUE;
-            }
-            if(GetHasSpell(SPELL_FIND_TRAPS, oCreature))
-            {
-                AssignCommand(oCreature, ai_ClearCreatureActions());
-                AssignCommand(oCreature, ActionCastSpellAtObject(SPELL_FIND_TRAPS, oTrap));
-                // Continue checking for traps, locks, and loot.
-                AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
-                return TRUE;
+                int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
+                int nTrapDC = GetTrapDisarmDC(oTrap);
+                if(AI_DEBUG) ai_Debug("0i_actions", "1534", "nSkill: " + IntToString(nSkill) +
+                         " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
+                if(nSkill + 20 >= nTrapDC)
+                {
+                    SetLocalInt(oTrap, AI_OBJECT_IN_USE, TRUE);
+                    DelayCommand(18.0, DeleteLocalInt(oTrap, AI_OBJECT_IN_USE));
+                    AssignCommand(oCreature, ai_ClearCreatureActions());
+                    AssignCommand(oCreature, ActionUseSkill(SKILL_DISABLE_TRAP, oTrap, 0));
+                    // Let them know we did it!
+                    AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 6, ":44:42:31:35:")));
+                    AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oTrap, AI_OBJECT_IN_USE)));
+                    // Continue checking for traps, locks, and loot.
+                    AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
+                    return TRUE;
+                }
+                if(GetHasSpell(SPELL_FIND_TRAPS, oCreature))
+                {
+                    AssignCommand(oCreature, ai_ClearCreatureActions());
+                    AssignCommand(oCreature, ActionCastSpellAtObject(SPELL_FIND_TRAPS, oTrap));
+                    // Continue checking for traps, locks, and loot.
+                    AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
+                    return TRUE;
+                }
             }
             if(GetLocalInt(oTrap, "AI_CANNOT_TRAP_" + sTag) && !bForce) return FALSE;
             // Let them know we can't get this done!.
@@ -1534,7 +1538,7 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
         }
         if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag) && !bForce) return FALSE;
         // Let them know we can't get this done!.
-        ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to disable the trap!");
+        ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to disable the trap!", TRUE);
         ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
         SetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag, TRUE);
         return FALSE;
@@ -1545,43 +1549,33 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
         if(oMaster != OBJECT_INVALID && !ai_GetIsCharacter(oCreature))
         {
             ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
-            ai_SetAIMode(oCreature, AI_MODE_STAND_GROUND, FALSE);
-            ai_SetAIMode(oCreature, AI_MODE_FOLLOW, TRUE);
+            ai_SetAIMode(oCreature, AI_MODE_STAND_GROUND, TRUE);
+            ai_SetAIMode(oCreature, AI_MODE_FOLLOW, FALSE);
             ai_SetAIMode(oCreature, AI_MODE_COMMANDED, FALSE);
             int nToken = NuiFindWindow(oMaster, ai_GetAssociateType(oMaster, oCreature) + AI_WIDGET_NUI);
             ai_HighlightWidgetMode(oMaster, oCreature, nToken);
             aiSaveAssociateModesToDb(oMaster, oCreature);
-            // To follow we probably should be running and not searching or hiding.
-            if(GetDetectMode(oCreature) && !GetHasFeat(FEAT_KEEN_SENSE, oCreature)) SetActionMode(oCreature, ACTION_MODE_DETECT, FALSE);
-            if(GetStealthMode(oCreature)) SetActionMode(oCreature, ACTION_MODE_STEALTH, FALSE);
-            SetActionMode(oCreature, ACTION_FOLLOW, TRUE);
             if(ai_IsInCombatRound(oCreature)) ai_ClearCombatState(oCreature);
             ai_ClearCreatureActions(TRUE);
-            object oTarget = GetLocalObject(oCreature, AI_FOLLOW_TARGET);
-            if(oTarget == OBJECT_INVALID) oTarget = oMaster;
-            ActionMoveToObject(oTarget, TRUE, ai_GetFollowDistance(oCreature));
-            ai_SendMessages(GetName(oCreature) + " has went into follow mode after seeing a trap!", AI_COLOR_YELLOW, oMaster);
-            //ai_SetAIMode(oCreature, AI_MODE_STAND_GROUND);
-            //ai_HighlightWidgetMode(oMaster, oCreature, NuiFindWindow(oMaster, ai_GetAssociateType(oMaster, oCreature) + AI_WIDGET_NUI));
-            //ai_ClearCreatureActions();
+            ai_SendMessages(GetName(oCreature) + " has went into hold mode after seeing a trap!", AI_COLOR_YELLOW, oMaster);
             return TRUE;
         }
     }
     if(ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
     {
-        if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag)) return FALSE;
-        // Let them know we can't loot this object!.
-        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTrap) + " is trapped!"));
+        if(GetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag) && !bForce) return FALSE;
+        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oTrap) + " is trapped!", TRUE));
         ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
         SetLocalInt(oTrap, "AI_SAW_TRAP_" + sTag, TRUE);
     }
     return FALSE;
 }
-int ai_AttemptToByPassLock(object oCreature, object oLocked)
+int ai_AttemptToByPassLock(object oCreature, object oLocked, int bForce = FALSE)
 {
     if(AI_DEBUG) ai_Debug("0i_actions", "1446", "Attempting to bypass lock on " +
                           GetName(oLocked) + " [AI_OBJECT_IN_USE: " +
-                          IntToString(GetLocalInt(oLocked, AI_OBJECT_IN_USE)) + "].");
+                          IntToString(GetLocalInt(oLocked, AI_OBJECT_IN_USE)) + "]" +
+                          " bForce: " + IntToString(bForce));
     if(GetLocalInt(oLocked, AI_OBJECT_IN_USE)) return FALSE;
     string sTag = GetTag(oCreature);
     // Attempt to cast knock because its always safe to cast it, even on a trapped object.
@@ -1590,7 +1584,7 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
     if(GetTrapDetectedBy(oCreature, oLocked))
     {
         // Ick! Try and disarm the trap first
-        if(ai_ReactToTrap(oCreature, oLocked)) return TRUE;
+        if(ai_ReactToTrap(oCreature, oLocked, bForce)) return TRUE;
     }
     if(GetLockKeyRequired(oLocked))
     {
@@ -1603,7 +1597,7 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
         if(oKey != OBJECT_INVALID)
         {
             int nObjectType = GetObjectType(oLocked);
-            if(nObjectType == OBJECT_TYPE_DOOR) return ai_AttemptToOpenDoor(oCreature, oLocked);
+            if(nObjectType == OBJECT_TYPE_DOOR) return ai_AttemptToOpenDoor(oCreature, oLocked, bForce);
             else if (nObjectType == OBJECT_TYPE_PLACEABLE)
             {
                 SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
@@ -1619,54 +1613,56 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
         }
         else
         {
-            if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag)) return FALSE;
+            if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag) && !bForce) return FALSE;
             // Let them know we can't get this done!.
-            AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oLocked) + " is locked and I cannot open it!")));
+            AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oLocked) + " is special! It requires a special key to open.")));
             ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
             SetLocalInt(oLocked, "AI_LOCKED_" + sTag, TRUE);
             return FALSE;
         }
     }
-    if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS))
+    if(bForce || ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS))
     {
-        // Now, let's try and pick the lock
-        int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
-        int nLockDC = GetLockUnlockDC(oLocked);
-        object oPicks = ai_GetBestPicks(oCreature, nLockDC);
-        int nPickBonus = GetLocalInt(oPicks, "AI_BONUS");
-        if(AI_DEBUG) ai_Debug("0i_actions", "1497", "I have picks: " + GetName(oPicks) +
-                              " nSkill :" + IntToString(nSkill) + " nPickBonus: " +
-                              IntToString(nPickBonus) + " + 20 = " +
-                              IntToString(nSkill + nPickBonus + 20) +
-                              " nLockDC: " + IntToString(nLockDC));
-        if(nSkill + 20 + nPickBonus >= nLockDC)
+        // We must have ranks in open locks to actually open the lock!
+        if(GetSkillRank(SKILL_OPEN_LOCK, oCreature, TRUE))
         {
-            SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
-            DelayCommand(18.0, DeleteLocalInt(oLocked, AI_OBJECT_IN_USE));
-            AssignCommand(oCreature, ai_ClearCreatureActions());
-            AssignCommand(oCreature, ActionWait(1.0));
-            AssignCommand(oCreature, ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oPicks));
-            AssignCommand(oCreature, ActionWait(1.0));
-            // Let them know we did it!
-            ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":44:42:26:31:35:"));
-            AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oLocked, AI_OBJECT_IN_USE)));
-            // Continue checking for traps, locks, and loot.
-            AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
-            return TRUE;
-        }
-        else
-        {
-            if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag)) return FALSE;
-            // Let them know we can't get this done!.
-            AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to pick the lock on this " + GetName(oLocked) + "!")));
-            ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
-            SetLocalInt(oLocked, "AI_LOCKED_" + sTag, TRUE);
-            return FALSE;
+            int nSkill = GetSkillRank(SKILL_OPEN_LOCK, oCreature);
+            int nLockDC = GetLockUnlockDC(oLocked);
+            object oPicks = ai_GetBestPicks(oCreature, nLockDC);
+            int nPickBonus = GetLocalInt(oPicks, "AI_BONUS");
+            if(AI_DEBUG) ai_Debug("0i_actions", "1497", "I have picks: " + GetName(oPicks) +
+                                  " nSkill :" + IntToString(nSkill) + " nPickBonus: " +
+                                  IntToString(nPickBonus) + " + 20 = " +
+                                  IntToString(nSkill + nPickBonus + 20) +
+                                  " nLockDC: " + IntToString(nLockDC));
+            if(nSkill + 20 + nPickBonus >= nLockDC)
+            {
+                SetLocalInt(oLocked, AI_OBJECT_IN_USE, TRUE);
+                DelayCommand(18.0, DeleteLocalInt(oLocked, AI_OBJECT_IN_USE));
+                AssignCommand(oCreature, ai_ClearCreatureActions());
+                AssignCommand(oCreature, ActionWait(1.0));
+                AssignCommand(oCreature, ActionUseSkill(SKILL_OPEN_LOCK, oLocked, 0, oPicks));
+                AssignCommand(oCreature, ActionWait(1.0));
+                // Let them know we did it!
+                ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":44:42:26:31:35:"));
+                AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oLocked, AI_OBJECT_IN_USE)));
+                // Continue checking for traps, locks, and loot.
+                AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
+                return TRUE;
+            }
+            else if(!GetLocalInt(oLocked, "AI_LOCKED_" + sTag))
+            {
+                // Let them know we can't get this done!
+                AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "I'm not skilled enough to pick the lock on this " + GetName(oLocked) + "!", TRUE)));
+                ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
+                SetLocalInt(oLocked, "AI_LOCKED_" + sTag, TRUE);
+                return FALSE;
+            }
         }
     }
-    if(ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
+    if(bForce || ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
     {
-        AssignCommand(oCreature, ai_ClearCreatureActions());
+        //AssignCommand(oCreature, ai_ClearCreatureActions());
         // Check to make sure we are using a melee weapon.
         if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oCreature)) ||
            ai_EquipBestMeleeWeapon(oCreature))
@@ -1675,32 +1671,52 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked)
             AssignCommand(oCreature, ActionAttack(oLocked));
             return TRUE;
         }
-        if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag)) return FALSE;
+        if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag) && !bForce) return FALSE;
         // Let them know we can't get this done!.
-        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "I cannot bash this " + GetName(oLocked) + " open!")));
+        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "I cannot bash this " + GetName(oLocked) + " open!", TRUE)));
         SetLocalInt(oLocked, "AI_LOCKED_" + sTag, TRUE);
         return FALSE;
     }
-    if(ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
+    if(bForce || ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS))
     {
-        if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag)) return FALSE;
-        // Let them know we can't loot this object!.
-        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oLocked) + " is locked!")));
+        if(GetLocalInt(oLocked, "AI_LOCKED_" + sTag) && !bForce) return FALSE;
+        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oLocked) + " is locked!", TRUE)));
         ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
         SetLocalInt(oLocked, "AI_LOCKED_" + sTag, TRUE);
     }
     return FALSE;
 }
-int ai_AttemptToOpenDoor(object oCreature, object oDoor)
+int ai_AttemptToOpenDoor(object oCreature, object oDoor, int bForce = FALSE)
 {
     if(AI_DEBUG) ai_Debug("0i_actions", "1542", "Attempting to open " +
                           GetName(oDoor) + " [AI_OBJECT_IN_USE: " +
                           IntToString(GetLocalInt(oDoor, AI_OBJECT_IN_USE)) + "] " +
                           " IsOpen: " + IntToString(GetIsOpen(oDoor)) +
                           " Plot: " + IntToString(GetPlotFlag(oDoor)) + ".");
-    if(!ai_GetAIMode(oCreature, AI_MODE_OPEN_DOORS)) return FALSE;
+    if(!ai_GetAIMode(oCreature, AI_MODE_OPEN_DOORS) && !bForce) return FALSE;
     if(GetLocalInt(oDoor, AI_OBJECT_IN_USE)) return FALSE;
     if(GetIsOpen(oDoor)) return FALSE;
+    string sTag = GetTag(oCreature);
+    if(GetIsTrapped(oDoor))
+    {
+        if(GetTrapDetectedBy(oDoor, GetMaster(oCreature))) SetTrapDetectedBy(oDoor, oCreature);
+        if(GetTrapDetectedBy(oDoor, oCreature))
+        {
+            if(GetLocalInt(oDoor, "AI_SAW_TRAP_" + sTag)) return FALSE;
+            ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oDoor) + " is trapped!", TRUE));
+            ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
+            SetLocalInt(oDoor, "AI_SAW_TRAP_" + sTag, TRUE);
+            return FALSE;
+        }
+    }
+    if(GetLocked(oDoor))
+    {
+        if(GetLocalInt(oDoor, "AI_LOCKED_" + sTag)) return FALSE;
+        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oDoor) + " is locked!", TRUE)));
+        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
+        SetLocalInt(oDoor, "AI_LOCKED_" + sTag, TRUE);
+        return FALSE;
+    }
     SetLocalInt(oDoor, AI_OBJECT_IN_USE, TRUE);
     DelayCommand(18.0, DeleteLocalInt(oDoor, AI_OBJECT_IN_USE));
     AssignCommand(oCreature, ActionOpenDoor(oDoor));
@@ -1720,13 +1736,14 @@ int ai_CheckNearbyObjects(object oCreature)
     int nFilter = OBJECT_TYPE_DOOR | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER | OBJECT_TYPE_ITEM;
     float fLockRange, fDoorRange, fLootRange, fObjectDistance;
     float fTrapRange = GetLocalFloat(oCreature, AI_TRAP_CHECK_RANGE);
-    fLockRange = GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE);
+    if(ai_GetAIMode(oCreature, AI_MODE_PICK_LOCKS) ||
+       ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS)) fLockRange = GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE);
     if(ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS)) fLootRange = GetLocalFloat(oCreature, AI_LOOT_CHECK_RANGE);
     if(ai_GetAIMode(oCreature, AI_MODE_OPEN_DOORS)) fDoorRange = GetLocalFloat(oCreature, AI_OPEN_DOORS_RANGE);
-    //if(AI_DEBUG && fTrapRange != 0.0) ai_Debug("0i_actions", "1579", " Checking " + FloatToString(fTrapRange, 0, 0) + " foot area for traps.");
-    //if(AI_DEBUG && fLootRange != 0.0) ai_Debug("0i_actions", "1580", " Checking " + FloatToString(fLootRange, 0, 0) + " foot area for traps.");
-    //if(AI_DEBUG && fLockRange != 0.0) ai_Debug("0i_actions", "1581", " Checking " + FloatToString(fLockRange, 0, 0) + " foot area for locks.");
-    //if(AI_DEBUG && fDoorRange != 0.0) ai_Debug("0i_actions", "1582", " Checking " + FloatToString(fDoorRange, 0, 0) + " foot area for doors.");
+    if(AI_DEBUG && fTrapRange != 0.0) ai_Debug("0i_actions", "1579", " Checking " + FloatToString(fTrapRange, 0, 0) + " foot area for traps.");
+    if(AI_DEBUG && fLootRange != 0.0) ai_Debug("0i_actions", "1580", " Checking " + FloatToString(fLootRange, 0, 0) + " foot area for traps.");
+    if(AI_DEBUG && fLockRange != 0.0) ai_Debug("0i_actions", "1581", " Checking " + FloatToString(fLockRange, 0, 0) + " foot area for locks.");
+    if(AI_DEBUG && fDoorRange != 0.0) ai_Debug("0i_actions", "1582", " Checking " + FloatToString(fDoorRange, 0, 0) + " foot area for doors.");
     float fLongestRange = fTrapRange;
     vector vCreature = GetPositionFromLocation(GetLocation(oCreature));
     if(fLongestRange < fLootRange) fLongestRange = fLootRange;
@@ -1738,14 +1755,12 @@ int ai_CheckNearbyObjects(object oCreature)
         fObjectDistance = GetDistanceBetween(oMaster, oObject);
         if(AI_DEBUG) ai_Debug("0i_actions", "1651", "Checking Nearby Objects: " +
                   GetName(oObject) + " fDistance: " + FloatToString(fObjectDistance, 0, 2));
-        bIgnore = FALSE;
         if(GetTrapDetectedBy(oObject, oCreature))
         {
             if(fTrapRange >= fObjectDistance)
             {
                 if(ai_ReactToTrap(oCreature, oObject)) return TRUE;
             }
-            bIgnore = TRUE;
         }
         if(GetLocked(oObject))
         {
@@ -1753,32 +1768,28 @@ int ai_CheckNearbyObjects(object oCreature)
             {
                 if(ai_AttemptToByPassLock(oCreature, oObject)) return TRUE;
             }
-            bIgnore = TRUE;
         }
         nObjectType = GetObjectType(oObject);
-        if(!bIgnore)
+        if(fDoorRange >= fObjectDistance && nObjectType == OBJECT_TYPE_DOOR)
         {
-            if(fDoorRange >= fObjectDistance && nObjectType == OBJECT_TYPE_DOOR)
+            if(ai_AttemptToOpenDoor(oCreature, oObject)) return TRUE;
+        }
+        if(fLootRange >= fObjectDistance)
+        {
+            if(nObjectType == OBJECT_TYPE_PLACEABLE)
             {
-                if(ai_AttemptToOpenDoor(oCreature, oObject)) return TRUE;
-            }
-            if(fLootRange >= fObjectDistance)
-            {
-                if(nObjectType == OBJECT_TYPE_PLACEABLE)
+                if(ai_IsContainerLootable(oCreature, oObject))
                 {
-                    if(ai_IsContainerLootable(oCreature, oObject))
-                    {
-                        ai_ClearCreatureActions();
-                        ActionMoveToObject(oObject, TRUE);
-                        AssignCommand(oCreature, ActionDoCommand(ai_SearchObject(oCreature, oObject, oMaster)));
-                        return TRUE;
-                    }
-                }
-                else if(nObjectType == OBJECT_TYPE_ITEM)
-                {
-                    ActionPickUpItem(oObject);
+                    ai_ClearCreatureActions();
+                    ActionMoveToObject(oObject, TRUE);
+                    AssignCommand(oCreature, ActionDoCommand(ai_SearchObject(oCreature, oObject, oMaster)));
                     return TRUE;
                 }
+            }
+            else if(nObjectType == OBJECT_TYPE_ITEM)
+            {
+                ActionPickUpItem(oObject);
+                return TRUE;
             }
         }
         oObject = GetNextObjectInShape(SHAPE_SPHERE, fLongestRange, lMaster, TRUE, nFilter);
@@ -2153,51 +2164,31 @@ void ai_Actions()
         if(nRoll < 51) AnimActionPlayRandomAnimation();
         return;
     }
-    object oPC = GetFirstPC();
-    if(nRoll < 5)
+    int nRace = GetRacialType(OBJECT_SELF);
+    if(nRace != RACIAL_TYPE_ABERRATION && nRace != RACIAL_TYPE_ANIMAL &&
+       nRace != RACIAL_TYPE_BEAST && nRace != RACIAL_TYPE_MAGICAL_BEAST &&
+       nRace != RACIAL_TYPE_OOZE && nRace != RACIAL_TYPE_VERMIN)
     {
-        //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-        //                " Attempting to sit down.");
-        if(ai_ActionSitInChair(fMaxDistance)) return;
-    }
-    // Open or close a door
-    if(nRoll < 20)
-    {
-        //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-        //                " Looking at doors.");
-        if(ai_ActionCheckDoor(fMaxDistance)) return;
-    }
-    // Fiddle with a placeable
-    if(nRoll < 40)
-    {
-        //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-        //                " Looking for a placeable.");
-        if(ai_ActionFindPlaceable(fMaxDistance)) return;
-    }
-    // Start talking to a friend
-    if(nRoll < 50)
-    {
-        //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-        //                " Looking for a friend.");
-        if(ai_ActionFindFriend(fMaxDistance)) return;
+        if(nRoll < 5) if(ai_ActionSitInChair(fMaxDistance)) return;
+        // Open or close a door
+        if(nRoll < 20) if(ai_ActionCheckDoor(fMaxDistance)) return;
+        // Fiddle with a placeable
+        if(nRoll < 40) if(ai_ActionFindPlaceable(fMaxDistance)) return;
+        // Start talking to a friend
+        if(nRoll < 50) if(ai_ActionFindFriend(fMaxDistance)) return;
     }
     // Lets walk around.
     if(nRoll < 80)
     {
-        //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-        //                " Walking.");
         ai_ActionRandomWalk(fMaxDistance);
         return;
     }
     // If we find nothing interesting to do then just stay put and look interesting.
-    //SendMessageToPC(oPC, GetName(OBJECT_SELF) + " : nRoll: " + IntToString(nRoll) +
-    //                " Playing a random animation.");
     AnimActionPlayRandomAnimation();
 }
 int ai_CheckCurrentAction()
 {
     int nAction = GetCurrentAction();
-    //SendMessageToPC(GetFirstPC(), GetName(OBJECT_SELF) + " : nAction: " + IntToString(nAction));
     if(nAction == ACTION_SIT)
     {
         // low prob of getting up, so we don't bop up and down constantly
@@ -2231,3 +2222,4 @@ void ai_AmbientAnimations()
     // If we get here then lets go see what we can do!
     ai_Actions();
 }
+

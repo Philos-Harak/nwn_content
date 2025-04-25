@@ -53,31 +53,31 @@ void main()
         SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
     }
     if(StartingUp(oPC)) return;
-    // Row 1 (Buttons) ********************************************************* 73
+    // Row 1 (Buttons) ********************************************************* 83
     json jRow = JsonArray();
-    CreateButtonSelect(jRow, "Save", "btn_save", 60.0f, 20.0f, "btn_save_tooltip");
-    CreateButton(jRow, "Clear", "btn_clear", 60.0f, 20.0f, -1.0, "btn_clear_tooltip");
-    CreateButton(jRow, "Buff", "btn_buff", 60.0f, 20.0f, -1.0, "btn_buff_tooltip");
-    CreateButtonSelect(jRow, "List 1", "btn_list1", 60.0f, 20.0f);
-    CreateButtonSelect(jRow, "List 2", "btn_list2", 60.0f, 20.0f);
-    CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 20.0f);
-    CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 20.0f);
+    CreateButtonSelect(jRow, "Save", "btn_save", 60.0f, 30.0f, "btn_save_tooltip");
+    CreateButton(jRow, "Clear", "btn_clear", 60.0f, 30.0f, -1.0, "btn_clear_tooltip");
+    CreateButton(jRow, "Buff", "btn_buff", 60.0f, 30.0f, -1.0, "btn_buff_tooltip");
+    CreateButtonSelect(jRow, "List 1", "btn_list1", 60.0f, 30.0f);
+    CreateButtonSelect(jRow, "List 2", "btn_list2", 60.0f, 30.0f);
+    CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 30.0f);
+    CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 30.0f);
     // Add the row to the column.
     json jCol = JsonArray();
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 2 (Buttons) ********************************************************* 101
+    // Row 2 (Buttons) ********************************************************* 121
     jRow = JsonArray();
     JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateCheckBox(jRow, "Buff Widget", "buff_widget", 110.0, 20.0f, "buff_widget_tooltip");
-    CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 110.0, 20.0f, "lock_buff_widget_tooltip");
+    CreateCheckBox(jRow, "Buff Widget", "buff_widget", 110.0, 30.0f, "buff_widget_tooltip");
+    CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 110.0, 30.0f, "lock_buff_widget_tooltip");
     if(!AI_SERVER)
     {
-        CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 20.0f, "chbx_no_monster_check_tooltip");
+        CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 30.0f, "chbx_no_monster_check_tooltip");
     }
     JsonArrayInsertInplace(jRow, NuiSpacer());
     // Add the row to the column.
     JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 4 (List of Spells) ************************************************** 144
+    // Row 4 (List of Spells) ************************************************** 164
     // Create the button template for the List.
     jRow = JsonArray();
     string sList = JsonGetString(JsonArrayGet(jMenuData, 0));
@@ -111,7 +111,7 @@ void main()
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     int nToken = SetWindow(oPC, jLayout, "plbuffwin", "Fast Buffing Spells",
-                           fX, fY, fWidth, 144.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_buffing");
+                           fX, fY, fWidth, 164.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_buffing");
     // Set the elements to show events.
     int nSelected = GetEventScript(oPC, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT) == "pc_savebuffs";
     NuiSetBind(oPC, nToken, "btn_save", JsonBool(nSelected));

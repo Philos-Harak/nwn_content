@@ -117,8 +117,6 @@ void ai_StartupPlugins(object oPC);
 void ai_SetAIRules()
 {
     object oModule = GetModule();
-    if(GetLocalInt(oModule, AI_RULES_SET)) return;
-    SetLocalInt(oModule, AI_RULES_SET, TRUE);
     ai_CheckCampaignDataAndInitialize();
     json jRules = ai_GetCampaignDbJson("rules");
     if(JsonGetType(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS)) == JSON_TYPE_NULL)

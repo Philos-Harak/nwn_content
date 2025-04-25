@@ -93,9 +93,10 @@ void main()
                     ai_DoMonsterCombatRound(oCreature);
                 }
             }
-            // If they are not invisible then that means they left our perception
-            // range and we need follow them.
-            else ActionMoveToObject(oLastPerceived, TRUE, AI_RANGE_CLOSE);
+            // We are not in combat so lets move to that location and check it out.
+            else ActionMoveToLocation(GetLocation(oLastPerceived), TRUE);
+            // we use to move to the object but thats a bit creepy!
+            //else ActionMoveToObject(oLastPerceived, TRUE, AI_RANGE_CLOSE);
         }
         // ************************ ENEMY INAUDIBLE*****************************
         // Not used.
