@@ -447,6 +447,11 @@ void main()
                         jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION, FALSE);
                     }
                 }
+                else if(sElem == "chbx_timestop_check")
+                {
+                    if(bCheck) jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP);
+                    else jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP, FALSE);
+                }
                 ai_SetCampaignDbJson("rules", jRules);
             }
         }
@@ -481,7 +486,7 @@ void main()
             {
                 int bVertical = !ai_GetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType);
                 ai_SetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType, bVertical);
-                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
+                if(oPC != oAssociate && !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType))
                 {
                     NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
                     ai_CreateWidgetNUI(oPC, oAssociate);
@@ -1621,6 +1626,7 @@ json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)
 {
     object oModule = GetModule();
     json jRSpells = GetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS);
+    if(JsonGetType(jRSpells) == JSON_TYPE_NULL) jRSpells = JsonArray();
     int nIndex, nMaxIndex = JsonGetLength(jRSpells);
     if(bRestrict)
     {

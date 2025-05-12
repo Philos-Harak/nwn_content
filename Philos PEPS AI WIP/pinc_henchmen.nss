@@ -62,6 +62,12 @@ void SavedCharacterJoin(object oPC, int nToken, string sParty);
 void SavedPartyCleared(object oPC, int nToken, string sParty);
 // Sets oHenchmans scripts to the current AI.
 void SetHenchmanScripts(object oHenchman);
+// If a henchman does not have a LvlStatList this will create one for them.
+// nLevels allows the creation of x levels for LvlStatList using the 1st class.
+// 0 on nLevels makes the function build it based on current levels.
+object CreateLevelStatList(object oPC, object oHenchman, int nLevels = 0);
+// Resets the character to level one in the first class.
+object ResetCharacter(object oPC, object oHenchman);
 // Creates a menu to edit a characters information.
 void CreateCharacterEditGUIPanel(object oPC, object oAssociate);
 // Creates a character description menu.
@@ -231,11 +237,11 @@ void AddSavedCharacterInfo(object oPC, int nToken, string sParty)
     if(sHenchman != "")
     {
         NuiSetBind (oPC, nToken, "btn_clear_party_event", JsonBool (TRUE));
-        string sText = "  Clears Party " + sParty + "'s entire list!";
+        string sText = "  Clears all characters from party " + sParty + "'s list!";
         NuiSetBind(oPC, nToken, "btn_clear_party_tooltip", JsonString(sText));
         NuiSetBind(oPC, nToken, "btn_join_party", JsonBool (TRUE));
         NuiSetBind(oPC, nToken, "btn_join_party_event", JsonBool (TRUE));
-        sText = "  Saved party enters the game and joins you!";
+        sText = "  Saved characters from party " + sParty + " enter the game and join you.";
         NuiSetBind(oPC, nToken, "btn_join_party_tooltip", JsonString(sText));
         // Setup the henchman window.
         string sName = GetHenchmanDbString(oPC, "henchname", sParty + sHenchman);
@@ -301,7 +307,9 @@ void AddCurrentCharacterInfo(object oPC, int nToken, string sParty)
     NuiSetBind(oPC, nToken, "btn_remove_party_event", JsonBool (bParty));
     if(bParty)
     {
-        string sText = "  Removes all henchman from your current party!";
+        string sText = "  Saves all henchman from your current party to party " + sParty + ".";
+        NuiSetBind(oPC, nToken, "btn_save_party_tooltip", JsonString(sText));
+        sText = "  Removes all henchman from your current party!";
         NuiSetBind(oPC, nToken, "btn_remove_party_tooltip", JsonString(sText));
     }
     // Setup the henchman window.
@@ -364,7 +372,7 @@ void RemoveYourHenchman(object oPC, int nToken, string sParty)
     else
     {
         RemoveHenchman(oPC, oHenchman);
-        SetIsDestroyable(TRUE, FALSE, FALSE, oHenchman);
+        AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
         NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
         DestroyObject(oHenchman);
     }
@@ -383,7 +391,7 @@ void RemoveWholeParty(object oPC, int nToken, string sParty)
         {
             ai_SendMessages(GetName(oHenchman) + " has been remove from your Party.", AI_COLOR_YELLOW, oPC);
             RemoveHenchman(oPC, oHenchman);
-            SetIsDestroyable(TRUE, FALSE, FALSE, oHenchman);
+            AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
             NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
             DestroyObject(oHenchman);
         }
@@ -551,6 +559,23 @@ void SavedPartyCleared(object oPC, int nToken, string sParty)
     NuiDestroy(oPC, nToken);
     ExecuteScript("pi_henchmen", oPC);
 }
+json CreateOptionsAlignment(object oHenchman, int nAlignType)
+{
+    json jAlignNameList = JsonArray();
+    if(nAlignType == 0)
+    {
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Lawful"));
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Neutral"));
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Chaotic"));
+    }
+    else
+    {
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Good"));
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Neutral"));
+        JsonArrayInsertInplace(jAlignNameList, JsonString("Evil"));
+    }
+    return jAlignNameList;
+}
 json CreateOptionsClasses(object oHenchman)
 {
     int nIndex = 1, nClass;
@@ -615,7 +640,7 @@ int GetClassBySelection2DA(int nSelection)
     }
     return -1;
 }
-json jArrayInsertPackages(string sClass)
+json ArrayInsertPackages(string sClass)
 {
     int nIndex, nPackage, nMaxPackage = Get2DARowCount("packages");
     string sPackageName;
@@ -625,8 +650,11 @@ json jArrayInsertPackages(string sClass)
         if(Get2DAString("packages", "ClassID", nIndex) == sClass)
         {
             sPackageName = GetStringByStrRef(StringToInt(Get2DAString("packages", "Name", nIndex)));
-            JsonArrayInsertInplace(jPackageNameCombo, NuiComboEntry(sPackageName, nPackage));
-            nPackage++;
+            if(sPackageName != "Bad Strref" && sPackageName != "")
+            {
+                JsonArrayInsertInplace(jPackageNameCombo, NuiComboEntry(sPackageName, nPackage));
+                nPackage++;
+            }
         }
         nIndex++;
     }
@@ -635,12 +663,17 @@ json jArrayInsertPackages(string sClass)
 int GetSelectionByPackage2DA(string sClass, int nPackage)
 {
     int nIndex, nSelection, nMaxPackage = Get2DARowCount("packages");
+    string sPackageName;
     while(nIndex < nMaxPackage)
     {
         if(Get2DAString("packages", "ClassID", nIndex) == sClass)
         {
-            if(nPackage == nIndex) return nSelection;
-            nSelection++;
+            sPackageName = GetStringByStrRef(StringToInt(Get2DAString("packages", "Name", nIndex)));
+            if(sPackageName != "Bad Strref" && sPackageName != "")
+            {
+                if(nPackage == nIndex) return nSelection;
+                nSelection++;
+            }
         }
         nIndex++;
     }
@@ -660,20 +693,23 @@ int GetPackageBySelection2DA(string sClass, int nSelection)
     }
     return -1;
 }
-json jArrayInsertSoundSets(object oHenchman)
+json ArrayInsertSoundSets(object oHenchman)
 {
     int nIndex, nSoundSet, nSoundSetType, nMaxSets = Get2DARowCount("soundset");
     string sGender = IntToString(GetGender(oHenchman));
-    string sSoundSetName;
+    string sSoundSetName, sResRef;
     json jSoundSetNameCombo = JsonArray();
     while(nIndex < nMaxSets)
     {
         if(Get2DAString("soundset", "GENDER", nIndex) == sGender)
         {
             nSoundSetType = StringToInt(Get2DAString("soundset", "TYPE", nIndex));
-            if(nSoundSetType < 4)
+            if(nSoundSetType < 5)
             {
                 sSoundSetName = GetStringByStrRef(StringToInt(Get2DAString("soundset", "STRREF", nIndex)));
+                sResRef = GetStringLowerCase(Get2DAString("soundset", "RESREF", nIndex));
+                if(GetStringLeft(sResRef, 4) == "vs_f") sSoundSetName += " (Full)";
+                else if(GetStringLeft(sResRef, 4) == "vs_n") sSoundSetName += " (Part)";
                 JsonArrayInsertInplace(jSoundSetNameCombo, NuiComboEntry(sSoundSetName, nSoundSet));
                 nSoundSet++;
             }
@@ -691,7 +727,7 @@ int GetSelectionBySoundSet2DA(object oHenchman, int nSoundSet)
         if(Get2DAString("soundset", "GENDER", nIndex) == sGender)
         {
             nSoundSetType = StringToInt(Get2DAString("soundset", "TYPE", nIndex));
-            if(nSoundSetType < 4)
+            if(nSoundSetType < 5)
             {
                 if(nSoundSet == nIndex) return nSelection;
                 nSelection++;
@@ -710,7 +746,7 @@ int GetSoundSetBySelection2DA(object oHenchman, int nSelection)
         if(Get2DAString("soundset", "GENDER", nSoundSet) == sGender)
         {
             nSoundSetType = StringToInt(Get2DAString("soundset", "TYPE", nSoundSet));
-            if(nSoundSetType < 4)
+            if(nSoundSetType < 5)
             {
                 if(nSelection == nIndex) return nSoundSet;
                 nIndex++;
@@ -735,12 +771,203 @@ void SetHenchmanScripts(object oHenchman)
     SetEventScript(oHenchman, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "nw_ch_acb");
     SetEventScript(oHenchman, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "nw_ch_ace");
 }
+object ai_AddHenchman(object oPC, json jHenchman, location lLocation, int nFamiliar, int nCompanion)
+{
+    object oHenchman = JsonToObject(jHenchman, lLocation, OBJECT_INVALID, TRUE);
+    AddHenchman(oPC, oHenchman);
+    DeleteLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE");
+    string sAssociateType = ai_GetAssociateType(oPC, oHenchman);
+    NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+    if(nFamiliar) SummonFamiliar(oHenchman);
+    if(nCompanion) SummonAnimalCompanion(oHenchman);
+    return oHenchman;
+}
+object CreateLevelStatList(object oPC, object oHenchman, int nLevels = 0)
+{
+    int nClass = GetClassByPosition(1, oHenchman);
+    int nHitDie = StringToInt(Get2DAString("classes", "HitDie", nClass));
+    SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
+    json jSkill = JsonObject();
+    jSkill = GffAddByte(jSkill, "Rank", 0);
+    jSkill = JsonObjectSet(jSkill, "__struct_id", JsonInt(0));
+    json jSkillArray = JsonArray();
+    int nNumOfSkills;
+    for(nNumOfSkills = Get2DARowCount("skills"); nNumOfSkills > 0; nNumOfSkills--)
+    {
+        jSkillArray = JsonArrayInsert(jSkillArray, jSkill);
+    }
+    json jLevel = JsonObject();
+    jLevel = GffAddByte(jLevel, "EpicLevel", 0);
+    jLevel = GffAddList(jLevel, "FeatList", JsonArray());
+    jLevel = GffAddByte(jLevel, "LvlStatClass", nClass);
+    jLevel = GffAddByte(jLevel, "LvlStatHitDie", nHitDie);
+    jLevel = GffAddList(jLevel, "SkillList", jSkillArray);
+    jLevel = GffAddWord(jLevel, "SkillPoints", 0);
+    jLevel = JsonObjectSet(jLevel, "__struct_id", JsonInt(0));
+    json jLevelArray = JsonArray();
+    if(nLevels == 0) nLevels = GetLevelByPosition(1, oHenchman);
+    for(nLevels; nLevels > 0; nLevels--)
+    {
+        jLevelArray = JsonArrayInsert(jLevelArray, jLevel);
+    }
+    RemoveHenchman(oPC, oHenchman);
+    json jHenchman = ObjectToJson(oHenchman, TRUE);
+    location lLocation = GetLocation(oHenchman);
+    jHenchman = GffAddList(jHenchman, "LvlStatList", jLevelArray);
+    int nFamiliar, nCompanion;
+    object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oHenchman);
+    if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+    oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oHenchman);
+    if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
+    AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
+    DestroyObject(oHenchman);
+    oHenchman = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
+    return oHenchman;
+}
+object ResetCharacter(object oPC, object oHenchman)
+{
+    SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
+    RemoveHenchman(oPC, oHenchman);
+    json jHenchman = ObjectToJson(oHenchman, TRUE);
+    json jLvlStatList = GffGetList(jHenchman, "LvlStatList");
+    if(JsonGetType(jLvlStatList) == JSON_TYPE_NULL)
+    {
+        oHenchman = CreateLevelStatList(oPC, oHenchman, 1);
+    }
+    else
+    {
+        int nCharLevel = ai_GetCharacterLevels(oHenchman);
+        int nLevel = 1; // Skip the first level i.e. 0.
+        json jFeatList = GffGetList(jHenchman, "FeatList");
+        int nFeat, nFeatLevelIndex, nFeatIndex;
+        json jFeatLevelList, jFeat;
+        json jSkillList = GffGetList(jHenchman, "SkillList");
+        int nRankLevel, nRank, nSkillLevelIndex, nSkillIndex;
+        json jSkillLevelList, jSkill;
+        int nAbilityStatIncrease, nAbility;
+        string sAbility;
+        json jAbility;
+        json jLevel = JsonArrayGet(jLvlStatList, nLevel);
+        //SendMessageToPC(oPC, "nLevel: " + IntToString(nLevel) + ".");
+        while(JsonGetType(jLevel) != JSON_TYPE_NULL)
+        {
+            // Remove all feats for each level from main feat list.
+            jFeatLevelList = GffGetList(jLevel, "FeatList");
+            nFeatLevelIndex = 0;
+            jFeat = JsonArrayGet(jFeatLevelList, nFeatLevelIndex);
+            while(JsonGetType(jFeat) != JSON_TYPE_NULL)
+            {
+                jFeat = GffGetWord(jFeat, "Feat");
+                nFeat = JsonGetInt(jFeat);
+                //WriteTimestampedLogEntry("pinc_henchmen, 830, nFeatLevelIndex: " + IntToString(nFeatLevelIndex) + " nFeatLevel: " + IntToString(nFeat));
+                nFeatIndex = 0;
+                jFeat = JsonArrayGet(jFeatList, nFeatIndex);
+                while(JsonGetType(jFeat) != JSON_TYPE_NULL)
+                {
+                    jFeat = GffGetWord(jFeat, "Feat");
+                    //WriteTimestampedLogEntry("pinc_henchmen, 835, nFeatIndex: " + IntToString(nFeatIndex) + " nFeatList: " + IntToString(JsonGetInt(jFeat)));
+                    if(nFeat == JsonGetInt(jFeat))
+                    {
+                        JsonArrayDelInplace(jFeatList, nFeatIndex);
+                        break;
+                    }
+                    jFeat = JsonArrayGet(jFeatList, ++nFeatIndex);
+                }
+                jFeat = JsonArrayGet(jFeatLevelList, ++nFeatLevelIndex);
+            }
+            //SendMessageToPC(oPC, "Feats done: " + JsonDump(jFeatList, 1));
+            // Remove all skill ranks for each level from main skill list.
+            jSkillLevelList = GffGetList(jLevel, "SkillList");
+            nSkillLevelIndex = 0;
+            jSkill = JsonArrayGet(jSkillLevelList, nSkillLevelIndex);
+            while(JsonGetType(jSkill) != JSON_TYPE_NULL)
+            {
+                jSkill = GffGetByte(jSkill, "Rank");
+                nRankLevel = JsonGetInt(jSkill);
+                nSkillIndex = 0;
+                jSkill = JsonArrayGet(jSkillList, nSkillIndex);
+                while(JsonGetType(jSkill) != JSON_TYPE_NULL)
+                {
+                    if(nSkillLevelIndex == nSkillIndex)
+                    {
+                        nRank = JsonGetInt(GffGetByte(jSkill, "Rank"));
+                        nRank -= nRankLevel;
+                        jSkill = GffReplaceByte(jSkill, "Rank", nRank);
+                        JsonArrayInsertInplace(jSkillList, jSkill, nSkillIndex);
+                        break;
+                    }
+                    jSkill = JsonArrayGet(jSkillList, ++nSkillIndex);
+                    jSkill = JsonObjectGet(jSkill, "Rank");
+                }
+                jSkill = JsonArrayGet(jSkillLevelList, ++nSkillLevelIndex);
+            }
+            //SendMessageToPC(oPC, "Skills done: " + JsonDump(jSkillList, 4));
+            // Remove all Ability score increases for each level from ability scores.
+            jAbility = JsonObjectGet(jLevel, "LvlStatAbility");
+            if(JsonGetType(jAbility) != JSON_TYPE_NULL)
+            {
+                nAbilityStatIncrease = JsonGetInt(jAbility);
+                if(nAbilityStatIncrease == ABILITY_STRENGTH) sAbility = "Str";
+                if(nAbilityStatIncrease == ABILITY_DEXTERITY) sAbility = "Dex";
+                if(nAbilityStatIncrease == ABILITY_CONSTITUTION) sAbility = "Con";
+                if(nAbilityStatIncrease == ABILITY_INTELLIGENCE) sAbility = "Int";
+                if(nAbilityStatIncrease == ABILITY_WISDOM) sAbility = "Wis";
+                if(nAbilityStatIncrease == ABILITY_CHARISMA) sAbility = "Cha";
+                nAbility = JsonGetInt(GffGetByte(jHenchman, sAbility)) - 1;
+                jHenchman = GffReplaceByte(jHenchman, sAbility, nAbility);
+            }
+            jLvlStatList = JsonArrayDel(jLvlStatList, nLevel);
+            jLevel = JsonArrayGet(jLvlStatList, nLevel);
+            //SendMessageToPC(oPC, "jLvlStatList: " + JsonDump(jLvlStatList, 4));
+        }
+        jHenchman = GffReplaceList(jHenchman, "FeatList", jFeatList);
+        jHenchman = GffReplaceList(jHenchman, "SkillList", jSkillList);
+        jHenchman = GffReplaceList(jHenchman, "LvlStatList", jLvlStatList);
+    }
+    // Set the Class list to the first class only and put at level 1.
+    json jClassList = GffGetList(jHenchman, "ClassList");
+    json jClass = JsonArrayGet(jClassList, 0);
+    int nClass = JsonGetInt(JsonObjectGet(jClass, "Class"));
+    jClass = GffReplaceShort(jClass, "ClassLevel", 1);
+    JsonArraySetInplace(jClassList, 0, jClass);
+    int nClassIndex = 1;
+    jClass = JsonArrayGet(jClassList, nClassIndex);
+    while(JsonGetType(jClass) != JSON_TYPE_NULL)
+    {
+        jClassList = JsonArrayDel(jClassList, nClassIndex);
+        jClass = JsonArrayGet(jClassList, nClassIndex);
+    }
+    jHenchman = GffReplaceList(jHenchman, "ClassList", jClassList);
+    int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
+    int nMod = JsonGetInt(GffGetByte(jHenchman, "Con"));
+    if(nMod > 9) nHitPoints += (nMod - 10) / 2;
+    else nHitPoints += (nMod - 11) / 2;
+    jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
+    jHenchman = GffReplaceDword(jHenchman, "Experience", 0);
+    jHenchman = GffReplaceFloat(jHenchman, "ChallengeRating", 1.0);
+    string sAtk2DA = Get2DAString("classes", "AttackBonusTable", nClass);
+    int nAtk = StringToInt(Get2DAString(sAtk2DA, "BAB", 0));
+    jHenchman = GffReplaceByte(jHenchman, "BaseAttackBonus", nAtk);
+    //WriteTimestampedLogEntry("pinc_henchmen 905, jHenchman: " + JsonDump(jHenchman, 4));
+    location lLocation = GetLocation(oHenchman);
+    int nFamiliar, nCompanion;
+    object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oHenchman);
+    if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+    oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oHenchman);
+    if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
+    AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
+    DestroyObject(oHenchman);
+    oHenchman = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
+    return oHenchman;
+}
 // ********* New Henchman windows **********
 void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
 {
     // Set window to not save until it has been created.
-    SetLocalInt (oPC, "0_No_Win_Save", TRUE);
-    DelayCommand (0.5f, DeleteLocalInt (oPC, "0_No_Win_Save"));
+    SetLocalInt(oPC, "0_No_Win_Save", TRUE);
+    DelayCommand(0.5f, DeleteLocalInt (oPC, "0_No_Win_Save"));
     // Group 1 (Portrait)******************************************************* 151 / 73
     // Group 1 Row 1 *********************************************************** 350 / 91
     json jRow = JsonArray();
@@ -777,14 +1004,14 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     // Group 1 Row 4 *********************************************************** 350 / 91
     jGroupRow = JsonArray();
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateLabel(jGroupRow, "Sound Set", "lbl_sound_set", 140.0, 10.0f);
+    CreateLabel(jGroupRow, "Sound Set", "lbl_sound_set", 140.0, 10.0f, NUI_HALIGN_CENTER, NUI_VALIGN_BOTTOM);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add the group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Group 1 Row 5 *********************************************************** 350 / 325
     jGroupRow = JsonArray();
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateCombo(jGroupRow, jArrayInsertSoundSets(oHenchman), "cmb_soundset", 140.0, 25.0);
+    CreateCombo(jGroupRow, ArrayInsertSoundSets(oHenchman), "cmb_soundset", 140.0, 25.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
@@ -798,6 +1025,20 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+
+    // Group 2 Row 2 *********************************************************** 350 / 243
+    //jGroupRow = JsonArray();
+    //json jAlign = CreateOptionsAlignment(oHenchman, 0);
+    //CreateOptions(jGroupRow, "opt_lawchaos", NUI_DIRECTION_HORIZONTAL, jAlign, 60.0, 35.0);
+    // Add group row to the group column.
+    //JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    // Group 2 Row 3 *********************************************************** 350 / 243
+    //jGroupRow = JsonArray();
+    //jAlign = CreateOptionsAlignment(oHenchman, 1);
+    //CreateOptions(jGroupRow, "opt_goodevil", NUI_DIRECTION_HORIZONTAL, jAlign, 60.0, 35.0);
+    //JsonArrayInsertInplace(jGroupRow, NuiSpacer());
+    // Add group row to the group column.
+    //JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Group 2 Row 2 *********************************************************** 350 / 243
     jGroupRow = JsonArray();
     json jClasses = CreateOptionsClasses(oHenchman);
@@ -808,14 +1049,14 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     // Group 2 Row 3 *********************************************************** 350 / 276
     jGroupRow = JsonArray();
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton (jGroupRow, "Level Up", "btn_level_up", 150.0f, 25.0f);
+    CreateButton(jGroupRow, "Level Up", "btn_level_up", 150.0f, 25.0f, -1.0, "btn_level_up_tooltip");
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
     // Group 2 Row 4 *********************************************************** 350 / 309
     jGroupRow = JsonArray();
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton (jGroupRow, "Level Down", "btn_level_down", 150.0f, 25.0f);
+    CreateButton (jGroupRow, "Reset Character", "btn_reset", 150.0f, 25.0f, -1.0, "btn_reset_tooltip");
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
@@ -838,7 +1079,7 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
         bNoClass = TRUE;
     }
     string sClass = IntToString(nClass);
-    CreateCombo(jGroupRow, jArrayInsertPackages(sClass), "cmb_package", 150.0, 25.0);
+    CreateCombo(jGroupRow, ArrayInsertPackages(sClass), "cmb_package", 150.0, 25.0);
     JsonArrayInsertInplace(jGroupRow, NuiSpacer());
     // Add group row to the group column.
     JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
@@ -880,29 +1121,29 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     int nID = GetPortraitId (oPC);
     NuiSetUserData(oPC, nToken, JsonInt(nID));
     string sResRef = GetPortraitResRef(oHenchman);
-    NuiSetBind(oPC, nToken, "char_name_event", JsonBool(TRUE));
+    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     NuiSetBind(oPC, nToken, "char_name", JsonString(GetName(oHenchman)));
     NuiSetBindWatch(oPC, nToken, "char_name", TRUE);
-    NuiSetBind(oPC, nToken, "port_name_event", JsonBool(TRUE));
-    NuiSetBindWatch(oPC, nToken, "port_name", TRUE);
+    NuiSetBind(oPC, nToken, "char_name_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "port_name", JsonString(sResRef));
+    NuiSetBindWatch(oPC, nToken, "port_name", TRUE);
+    NuiSetBind(oPC, nToken, "port_name_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "port_resref_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "port_resref_image", JsonString(sResRef + "l"));
     NuiSetBind(oPC, nToken, "port_tooltip", JsonString ("  You may also type the portrait file name."));
     // Set buttons active.
     NuiSetBind(oPC, nToken, "btn_portrait_prev_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_portrait_next_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "cmb_soundset_event", JsonBool(TRUE));
     int nSelection = GetSelectionBySoundSet2DA(oHenchman, GetSoundset(oHenchman));
-    NuiSetBind(oPC, nToken, "cmb_soundset_selected", JsonBool(nSelection));
+    NuiSetBind(oPC, nToken, "cmb_soundset_selected", JsonInt(nSelection));
     NuiSetBindWatch(oPC, nToken, "cmb_soundset_selected", TRUE);
+    NuiSetBind(oPC, nToken, "cmb_soundset_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_desc_save_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_portrait_ok_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "desc_tooltip", JsonString("  You can use color codes!"));
     string sDescription = GetDescription(oHenchman);
     NuiSetBind(oPC, nToken, "desc_value_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "desc_value", JsonString (sDescription));
-    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Setup the henchman window.
     string sStats = GetAlignText(oHenchman) + " ";
     if(GetGender(oHenchman) == GENDER_MALE) sStats += "Male ";
@@ -910,26 +1151,26 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     sStats += GetStringByStrRef (StringToInt (Get2DAString ("racialtypes", "Name", GetRacialType (oHenchman))));
     NuiSetBind(oPC, nToken, "lbl_stats_label", JsonString(sStats));
     json jHenchman = ObjectToJson(oHenchman);
-    json jLvlStatList = JsonObjectGet(jHenchman, "LvlStatList");
-    int bLevelUp = JsonGetType(jLvlStatList) != JSON_TYPE_NULL;
-    NuiSetBind(oPC, nToken, "opt_classes_event", JsonBool(bLevelUp));
+    NuiSetBind(oPC, nToken, "opt_classes_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "opt_classes_value", JsonInt(nClassOption));
-    NuiSetBind(oPC, nToken, "btn_level_up_event", JsonBool(bLevelUp));
-    NuiSetBind(oPC, nToken, "btn_level_down_event", JsonBool(bLevelUp));
-    NuiSetBind(oPC, nToken, "cmb_class_event", JsonBool(bNoClass));
-    NuiSetBindWatch(oPC, nToken, "cmb_class_selected", bNoClass);
+    NuiSetBind(oPC, nToken, "btn_level_up_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_level_up_tooltip", JsonString("  Levels the character up by one level in selected class."));
+    if(ai_GetIsCharacter(oHenchman)) NuiSetBind(oPC, nToken, "btn_reset_event", JsonBool(FALSE));
+    else NuiSetBind(oPC, nToken, "btn_reset_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_reset_tooltip", JsonString("  Resets the character to level 1."));
     nSelection = GetSelectionByClass2DA(nClass);
     NuiSetBind(oPC, nToken, "cmb_class_selected", JsonInt(nSelection));
-    NuiSetBind(oPC, nToken, "cmb_package_event", JsonBool(bNoClass));
-    NuiSetBindWatch(oPC, nToken, "cmb_package_selected", bNoClass);
+    NuiSetBindWatch(oPC, nToken, "cmb_class_selected", bNoClass);
+    NuiSetBind(oPC, nToken, "cmb_class_event", JsonBool(bNoClass));
     int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1));
     if(nPackage == 0)
     {
-        if(GetClassByPosition(1, oHenchman) == nClass) nPackage = GetCreatureStartingPackage(oHenchman);
-        else nPackage = GetPackageBySelection2DA(sClass, 0);
+        nPackage = GetPackageBySelection2DA(sClass, 0);
         SetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1), nPackage);
     }
     NuiSetBind(oPC, nToken, "cmb_package_selected", JsonInt(GetSelectionByPackage2DA(sClass, nPackage)));
+    NuiSetBindWatch(oPC, nToken, "cmb_package_selected", bNoClass);
+    NuiSetBind(oPC, nToken, "cmb_package_event", JsonBool(bNoClass));
 }
 void CreateCharacterDescriptionNUI(object oPC, string sName, string sIcon, string sDescription)
 {

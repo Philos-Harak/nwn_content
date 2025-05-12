@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04.25.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:05.11.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -20,7 +20,7 @@ const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
 const int AI_SERVER = FALSE;
 // The number of classes allowed for a creature to take in the server/module.
-const int AI_MAX_CLASSES_PER_CHARACTER = 3;
+const int AI_MAX_CLASSES_PER_CHARACTER = 8;
 // Taunts cool down time before the AI attemps another Taunt.
 const int AI_TAUNT_COOLDOWN = 3;
 // Animal Empathy cool down time before the AI attemps another check.
@@ -243,7 +243,7 @@ const string AI_ATTACKED_SPELL = "AI_ATTACKED_SPELL";
 const string AI_NORMAL_FORM = "AI_NORMAL_FORM";
 // Variable name used to keep track if a creature has been buffed yet.
 const string AI_CASTER_BUFFS_SET = "AI_CASTER_BUFFS_SET";
-// Variable name used to keep track of rounds in a custom ai script.
+// Variable name used to keep track of rounds in combat for a custom ai script.
 const string AI_ROUND = "AI_ROUND";
 // Combat Ranges
 const float AI_RANGE_MELEE = 5.0f; // Anyone within this is considered to be in melee.
@@ -345,16 +345,16 @@ const int AI_MODE_IGNORE_ASSOCIATES =   0x01000000; // Will ignore associates in
 // Bitwise constants for Associate magic modes that are used with Get/SetAssociateMagicMode().
 const string sMagicModeVarname = "ASSOCIATE_MAGIC_MODES";
 const int AI_MAGIC_BUFF_MASTER =         0x00000001; // Buffs master before other allies.
-const int AI_MAGIC_NO_MAGIC =            0x00000002; // Will not use any magic (Spells, items, abilities).
+const int AI_MAGIC_NO_MAGIC =            0x00000002; // Will not use any magic (Spells, abilities).
 const int AI_MAGIC_DEFENSIVE_CASTING =   0x00000004; // Will only cast defensive spells.
 const int AI_MAGIC_OFFENSIVE_CASTING =   0x00000008; // Will only cast offensive spells.
 const int AI_MAGIC_STOP_DISPEL =         0x00000010; // Will not cast dispel type spells.
 const int AI_MAGIC_BUFF_AFTER_REST =     0x00000020; // Will buff the party after resting.
 const int AI_MAGIC_NO_MAGIC_ITEMS =      0x00000040; // Will not use magic items in combat.
-const int AI_MAGIC_LOW_MAGIC_USE =       0x00000080; // Will use spells sparingly in combat.
-const int AI_MAGIC_NORMAL_MAGIC_USE =    0x00000100; // Will use spells more in combat.
-const int AI_MAGIC_HEAVY_MAGIC_USE =     0x00000200; // Will use spells a lot in combat.
-const int AI_MAGIC_CONSTANT_MAGIC_USE =  0x00000400; // Will use spells all the time until out in combat.
+//const int  =                           0x00000080; // Not used.
+//const int  =                           0x00000100; // Not used.
+//const int  =                           0x00000200; // Not used.
+//const int  =                           0x00000400; // Not used.
 const int AI_MAGIC_NO_SPONTANEOUS_CURE = 0x00000800; // Caster will stop using spontaneous cure spells.
 //const int AI_MAGIC_ =                  0x00001000; // Not used.
 //const int AI_MAGIC_ =                  0x00002000; // Not used.
@@ -483,6 +483,8 @@ const string AI_MIN_GOLD_ = "AI_MIN_GOLD_";
 const string AI_DELAY_NUI_USE = "AI_DELAY_NUI_USE";
 // Variable for maximum weight to pickup from looting.
 const string AI_MAX_LOOT_WEIGHT = "AI_MAX_LOOT_WEIGHT";
+// Variable to change the size of the widget buttons.
+const string AI_WIDGET_BUTTON_SIZE = "AI_WIDGET_BUTTON_SIZE";
 // Variable to change the difficulty so a player can adjust spell usage.
 const string AI_DIFFICULTY_ADJUSTMENT = "AI_DIFFICULTY_ADJUSTMENT";
 // Variable to change the Healing % limit for out of combat.
@@ -530,9 +532,8 @@ const int AI_TALENT_TYPE_ITEM = 4;
 const string AI_PC_LOCKED_TARGET = "AI_PC_LOCKED_TARGET";
 // Variable name of json talent immunity.
 const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
-// Variables that clips checking talent categories a creature does not have.
-// Significantly reduces search times.
-const string AI_NO_TALENTS = "AI_NO_TALENTS_";
+// Variables keeps track of the maximum level for the talent category.
+const string AI_MAX_TALENT = "AI_MAX_TALENT_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
 // Variable set on the module if the module is using PRC.

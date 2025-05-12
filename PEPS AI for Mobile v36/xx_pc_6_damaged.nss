@@ -18,16 +18,9 @@ void main()
     DeleteLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT");
     object oDamager = GetLastDamager(oCreature);
     if(AI_DEBUG) ai_Debug("xx_pc_6_damaged", "18", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
-    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
-    {
-        if(ai_IsInADangerousAOE(oCreature))
-        {
-            ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
-            return;
-        }
-    }
+    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT &&
+       ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;
     if(ai_GetIsBusy(oCreature) || ai_GetIsInCombat(oCreature)) return;
     if(GetDistanceBetween(oCreature, oDamager) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
     else ActionMoveToObject(oDamager, TRUE, AI_RANGE_CLOSE - 1.0);
 }
-

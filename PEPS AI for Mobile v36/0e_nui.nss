@@ -451,6 +451,11 @@ void main()
                         jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION, FALSE);
                     }
                 }
+                else if(sElem == "chbx_timestop_check")
+                {
+                    if(bCheck) jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP);
+                    else jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP, FALSE);
+                }
                 ai_SetCampaignDbJson("rules", jRules);
             }
         }
@@ -1637,6 +1642,7 @@ json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)
 {
     object oModule = GetModule();
     json jRSpells = GetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS);
+    if(JsonGetType(jRSpells) == JSON_TYPE_NULL) jRSpells = JsonArray();
     int nIndex, nMaxIndex = JsonGetLength(jRSpells);
     if(bRestrict)
     {

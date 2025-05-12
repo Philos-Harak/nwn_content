@@ -27,6 +27,8 @@ void ai_DMAction(object oDM, object oTarget, location lLocation, string sTargetM
 void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem);
 // Updates oAssociates widget by destroying the current one and rebuilding.
 void ai_UpdateAssociateWidget(object oPC, object oAssociate);
+// Sets oAssociates action mode for nFeat from the quick widget menu
+int ai_SetActionMode(object oAssociate, int nFeat);
 
 void ai_SetupPlayerTarget(object oCreature)
 {
@@ -263,7 +265,21 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             if(GetLocked(oTarget)) ai_AttemptToByPassLock(oAssociate, oTarget, TRUE);
             else ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE));
         }
-        else DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
+        else
+        {
+            if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS))
+            {
+                AssignCommand(oAssociate, ai_ClearCreatureActions());
+                // Check to make sure we are using a melee weapon.
+                if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oAssociate)) ||
+                   ai_EquipBestMeleeWeapon(oAssociate))
+                {
+                    AssignCommand(oAssociate, ActionWait(1.0));
+                    AssignCommand(oAssociate, ActionAttack(oTarget));
+                }
+            }
+            else AssignCommand(oAssociate, DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE));
+        }
     }
     else if(nObjectType == OBJECT_TYPE_TRIGGER)
     {
@@ -646,15 +662,17 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
             return;
         }
     }
-    else
+    else // Feats, Spells, Special Abilities.
     {
         int nFeat = JsonGetInt(JsonArrayGet(jSpell, 5));
         if(nFeat)
         {
-            if(Get2DAString("spells", "Range", nSpell) == "P" || // Self
-               nFeat == FEAT_SUMMON_FAMILIAR || nFeat == FEAT_ANIMAL_COMPANION)
+            if(!nSpell || Get2DAString("spells", "Range", nSpell) == "P" || // Self
+               nFeat == FEAT_SUMMON_FAMILIAR || nFeat == FEAT_ANIMAL_COMPANION ||
+               nFeat == FEAT_TURN_UNDEAD)
             {
                 if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+                // Adjust the spell used for wild shape and other shape feats.
                 if(nFeat == FEAT_WILD_SHAPE) nSpell += 607;
                 if(nFeat == FEAT_ELEMENTAL_SHAPE)
                 {
@@ -663,6 +681,20 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
                     else if(nSpell == 399) nSpell == SUBFEAT_ELEMENTAL_SHAPE_EARTH;
                     else if(nSpell == 400) nSpell == SUBFEAT_ELEMENTAL_SHAPE_AIR;
                 }
+                // Do special targeting for attack feats.
+                if(nFeat == FEAT_STUNNING_FIST || nFeat == FEAT_DIRTY_FIGHTING ||
+                   nFeat == FEAT_WHIRLWIND_ATTACK || nFeat == FEAT_QUIVERING_PALM ||
+                   nFeat == FEAT_KNOCKDOWN || nFeat == FEAT_IMPROVED_KNOCKDOWN ||
+                   nFeat == FEAT_SAP || nFeat == FEAT_KI_DAMAGE ||
+                   nFeat == FEAT_DISARM || nFeat == FEAT_IMPROVED_DISARM ||
+                   nFeat == FEAT_SMITE_EVIL || nFeat == FEAT_SMITE_GOOD)
+                {
+                    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_FEAT");
+                    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
+                    EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ATTACK, MOUSECURSOR_NOATTACK);
+                }
+                // Check feat and adjust if it is an action mode feat.
+                if(ai_SetActionMode(oAssociate, nFeat)) return;
                 AssignCommand(oAssociate, ActionUseFeat(nFeat, oAssociate, nSpell));
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
                 return;
@@ -682,10 +714,11 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
         }
     }
     SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
+    int nObjectType;
     string sTarget = Get2DAString("spells", "TargetType", nSpell);
     int nTarget = ai_HexStringToInt(sTarget);
-    int nObjectType;
-    if(nTarget & 2) nObjectType += OBJECT_TYPE_CREATURE;
+    //SendMessageToPC(GetFirstPC(), "nTarget: " + IntToString(nTarget));
+    if(nTarget & 2 || nTarget & 1) nObjectType += OBJECT_TYPE_CREATURE;
     if(nTarget & 4) nObjectType += OBJECT_TYPE_TILE;
     if(nTarget & 8) nObjectType += OBJECT_TYPE_ITEM;
     if(nTarget & 16) nObjectType += OBJECT_TYPE_DOOR;
@@ -744,4 +777,20 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate)
         }
     }
 }
-
+int ai_SetActionMode(object oAssociate, int nFeat)
+{
+    int nMode;
+    if(nFeat == FEAT_POWER_ATTACK) nMode = ACTION_MODE_POWER_ATTACK;
+    else if(nFeat == FEAT_RAPID_SHOT) nMode = ACTION_MODE_RAPID_SHOT;
+    else if(nFeat == FEAT_FLURRY_OF_BLOWS) nMode = ACTION_MODE_FLURRY_OF_BLOWS;
+    else if(nFeat == FEAT_IMPROVED_POWER_ATTACK) nMode = ACTION_MODE_IMPROVED_POWER_ATTACK;
+    else if(nFeat == FEAT_EXPERTISE) nMode = ACTION_MODE_EXPERTISE;
+    else if(nFeat == FEAT_IMPROVED_EXPERTISE) nMode = ACTION_MODE_IMPROVED_EXPERTISE;
+    else if(nFeat == FEAT_DIRTY_FIGHTING) nMode = ACTION_MODE_DIRTY_FIGHTING;
+    if(nMode)
+    {
+        SetActionMode(oAssociate, nMode, !GetActionMode(oAssociate, nMode));
+        return TRUE;
+    }
+    return FALSE;
+}

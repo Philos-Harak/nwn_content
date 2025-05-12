@@ -21,11 +21,7 @@ void main()
     if(AI_DEBUG) ai_Debug("xx_pc_b_castat", "21", GetName(OBJECT_SELF) + " has been hit by a harmful spell(" +
              Get2DAString("spells", "Label", nSpell) + ")!");
     if(ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
-       !ai_CreatureImmuneToEffect(oCaster, oCreature, nSpell))
-    {
-        ai_MoveOutOfAOE(oCreature, oCaster);
-        return;
-    }
+       ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;
     if(ai_GetIsBusy(oCreature)) return;
     if(ai_CheckForCombat(oCreature, FALSE)) return;
     // We were attacked by an enemy out of combat, so let our allies know.
@@ -35,5 +31,3 @@ void main()
     if(GetDistanceBetween(oCreature, oCaster) < AI_RANGE_CLOSE) ai_DoAssociateCombatRound(oCreature);
     else ActionMoveToObject(oCaster, TRUE, AI_RANGE_CLOSE - 1.0);
 }
-
-

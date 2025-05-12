@@ -4,16 +4,53 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
  Include scripts for base spells.
 
- Buffing Groups are as follows:
- 1 - Elemental Damage Resistance
- 2 - AC Natural
- 3 - AC Deflection
- 4 - AC bonus
- 5 - Invisibility/Sanctuary
- 6 - Regeneration
- 7 - Globes of Invulnerablility
- 8 - Damage Reduction
- 9 - Mantles
+Category:
+   Enhancement E
+    Protection P
+Indiscriminant I
+  Discriminant D
+         Range R
+         Touch T
+        Summon S
+       Healing H
+          Cure C
+
+Buff Duration:
+1 - All
+2 - Short
+3 - Long
+
+Buff Target:
+ 0  - Caster only
+ 1-6  Str, Dex, Con, Int, Wis, Cha: Highest Ability Score
+ 7  - Lowest AC
+ 8  - Lowest AC without AC Bonus
+ 9  - Highest Atk
+ 10 - Most Wounded
+ 11 - Lowest Fortitude
+ 12 - Lowest Reflex
+ 13 - Lowest Will
+ 14 - Lowest total saves
+ 15 - Buffs an Item
+
+Buff Groups:
+-1  - Elemental Resistances.
+-2  - Summons
+-3  - AC (Non armor)
+-4  - AC (for Armor/Shield)
+-5  - Chance to Miss (Invisibility)
+-6  - Regeneration
+-7  - Globes of Invulnerablitity
+-8  - Damage Reduction
+-9  - Mantles
+-10 - Alignment vs Chaos
+-11 - Alignment vs Evil
+-12 - Alignment vs Good
+-13 - Alignment vs Law
+-14 - Atk Bonus (for Weapon)
+-15 - Light effects
+-16 - Haste effects
+-17 - Polymorph effects
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_messages"
 #include "0i_states_cond"
@@ -44,10 +81,6 @@ int ai_IsCureSpell(int nSpell);
 int ai_IsInflictSpell(int nSpell);
 // Returns TRUE if nSpell is an area of effect spell.
 int ai_IsAreaOfEffectSpell(int nSpell);
-// Returns TRUE if oCreature is in a Dangerous Area of Effect in fMaxRange.
-int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD);
-// Have oCreature move out of an area effect based on the creatures in the battle.
-void ai_MoveOutOfAOE(object oCreature, object oCaster);
 // Returns 1(TRUE) if oAssociate is a spellcaster.
 // Rturns 2(TRUE) if oAssociate is a memorizing spellcaster.
 int ai_GetIsSpellCaster(object oAssociate);
@@ -317,76 +350,6 @@ int ai_IsAreaOfEffectSpell(int nSpell)
     }
     return FALSE;
 }
-int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD)
-{
-    int nSpell, nCnt = 1;
-    string sAOEType;
-    object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
-    float fRadius, fDistance = GetDistanceBetween(oCreature, oAOE);
-    while(oAOE != OBJECT_INVALID && fDistance <= fMaxRange)
-    {
-        // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
-        // I check vs those labels to see if the AOE is offensive.
-        // Below is the list of Offensive AOE effects.
-        sAOEType = GetTag(oAOE);
-        if(sAOEType == "VFX_PER_WEB") { fRadius = 6.7; nSpell = SPELL_WEB; }
-        else if(sAOEType == "VFX_PER_ENTANGLE") { fRadius = 5.0; nSpell = SPELL_ENTANGLE; }
-        else if(sAOEType == "VFX_PER_GREASE") { fRadius = 6.0; nSpell = SPELL_GREASE; }
-        else if(sAOEType == "VFX_PER_EVARDS_BLACK_TENTACLES")
-             { fRadius = 5.0; nSpell = SPELL_EVARDS_BLACK_TENTACLES; }
-        //else if(sAOEType == "VFX_PER_DARKNESS") { fRadius = 6.7; nSpell = SPELL_DARKNESS; }
-        //else if(sAOEType == "VFX_MOB_SILENCE") { fRadius = 4.0; nSpell = SPELL_SILENCE; }
-        else if(sAOEType == "VFX_PER_FOGSTINK") { fRadius = 6.7; nSpell = SPELL_STINKING_CLOUD; }
-        else if(sAOEType == "VFX_PER_FOGFIRE") { fRadius = 5.0; nSpell = SPELL_INCENDIARY_CLOUD; }
-        else if(sAOEType == "VFX_PER_FOGKILL") { fRadius = 5.0; nSpell = SPELL_CLOUDKILL; }
-        else if(sAOEType == "VFX_PER_FOGMIND") { fRadius = 5.0; nSpell = SPELL_MIND_FOG; }
-        else if(sAOEType == "VFX_PER_CREEPING_DOOM") { fRadius = 6.7; nSpell = SPELL_CREEPING_DOOM; }
-        else if(sAOEType == "VFX_PER_FOGACID") { fRadius = 5.0; nSpell = SPELL_ACID_FOG; }
-        else if(sAOEType == "VFX_PER_FOGBEWILDERMENT") { fRadius = 5.0; nSpell = SPELL_CLOUD_OF_BEWILDERMENT; }
-        else if(sAOEType == "VFX_PER_WALLFIRE") { fRadius = 10.0; nSpell = SPELL_WALL_OF_FIRE; }
-        else if(sAOEType == "VFX_PER_WALLBLADE") { fRadius = 10.0; nSpell = SPELL_BLADE_BARRIER; }
-        else if(sAOEType == "VFX_PER_DELAY_BLAST_FIREBALL") { fRadius = 2.0; nSpell = SPELL_DELAYED_BLAST_FIREBALL; }
-        else if(sAOEType == "VFX_PER_GLYPH") { fRadius = 2.5; nSpell = SPELL_GLYPH_OF_WARDING; }
-        else fRadius = 0.0;
-        if(AI_DEBUG) ai_Debug("0i_combat", "3088", GetName(oCreature) + " distance from AOE is " + FloatToString(fDistance, 0, 2) +
-                " AOE Radius: " + FloatToString(fRadius, 0, 2) +
-                " AOE Type: " + GetTag(oAOE));
-        // fRadius > 0.0 keeps them from tiggering that they are in a dangerous
-        // AOE due to having an AOE on them.
-        if(fRadius > 0.0 && fDistance <= fRadius &&
-           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell))
-        {
-            if(nSpell == SPELL_WEB || nSpell == SPELL_ENTANGLE)
-            {
-                if(ai_HasRangedWeaponWithAmmo(oCreature)) return FALSE;
-                if(GetReflexSavingThrow(oCreature) + GetAbilityModifier(ABILITY_DEXTERITY, oCreature) >= ai_GetCharacterLevels(oCreature))
-                    return FALSE;
-            }
-            return TRUE;
-        }
-        oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
-        fDistance = GetDistanceBetween(oCreature, oAOE);
-    }
-    return FALSE;
-}
-void ai_MoveOutOfAOE(object oCreature, object oCaster)
-{
-    location lLocation;
-    object oMaster = GetMaster(oCreature);
-    // If the caster is not dead and not in an effect then go to them.
-    if(oCaster != OBJECT_INVALID &&
-       GetObjectSeen(oCaster, oCreature) &&
-       !GetIsDead(oCaster) &&
-       !ai_IsInADangerousAOE(oCaster)) lLocation = GetLocation(oCaster);
-    // Else if our master is not in a AOE then go to them.
-    else if(oMaster != OBJECT_INVALID &&
-            !ai_IsInADangerousAOE(oMaster)) lLocation = GetLocation(oMaster);
-    //else get a random location!
-    else lLocation = GetRandomLocation(GetArea(oCreature), oCreature, 10.0);
-    ai_ClearCreatureActions();
-    if(AI_DEBUG) ai_Debug("0i_actions", "345", GetName(oCreature) + " is moving out of area of effect!");
-    ActionMoveToLocation(lLocation, TRUE);
-}
 int ai_GetIsSpellCaster(object oAssociate)
 {
     int nIndex, nSpellCaster, nClass;
@@ -654,7 +617,7 @@ int ai_IsSilenced(object oCreature, int nSpell)
 {
     if(Get2DAString("spells", "VS", nSpell) == "s") return FALSE;
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SILENCE)) return TRUE;
-    return TRUE;
+    return FALSE;
 }
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot)
 {
@@ -1455,7 +1418,7 @@ void ai_CheckForBuffSpells(struct stSpell stSpell)
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-            if(AI_DEBUG) ai_Debug("0i_spells", "1214", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1214", "Memorizes Spells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
                 stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1620,24 +1583,24 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        //ai_Debug("0i_spells", "1252", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        ai_Debug("0i_spells", "1252", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            //ai_Debug("0i_spells", "1255", "nLevel: " + IntToString(stSpell.nLevel));
+            ai_Debug("0i_spells", "1255", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
-                //ai_Debug("0i_spells", "1258", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                //         " nSlots: " + IntToString(stSpell.nSlot));
+                ai_Debug("0i_spells", "1258", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                         " nSlots: " + IntToString(stSpell.nSlot));
                 while(stSpell.nSlot < stSpell.nMaxSlots)
                 {
-                    //ai_Debug("0i_spells", "1262", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
+                    ai_Debug("0i_spells", "1262", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
                     if(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot))
                     {
                         nSpell = GetMemorizedSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
                         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                        //ai_Debug("0i_spells", "1267", "nBuffType: " + IntToString(stSpell.nBuffType) +
-                        //         " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
-                        //         " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
+                        ai_Debug("0i_spells", "1267", "nBuffType: " + IntToString(stSpell.nBuffType) +
+                                 " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
+                                 " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
                         if(stSpell.nBuffType == nSpellBuffDuration || stSpell.nBuffType == 1)
                         {
                             if(stSpell.nTarget > 0)
@@ -1652,8 +1615,8 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
                                 else oTarget == OBJECT_INVALID;
                             }
                             else oTarget = ai_GetBuffTarget(stSpell.oCaster, nSpell);
-                            //ai_Debug("0i_spells", "1284", "nSpell: " + IntToString(nSpell) +
-                            //         " oTarget: " + GetName(oTarget));
+                            ai_Debug("0i_spells", "1284", "nSpell: " + IntToString(nSpell) +
+                                     " oTarget: " + GetName(oTarget));
                             if(oTarget != OBJECT_INVALID)
                             {
                                 ai_CastMemorizedSpell(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot, oTarget, TRUE, stSpell.oPC);
@@ -1666,7 +1629,7 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
                     stSpell.nSlot++;
                 }
                 stSpell.nLevel--;
-                //ai_Debug("0i_spells", "1298", "nLevel: " + IntToString(stSpell.nLevel));
+                ai_Debug("0i_spells", "1298", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1677,7 +1640,7 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell)
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        //ai_Debug("0i_spells", "1309", "nClass: " + IntToString(stSpell.nClass));
+        ai_Debug("0i_spells", "1309", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
@@ -2136,7 +2099,7 @@ void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lL
     json jSpells = JsonArrayGet(jAIData, 10);
     json jWidget = JsonArrayGet(jSpells, 2);
     json jFeat = JsonArrayGet(jWidget, nIndex);
-    int nFeat = JsonGetInt(JsonArrayGet(jFeat, 0));
+    int nFeat = JsonGetInt(JsonArrayGet(jFeat, 5));
     if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
     if(!GetIsObjectValid(oTarget))
     {
@@ -2180,4 +2143,3 @@ void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lL
     }
     else AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oTarget));
 }
-

@@ -1490,9 +1490,11 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
 }
 int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
 {
+    int nTrapDC = GetTrapDisarmDC(oTrap);
     if(AI_DEBUG) ai_Debug("0i_actions", "1520", "Reacting to trap on " + GetName(oTrap) +
-                          " bForce: " + IntToString(bForce) +
+                          " bForce: " + IntToString(bForce) + " nTrapDC: " + IntToString(nTrapDC) +
                           " [AI_OBJECT_IN_USE: " + IntToString(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) + "].");
+    if(nTrapDC == 0) return FALSE;
     string sTag = GetTag(oCreature);
     if(bForce || ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
     {
@@ -1503,7 +1505,6 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
             if(GetSkillRank(SKILL_DISABLE_TRAP, oCreature, TRUE))
             {
                 int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
-                int nTrapDC = GetTrapDisarmDC(oTrap);
                 if(AI_DEBUG) ai_Debug("0i_actions", "1534", "nSkill: " + IntToString(nSkill) +
                          " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
                 if(nSkill + 20 >= nTrapDC)
@@ -1778,8 +1779,18 @@ int ai_CheckNearbyObjects(object oCreature)
         {
             if(nObjectType == OBJECT_TYPE_PLACEABLE)
             {
-                if(ai_IsContainerLootable(oCreature, oObject))
+                if(!GetLocalInt(oObject, AI_OBJECT_IN_USE) &&
+                   ai_IsContainerLootable(oCreature, oObject))
                 {
+                    if(GetLocked(oObject))
+                    {
+                        string sTag = GetTag(oCreature);
+                        if(GetLocalInt(oObject, "AI_LOCKED_" + sTag)) return FALSE;
+                        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oObject) + " is locked!", TRUE)));
+                        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
+                        SetLocalInt(oObject, "AI_LOCKED_" + sTag, TRUE);
+                        return FALSE;
+                    }
                     ai_ClearCreatureActions();
                     ActionMoveToObject(oObject, TRUE);
                     AssignCommand(oCreature, ActionDoCommand(ai_SearchObject(oCreature, oObject, oMaster)));
@@ -2019,7 +2030,7 @@ object ai_GetRandomUseableObject(float fMaxDistance)
     object oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, nIndex);
     while(nIndex > 0)
     {
-        if(GetUseableFlag(oObject) &&
+        if(GetUseableFlag(oObject) && !GetLocked(oObject) &&
            GetDistanceBetweenLocations(GetLocation(oObject), lStartLocation) <= fMaxDistance) break;
         oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, --nIndex);
     }
@@ -2030,7 +2041,7 @@ object ai_GetRandomUseableObject(float fMaxDistance)
 int ai_ActionFindPlaceable(float fMaxDistance)
 {
     object oPlaceable = ai_GetRandomUseableObject(fMaxDistance);
-    if (GetIsObjectValid(oPlaceable))
+    if(GetIsObjectValid(oPlaceable))
     {
         ai_ActionStartInteracting(oPlaceable);
         return 1;

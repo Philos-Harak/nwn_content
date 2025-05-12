@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:04.25.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:05.11.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -20,7 +20,7 @@ const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
 const int AI_SERVER = FALSE;
 // The number of classes allowed for a creature to take in the server/module.
-const int AI_MAX_CLASSES_PER_CHARACTER = 3;
+const int AI_MAX_CLASSES_PER_CHARACTER = 8;
 // Taunts cool down time before the AI attemps another Taunt.
 const int AI_TAUNT_COOLDOWN = 3;
 // Animal Empathy cool down time before the AI attemps another check.
@@ -243,7 +243,7 @@ const string AI_ATTACKED_SPELL = "AI_ATTACKED_SPELL";
 const string AI_NORMAL_FORM = "AI_NORMAL_FORM";
 // Variable name used to keep track if a creature has been buffed yet.
 const string AI_CASTER_BUFFS_SET = "AI_CASTER_BUFFS_SET";
-// Variable name used to keep track of rounds in a custom ai script.
+// Variable name used to keep track of rounds in combat for a custom ai script.
 const string AI_ROUND = "AI_ROUND";
 // Combat Ranges
 const float AI_RANGE_MELEE = 5.0f; // Anyone within this is considered to be in melee.
@@ -532,9 +532,8 @@ const int AI_TALENT_TYPE_ITEM = 4;
 const string AI_PC_LOCKED_TARGET = "AI_PC_LOCKED_TARGET";
 // Variable name of json talent immunity.
 const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
-// Variables that clips checking talent categories a creature does not have.
-// Significantly reduces search times.
-const string AI_NO_TALENTS = "AI_NO_TALENTS_";
+// Variables keeps track of the maximum level for the talent category.
+const string AI_MAX_TALENT = "AI_MAX_TALENT_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
 // Variable set on the module if the module is using PRC.

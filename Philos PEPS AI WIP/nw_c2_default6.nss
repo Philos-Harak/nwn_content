@@ -25,14 +25,8 @@ void main()
     object oDamager = GetLastDamager(oCreature);
     if(AI_DEBUG) ai_Debug("nw_c2_default6", "23", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;
-    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT)
-    {
-        if(ai_IsInADangerousAOE(oCreature))
-        {
-            ai_MoveOutOfAOE(oCreature, GetAreaOfEffectCreator(oDamager));
-            return;
-        }
-    }
+    if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT &&
+       ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;
     if(ai_GetIsBusy(oCreature) || ai_GetIsInCombat(oCreature)) return;
     if(GetDistanceBetween(oCreature, oDamager) < AI_RANGE_CLOSE) ai_DoMonsterCombatRound(oCreature);
     else ActionMoveToObject(oDamager, TRUE, AI_RANGE_CLOSE - 1.0);

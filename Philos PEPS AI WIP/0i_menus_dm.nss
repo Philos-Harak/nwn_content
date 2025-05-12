@@ -335,6 +335,7 @@ void ai_CreateDMOptionsNUI(object oPC)
         CreateLabel(jGroupRow, " Spells the AI will not use:", "lbl_restrict_spells", 190.0, 20.0, NUI_HALIGN_LEFT);
         CreateCheckBox(jGroupRow, " Darkness", "chbx_darkness", 90.0, 20.0, "chbx_darkness_tooltip");
         CreateCheckBox(jGroupRow, " Dispels", "chbx_dispels", 90.0, 20.0, "chbx_dispels_tooltip");
+        CreateCheckBox(jGroupRow, " Time Stop", "chbx_timestop", 90.0, 20.0, "chbx_timestop_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         fHeight += 168.0;
     }
@@ -559,6 +560,10 @@ void ai_CreateDMOptionsNUI(object oPC)
         NuiSetBindWatch (oPC, nToken, "chbx_dispels_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_dispels_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "chbx_dispels_tooltip", JsonString("  AI will not use any of the Dispel spells in combat."));
+        NuiSetBind(oPC, nToken, "chbx_timestop_check", JsonBool(ai_SpellRestricted(SPELL_TIME_STOP)));
+        NuiSetBindWatch (oPC, nToken, "chbx_timestop_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_timestop_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "chbx_timestop_tooltip", JsonString("  AI will not use the Time Stop spell in combat."));
     }
 }
 void ai_CreateDMCommandNUI(object oPC)
@@ -1325,7 +1330,7 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBindWatch(oPC, nToken, "chbx_bash_locks_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_bash_locks_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_bash_locks_event", JsonBool(TRUE));
-    NuiSetBind (oPC, nToken, "btn_bash_locks_tooltip", JsonString("  Bash Locks button"));
+    NuiSetBind (oPC, nToken, "btn_bash_locks_tooltip", JsonString("  Bash button"));
 
     NuiSetBind(oPC, nToken, "chbx_magic_level_check", JsonBool(bMagicLevel));
     NuiSetBindWatch (oPC, nToken, "chbx_magic_level_check", TRUE);

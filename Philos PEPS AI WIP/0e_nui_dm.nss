@@ -11,6 +11,9 @@ void ai_SetDMWAccessButtonToCheckbox(object oDM, int nButton, int nToken, string
 void ai_SetDMAIAccessButtonToCheckbox(object oDM, int nButton, int nToken, string sElem);
 void ai_SetDMAIAccessButtonToCheckbox(object oDM, int nButton, int nToken, string sElem);
 void ai_RulePercDistInc(object oDM, object oModule, int nIncrement, int nToken);
+// Adds a spell to a json AI restricted spell list then returns jRules.
+// bRestrict = TRUE will add to the list FALSE will remove it from the list.
+json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE);
 // Adds a selected creature to the group.
 void ai_SelectToGroup(object oDM, string sElem);
 // Does a selected action for nGroup.
@@ -300,6 +303,68 @@ void main()
                     SetLocalInt(oModule, AI_RULE_WANDER, bCheck);
                     JsonObjectSetInplace(jRules, AI_RULE_CORPSES_STAY, JsonInt(bCheck));
                 }
+                else if(sElem == "chbx_open_doors_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_OPEN_DOORS, bCheck);
+                    jRules = JsonObjectSet(jRules, AI_RULE_OPEN_DOORS, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_party_scale_check")
+                {
+                    if(bCheck)
+                    {
+                        SetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP, GetModuleXPScale());
+                        ai_CheckXPPartyScale(oDM);
+                    }
+                    else
+                    {
+                        SetModuleXPScale(GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE));
+                    }
+                    SetLocalInt(oModule, AI_RULE_PARTY_SCALE, bCheck);
+                    jRules = JsonObjectSet(jRules, AI_RULE_PARTY_SCALE, JsonInt(bCheck));
+                    string sText = IntToString(GetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP));
+                    NuiSetBind(oDM, nToken, "chbx_party_scale_tooltip", JsonString("  PEPS adjusts your XP based on party size from (" + sText + ")."));
+                    sText = IntToString(GetModuleXPScale());
+                    NuiSetBind(oDM, nToken, "txt_xp_scale", JsonString(sText));
+                }
+                else if(sElem == "chbx_darkness_check")
+                {
+                    if(bCheck)
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DARKNESS);
+                        jRules = ai_AddRestrictedSpell(jRules, 159);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELLABILITY_AS_DARKNESS);
+                        jRules = ai_AddRestrictedSpell(jRules, 688); // WildShape_Darkness
+                    }
+                    else
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DARKNESS, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, 159, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELLABILITY_AS_DARKNESS, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, 688, FALSE); // WildShape_Darkness
+                    }
+                }
+                else if(sElem == "chbx_dispels_check")
+                {
+                    if(bCheck)
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_LESSER_DISPEL);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DISPEL_MAGIC);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_GREATER_DISPELLING);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION);
+                    }
+                    else
+                    {
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_LESSER_DISPEL, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_DISPEL_MAGIC, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_GREATER_DISPELLING, FALSE);
+                        jRules = ai_AddRestrictedSpell(jRules, SPELL_MORDENKAINENS_DISJUNCTION, FALSE);
+                    }
+                }
+                else if(sElem == "chbx_timestop_check")
+                {
+                    if(bCheck) jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP);
+                    else jRules = ai_AddRestrictedSpell(jRules, SPELL_TIME_STOP, FALSE);
+                }
                 ai_SetCampaignDbJson("rules", jRules);
             }
         }
@@ -568,6 +633,35 @@ void ai_RulePercDistInc(object oDM, object oModule, int nIncrement, int nToken)
     json jRules = ai_GetCampaignDbJson("rules");
     JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(nAdjustment));
     ai_SetCampaignDbJson("rules", jRules);
+}
+json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)
+{
+    object oModule = GetModule();
+    json jRSpells = GetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS);
+    int nIndex, nMaxIndex = JsonGetLength(jRSpells);
+    if(bRestrict)
+    {
+        while(nIndex < nMaxIndex)
+        {
+            if(JsonGetInt(JsonArrayGet(jRSpells, nIndex)) == nSpell) return jRules;
+            nIndex++;
+        }
+        jRSpells = JsonArrayInsert(jRSpells, JsonInt(nSpell));
+    }
+    else
+    {
+        while(nIndex < nMaxIndex)
+        {
+            if(JsonGetInt(JsonArrayGet(jRSpells, nIndex)) == nSpell)
+            {
+                jRSpells = JsonArrayDel(jRSpells, nIndex);
+                break;
+            }
+            nIndex++;
+        }
+    }
+    SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
+    return JsonObjectSet(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
 }
 void ai_SelectToGroup(object oDM, string sElem)
 {

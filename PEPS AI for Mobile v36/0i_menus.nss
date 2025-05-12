@@ -259,6 +259,7 @@ void ai_CreateAIMainNUI(object oPC)
         CreateLabel(jGroupRow, " Spells the AI will not use:", "lbl_restrict_spells", 190.0, 20.0, NUI_HALIGN_LEFT);
         CreateCheckBox(jGroupRow, " Darkness", "chbx_darkness", 90.0, 20.0, "chbx_darkness_tooltip");
         CreateCheckBox(jGroupRow, " Dispels", "chbx_dispels", 90.0, 20.0, "chbx_dispels_tooltip");
+        CreateCheckBox(jGroupRow, " Time Stop", "chbx_timestop", 90.0, 20.0, "chbx_timestop_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         fHeight += 168.0;
     }
@@ -457,6 +458,10 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBindWatch (oPC, nToken, "chbx_dispels_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_dispels_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "chbx_dispels_tooltip", JsonString("  AI will not use any of the Dispel spells in combat."));
+        NuiSetBind(oPC, nToken, "chbx_timestop_check", JsonBool(ai_SpellRestricted(SPELL_TIME_STOP)));
+        NuiSetBindWatch (oPC, nToken, "chbx_timestop_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_timestop_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "chbx_timestop_tooltip", JsonString("  AI will not use the Time Stop spell in combat."));
     }
 }
 void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
@@ -1373,8 +1378,8 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     NuiSetBindWatch(oPC, nToken, "chbx_bash_locks_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_bash_locks_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_bash_locks_event", JsonBool(TRUE));
-    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "Bash locks On [" + sRange + "]";
-    else sText = "Bash Locks Off [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "Bash On [" + sRange + "]";
+    else sText = "Bash Off [" + sRange + "]";
     NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sText));
     NuiSetBind (oPC, nToken, "btn_bash_locks_tooltip", JsonString("  " + sText));
     // Row 8
@@ -1785,8 +1790,8 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
     {
         sRange = FloatToString(GetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE), 0, 0);
         NuiSetBind(oPC, nToken, "btn_bash_locks_event", JsonBool(TRUE));
-        if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash locks On [" + sRange + " meters]";
-        else sText = "  Bash Locks Off [" + sRange + " meters]";
+        if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash On [" + sRange + " meters]";
+        else sText = "  Bash Off [" + sRange + " meters]";
         NuiSetBind(oPC, nToken, "btn_bash_locks_tooltip", JsonString(sText));
     }
     if(ai_GetAIButton(oPC, BTN_AI_MAGIC_LEVEL, oAssociate, sAssociateType))
@@ -1974,12 +1979,13 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
                         if(nFeat) // This is a feat.
                         {
                             nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                            sSpellIcon = "";
                             if(nSpell)
                             {
                                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                                 sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                             }
-                            else
+                            if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                             {
                                 sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                                 sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -2074,12 +2080,13 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
                     else if(nFeat) // This is a feat.
                     {
                         nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        sSpellIcon = "";
                         if(nSpell)
                         {
                             sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                             sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                         }
-                        else
+                        if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                         {
                             sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                             sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -3527,7 +3534,7 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
                                 sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                                 jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
                                 jSpell = JsonArray();
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(0));
+                                jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(0));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(255));
@@ -3700,12 +3707,13 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
             }
             else if(nFeat) // This is a feat.
             {
+                sSpellIcon = "";
                 if(nSpell)
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                     sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                 }
-                else
+                if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                     sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -3789,12 +3797,13 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
             }
             else if(nFeat) // This is a feat.
             {
+                sSpellIcon = "";
                 if(nSpell)
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                     sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                 }
-                else
+                if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                     sSpellIcon = Get2DAString("feat", "ICON", nFeat);

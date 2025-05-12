@@ -157,6 +157,8 @@ void main()
         NuiSetBind(oPC, nToken, "btn_party" + sIndex + "_event", JsonBool (TRUE));
     }
     NuiSetBind(oPC, nToken, "btn_npc_henchman_event", JsonBool(TRUE));
+    string sText = "  Select a creature to copy and have them join you.";
+    NuiSetBind(oPC, nToken, "btn_npc_henchman_tooltip", JsonString(sText));
     // ********** Saved Henchman in party # *********
     nIndex = 0;
     int nSlot, nMaxHenchman = AI_MAX_HENCHMAN + 1;

@@ -26,11 +26,7 @@ void main()
     if(AI_DEBUG) ai_Debug("nw_c2_defaultb", "26", GetName(oCreature) + " has been hit by a harmful spell(" +
           Get2DAString("spells", "Label", nSpell) + ")!");
     if(ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
-       !ai_CreatureImmuneToEffect(oCaster, oCreature, nSpell))
-    {
-        ai_MoveOutOfAOE(oCreature, oCaster);
-        return;
-    }
+       ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;
     if(ai_GetIsBusy(oCreature)) return;
     if(ai_CheckForCombat(oCreature, TRUE)) return;
     // We have been attacked out of combat, so let our allies know.

@@ -1549,7 +1549,7 @@ int GetHasPartColor(object oItem, int nPart, string sSide)
     nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "3"));
     nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "4"));
     nPartColor += JsonGetInt(GffGetByte(jItem, sPartName + "5"));
-    SendMessageToPC(GetFirstPC(), "sPartName: " + sPartName + " nPartColor: " + IntToString(nPartColor));
+    //SendMessageToPC(GetFirstPC(), "sPartName: " + sPartName + " nPartColor: " + IntToString(nPartColor));
     return nPartColor;
 }
 void SetModelNumberText(object oPC, int nToken)
@@ -1765,8 +1765,8 @@ void SetModelNumberText(object oPC, int nToken)
             nSelectedRight = GetHasPartColor(oItem, nModelSelected, "Right");
             nSelectedLeft = GetHasPartColor(oItem, nModelSelected, "Left");
             nSelectedAll = nSelectedRight || nSelectedLeft;
-            SendMessageToPC(oPC, "nSelectedRight: " + IntToString(nSelectedRight) +
-                                 " nSelectedLeft: " + IntToString(nSelectedLeft));
+            //SendMessageToPC(oPC, "nSelectedRight: " + IntToString(nSelectedRight) +
+            //                     " nSelectedLeft: " + IntToString(nSelectedLeft));
             NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(nSelectedRight));
             NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nSelectedAll));
             NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(nSelectedLeft));

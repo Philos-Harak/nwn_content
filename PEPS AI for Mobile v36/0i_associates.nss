@@ -147,7 +147,7 @@ object ai_GetNearestLockedObject(object oCreature)
 void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMonster)
 {
     if(GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
-    if(oSpeaker == oTarget)
+    if(oSpeaker == oTarget && d100() < 34)
     {
         // Let them know we heard something in the distance!.
         if(!ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK))
@@ -830,7 +830,9 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
         if(nEnemyPower < nPower) ai_DoAssociateCombatRound(oCreature);
         return;
     }
-    if(sPerception == AI_I_SEE_AN_ENEMY)
+    // Heard fires first, but Heard and Seen are both set at the same time.
+    // So lets skip the hearing code if they are also seen.
+    if(sPerception == AI_I_SEE_AN_ENEMY || GetObjectSeen(oLastPerceived, oCreature))
     {
         // We are not in combat and we see the enemy so alert our allies!
         ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
@@ -893,8 +895,11 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
     }
     if(sPerception == AI_I_SEE_AN_ENEMY)
     {
-        // We are not in combat so alert our allies!
-        ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        if(d100() < 34)
+        {
+            // We are not in combat so alert our allies!
+            ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        }
         SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
         ai_StartMonsterCombat(oCreature);
@@ -1105,16 +1110,16 @@ void ai_Locks(object oPC, object oAssociate, string sAssociateType, int nMode, i
     {
         if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS))
         {
-            ai_SendMessages(GetName(oAssociate) + " will stop bashing locks.", AI_COLOR_YELLOW, oPC);
-            string sText = "Bash Locks Off [" + sRange + "]";
+            ai_SendMessages(GetName(oAssociate) + " will stop bashing.", AI_COLOR_YELLOW, oPC);
+            string sText = "Bash Off [" + sRange + "]";
             NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sText));
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_BASH_LOCKS, FALSE);
         }
         else
         {
-            ai_SendMessages(GetName(oAssociate) + " will now bash locks.", AI_COLOR_YELLOW, oPC);
-            string sText = "Bash Locks On [" + sRange + "]";
+            ai_SendMessages(GetName(oAssociate) + " will now bash.", AI_COLOR_YELLOW, oPC);
+            string sText = "Bash On [" + sRange + "]";
             NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sText));
             ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_bash_locks_tooltip", "  " + sText);
             ai_SetAIMode(oAssociate, AI_MODE_BASH_LOCKS, TRUE);
@@ -1309,9 +1314,9 @@ void ai_LockRangeIncrement(object oPC, object oAssociate, float fIncrement, stri
     ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     string sRange = FloatToString(fAdjustment, 0, 0);
     string sPick = "Pick Locks Off [" + sRange + "]";
-    string sBash = "Bash Locks Off [" + sRange + "]";
+    string sBash = "Bash Off [" + sRange + "]";
     if(ai_GetAIMode(oAssociate, AI_MODE_PICK_LOCKS)) sPick = "Pick Locks On [" + sRange + "]";
-    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sBash = "Bash Locks On [" + sRange + "]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sBash = "Bash On [" + sRange + "]";
     NuiSetBind(oPC, nToken, "btn_pick_locks_label", JsonString(sPick));
     NuiSetBind(oPC, nToken, "btn_bash_locks_label", JsonString(sBash));
     ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_pick_locks_tooltip", "  " + sPick);

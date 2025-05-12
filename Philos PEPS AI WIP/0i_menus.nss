@@ -204,6 +204,7 @@ void ai_CreateAIMainNUI(object oPC)
         CreateLabel(jGroupRow, " Spells the AI will not use:", "lbl_restrict_spells", 190.0, 20.0, NUI_HALIGN_LEFT);
         CreateCheckBox(jGroupRow, " Darkness", "chbx_darkness", 90.0, 20.0, "chbx_darkness_tooltip");
         CreateCheckBox(jGroupRow, " Dispels", "chbx_dispels", 90.0, 20.0, "chbx_dispels_tooltip");
+        CreateCheckBox(jGroupRow, " Time Stop", "chbx_timestop", 90.0, 20.0, "chbx_timestop_tooltip");
         JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
         fHeight += 196.0;
     }
@@ -333,13 +334,13 @@ void ai_CreateAIMainNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_action_ghost_tooltip", JsonString("  Allows associates to move through creatures while in command mode."));
     // Row 3 Label for AI RULES
     // Row 4
-    NuiSetBind(oPC, nToken, "txt_max_henchman_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_MAX_HENCHMAN))));
     NuiSetBindWatch (oPC, nToken, "txt_max_henchman", TRUE);
+    NuiSetBind(oPC, nToken, "txt_max_henchman_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_max_henchman_tooltip", JsonString("  Set max number of henchman allowed (1-12)."));
-    NuiSetBind(oPC, nToken, "txt_xp_scale_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(GetModuleXPScale())));
     NuiSetBindWatch (oPC, nToken, "txt_xp_scale", TRUE);
+    NuiSetBind(oPC, nToken, "txt_xp_scale_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_xp_scale_tooltip", JsonString("  Set the modules XP scale (0 - 200) Normal D&D is 10."));
     NuiSetBind(oPC, nToken, "chbx_party_scale_check", JsonBool(GetLocalInt(oModule, AI_RULE_PARTY_SCALE)));
     NuiSetBindWatch(oPC, nToken, "chbx_party_scale_check", TRUE);
@@ -351,9 +352,9 @@ void ai_CreateAIMainNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_default_xp_tooltip", JsonString("  Reset the Modules XP to (" + sText + ")."));
     if(nMonsterAI)
     {
-        NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
         NuiSetBindWatch(oPC, nToken, "txt_ai_difficulty", TRUE);
+        NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
         NuiSetBindWatch(oPC, nToken, "chbx_buff_monsters_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_event", JsonBool(TRUE));
@@ -380,9 +381,9 @@ void ai_CreateAIMainNUI(object oPC)
             NuiSetBind(oPC, nToken, "chbx_corpses_stay_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "chbx_corpses_stay_tooltip", JsonString("  ** This will break some modules! ** See Readme for issues!"));
         }
-        NuiSetBind(oPC, nToken, "txt_perception_distance_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE), 0, 0)));
         NuiSetBindWatch(oPC, nToken, "txt_perception_distance", TRUE);
+        NuiSetBind(oPC, nToken, "txt_perception_distance_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_perception_distance_tooltip", JsonString("  Range [10 to 60 meters] from the player."));
         NuiSetBindWatch(oPC, nToken, "lbl_perc_dist", TRUE);
         int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE);
@@ -401,21 +402,21 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBind(oPC, nToken, "chbx_wander_check", JsonBool(bWander));
         NuiSetBindWatch(oPC, nToken, "chbx_wander_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_wander_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bWander));
         NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(FloatToString(GetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE), 0, 0)));
         NuiSetBindWatch(oPC, nToken, "txt_wander_distance", TRUE);
+        NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bWander));
         NuiSetBind(oPC, nToken, "chbx_wander_tooltip", JsonString("  ** This will break some modules! ** See Readme for issues!"));
         NuiSetBind(oPC, nToken, "chbx_open_doors_check", JsonBool(GetLocalInt(oModule, AI_RULE_OPEN_DOORS)));
         NuiSetBindWatch(oPC, nToken, "chbx_open_doors_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_open_doors_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "chbx_open_doors_tooltip", JsonString("  This allows monsters to open doors to hunt you down!"));
-        NuiSetBind(oPC, nToken, "txt_inc_enc_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_inc_enc_tooltip", JsonString("  Spawns one extra monster per counter above 1. Adds value to counter per encounter monster spawned."));
         NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS), 0, 2)));
         NuiSetBindWatch(oPC, nToken, "txt_inc_enc", TRUE);
-        NuiSetBind(oPC, nToken, "txt_inc_hp_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "txt_inc_enc_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(GetLocalInt(oModule, AI_INCREASE_MONSTERS_HP))));
         NuiSetBindWatch(oPC, nToken, "txt_inc_hp", TRUE);
+        NuiSetBind(oPC, nToken, "txt_inc_hp_event", JsonBool(TRUE));
     }
     if(nMonsterAI || nAssociateAI)
     {
@@ -442,6 +443,10 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBindWatch (oPC, nToken, "chbx_dispels_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_dispels_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "chbx_dispels_tooltip", JsonString("  AI will not use any of the Dispel spells in combat."));
+        NuiSetBind(oPC, nToken, "chbx_timestop_check", JsonBool(ai_SpellRestricted(SPELL_TIME_STOP)));
+        NuiSetBindWatch (oPC, nToken, "chbx_timestop_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_timestop_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "chbx_timestop_tooltip", JsonString("  AI will not use the Time Stop spell in combat."));
     }
 }
 void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
@@ -1314,7 +1319,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
         JsonArrayInsertInplace(jRow, NuiSpacer());
         if(bLeft)
         {
-            CreateButton(jRow, "Bash Locks Mode", "btn_bash_locks", 200.0, 20.0, -1.0, "btn_bash_locks_tooltip");
+            CreateButton(jRow, "Bash Mode", "btn_bash_locks", 200.0, 20.0, -1.0, "btn_bash_locks_tooltip");
             CreateCheckBox(jRow, "", "chbx_bash_locks", 25.0, 20.0);
         }
         JsonArrayInsertInplace(jCol, NuiRow(jRow));
@@ -1625,8 +1630,8 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     NuiSetBindWatch(oPC, nToken, "chbx_bash_locks_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_bash_locks_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_bash_locks_event", JsonBool(TRUE));
-    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash locks On [" + sRange + " meters]";
-    else sText = "  Bash Locks Off [" + sRange + " meters]";
+    if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash On [" + sRange + " meters]";
+    else sText = "  Bash Off [" + sRange + " meters]";
     NuiSetBind (oPC, nToken, "btn_bash_locks_tooltip", JsonString(sText));
     // Row 8
     string sMagic = IntToString(GetLocalInt(oAssociate, AI_DIFFICULTY_ADJUSTMENT));
@@ -2021,8 +2026,8 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
     {
         sRange = FloatToString(GetLocalFloat(oAssociate, AI_LOCK_CHECK_RANGE), 0, 0);
         NuiSetBind(oPC, nToken, "btn_bash_locks_event", JsonBool(TRUE));
-        if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash locks On [" + sRange + " meters]";
-        else sText = "  Bash Locks Off [" + sRange + " meters]";
+        if(ai_GetAIMode(oAssociate, AI_MODE_BASH_LOCKS)) sText = "  Bash On [" + sRange + " meters]";
+        else sText = "  Bash Off [" + sRange + " meters]";
         NuiSetBind(oPC, nToken, "btn_bash_locks_tooltip", JsonString(sText));
     }
     if(ai_GetAIButton(oPC, BTN_AI_MAGIC_LEVEL, oAssociate, sAssociateType))
@@ -2210,12 +2215,13 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
                         if(nFeat) // This is a feat.
                         {
                             nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                            sSpellIcon = "";
                             if(nSpell)
                             {
                                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                                 sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                             }
-                            else
+                            if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                             {
                                 sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                                 sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -2310,12 +2316,13 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
                     else if(nFeat) // This is a feat.
                     {
                         nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
+                        sSpellIcon = "";
                         if(nSpell)
                         {
                             sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                             sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                         }
-                        else
+                        if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                         {
                             sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                             sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -3758,7 +3765,7 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
                                 sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                                 jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
                                 jSpell = JsonArray();
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(0));
+                                jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(0));
                                 jSpell = JsonArrayInsert(jSpell, JsonInt(255));
@@ -3930,12 +3937,13 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
             }
             else if(nFeat) // This is a feat.
             {
+                sSpellIcon = "";
                 if(nSpell)
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                     sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                 }
-                else
+                if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                     sSpellIcon = Get2DAString("feat", "ICON", nFeat);
@@ -4019,12 +4027,13 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
             }
             else if(nFeat) // This is a feat.
             {
+                sSpellIcon = "";
                 if(nSpell)
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
                     sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                 }
-                else
+                if(sSpellIcon == "" || sSpellIcon == "IR_USE")
                 {
                     sName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
                     sSpellIcon = Get2DAString("feat", "ICON", nFeat);

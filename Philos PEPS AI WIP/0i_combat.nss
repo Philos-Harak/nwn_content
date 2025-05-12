@@ -1,10 +1,10 @@
-/*////////////////////////////////////////////////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////////////////////////////
 // Script Name: 0i_combat
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
  Include scripts for combat scripts.
-*/////////////////////////////////////////////////////////////////////////////////////////////////////
+*///////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
-//////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 #include "0i_messages"
 #include "0i_items"
 #include "0i_spells"
@@ -328,6 +328,9 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID);
 // Returns TRUE if equiped, FALSE if not.
 // oTarget is the creature the caller is targeting.
 int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID);
+// Returns TRUE if oCreature is in a Dangerous Area of Effect in fMaxRange.
+// bMove will attempt to move oCreature out of the Dangerous AOE if needed.
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD, int bMove = FALSE);
 // Returns 1 if oHidden has an Invisiblity effect, Can't be spotted but can be heard.
 // Returns 2 if oHidden has a Darkness effect. Can't be spotted but can be heard.
 // Returns 3 if oHidden has a Sanctuary effect, Can't be spotted or heard.
@@ -482,7 +485,7 @@ object ai_SetCombatState(object oCreature)
     float fNearest = AI_RANGE_BATTLEFIELD;
     float fDistance;
     float fMaxRange = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
-    if(fMaxRange == 0.0) fMaxRange = 20.0;
+    if(fMaxRange == 0.0) fMaxRange = AI_RANGE_PERCEPTION;
     string sCnt, sDebugText;
     location lLocation = GetLocation(oMaster);
     object oMelee, oNearestEnemy = OBJECT_INVALID;
@@ -767,15 +770,15 @@ void ai_ClearCombatState(object oCreature)
     DeleteLocalJson(oCreature, AI_TALENT_INDISCRIMINANT_AOE);
     DeleteLocalJson(oCreature, AI_TALENT_RANGED);
     DeleteLocalJson(oCreature, AI_TALENT_TOUCH);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_CURE);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_HEALING);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_ENHANCEMENT);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_PROTECTION);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_SUMMON);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_DISCRIMINANT_AOE);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_INDISCRIMINANT_AOE);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_RANGED);
-    DeleteLocalInt(oCreature, AI_NO_TALENTS + AI_TALENT_TOUCH);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_HEALING);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_ENHANCEMENT);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_PROTECTION);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_SUMMON);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_DISCRIMINANT_AOE);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_INDISCRIMINANT_AOE);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_RANGED);
+    DeleteLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_TOUCH);
     DeleteLocalInt(oCreature, AI_AM_I_SEARCHING);
     DeleteLocalInt(oCreature, AI_TRIED_TO_HIDE);
     DeleteLocalObject(oCreature, AI_IS_INVISIBLE);
@@ -2609,6 +2612,7 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
                                   " nLeftValue: " + IntToString(nLeftValue));
         }
     }
+    int nWeaponSize, nType, nCreatureSize = GetCreatureSize(oCreature);
     // Get the best weapons they have in their inventory.
     object oItem = GetFirstItemInInventory(oCreature);
     // If they don't have any items then lets stop, we can't equip a weapon/shield.
@@ -2635,62 +2639,70 @@ int ai_EquipBestMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALID)
                 }
                 else if(ai_GetIsMeleeWeapon(oItem))
                 {
-                    // Get item avg damage based on if it is 2handed or 1handed.
-                    if(ai_GetIsSingleHandedWeapon(oItem, oCreature))
+                    // Make sure the creature and weapon are close enough in size.
+                    // Can wield a weapon up to one size larger than their size.
+                    // Can wield a weapon down to two sizes smaller than their size.
+                    nType = GetBaseItemType(oItem);
+                    nWeaponSize = StringToInt(Get2DAString("baseitems", "WeaponSize", nType));
+                    if(nWeaponSize >=  nCreatureSize - 2 && nWeaponSize <= nCreatureSize + 1)
                     {
-                        fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem);
-                        fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, FALSE, TRUE);
-                        // If the new weapon is better than the weapon in our right hand.
-                        if(fItemPower > fRightPower ||
-                          (fItemPower == fRightPower && nItemValue > nRightValue))
+                        // Get item avg damage based on if it is 2handed or 1handed.
+                        if(ai_GetIsSingleHandedWeapon(oItem, oCreature))
                         {
-                            // We need to check if the weapon in the right hand is
-                            // better than the weapon in the left hand since we are
-                            // replacing our right hand weapon.
-                            // Note: we must find out if we have selected a weapon for the
-                            // right hand i.e. oRight or the best weapon is in our
-                            // right hand i.e. oRightHand!
-                            fOffItemPower = 0.0;
-                            if(oRight != OBJECT_INVALID && ai_GetIsSingleHandedWeapon(oRight, oCreature))
+                            fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem);
+                            fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, FALSE, TRUE);
+                            // If the new weapon is better than the weapon in our right hand.
+                            if(fItemPower > fRightPower ||
+                              (fItemPower == fRightPower && nItemValue > nRightValue))
                             {
-                                fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oRight, FALSE, TRUE);
+                                // We need to check if the weapon in the right hand is
+                                // better than the weapon in the left hand since we are
+                                // replacing our right hand weapon.
+                                // Note: we must find out if we have selected a weapon for the
+                                // right hand i.e. oRight or the best weapon is in our
+                                // right hand i.e. oRightHand!
+                                fOffItemPower = 0.0;
+                                if(oRight != OBJECT_INVALID && ai_GetIsSingleHandedWeapon(oRight, oCreature))
+                                {
+                                    fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oRight, FALSE, TRUE);
+                                }
+                                else if(oRightHand != OBJECT_INVALID && ai_GetIsSingleHandedWeapon(oRightHand, oCreature))
+                                {
+                                    fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oRightHand, FALSE, TRUE);
+                                }
+                                // If the right hand weapon is better than the weapon in our left hand.
+                                if(fOffItemPower > fLeftPower || (fOffItemPower > 0.0 &&
+                                   fOffItemPower == fLeftPower && nRightValue > nLeftValue))
+                                {
+                                    if(oRight != OBJECT_INVALID) oLeft = oRight;
+                                    else oLeft = oRightHand;
+                                    fLeftPower = fOffItemPower;
+                                    nLeftValue = nRightValue;
+                                }
+                                oRight = oItem;
+                                fRightPower = fItemPower;
+                                nRightValue = nItemValue;
                             }
-                            else if(oRightHand != OBJECT_INVALID && ai_GetIsSingleHandedWeapon(oRightHand, oCreature))
-                            {
-                                fOffItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oRightHand, FALSE, TRUE);
-                            }
-                            // If the right hand weapon is better than the weapon in our left hand.
-                            if(fOffItemPower > fLeftPower || (fOffItemPower > 0.0 &&
-                               fOffItemPower == fLeftPower && nRightValue > nLeftValue))
-                            {
-                                if(oRight != OBJECT_INVALID) oLeft = oRight;
-                                else oLeft = oRightHand;
-                                fLeftPower = fOffItemPower;
-                                nLeftValue = nRightValue;
-                            }
-                            oRight = oItem;
-                            fRightPower = fItemPower;
-                            nRightValue = nItemValue;
+                            // If the new weapon is better than the weapon in our left hand.
+                            else if(fOffItemPower > fLeftPower ||
+                                   (fOffItemPower == fLeftPower && nItemValue > nLeftValue))
+                            { oLeft = oItem; fLeftPower = fOffItemPower; nLeftValue = nItemValue; }
                         }
-                        // If the new weapon is better than the weapon in our left hand.
-                        else if(fOffItemPower > fLeftPower ||
-                               (fOffItemPower == fLeftPower && nItemValue > nLeftValue))
-                        { oLeft = oItem; fLeftPower = fOffItemPower; nLeftValue = nItemValue; }
-                    }
-                    else if(ai_GetIsTwoHandedWeapon(oItem, oCreature))
-                    {
-                        if(ai_GetIsDoubleWeapon(oItem))
+                        else if(ai_GetIsTwoHandedWeapon(oItem, oCreature))
                         {
-                            fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, TRUE, FALSE, oItem);
-                        }
-                        else fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, TRUE);
-                        // If the new weapon is better than the selected weapon.
-                        if(fItemPower > f2HandedPower ||
-                          (fItemPower == f2HandedPower && nItemValue > n2HandedValue))
-                        {
-                            o2Handed = oItem;
-                            f2HandedPower = fItemPower;
-                            n2HandedValue = nItemValue;
+                            if(ai_GetIsDoubleWeapon(oItem))
+                            {
+                                fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, TRUE, FALSE, oItem);
+                            }
+                            else fItemPower = ai_GetMeleeWeaponAvgDmg(oCreature, oItem, TRUE);
+                            // If the new weapon is better than the selected weapon.
+                            if(fItemPower > f2HandedPower ||
+                              (fItemPower == f2HandedPower && nItemValue > n2HandedValue))
+                            {
+                                o2Handed = oItem;
+                                f2HandedPower = fItemPower;
+                                n2HandedValue = nItemValue;
+                            }
                         }
                     }
                 }
@@ -2768,7 +2780,7 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
     int nMaxItemValue = ai_GetMaxItemValueThatCanBeEquiped(GetHitDice(oCreature));
     string sAmmo;
     object oRightHand = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oCreature);
-    if(oRightHand != OBJECT_INVALID)
+    if(oRightHand != OBJECT_INVALID && ai_GetIsRangeWeapon(oRightHand))
     {
         // Setup the item in our right hand as our base gold value to check against.
         if(ai_GetIsRangeWeapon(oRightHand)) nRangedValue = GetGoldPieceValue(oRightHand);
@@ -2801,24 +2813,24 @@ int ai_EquipBestRangedWeapon(object oCreature, object oTarget = OBJECT_INVALID)
       nAmmo = BASE_ITEM_BOLT; nAmmoSlot = INVENTORY_SLOT_BOLTS; sAmmo = "bolt"; }
     if(AI_DEBUG) ai_Debug("0i_combat", "3262", "nBestType1: " + IntToString(nBestType1) + " nBestType2: " + IntToString(nBestType2) +
            " nAmmo: " + IntToString(nAmmo));
+    int nCreatureSize = GetCreatureSize(oCreature) + 1;
     // Cycle through the inventory looking for a ranged weapon.
     object oItem = GetFirstItemInInventory(oCreature);
-    int nCreatureSize = GetCreatureSize(oCreature) + 1;
     while(oItem != OBJECT_INVALID)
     {
+        nType = GetBaseItemType(oItem);
         if(AI_DEBUG) ai_Debug("0i_combat", "3269", "oItem: " + GetName(oItem) +
-                 " Identified: " + IntToString(GetIdentified(oItem)));
-        if(GetIdentified(oItem) && ai_CheckIfCanUseItem(oCreature, oItem))
+                 " Identified: " + IntToString(GetIdentified(oItem)) +
+                 " Ranged Weapon: " + Get2DAString("baseitems", "RangedWeapon", nType));
+        // Make sure it is identified and it is a ranged weapon.
+        if(GetIdentified(oItem) && Get2DAString("baseitems", "RangedWeapon", nType) != "")
         {
-            nType = GetBaseItemType(oItem);
-            // Make sure this is a ranged weapon.
-            if(AI_DEBUG) ai_Debug("0i_combat", "3275", " Ranged Weapon: " + Get2DAString("baseitems", "RangedWeapon", nType));
-            if(Get2DAString("baseitems", "RangedWeapon", nType) != "")
+           if(AI_DEBUG) ai_Debug("0i_combat", "3278", " Proficient: " +
+                    IntToString(ai_GetIsProficientWith(oCreature, oItem)) +
+                    " nMaxItemValue: " + IntToString(nMaxItemValue));
+            if(ai_GetIsProficientWith(oCreature, oItem))
             {
-                if(AI_DEBUG) ai_Debug("0i_combat", "3278", " Proficient: " +
-                         IntToString(ai_GetIsProficientWith(oCreature, oItem)) +
-                         " nMaxItemValue: " + IntToString(nMaxItemValue));
-                if(ai_GetIsProficientWith(oCreature, oItem))
+                if(ai_CheckIfCanUseItem(oCreature, oItem))
                 {
                     nItemValue = GetGoldPieceValue(oItem);
                     if(AI_DEBUG) ai_Debug("0i_combat", "3284", "nItemValue: " + IntToString(nItemValue));
@@ -2942,6 +2954,84 @@ int ai_EquipBestMonkMeleeWeapon(object oCreature, object oTarget = OBJECT_INVALI
     if(AI_DEBUG) ai_Debug("0i_combat", "2986", GetName(oCreature) + " is equiping " + GetName(oRight) + " in the right hand.");
     ActionEquipItem(oRight, INVENTORY_SLOT_RIGHTHAND);
     return TRUE;
+}
+int ai_IsInADangerousAOE(object oCreature, float fMaxRange = AI_RANGE_BATTLEFIELD, int bMove = FALSE)
+{
+    int bDangerous, nSpell, nCnt = 1;
+    string sAOEType;
+    object oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, nCnt);
+    float fRadius, fDistance = GetDistanceBetween(oCreature, oAOE);
+    while(oAOE != OBJECT_INVALID && fDistance <= fMaxRange)
+    {
+        // AOE's have the tag set to the "LABEL" in vfx_persistent.2da
+        // I check vs those labels to see if the AOE is offensive.
+        // Below is the list of Offensive AOE effects.
+        sAOEType = GetTag(oAOE);
+        if(sAOEType == "VFX_PER_WEB") { fRadius = 6.7; nSpell = SPELL_WEB; }
+        else if(sAOEType == "VFX_PER_ENTANGLE") { fRadius = 5.0; nSpell = SPELL_ENTANGLE; }
+        else if(sAOEType == "VFX_PER_GREASE") { fRadius = 6.0; nSpell = SPELL_GREASE; }
+        else if(sAOEType == "VFX_PER_EVARDS_BLACK_TENTACLES")
+             { fRadius = 5.0; nSpell = SPELL_EVARDS_BLACK_TENTACLES; }
+        //else if(sAOEType == "VFX_PER_DARKNESS") { fRadius = 6.7; nSpell = SPELL_DARKNESS; }
+        //else if(sAOEType == "VFX_MOB_SILENCE") { fRadius = 4.0; nSpell = SPELL_SILENCE; }
+        else if(sAOEType == "VFX_PER_FOGSTINK") { fRadius = 6.7; nSpell = SPELL_STINKING_CLOUD; }
+        else if(sAOEType == "VFX_PER_FOGFIRE") { fRadius = 5.0; nSpell = SPELL_INCENDIARY_CLOUD; }
+        else if(sAOEType == "VFX_PER_FOGKILL") { fRadius = 5.0; nSpell = SPELL_CLOUDKILL; }
+        else if(sAOEType == "VFX_PER_FOGMIND") { fRadius = 5.0; nSpell = SPELL_MIND_FOG; }
+        else if(sAOEType == "VFX_PER_CREEPING_DOOM") { fRadius = 6.7; nSpell = SPELL_CREEPING_DOOM; }
+        else if(sAOEType == "VFX_PER_FOGACID") { fRadius = 5.0; nSpell = SPELL_ACID_FOG; }
+        else if(sAOEType == "VFX_PER_FOGBEWILDERMENT") { fRadius = 5.0; nSpell = SPELL_CLOUD_OF_BEWILDERMENT; }
+        else if(sAOEType == "VFX_PER_WALLFIRE") { fRadius = 10.0; nSpell = SPELL_WALL_OF_FIRE; }
+        else if(sAOEType == "VFX_PER_WALLBLADE") { fRadius = 10.0; nSpell = SPELL_BLADE_BARRIER; }
+        else if(sAOEType == "VFX_PER_DELAY_BLAST_FIREBALL") { fRadius = 2.0; nSpell = SPELL_DELAYED_BLAST_FIREBALL; }
+        else if(sAOEType == "VFX_PER_GLYPH") { fRadius = 2.5; nSpell = SPELL_GLYPH_OF_WARDING; }
+        else fRadius = 0.0;
+        if(AI_DEBUG) ai_Debug("0i_combat", "3088", GetName(oCreature) + " distance from AOE is " + FloatToString(fDistance, 0, 2) +
+                " AOE Radius: " + FloatToString(fRadius, 0, 2) +
+                " AOE Type: " + GetTag(oAOE));
+        // fRadius > 0.0 keeps them from tiggering that they are in a dangerous
+        // AOE due to having an AOE on them.
+        if(fRadius > 0.0 && fDistance <= fRadius &&
+           !ai_CreatureImmuneToEffect(GetAreaOfEffectCreator(oAOE), oCreature, nSpell))
+        {
+            bDangerous = TRUE;
+            if(nSpell == SPELL_WEB || nSpell == SPELL_ENTANGLE)
+            {
+                if(ai_HasRangedWeaponWithAmmo(oCreature)) bDangerous = FALSE;
+                if(GetReflexSavingThrow(oCreature) + GetAbilityModifier(ABILITY_DEXTERITY, oCreature) >= ai_GetCharacterLevels(oCreature))
+                    bDangerous = FALSE;
+            }
+            break;
+        }
+        oAOE = GetNearestObject(OBJECT_TYPE_AREA_OF_EFFECT, oCreature, ++nCnt);
+        fDistance = GetDistanceBetween(oCreature, oAOE);
+    }
+    if(bDangerous && bMove)
+    {
+        location lLocation;
+        object oTarget;
+        if(ai_GetIsInCombat(oCreature))
+        {
+            object oMaster = GetMaster(oCreature);
+            // If we have a ranged weapon then backout and use that.
+            if(ai_HasRangedWeaponWithAmmo(oCreature))
+            {
+                lLocation = GetRandomLocation(GetArea(oCreature), oCreature, fRadius + 1.0);
+            }
+            else // we must find a target out of the AOE or fight in the AOE.
+            {
+                oTarget = ai_GetNearestTargetNotInAOE(oCreature, AI_RANGE_PERCEPTION, AI_ENEMY, TRUE);
+                if(oTarget != OBJECT_INVALID) lLocation = GetLocation(oTarget);
+            }
+        }
+        else lLocation = GetRandomLocation(GetArea(oCreature), oCreature, fRadius + 1.0);
+        ai_ClearCreatureActions();
+        if(AI_DEBUG) ai_Debug("0i_combat", "3035", GetName(oCreature) + " is moving out of area of effect!");
+        ActionMoveToLocation(lLocation, TRUE);
+        return TRUE;
+    }
+    else if(bDangerous) return TRUE;
+    return FALSE;
 }
 int ai_GetIsHidden(object oHidden)
 {

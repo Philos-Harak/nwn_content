@@ -40,7 +40,7 @@ void main()
 {
    object oPC = OBJECT_SELF;
    //*********** Philos Player Setup *********
-   if(!AI_SERVER) ai_CheckPCStart(oPC);
+   if(!AI_SERVER && ai_GetIsCharacter(oPC)) ai_CheckPCStart(oPC);
    //*********** Philos Player Setup *********
    object oTarget=GetSpellTargetObject();
    object oHorse;
