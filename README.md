@@ -12,3 +12,5 @@ Place in the override folder to use.
 
 Philos PEPS AI WIP: This is the work in progress and is the full module folder that I use to build and work on the files.
   ai_spells.2da has also been added and needs to be placed in the override folder.
+
+PEPS AI for Mobile v36: Compiled for NWN version 36-13 that works on Mobile. Also adjusted some menus to work better for Mobile devices.
