@@ -104,13 +104,13 @@ void main()
                     ai_SendMessages(GetName(oDM) + " AI widget locked.", AI_COLOR_YELLOW, oDM);
                     ai_SetDMWidgetButton(oDM, BTN_DM_WIDGET_LOCK, TRUE);
                 }
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
             else if(sElem == "btn_main_menu")
             {
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMOptionsNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMOptionsNUI(oDM));
             }
             else if(sElem == "btn_camera") ai_SelectCameraView(oDM);
             else if(sElem == "btn_inventory") ai_SelectOpenInventory(oDM);
@@ -137,8 +137,8 @@ void main()
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetCampaignDbJson("plugins", jPlugins, sName, AI_DM_TABLE);
             }
-            NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-            ai_CreateDMWidgetNUI(oDM);
+            DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+            DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
         }
         else if(sEvent == "mousescroll")
         {
@@ -182,13 +182,13 @@ void main()
         {
             if(sElem == "btn_plugin_manager")
             {
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
             }
             if(sElem == "btn_widget_manager")
             {
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMWidgetManagerNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
             }
         }
         if(sEvent == "watch")
@@ -204,7 +204,7 @@ void main()
                 }
                 SetMaxHenchmen(nMaxHenchmen);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
+                jRules = JsonObjectSet(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
                 ai_SetCampaignDbJson("rules", jRules);
                 ai_SendMessages("Maximum henchmen has been changed to " + IntToString(nMaxHenchmen), AI_COLOR_YELLOW, oDM);
             }
@@ -215,7 +215,7 @@ void main()
                 else if(nChance > 100) nChance = 100;
                 SetLocalInt(GetModule(), AI_RULE_AI_DIFFICULTY, nChance);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(nChance));
+                jRules = JsonObjectSet(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(nChance));
                 ai_SetCampaignDbJson("rules", jRules);
             }
             else if(sElem == "txt_perception_distance")
@@ -225,7 +225,7 @@ void main()
                 else if(fDistance > 60.0) fDistance = 60.0;
                 SetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE, fDistance);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(fDistance));
+                jRules = JsonObjectSet(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(fDistance));
                 ai_SetCampaignDbJson("rules", jRules);
             }
             else if(sElem == "txt_inc_hp")
@@ -235,7 +235,7 @@ void main()
                 else if(nNumber > 100) nNumber = 100;
                 SetLocalInt(GetModule(), AI_INCREASE_MONSTERS_HP, nNumber);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
+                jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
                 ai_SetCampaignDbJson("rules", jRules);
             }
             else if(GetStringLeft(sElem, 4) == "chbx")
@@ -246,62 +246,62 @@ void main()
                 if(sElem == "chbx_moral_check")
                 {
                     SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_MORAL_CHECKS, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_MORAL_CHECKS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_buff_monsters_check")
                 {
                     SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_buff_summons_check")
                 {
                     SetLocalInt(oModule, AI_RULE_PRESUMMON, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_PRESUMMON, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_ambush_monsters_check")
                 {
                     SetLocalInt(oModule, AI_RULE_AMBUSH, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_AMBUSH, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_AMBUSH, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_companions_check")
                 {
                     SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_SUMMON_COMPANIONS, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_SUMMON_COMPANIONS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_advanced_movement_check")
                 {
                     SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_ilr_check")
                 {
                     SetLocalInt(oModule, AI_RULE_ILR, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_ILR, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_ILR, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_umd_check")
                 {
                     SetLocalInt(oModule, AI_RULE_ALLOW_UMD, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_ALLOW_UMD, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_ALLOW_UMD, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_use_healingkits_check")
                 {
                     SetLocalInt(oModule, AI_RULE_HEALERSKITS, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_HEALERSKITS, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_HEALERSKITS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_perm_assoc_check")
                 {
                     SetLocalInt(oModule, AI_RULE_PERM_ASSOC, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_PERM_ASSOC, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_PERM_ASSOC, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_corpses_stay_check")
                 {
                     SetLocalInt(oModule, AI_RULE_CORPSES_STAY, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_CORPSES_STAY, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_CORPSES_STAY, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_wander_check")
                 {
                     SetLocalInt(oModule, AI_RULE_WANDER, bCheck);
-                    JsonObjectSetInplace(jRules, AI_RULE_CORPSES_STAY, JsonInt(bCheck));
+                    jRules = JsonObjectSet(jRules, AI_RULE_CORPSES_STAY, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_open_doors_check")
                 {
@@ -403,10 +403,10 @@ void main()
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, "pi_debug");
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, "pi_test");
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
             if(sElem == "btn_check_plugins")
             {
@@ -419,10 +419,10 @@ void main()
                     jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
             if(sElem == "btn_clear_plugins")
             {
@@ -435,10 +435,10 @@ void main()
                     jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
             else if(sElem == "btn_add_plugin")
             {
@@ -446,18 +446,18 @@ void main()
                 if(JsonGetType(JsonArrayGet(jPlugins, 0)) == JSON_TYPE_NULL) jPlugins = JsonArray();
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, sScript);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
             }
             else if(GetStringLeft(sElem, 18) == "btn_remove_plugin_")
             {
                 int nIndex = StringToInt(GetStringRight(sElem, 1));
                 jPlugins = JsonArrayDel(jPlugins, nIndex);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMPluginManagerNUI(oDM);
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
             else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oDM, sElem, 2);
         }
@@ -471,8 +471,8 @@ void main()
                 jPlugin = JsonArraySet(jPlugin, 1, JsonBool(bCheck));
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
-                ai_CreateDMWidgetNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
             }
         }
     }
@@ -487,11 +487,11 @@ void main()
                 SetLocalInt(oModule, sDMWidgetAccessVarname, 0);
                 SetLocalInt(oModule, sDMAIAccessVarname, 0);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, sDMWidgetAccessVarname, JsonInt(0));
-                JsonObjectSetInplace(jRules, sDMAIAccessVarname, JsonInt(0));
+                jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(0));
+                jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(0));
                 ai_SetCampaignDbJson("rules", jRules);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMWidgetManagerNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
                 return;
             }
             else if(sElem == "btn_check_buttons")
@@ -500,11 +500,11 @@ void main()
                 SetLocalInt(oModule, sDMWidgetAccessVarname, 7340028);
                 SetLocalInt(oModule, sDMAIAccessVarname, 203423743);
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, sDMWidgetAccessVarname, JsonInt(7340028));
-                JsonObjectSetInplace(jRules, sDMAIAccessVarname, JsonInt(203423743));
+                jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(7340028));
+                jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(203423743));
                 ai_SetCampaignDbJson("rules", jRules);
-                NuiDestroy(oDM, nToken);
-                ai_CreateDMWidgetManagerNUI(oDM);
+                DelayCommand(0.0, NuiDestroy(oDM, nToken));
+                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
                 return;
             }
             SetLocalInt(oDM, "CHBX_SKIP", TRUE);
@@ -534,7 +534,6 @@ void main()
             else if(sElem == "btn_ai") NuiSetBind(oDM, nToken, "chbx_ai_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_FOR_PC)));
             else if(sElem == "btn_quiet") NuiSetBind(oDM, nToken, "chbx_quiet_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_REDUCE_SPEECH)));
             else if(sElem == "btn_ranged") NuiSetBind(oDM, nToken, "chbx_ranged_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_USE_RANGED)));
-            else if(sElem == "btn_ignore_assoc") NuiSetBind(oDM, nToken, "chbx_ignore_assoc_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_IGNORE_ASSOCIATES)));
             else if(sElem == "btn_search") NuiSetBind(oDM, nToken, "chbx_search_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_USE_SEARCH)));
             else if(sElem == "btn_stealth") NuiSetBind(oDM, nToken, "chbx_stealth_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_USE_STEALTH)));
             else if(sElem == "btn_open_door") NuiSetBind(oDM, nToken, "chbx_open_door_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_OPEN_DOORS)));
@@ -552,6 +551,8 @@ void main()
             else if(sElem == "btn_heals_onoff") NuiSetBind(oDM, nToken, "chbx_heals_onoff_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_STOP_SELF_HEALING)));
             else if(sElem == "btn_healp_onoff") NuiSetBind(oDM, nToken, "chbx_healp_onoff_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_STOP_PARTY_HEALING)));
             else if(sElem == "btn_loot") NuiSetBind(oDM, nToken, "chbx_loot_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_LOOT)));
+            else if(sElem == "btn_ignore_assoc") NuiSetBind(oDM, nToken, "chbx_ignore_assoc_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_IGNORE_ASSOCIATES)));
+            else if(sElem == "btn_ignore_traps") NuiSetBind(oDM, nToken, "chbx_ignore_traps_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_IGNORE_TRAPS)));
             else if(sElem == "btn_perc_range") NuiSetBind(oDM, nToken, "chbx_perc_range_check", JsonBool(!ai_GetDMAIAccessButton(BTN_AI_PERC_RANGE)));
         }
         if(sEvent == "watch")
@@ -582,7 +583,6 @@ void main()
             else if(sElem == "chbx_ai_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_FOR_PC, nToken, sElem);
             else if(sElem == "chbx_quiet_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_REDUCE_SPEECH, nToken, sElem);
             else if(sElem == "chbx_ranged_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_USE_RANGED, nToken, sElem);
-            else if(sElem == "chbx_ignore_assoc_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_IGNORE_ASSOCIATES, nToken, sElem);
             else if(sElem == "chbx_search_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_USE_SEARCH, nToken, sElem);
             else if(sElem == "chbx_stealth_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_USE_STEALTH, nToken, sElem);
             else if(sElem == "chbx_open_door_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_OPEN_DOORS, nToken, sElem);
@@ -600,6 +600,8 @@ void main()
             else if(sElem == "chbx_heals_onoff_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_STOP_SELF_HEALING, nToken, sElem);
             else if(sElem == "chbx_healp_onoff_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_STOP_PARTY_HEALING, nToken, sElem);
             else if(sElem == "chbx_loot_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_LOOT, nToken, sElem);
+            else if(sElem == "chbx_ignore_assoc_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_IGNORE_ASSOCIATES, nToken, sElem);
+            else if(sElem == "chbx_ignore_traps_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_IGNORE_TRAPS, nToken, sElem);
             else if(sElem == "chbx_perc_range_check") ai_SetDMAIAccessButtonToCheckbox(oDM, BTN_AI_PERC_RANGE, nToken, sElem);
         }
     }
@@ -631,7 +633,7 @@ void ai_RulePercDistInc(object oDM, object oModule, int nIncrement, int nToken)
     else sText = " Monster perception: Default [Monster's default values]";
     NuiSetBind(oDM, nToken, "lbl_perc_dist_label", JsonString(sText));
     json jRules = ai_GetCampaignDbJson("rules");
-    JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(nAdjustment));
+    jRules = JsonObjectSet(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(nAdjustment));
     ai_SetCampaignDbJson("rules", jRules);
 }
 json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)

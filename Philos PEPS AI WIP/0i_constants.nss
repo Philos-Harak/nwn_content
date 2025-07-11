@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:05.11.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:07.10.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -31,6 +31,14 @@ const int AI_ASF_WILL_USE = 15;
 const int AI_MONSTER_HEAL_IN_COMBAT_CHANCE = 70;
 // Monsters chance to heal when out of combat per heart beat.
 const int AI_MONSTER_HEAL_OUT_COMBAT_CHANCE = 70;
+// Allows Henchman to have a widget if using the henchman AI.
+const int AI_HENCHMAN_WIDGET = TRUE;
+// Change the Custom token number if it conflicts with your server.
+const int AI_BASE_CUSTOM_TOKEN = 1000;
+// Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
+const float AI_HENCHMAN_BUFF_DELAY = 0.2;
+
+//*******************  These can be changed within the game  *******************
 // Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
 const int AI_MORAL_CHECKS = FALSE;
 // Allows monsters to prebuff before combat starts.
@@ -71,16 +79,10 @@ const int AI_OPEN_DOORS = FALSE;
 // 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
 // 11 Default(Based on appearance.2da Most creatures use 9, bosses use 10).
 const int AI_MONSTER_PERCEPTION = 11;
-// Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_BUFF_DELAY = 0.2;
-
-// The below constants are for Henchman AI only.
 // Should the AI auto adjust the XP scale to remove party size penalty?
 const int AI_PARTY_SCALE = FALSE;
-// Allows Henchman to have a widget if using the henchman AI.
-const int AI_HENCHMAN_WIDGET = TRUE;
-// Change the Custom token number if it conflicts with your server.
-const int AI_BASE_CUSTOM_TOKEN = 1000;
+
+//****************************  DM Based Constants  ****************************
 // The constant the server wants set to allow players to use specific widgets buttons.
 // 0 Allows all buttons. See ASSOCIATE_WIDGET_BUTTONS below for values needed to be
 // added to block those buttons.
@@ -132,11 +134,21 @@ const string AI_COPY_NUI = "_copy_nui";
 const string AI_PLUGIN_NUI = "ai_plugin_nui";
 const string AI_QUICK_WIDGET_NUI = "_quick_widget_nui";
 const string AI_SPELL_MEMORIZE_NUI = "_spell_memorize_nui";
+const string AI_SPELL_KNOWN_NUI = "_spell_known_nui";
 const string AI_SPELL_DESCRIPTION_NUI = "ai_spell_desc_nui";
+const string AI_EFFECT_ICON_NUI = "ai_effect_icon_nui";
 //******************************* CORE CONSTANTS *******************************
 // The following constants are core constants and changing any of these without
 // understanding the whole system could cause unforseen results.
 //                            CHANGE AT YOUR OWN RISK.
+// Variable used to asave a monster object for changing.
+const string AI_MONSTER_OBJECT = "AI_MONSTER_OBJECT";
+// Variable used to save a monsters json for changing.
+const string AI_MONSTER_JSON = "AI_MONSTER_JSON";
+// Variable used to let PEPS know that a monster plugin changed the monster.
+const string AI_MONSTER_CHANGED = "AI_MONSTER_CHANGED";
+// Variable used to save an associates class list to change known list json.
+const string AI_CLASS_LIST_JSON = "AI_CLASS_LIST_JSON";
 // Startup variable to tell plugins that we have started.
 const string AI_STARTING_UP = "AI_STARTING_UP";
 // Add plugin variable to tell plugins that we are adding them to PEPS.
@@ -145,6 +157,8 @@ const string AI_ADD_PLUGIN = "AI_ADD_PLUGIN";
 const string AI_JSON_PLUGINS = "AI_JSON_PLUGINS";
 // Plugin variable to have plugins return if they setup the plugin in the json for PEPS.
 const string AI_PLUGIN_SET = "AI_PLUGIN_SET";
+// Monster modification variable to let PEPS know what mods are available.
+const string AI_MONSTER_MOD_JSON = "AI_MONSTER_MOD_JSON";
 // The maximum number of henchman the code works with.
 const int AI_MAX_HENCHMAN = 12;
 // Delay between Henchman casting Healing spells. Must be minimum of 0.5 seconds.
@@ -317,7 +331,7 @@ const int AI_MODE_SELF_HEALING_OFF =    0x00000008; // Creature will not use hea
 const int AI_MODE_PARTY_HEALING_OFF =   0x00000010; // Creature will not use healing items or spells on party.
 const int AI_MODE_GHOST =               0x00000020; // Creature can move through other creatures.
 const int AI_MODE_OPEN_DOORS =          0x00000040; // Creature will attempted to open all doors.
-//const int AI_MODE_ =                  0x00000080; // Not used.
+const int AI_MODE_EQUIP_WEAPON_OFF =    0x00000080; // The AI will not equip weapons.
 const int AI_MODE_BASH_LOCKS =          0x00000100; // Will bash locks if cannot open door/placeable.
 const int AI_MODE_AGGRESSIVE_SEARCH =   0x00000200; // Sets associate to continuous search mode.
 const int AI_MODE_AGGRESSIVE_STEALTH =  0x00000400; // Sets associate to continuous stealth mode.
@@ -330,7 +344,7 @@ const int AI_MODE_STOP_RANGED =         0x00010000; // Will not use ranged weapo
 const int AI_MODE_FOLLOW =              0x00020000; // Keeps associate following master ignoring combat.
 const int AI_MODE_PICKUP_ITEMS =        0x00040000; // Will pickup up all items for master.
 const int AI_MODE_COMMANDED =           0x00080000; // In Command mode then don't follow, search, etc.
-//const int AI_MODE_ =                  0x00100000; // Not used.
+const int AI_MODE_IGNORE_TRAPS =        0x00100000; // Creature will ignore traps on the floor.
 const int AI_MODE_NO_STEALTH =          0x00200000; // Will not cast invisibilty or use stealth.
 const int AI_MODE_DO_NOT_SPEAK =        0x00400000; // Tells the henchmen to be silent and not talk.
 const int AI_MODE_CHECK_ATTACK =        0x00800000; // Will only engage in combats they think they can win.
@@ -351,8 +365,8 @@ const int AI_MAGIC_OFFENSIVE_CASTING =   0x00000008; // Will only cast offensive
 const int AI_MAGIC_STOP_DISPEL =         0x00000010; // Will not cast dispel type spells.
 const int AI_MAGIC_BUFF_AFTER_REST =     0x00000020; // Will buff the party after resting.
 const int AI_MAGIC_NO_MAGIC_ITEMS =      0x00000040; // Will not use magic items in combat.
-//const int  =                           0x00000080; // Not used.
-//const int  =                           0x00000100; // Not used.
+const int AI_MAGIC_CURE_SPELLS_OFF =     0x00000080; // Will not cast cure spells.
+const int AI_MAGIC_EFFECT_ICON_REPORT =  0x00000100; // Sets each player to report Effect Icons to chat.
 //const int  =                           0x00000200; // Not used.
 //const int  =                           0x00000400; // Not used.
 const int AI_MAGIC_NO_SPONTANEOUS_CURE = 0x00000800; // Caster will stop using spontaneous cure spells.
@@ -427,9 +441,9 @@ const int BTN_AI_OPEN_DOORS         = 0x00020000; // AI will open all closed doo
 const int BTN_AI_STOP_SELF_HEALING  = 0x00040000; // Stops AI from using any healing on self.
 const int BTN_AI_STOP_PARTY_HEALING = 0x00080000; // Stops AI from using any healing on party.
 const int BTN_AI_IGNORE_ASSOCIATES  = 0x00100000; // AI will deprioritize enemy associates.
-//const int BTN_AI_                   = 0x00200000; // Not used.
-//const int BTN_AI                    = 0x00400000; // Not used.
-//const int BTN_AI                    = 0x00800000; // Not used.
+const int BTN_AI_STOP_CURE_SPELLS   = 0x00200000; // AI uses cure spells.
+const int BTN_AI_STOP_WEAPON_EQUIP  = 0x00400000; // AI can equip different weapons.
+const int BTN_AI_IGNORE_TRAPS       = 0x00800000; // AI will ignore traps on the floor.
 //const int BTN_AI                    = 0x01000000; // Not used.
 //const int BTN_AI                    = 0x02000000; // Not used.
 const int BTN_AI_BASH_LOCKS         = 0x04000000; // AI will attempt to bash any locks they can't get past.
@@ -548,6 +562,8 @@ const string AI_TAG = "AI_TAG";
 const string AI_MODULE_TARGET_EVENT = "AI_MODULE_TARGET_EVENT";
 // Variable for plugins to inject Targeting mode code into PEPS.
 const string AI_PLUGIN_TARGET_SCRIPT = "AI_PLUGIN_TARGET_SCRIPT";
+// Variable for PEPS to inject effect icons NUI information.
+const string AI_MODULE_GUI_EVENT = "AI_MODULE_GUI_EVENT";
 // Variable used on the player to define the targeting action in the OnPlayerTarget event script.
 const string AI_TARGET_MODE = "AI_TARGET_MODE";
 // Variable used on the player to define which associate triggered the OnPlayer Target.

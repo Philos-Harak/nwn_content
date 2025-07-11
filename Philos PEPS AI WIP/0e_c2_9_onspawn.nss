@@ -389,10 +389,6 @@ void main()
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
-    // Do changes before we adjust anything on the creature via Json!
-    // If you don't use perception change, permanent corpses, permanent summons
-    // you may remove the next line 395.
-    oCreature = ai_ChangeMonster(oCreature, oModule);
     ai_SetListeningPatterns(oCreature);
     ai_SetCreatureAIScript(oCreature);
     ai_SetNormalAppearance(oCreature);
@@ -410,27 +406,10 @@ void main()
         eHp = SupernaturalEffect(eHp);
         ApplyEffectToObject(DURATION_TYPE_PERMANENT, eHp, oCreature);
     }
-    // After setting the monster lets see if we should copy it.
-    // If you don't use increased monsters you may remove the next 18 lines 415 - 433.
-    float fMonsterIncrease = GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS);
-    if(GetIsEncounterCreature(oCreature) && fMonsterIncrease > 0.0)
-    {
-        object oNewCreature;
-        int nMonsterIncrease;
-        float fMonsterCounter = GetLocalFloat(oModule, "AI_MONSTER_COUNTER");
-        fMonsterCounter += fMonsterIncrease;
-        if(fMonsterCounter >= 1.0)
-        {
-           nMonsterIncrease = FloatToInt(fMonsterCounter);
-           fMonsterCounter = fMonsterCounter - IntToFloat(nMonsterIncrease);
-        }
-        SetLocalFloat(oModule, "AI_MONSTER_COUNTER", fMonsterCounter);
-        while(nMonsterIncrease > 0)
-        {
-            CopyObject(oCreature, GetLocation(oCreature), OBJECT_INVALID, "", TRUE);
-            nMonsterIncrease --;
-        }
-    }
+    // Do changes after we adjusted the creature! ai_ChangeMonster does Json changes.
+    // If you don't use perception change, permanent corpses, permanent summons
+    // you may remove the next line 412.
+    ai_ChangeMonster(oCreature, oModule);
 //****************************  ADDED AI CODE  *********************************
 }
 

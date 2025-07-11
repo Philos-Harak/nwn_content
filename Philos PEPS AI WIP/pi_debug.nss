@@ -19,109 +19,95 @@ void main()
     if(AI_SERVER) sText = " [Server]";
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
-    json jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, PHILOS_VERSION + sText, "lbl_version", 470.0f, 20.0f, NUI_HALIGN_CENTER);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, PHILOS_VERSION + sText, "lbl_version", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 500 / 129
-    jRow = JsonArray();
     sText = "Module: " + GetModuleName() + " [" + GetTag(GetModule()) + "]";
-    CreateLabel(jRow, sText, "lbl_module_name", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = CreateLabel(JsonArray(), sText, "lbl_module_name", 470.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 101
-    jRow = JsonArray();
     sText = "Monster AI (nw_c2_default1): " + ResManGetAliasFor("nw_c2_default1", RESTYPE_NCS);
-    CreateLabel(jRow, sText, "monster_1_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = CreateLabel(JsonArray(), sText, "monster_1_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 500 / 157
-    jRow = JsonArray();
     sText = "Monster AI (j_ai_onheartbeat): " + ResManGetAliasFor("j_ai_onheartbeat", RESTYPE_NCS);
-    CreateLabel(jRow, sText, "monster_2_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = CreateLabel(JsonArray(), sText, "monster_2_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5 ******************************************************************* 500 / 213
-    jRow = JsonArray();
     sText = "Associate AI (nw_ch_ac1): " + ResManGetAliasFor("nw_ch_ac1", RESTYPE_NCS);
-    CreateLabel(jRow, sText, "henchman_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = CreateLabel(JsonArray(), sText, "henchman_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 6 ******************************************************************* 500 / 241
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Set NPC's scripts", "btn_npc_scripts", 150.0f, 20.0f, -1.0, "btn_npc_scripts_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Set Reputations", "btn_set_reputation", 150.0f, 20.0f, -1.0, "btn_set_reputation_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Clear Party Rep.", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Set NPC's scripts", "btn_npc_scripts", 150.0f, 20.0f, -1.0, "btn_npc_scripts_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Set Reputations", "btn_set_reputation", 150.0f, 20.0f, -1.0, "btn_set_reputation_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Clear Party Rep.", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 7 ******************************************************************* 500 / 269
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Display Target Info", "btn_info", 150.0f, 20.0f, -1.0, "btn_info_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Dump Object to Json", "btn_obj_json", 150.0f, 20.0f, -1.0, "btn_obj_json_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "List Object Variables", "btn_obj_var", 150.0f, 20.0f, -1.0, "btn_obj_var_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Display Target Info", "btn_info", 150.0f, 20.0f, -1.0, "btn_info_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Dump Object to Json", "btn_obj_json", 150.0f, 20.0f, -1.0, "btn_obj_json_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "List Object Variables", "btn_obj_var", 150.0f, 20.0f, -1.0, "btn_obj_var_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 8 ******************************************************************* 500 / 297    jRow = JsonArray();
-    jRow = JsonArray();
-    CreateButton(jRow, "Delete Variable", "btn_delete_var", 115.0f, 25.0f, -1.0, "btn_delete_var_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Set Variable", "btn_set_var", 115.0f, 25.0f, -1.0, "btn_set_var_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Get Variable", "btn_get_var", 115.0f, 25.0f, -1.0, "btn_get_var_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    json jCombo = JsonArray();
-    JsonArrayInsertInplace(jCombo, NuiComboEntry("int", 0));
-    JsonArrayInsertInplace(jCombo, NuiComboEntry("float", 1));
-    JsonArrayInsertInplace(jCombo, NuiComboEntry("string", 2));
-    JsonArrayInsertInplace(jCombo, NuiComboEntry("object", 3));
-    JsonArrayInsertInplace(jCombo, NuiComboEntry("location", 4));
-    CreateCombo(jRow, jCombo, "cmb_var_type", 115.0, 25.0);
+    jRow = CreateButton(JsonArray(), "Delete Variable", "btn_delete_var", 115.0f, 25.0f, -1.0, "btn_delete_var_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Set Variable", "btn_set_var", 115.0f, 25.0f, -1.0, "btn_set_var_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Get Variable", "btn_get_var", 115.0f, 25.0f, -1.0, "btn_get_var_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    json jCombo = JsonArrayInsert(JsonArray(), NuiComboEntry("int", 0));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("float", 1));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("string", 2));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("object", 3));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("location", 4));
+    jRow = CreateCombo(jRow, jCombo, "cmb_var_type", 115.0, 25.0);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 9 ******************************************************************* 500 / 329
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "Name:", "lbl_name", 40.0f, 20.0f);
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_var_name", 40, FALSE, 425.0f, 20.0f, "txt_var_name_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, "Name:", "lbl_name", 40.0f, 20.0f);
+    jRow = CreateTextEditBox(jRow, "sPlaceHolder", "txt_var_name", 40, FALSE, 425.0f, 20.0f, "txt_var_name_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 10 ******************************************************************* 500 / 357
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "Value:", "lbl_value", 40.0f, 20.0f);
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_var_value", 40, FALSE, 425.0f, 20.0f, "txt_var_value_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, "Value:", "lbl_value", 40.0f, 20.0f);
+    jRow = CreateTextEditBox(jRow, "sPlaceHolder", "txt_var_value", 40, FALSE, 425.0f, 20.0f, "txt_var_value_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 11 ******************************************************************* 500 / 385
-    jRow = JsonArray();
     // Make the debug creature group.
-    json jGroupRow = JsonArray();
-    json jGroupCol = JsonArray();
     // Group Row 1 ******************************************************************* 500 / 385
-    CreateButton(jGroupRow, "Debug Creature", "btn_debug_creature", 120.0f, 20.0f, -1.0, "btn_debug_creature_tooltip");
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton(jGroupRow, "Clear Debug", "btn_clear_debug", 120.0f, 20.0f, -1.0, "btn_clear_debug_tooltip");
+    json jGroupRow = CreateButton(JsonArray(), "Debug Creature", "btn_debug_creature", 120.0f, 20.0f, -1.0, "btn_debug_creature_tooltip");
+    jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
+    jGroupRow = CreateButton(jGroupRow, "Clear Event Scripts", "btn_clear_events", 150.0f, 20.0f, -1.0, "btn_clear_events_tooltip");
+    jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
+    jGroupRow = CreateButton(jGroupRow, "Clear Debug", "btn_clear_debug", 120.0f, 20.0f, -1.0, "btn_clear_debug_tooltip");
     // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    json jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
     float fHeight = 431.0;
     // Group Row 2 ******************************************************************* 500 / ---
     object oDebugCreature = GetLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT");
     if(GetIsObjectValid(oDebugCreature))
     {
-        jGroupRow = JsonArray();
         string sScript = GetEventScript(oDebugCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
         if(sScript == "nw_c2_default1") sText = GetName(oDebugCreature) + " is using monster AI scripts (" + sScript + ").";
         else if(sScript == "nw_ch_ac1") sText = GetName(oDebugCreature) + " is using associate AI scripts (" + sScript + ").";
@@ -129,24 +115,23 @@ void main()
         else if(sScript == "0e_id_events") sText = GetName(oDebugCreature) + " is using Infinite Dungeons AI scripts (" + sScript + ").";
         else if(sScript == "0e_prc_id_events") sText = GetName(oDebugCreature) + " is using PRC Infinite Dungeons AI scripts (" + sScript + ").";
         else sText = GetName(oDebugCreature) + " is using unknown AI scripts (" + sScript + ").";
-        CreateLabel(jGroupRow, sText, "debug_info", 455.0f, 20.0f, NUI_HALIGN_CENTER);
+        jGroupRow = CreateLabel(JsonArray(), sText, "debug_info", 455.0f, 20.0f, NUI_HALIGN_CENTER);
         // Add group row to the group column.
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
         fHeight = fHeight + 28;
     }
     // Group Row 3 ******************************************************************* 500 / ---
-    jGroupRow = JsonArray();
     sText = GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE);
     if(sText != "") sText = sText + " is sending AI debug to the log file.";
     else sText = "Nothing is sending AI debug to the log file.";
-    CreateLabel(jGroupRow, sText, "debug_log", 455.0f, 20.0f, NUI_HALIGN_CENTER);
+    jGroupRow = CreateLabel(JsonArray(), sText, "debug_log", 455.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     fHeight = fHeight + 28;
     // Add group to the row.
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
+    jRow = JsonArrayInsert(JsonArray(), NuiGroup(NuiCol(jGroupCol)));
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = GetName(oPC);
@@ -189,6 +174,8 @@ void main()
     // Row 11
     NuiSetBind(oPC, nToken, "btn_debug_creature_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_debug_creature_tooltip", JsonString("  Sets target creature to send AI debug to the log file."));
+    NuiSetBind(oPC, nToken, "btn_clear_events_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_clear_events_tooltip", JsonString("  Sets a creature's event scripts to default."));
     NuiSetBind(oPC, nToken, "btn_clear_debug_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_clear_debug_tooltip", JsonString("  Clears a creature from sending AI debug to the log file."));
 }
@@ -198,7 +185,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_debug"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Debug Menu"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_tagsearch"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);

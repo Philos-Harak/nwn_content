@@ -184,7 +184,6 @@ void ai_CastWidgetSpell(object oPC, object oAssociate, object oTarget, location 
 void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lLocation);
 // Uses the item on the current target for oAssociate.
 void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lLocation);
-
 int ai_GetCanCastSpell(object oCreature, int nSpell, int nClass, int nLevel, int nMetaMagic = 0, int nDomain = 0)
 {
     int nIndex, nSpellCount, nClassPosition, nSlot, nMaxSlots, nPosition = 1;
@@ -365,6 +364,17 @@ int ai_GetIsSpellCaster(object oAssociate)
     }
     return nSpellCaster;
 }
+int ai_GetIsSpellBookRestrictedCaster(object oAssociate)
+{
+    int nIndex, nSpellCaster, nClass;
+    for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
+    {
+        nClass = GetClassByPosition(nIndex, oAssociate);
+        if(nClass == CLASS_TYPE_INVALID) return FALSE;
+        if(Get2DAString("classes", "SpellbookRestricted", nClass) == "1") return TRUE;
+    }
+    return FALSE;
+}
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
@@ -472,19 +482,20 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
     int nSpellID, nLastSpellID, bSpell, nDispelChance;
     // Cycle through the targets effects.
     effect eEffect = GetFirstEffect(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_spells", "423", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", GetEffectSpellId(eEffect)))) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "485", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", GetEffectSpellId(eEffect)))) +
                      " oCreature: " + GetName(oCreature));
     while(GetIsEffectValid(eEffect))
     {
         nSpellID = GetEffectSpellId(eEffect);
         // -1 is not a spell.
-        if(AI_DEBUG) ai_Debug("0i_spells", "429", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpellID))));
+        if(AI_DEBUG) ai_Debug("0i_spells", "491", "nSpell: (" + IntToString(nSpellID) + ") " +
+                            GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpellID))));
         if(nSpellID > -1 && nLastSpellID != nSpellID)
         {
             // We check if the spell is Hostile(-1) or Helpful(+1).
             if(Get2DAString("ai_spells", "HostileSetting", nSpellID) == "1") nDispelChance--;
             else nDispelChance++;
-            if(AI_DEBUG) ai_Debug("0i_spells", "435", "HostileSetting: " + Get2DAString("ai_spells", "HostileSetting", nSpellID) +
+            if(AI_DEBUG) ai_Debug("0i_spells", "497", "HostileSetting: " + Get2DAString("ai_spells", "HostileSetting", nSpellID) +
                                    " nDispelChance: " + IntToString(nDispelChance));
         }
         nLastSpellID = nSpellID;
@@ -492,7 +503,7 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
     }
     // if the target has more Helpful spells than harmful spells effecting them
     // then use dispel!
-    if(AI_DEBUG) ai_Debug("0i_spells", "381", "nDispelChance: " + IntToString(nDispelChance));
+    if(AI_DEBUG) ai_Debug("0i_spells", "505", "nDispelChance: " + IntToString(nDispelChance));
     return (nDispelChance > 0);
 }
 void ai_RemoveASpecificEffect(object oCreature, int nEffectType)
@@ -2101,7 +2112,7 @@ void ai_UseWidgetFeat(object oPC, object oAssociate, object oTarget, location lL
     json jFeat = JsonArrayGet(jWidget, nIndex);
     int nFeat = JsonGetInt(JsonArrayGet(jFeat, 5));
     if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
-    SendMessageToPC(oPC, "0i_spells, 2104, nFeat: " + IntToString(nFeat) + " oTarget: " + GetName(oTarget));
+    //SendMessageToPC(oPC, "0i_spells, 2104, nFeat: " + IntToString(nFeat) + " oTarget: " + GetName(oTarget));
     if(!GetIsObjectValid(oTarget))
     {
         AssignCommand(oAssociate, ActionUseFeat(nFeat, OBJECT_INVALID, 0, lLocation));

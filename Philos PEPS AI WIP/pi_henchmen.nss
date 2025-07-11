@@ -18,103 +18,87 @@ void main()
     SetLocalInt (oPC, "AI_NO_NUI_SAVE", TRUE);
     DelayCommand (0.5f, DeleteLocalInt (oPC, "AI_NO_NUI_SAVE"));
     // Row 1 (Buttons) ********************************************************* 775 / 73
-    json jRow = JsonArray();
-    CreateButtonSelect(jRow, "Party 1", "btn_party1", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 2", "btn_party2", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 3", "btn_party3", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 4", "btn_party4", 90.0f, 20.0f);
-    CreateButtonSelect(jRow, "Party 5", "btn_party5", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 6", "btn_party6", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 7", "btn_party7", 90.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Party 8", "btn_party8", 90.0f, 20.0f);
+    json jRow = CreateButtonSelect(JsonArray(), "Party 1", "btn_party1", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 2", "btn_party2", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 3", "btn_party3", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 4", "btn_party4", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 5", "btn_party5", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 6", "btn_party6", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 7", "btn_party7", 90.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Party 8", "btn_party8", 90.0f, 20.0f);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Options)********************************************************** 775 / 101
-    jRow = JsonArray();
-    CreateButton(jRow, "Clear Party", "btn_clear_party", 120.0f, 20.0f, -1.0, "btn_clear_party_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Party Join", "btn_join_party", 120.0f, 20.0f, -1.0, "btn_join_party_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButtonSelect(jRow, "Create NPC Henchman", "btn_npc_henchman", 200.0f, 20.0f, "btn_npc_henchman_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Save Party", "btn_save_party", 120.0f, 20.0f, -1.0, "btn_save_party_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Remove Party", "btn_remove_party", 120.0f, 20.0f, -1.0, "btn_remove_party_tooltip");
+    jRow = CreateButton(JsonArray(), "Clear Party", "btn_clear_party", 120.0f, 20.0f, -1.0, "btn_clear_party_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Party Join", "btn_join_party", 120.0f, 20.0f, -1.0, "btn_join_party_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButtonSelect(jRow, "Create NPC Henchman", "btn_npc_henchman", 200.0f, 20.0f, "btn_npc_henchman_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Save Party", "btn_save_party", 120.0f, 20.0f, -1.0, "btn_save_party_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Remove Party", "btn_remove_party", 120.0f, 20.0f, -1.0, "btn_remove_party_tooltip");
     // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 (Names and List titles) ******************************************* 775 / 124
-    jRow = JsonArray();
-    CreateLabel(jRow, "", "lbl_save_char", 150.0, 15.0, 0, 0);
-    CreateLabel(jRow, "", "lbl_save_list", 200.0, 15.0, 0, 0);
-    CreateLabel(jRow, "In game party", "lbl_game_list", 200.0, 15.0, 0, 0);
-    CreateLabel(jRow, "", "lbl_game_char", 150.0, 15.0, 0, 0);
+    jRow = CreateLabel(JsonArray(), "", "lbl_save_char", 150.0, 15.0, 0, 0);
+    jRow = CreateLabel(jRow, "", "lbl_save_list", 200.0, 15.0, 0, 0);
+    jRow = CreateLabel(jRow, "In game party", "lbl_game_list", 200.0, 15.0, 0, 0);
+    jRow = CreateLabel(jRow, "", "lbl_game_char", 150.0, 15.0, 0, 0);
     // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 (List Characters) ************************************************* 775 / 488 (364)
     // Saved Characters for Party #
     // ***** Adding character saved group next to the button list **************
-    jRow = JsonArray();
-    json jGroupRow = JsonArray();
-    json jGroupCol = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateImage(jGroupRow, "", "img_saved_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 200.0, 0.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "lbl_saved_stats", 150.0, 15.0, 0, 0, 0.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "lbl_saved_classes", 150.0, 15.0, 0, 0, 0.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateButton(jGroupRow, "", "btn_saved_join", 75.0, 20.0);
-    CreateButton(jGroupRow, "Remove", "btn_saved_remove", 75.0, 20.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+    json jGroupRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jGroupRow = CreateImage(jGroupRow, "", "img_saved_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 200.0, 0.0);
+    jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
+    json jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "", "lbl_saved_stats", 150.0, 15.0, 0, 0, 0.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "", "lbl_saved_classes", 150.0, 15.0, 0, 0, 0.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateButton(JsonArray(), "", "btn_saved_join", 75.0, 20.0);
+    jGroupRow = CreateButton(jGroupRow, "Remove", "btn_saved_remove", 75.0, 20.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     //jGroupRow = JsonArray();
     //CreateButton(jGroupRow, "Edit", "btn_saved_edit", 150.0, 20.0);
-    //JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
+    //jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jRow = JsonArrayInsert(JsonArray(), NuiGroup(NuiCol(jGroupCol)));
     // Create the button template for the List.
     json jButton = NuiId(NuiButton(NuiBind ("btns_saved_char")), "btn_saved_char");
     json jList = JsonArrayInsert(JsonArray (), NuiListTemplateCell(jButton, 170.0, TRUE));
     // Create the list with the template.
-    CreateList(jRow, jList, "btns_saved_char", 25.0, 200.0, 325.0);
+    jRow = CreateList(jRow, jList, "btns_saved_char", 25.0, 200.0, 325.0);
     // Current Characters.
     // Create the button template for the List.
     jButton = NuiId(NuiButton(NuiBind ("btns_cur_char")), "btn_cur_char");
     jList = JsonArrayInsert(JsonArray (), NuiListTemplateCell(jButton, 170.0, TRUE));
     // Create the list with the template.
-    CreateList(jRow, jList, "btns_cur_char", 25.0, 200.0, 325.0);
+    jRow = CreateList(jRow, jList, "btns_cur_char", 25.0, 200.0, 325.0);
     // ***** Adding character current group next to the button list ************
-    jGroupRow = JsonArray();
-    jGroupCol = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateImage(jGroupRow, "", "img_cur_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 200.0, 0.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "lbl_cur_stats", 150.0, 15.0, 0, 0, 0.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateLabel(jGroupRow, "", "lbl_cur_classes", 150.0, 15.0, 0, 0, 0.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateButton(jGroupRow, "", "btn_cur_save", 75.0, 20.0);
-    CreateButton(jGroupRow, "Remove", "btn_cur_remove", 75.0, 20.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateButton(jGroupRow, "Edit", "btn_cur_edit", 150.0, 20.0);
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
+    jGroupRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jGroupRow = CreateImage(jGroupRow, "", "img_cur_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 200.0, 0.0);
+    jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
+    jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "", "lbl_cur_stats", 150.0, 15.0, 0, 0, 0.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "", "lbl_cur_classes", 150.0, 15.0, 0, 0, 0.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateButton(JsonArray(), "", "btn_cur_save", 75.0, 20.0);
+    jGroupRow = CreateButton(jGroupRow, "Remove", "btn_cur_remove", 75.0, 20.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateButton(JsonArray(), "Edit", "btn_cur_edit", 150.0, 20.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jRow = JsonArrayInsert(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     // Get the window location to restore it from the database.
@@ -172,7 +156,7 @@ void main()
         sButtonText = GetHenchmanDbString(oPC, "henchname", sParty + sIndex);
         if(sButtonText != "")
         {
-            JsonArrayInsertInplace(jButtons, JsonString(sButtonText));
+            jButtons = JsonArrayInsert(jButtons, JsonString(sButtonText));
             SetHenchmanDbString(oPC, "slot", sParty + IntToString(nSlot++), sParty + sIndex);
         }
         nIndex++;
@@ -196,7 +180,7 @@ void main()
     {
         if(nIndex == 0) oPartyMember = oPC;
         else oPartyMember = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-        if(oPartyMember != OBJECT_INVALID) JsonArrayInsertInplace(jButtons, JsonString(GetName(oPartyMember)));
+        if(oPartyMember != OBJECT_INVALID) jButtons = JsonArrayInsert(jButtons, JsonString(GetName(oPartyMember)));
         else break;
         nIndex++;
     }
@@ -210,7 +194,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_henchmen"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Henchmen Menu"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_creator"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);

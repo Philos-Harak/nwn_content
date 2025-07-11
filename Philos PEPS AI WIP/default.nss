@@ -21,10 +21,11 @@ void main()
         if(nEvent == EVENT_SCRIPT_CREATURE_ON_SPAWN_IN)
         {
             ai_SetAIRules();
+            ai_CheckAssociateData(oCreature, oCreature, "pc");
             ai_StartupPlugins(oCreature);
-            ai_CheckDMData(oCreature);
-            ai_CreateDMWidgetNUI(oCreature);
             ai_SetupPlayerTarget(oCreature);
+            ai_SetupModuleGUIEvents(oCreature);
+            ai_CreateDMWidgetNUI(oCreature);
         }
     }
 }

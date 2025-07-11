@@ -53,13 +53,13 @@ void main()
             json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
             if(sWndId == "plbuffwin")
             {
-                JsonArraySetInplace(jMenuData, 1, JsonObjectGet(jGeom, "x"));
-                JsonArraySetInplace(jMenuData, 2, JsonObjectGet(jGeom, "y"));
+                jMenuData = JsonArraySet(jMenuData, 1, JsonObjectGet(jGeom, "x"));
+                jMenuData = JsonArraySet(jMenuData, 2, JsonObjectGet(jGeom, "y"));
             }
             else if(sWndId == "widgetbuffwin")
             {
-                JsonArraySetInplace(jMenuData, 5, JsonObjectGet(jGeom, "x"));
-                JsonArraySetInplace(jMenuData, 6, JsonObjectGet(jGeom, "y"));
+                jMenuData = JsonArraySet(jMenuData, 5, JsonObjectGet(jGeom, "x"));
+                jMenuData = JsonArraySet(jMenuData, 6, JsonObjectGet(jGeom, "y"));
             }
             SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
         }
@@ -168,7 +168,7 @@ void main()
             {
                 sList = "list" + GetStringRight(sElem, 1);
                 json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
-                JsonArraySetInplace(jMenuData, 0, JsonString(sList));
+                jMenuData = JsonArraySet(jMenuData, 0, JsonString(sList));
                 SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
                 ExecuteScript("pi_buffing", oPC);
             }
@@ -179,7 +179,7 @@ void main()
             {
                 int bBuffWidget = JsonGetInt(NuiGetBind(oPC, nToken, "buff_widget_check"));
                 json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
-                JsonArraySetInplace(jMenuData, 3, JsonBool(bBuffWidget));
+                jMenuData = JsonArraySet(jMenuData, 3, JsonBool(bBuffWidget));
                 SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
                 if(bBuffWidget) PopupWidgetBuffGUIPanel(oPC);
                 else NuiDestroy(oPC, NuiFindWindow(oPC, "widgetbuffwin"));
@@ -188,8 +188,8 @@ void main()
             {
                 int bBuffLockWidget = JsonGetInt(NuiGetBind(oPC, nToken, "lock_buff_widget_check"));
                 json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
-                if(bBuffLockWidget) JsonArraySetInplace(jMenuData, 3, JsonBool(TRUE));
-                JsonArraySetInplace(jMenuData, 4, JsonBool(bBuffLockWidget));
+                if(bBuffLockWidget) jMenuData = JsonArraySet(jMenuData, 3, JsonBool(TRUE));
+                jMenuData = JsonArraySet(jMenuData, 4, JsonBool(bBuffLockWidget));
                 SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
                 NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(TRUE));
                 PopupWidgetBuffGUIPanel(oPC);
@@ -213,7 +213,7 @@ void main()
             if(sElem == "btn_three") sList = "list3";
             if(sElem == "btn_four") sList = "list4";
             json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
-            JsonArraySetInplace(jMenuData, 0, JsonString(sList));
+            jMenuData = JsonArraySet(jMenuData, 0, JsonString(sList));
             SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
             CastSavedBuffSpells(oPC);
         }
@@ -479,15 +479,13 @@ void PopupWidgetBuffGUIPanel(object oPC)
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
-    json jRow = JsonArray();
 
-    CreateButtonImage(jRow, "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
+    json jRow = CreateButtonImage(JsonArray(), "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
     int bAIBuffWidgetLock = JsonGetInt(JsonArrayGet(jMenuData, 4));
     // Get the window location to restore it from the database.

@@ -9,10 +9,13 @@
 #include "0i_menus"
 #include "0i_menus_dm"
 #include "0i_player_target"
+#include "0i_gui_events"
+#include "0i_module"
 void main()
 {
     object oPC = GetFirstPC();
     ai_SetupPlayerTarget(oPC);
+    ai_SetupModuleGUIEvents(oPC);
     ai_SetAIRules();
     ai_StartupPlugins(oPC);
     if(ai_GetIsCharacter(oPC))
@@ -23,11 +26,8 @@ void main()
     }
     if(AI_SERVER && (GetIsDM(oPC) || GetIsPlayerDM(oPC)))
     {
-        ai_SetAIRules();
-        ai_StartupPlugins(oPC);
         ai_CheckDMData(oPC);
         ai_CreateDMWidgetNUI(oPC);
-        ai_SetupPlayerTarget(oPC);
     }
 }
 

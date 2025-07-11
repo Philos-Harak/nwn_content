@@ -41,7 +41,7 @@ void main()
             string sDebugName = GetName(oTarget);
             SetLocalString(oModule, AI_RULE_DEBUG_CREATURE, sDebugName);
             json jRules = ai_GetCampaignDbJson("rules");
-            JsonObjectSetInplace(jRules, AI_RULE_DEBUG_CREATURE, JsonString(sDebugName));
+            jRules = JsonObjectSet(jRules, AI_RULE_DEBUG_CREATURE, JsonString(sDebugName));
             ai_SetCampaignDbJson("rules", jRules);
             SetLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT", oTarget);
             ExecuteScript("pi_debug", oPC);
@@ -370,6 +370,26 @@ void main()
             }
             else ai_RevertAssociateEventScriptsToDefault(oPC, oTarget);
         }
+        else if(sTargetMode == "CLEAR_CREATURE_EVENTS")
+        {
+            ai_SendMessages("Set event scripts for " + GetName(oTarget) + " to default.", AI_COLOR_YELLOW, oPC);
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "default");
+            SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "default");
+            DeleteLocalInt(oTarget, "AI_I_AM_BEING_HEALED");
+            DeleteLocalString(oTarget, "AIScript");
+            ai_ClearCreatureActions();
+        }
         else if(sTargetMode == "DEBUG_JSON_DUMP")
         {
             json jObject = ObjectToJson(oTarget, TRUE);
@@ -549,12 +569,23 @@ void main()
                 ai_SendMessages("Select a creature to start sending debug information to the log for.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
+            else if(sElem == "btn_clear_events")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "CLEAR_CREATURE_EVENTS");
+                NuiDestroy(oPC, nToken);
+                ai_SendMessages("Select a creature to set event scripts to default.", AI_COLOR_YELLOW, oPC);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+            }
             else if(sElem == "btn_clear_debug")
             {
                 object oModule = GetModule();
                 SetLocalString(oModule, AI_RULE_DEBUG_CREATURE, "");
                 json jRules = ai_GetCampaignDbJson("rules");
-                JsonObjectSetInplace(jRules, AI_RULE_DEBUG_CREATURE, JsonString(""));
+                jRules = JsonObjectSet(jRules, AI_RULE_DEBUG_CREATURE, JsonString(""));
                 ai_SetCampaignDbJson("rules", jRules);
                 DeleteLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT");
                 ai_SendMessages("Creature Debug mode has been cleared.", AI_COLOR_YELLOW, oPC);

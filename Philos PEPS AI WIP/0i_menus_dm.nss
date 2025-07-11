@@ -19,7 +19,7 @@ void ai_SetDMWidgetButton(object oPlayer, int nButton, int bOn = TRUE)
     if(bOn) nWidgetButtons = nWidgetButtons | nButton;
     else nWidgetButtons = nWidgetButtons & ~nButton;
     SetLocalInt(oPlayer, sDMWidgetButtonVarname, nWidgetButtons);
-    JsonArraySetInplace(jButtons, 0, JsonInt(nWidgetButtons));
+    jButtons = JsonArraySet(jButtons, 0, JsonInt(nWidgetButtons));
     ai_SetCampaignDbJson("buttons", jButtons, sName, AI_DM_TABLE);
 }
 int ai_GetDMWidgetButton(object oPlayer, int nButton)
@@ -53,7 +53,6 @@ void ai_CreateDMWidgetNUI(object oPC)
     float fButtons, fWidth = 86.0f;
     // ************************************************************************* Width / Height
     // Row 1 (buttons)**********************************************************
-    json jRow = JsonArray();
     // Setup the main associate button to use their portrait.
     json jButton = NuiEnabled(NuiId (NuiButtonImage(NuiBind("btn_open_main_image")), "btn_open_main"), NuiBind("btn_open_main_event"));
     jButton = NuiWidth(jButton, 35.0);
@@ -61,45 +60,45 @@ void ai_CreateDMWidgetNUI(object oPC)
     jButton = NuiMargin(jButton, 0.0);
     jButton = NuiTooltip(jButton, NuiBind ("btn_open_main_tooltip"));
     jButton = NuiImageRegion(jButton, NuiRect(0.0, 0.0, 32.0, 35.0));
-    JsonArrayInsertInplace(jRow, jButton);
+    json jRow = JsonArrayInsert(JsonArray(), jButton);
     if(bCmdGroup1)
     {
-        CreateButtonImage(jRow, "ir_level1", "btn_cmd_group1", 35.0f, 35.0f, 0.0, "btn_cmd_group1_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level1", "btn_cmd_group1", 35.0f, 35.0f, 0.0, "btn_cmd_group1_tooltip");
         fButtons += 1.0;
     }
     if(bCmdGroup2)
     {
-        CreateButtonImage(jRow, "ir_level2", "btn_cmd_group2", 35.0f, 35.0f, 0.0, "btn_cmd_group2_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level2", "btn_cmd_group2", 35.0f, 35.0f, 0.0, "btn_cmd_group2_tooltip");
         fButtons += 1.0;
     }
     if(bCmdGroup3)
     {
-        CreateButtonImage(jRow, "ir_level3", "btn_cmd_group3", 35.0f, 35.0f, 0.0, "btn_cmd_group3_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level3", "btn_cmd_group3", 35.0f, 35.0f, 0.0, "btn_cmd_group3_tooltip");
         fButtons += 1.0;
     }
     if(bCmdGroup4)
     {
-        CreateButtonImage(jRow, "ir_level4", "btn_cmd_group4", 35.0f, 35.0f, 0.0, "btn_cmd_group4_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level4", "btn_cmd_group4", 35.0f, 35.0f, 0.0, "btn_cmd_group4_tooltip");
         fButtons += 1.0;
     }
     if(bCmdGroup5)
     {
-        CreateButtonImage(jRow, "ir_level5", "btn_cmd_group5", 35.0f, 35.0f, 0.0, "btn_cmd_group5_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level5", "btn_cmd_group5", 35.0f, 35.0f, 0.0, "btn_cmd_group5_tooltip");
         fButtons += 1.0;
     }
     if(bCmdGroup6)
     {
-        CreateButtonImage(jRow, "ir_level6", "btn_cmd_group6", 35.0f, 35.0f, 0.0, "btn_cmd_group6_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_level6", "btn_cmd_group6", 35.0f, 35.0f, 0.0, "btn_cmd_group6_tooltip");
         fButtons += 1.0;
     }
     if(bCmdCamera)
     {
-        CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
         fButtons += 1.0;
     }
     if(bCmdInventory)
     {
-        CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
+        jRow = CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
         fButtons += 1.0;
     }
     // Plug in buttons *********************************************************
@@ -114,15 +113,14 @@ void ai_CreateDMWidgetNUI(object oPC)
         {
             sIcon = JsonGetString(JsonArrayGet(jPlugin, 3));
             sButton = IntToString(nIndex);
-            CreateButtonImage(jRow, sIcon, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
+            jRow = CreateButtonImage(jRow, sIcon, "btn_exe_plugin_" + sButton, 35.0f, 35.0f, 0.0, "btn_exe_plugin_" + sButton + "_tooltip");
             fButtons += 1.0;
         }
         jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
     if(fButtons > 1.0f) fWidth = fWidth + ((fButtons - 1.0) * 39.0f);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Get the window location to restore it from the database.
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
@@ -273,126 +271,99 @@ void ai_CreateDMOptionsNUI(object oPC)
     if(AI_SERVER) sText = " [Server]";
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
-    json jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, PHILOS_VERSION  + sText, "lbl_version ", 510.0f, 20.0f, NUI_HALIGN_CENTER);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, PHILOS_VERSION  + sText, "lbl_version ", 510.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 500 / 101
-    jRow = JsonArray();
-    CreateLabel(jRow, "", "lbl_ai_info", 510.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = CreateLabel(JsonArray(), "", "lbl_ai_info", 510.0f, 20.0f, NUI_HALIGN_CENTER);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 129
-    jRow = JsonArray();
-    CreateButton(jRow, "Plugin Manager", "btn_plugin_manager", 160.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Widget Manager", "btn_widget_manager", 160.0f, 20.0f, -1.0, "btn_widget_manager_tooltip");
+    jRow = CreateButton(JsonArray(), "Plugin Manager", "btn_plugin_manager", 160.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Widget Manager", "btn_widget_manager", 160.0f, 20.0f, -1.0, "btn_widget_manager_tooltip");
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 500 / 157
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "SERVER RULES", "lbl_ai_rules", 80.0f, 20.0f, NUI_HALIGN_CENTER);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, "SERVER RULES", "lbl_ai_rules", 100.0f, 20.0f, NUI_HALIGN_CENTER);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    float fHeight = 157.0;
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    float fHeight = 112.0;
     // Row 5 ******************************************************************* 500 / --- (28)
-    jRow = JsonArray();
     // Make the AI options a Group.
-    json jGroupRow = JsonArray();
-    json jGroupCol = JsonArray();
-    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_max_henchman", 2, FALSE, 30.0f, 20.0f, "txt_max_henchman_tooltip");
-    CreateLabel(jGroupRow, "Max number of henchmen that is allowed in your party.", "lbl_max_hench", 416.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_max_henchman_tooltip");
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = JsonArray();
-    CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_xp_scale", 3, FALSE, 40.0f, 20.0f, "txt_xp_scale_tooltip");
-    CreateLabel(jGroupRow, "Modules experience scale.", "lbl_xp_scale", 175.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_xp_scale_tooltip");
-    CreateCheckBox(jGroupRow, " scale to party.", "chbx_party_scale", 150.0, 20.0, "chbx_party_scale_tooltip");
-    CreateButton(jGroupRow, "Default", "btn_default_xp", 70.0f, 20.0f, -1.0, "btn_default_xp_tooltip");
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    fHeight += 78.0;
+    json jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_max_henchman", 2, FALSE, 30.0f, 20.0f, "txt_max_henchman_tooltip");
+    jGroupRow = CreateLabel(jGroupRow, "Max number of henchmen that is allowed in your party.", "lbl_max_hench", 416.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_max_henchman_tooltip");
+    json jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
+    jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_xp_scale", 3, FALSE, 40.0f, 20.0f, "txt_xp_scale_tooltip");
+    jGroupRow = CreateLabel(jGroupRow, "Modules experience scale.", "lbl_xp_scale", 175.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_xp_scale_tooltip");
+    jGroupRow = CreateCheckBox(jGroupRow, " scale to party.", "chbx_party_scale", 130.0, 20.0, "chbx_party_scale_tooltip");
+    jGroupRow = CreateButton(jGroupRow, "Default", "btn_default_xp", 70.0f, 20.0f, -1.0, "btn_default_xp_tooltip");
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    fHeight += 112.0;
     if(nMonsterAI || nAssociateAI)
     {
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Creatures will use advanced combat movement.", "chbx_advanced_movement", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Use item level restrictions for creatures [Default is off].", "chbx_ilr", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Creatures can use the skill Use Magic Device.", "chbx_umd", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Creatures can use Healing kits.", "chbx_use_healingkits", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Moral checks, wounded creatures may flee during combat.", "chbx_moral", 450.0, 20.0);
-        jGroupRow = JsonArray();
-        CreateLabel(jGroupRow, " Spells the AI will not use:", "lbl_restrict_spells", 190.0, 20.0, NUI_HALIGN_LEFT);
-        CreateCheckBox(jGroupRow, " Darkness", "chbx_darkness", 90.0, 20.0, "chbx_darkness_tooltip");
-        CreateCheckBox(jGroupRow, " Dispels", "chbx_dispels", 90.0, 20.0, "chbx_dispels_tooltip");
-        CreateCheckBox(jGroupRow, " Time Stop", "chbx_timestop", 90.0, 20.0, "chbx_timestop_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Creatures will use advanced combat movement.", "chbx_advanced_movement", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Use item level restrictions for creatures [Default is off].", "chbx_ilr", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Creatures can use the skill Use Magic Device.", "chbx_umd", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Creatures can use Healing kits.", "chbx_use_healingkits", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Moral checks, wounded creatures may flee during combat.", "chbx_moral", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateLabel(JsonArray(), " Spells the AI will not use:", "lbl_restrict_spells", 190.0, 20.0, NUI_HALIGN_LEFT);
+        jGroupRow = CreateCheckBox(jGroupRow, " Darkness", "chbx_darkness", 90.0, 20.0, "chbx_darkness_tooltip");
+        jGroupRow = CreateCheckBox(jGroupRow, " Dispels", "chbx_dispels", 90.0, 20.0, "chbx_dispels_tooltip");
+        jGroupRow = CreateCheckBox(jGroupRow, " Time Stop", "chbx_timestop", 90.0, 20.0, "chbx_timestop_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
         fHeight += 168.0;
     }
     if(nMonsterAI)
     {
-        jGroupRow = JsonArray();
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_ai_difficulty", 3, FALSE, 40.0f, 20.0f, "txt_ai_difficulty_tooltip");
-        CreateLabel(jGroupRow, "% chance monsters will attack the weakest target.", "lbl_ai_difficulty", 406.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_ai_difficulty_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
-        CreateLabel(jGroupRow, "meters is the distance a monster can respond to allies.", "lbl_perception_distance", 411.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Monsters can prebuff before combat starts.", "chbx_buff_monsters", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Monsters can use summons before combat starts.", "chbx_buff_summons", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Monsters can use tactics (ambush, defensive, flanker, etc).", "chbx_ambush_monsters", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateLabel(jGroupRow, "Add ", "lbl_inc_enc", 30.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0);
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_enc", 4, FALSE, 55.0f, 20.0f, "txt_inc_enc_tooltip");
-        CreateLabel(jGroupRow, "monsters per spawned encounter monster.", "lbl_inc_enc", 357.0, 20.0, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "txt_inc_enc_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_hp", 3, FALSE, 40.0f, 20.0f, "txt_inc_hp_tooltip");
-        CreateLabel(jGroupRow, "% increase in all monster's hitpoints.", "lbl_inc_hp", 406.0, 20.0, NUI_HALIGN_LEFT);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateLabel(jGroupRow, "***** WARNING! The options below may break the module! *****", "lbl_warning", 450.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "lbl_warning_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Monsters can wander upto ", "chbx_wander", 220.0, 20.0, "chbx_wander_tooltip");
-        CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_wander_distance", 2, FALSE, 35.0f, 20.0f, "chbx_wander_tooltip");
-        CreateLabel(jGroupRow, "meters and ", "lbl_wander_distance", 80.0f, 20.0f, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "chbx_wander_tooltip");
-        CreateCheckBox(jGroupRow, "open doors.", "chbx_open_doors", 100.0, 20.0, "chbx_wander_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Monsters can summon companions.", "chbx_companions", 450.0, 20.0, "chbx_companions_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Summoned associates to remain after masters death.", "chbx_perm_assoc", 450.0, 20.0);
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateCheckBox(jGroupRow, " Make enemy corpses remain.", "chbx_corpses_stay", 490.0, 20.0, "chbx_corpses_stay_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = JsonArray();
-        CreateLabel(jGroupRow, "", "lbl_perc_dist", 450.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "lbl_perc_dist_tooltip");
-        JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-        fHeight += 336.0;
+        jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_ai_difficulty", 3, FALSE, 40.0f, 20.0f, "txt_ai_difficulty_tooltip");
+        jGroupRow = CreateLabel(jGroupRow, "% chance monsters will attack the weakest target.", "lbl_ai_difficulty", 406.0f, 20.0f, NUI_HALIGN_LEFT, 0, -1.0, "txt_ai_difficulty_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
+        jGroupRow = CreateLabel(jGroupRow, "meters is the distance a monster can respond to allies.", "lbl_perception_distance", 411.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can prebuff before combat starts.", "chbx_buff_monsters", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can use summons before combat starts.", "chbx_buff_summons", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can use tactics (ambush, defensive, flanker, etc).", "chbx_ambush_monsters", 450.0, 20.0);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateLabel(JsonArray(), "Add ", "lbl_inc_enc", 30.0, 20.0, NUI_HALIGN_LEFT, 0, -1.0);
+        jGroupRow = CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_inc_enc", 4, FALSE, 55.0f, 20.0f, "txt_inc_enc_tooltip");
+        jGroupRow = CreateLabel(jGroupRow, "monsters per spawned encounter monster.", "lbl_inc_enc", 357.0, 20.0, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "txt_inc_enc_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_inc_hp", 3, FALSE, 40.0f, 20.0f, "txt_inc_hp_tooltip");
+        jGroupRow = CreateLabel(jGroupRow, "% increase in all monster's hitpoints.", "lbl_inc_hp", 406.0, 20.0, NUI_HALIGN_LEFT);
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateLabel(JsonArray(), "***** WARNING! The options below may break the module! *****", "lbl_warning", 450.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "chbx_warning_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can wander upto ", "chbx_wander", 220.0, 20.0, "chbx_warning_tooltip");
+        jGroupRow = CreateTextEditBox(jGroupRow, "sPlaceHolder", "txt_wander_distance", 2, FALSE, 35.0f, 20.0f, "chbx_warning_tooltip");
+        jGroupRow = CreateLabel(jGroupRow, "meters and ", "lbl_wander_distance", 80.0f, 20.0f, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, 0.0, "chbx_warning_tooltip");
+        jGroupRow = CreateCheckBox(jGroupRow, "open doors.", "chbx_open_doors", 100.0, 20.0, "chbx_warning_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can summon companions.", "chbx_companions", 450.0, 20.0, "chbx_warning_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Summoned associates to remain after masters death.", "chbx_perm_assoc", 450.0, 20.0, "chbx_warning_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateCheckBox(JsonArray(), " Make enemy corpses remain.", "chbx_corpses_stay", 450.0, 20.0, "chbx_warning_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        jGroupRow = CreateLabel(JsonArray(), "", "lbl_perc_dist", 450.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "lbl_perc_dist_tooltip");
+        jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+        fHeight += 364.0;
     }
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
+    jRow = JsonArrayInsert(JsonArray(), NuiGroup(NuiCol(jGroupCol)));
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Get the window location to restore it from the database.
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
     json jLocations = ai_GetCampaignDbJson("locations", sName, AI_DM_TABLE);
@@ -407,8 +378,7 @@ void ai_CreateDMOptionsNUI(object oPC)
     int nToken = SetWindow(oPC, jLayout, "dm" + AI_MAIN_NUI, sName + " PEPS Main Menu",
                              fX, fY, 534.0f, fHeight, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui_dm");
     // Save the associate to the nui for use in 0e_nui
-    json jData = JsonArray();
-    JsonArrayInsertInplace(jData, JsonString(ObjectToString(oPC)));
+    json jData = JsonArrayInsert(JsonArray(), JsonString(ObjectToString(oPC)));
     NuiSetUserData(oPC, nToken, jData);
     object oModule = GetModule();
     // Set event watches for save window location.
@@ -572,48 +542,42 @@ void ai_CreateDMCommandNUI(object oPC)
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
-    json jRow = JsonArray();
-    CreateButtonSelect(jRow, "Lock Widget", "btn_widget_lock", 200.0, 20.0, "btn_widget_lock_tooltip");
-    CreateLabel(jRow, "", "blank_label_1", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Main Menu", "btn_main_menu", 200.0, 20.0, -1.0, "btn_main_menu_tooltip");
-    CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jRow = CreateButtonSelect(JsonArray(), "Lock Widget", "btn_widget_lock", 200.0, 20.0, "btn_widget_lock_tooltip");
+    jRow = CreateLabel(jRow, "", "blank_label_1", 25.0, 20.0);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Main Menu", "btn_main_menu", 200.0, 20.0, -1.0, "btn_main_menu_tooltip");
+    jRow = CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 500 / 101
-    jRow = JsonArray();
-    CreateButton(jRow, "", "btn_cmd_group1", 200.0, 20.0, -1.0, "btn_cmd_group1_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group1", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "", "btn_cmd_group2", 200.0, 20.0, -1.0, "btn_cmd_group2_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group2", 25.0, 20.0);
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButton(JsonArray(), "", "btn_cmd_group1", 200.0, 20.0, -1.0, "btn_cmd_group1_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group1", 25.0, 20.0);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "", "btn_cmd_group2", 200.0, 20.0, -1.0, "btn_cmd_group2_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group2", 25.0, 20.0);
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 129
-    jRow = JsonArray();
-    CreateButton(jRow, "", "btn_cmd_group3", 200.0, 20.0, -1.0, "btn_cmd_group3_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group3", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "", "btn_cmd_group4", 200.0, 20.0, -1.0, "btn_cmd_group4_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group4", 25.0, 20.0);
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButton(JsonArray(), "", "btn_cmd_group3", 200.0, 20.0, -1.0, "btn_cmd_group3_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group3", 25.0, 20.0);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "", "btn_cmd_group4", 200.0, 20.0, -1.0, "btn_cmd_group4_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group4", 25.0, 20.0);
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 500 / 157
-    jRow = JsonArray();
-    CreateButton(jRow, "", "btn_cmd_group5", 200.0, 20.0, -1.0, "btn_cmd_group5_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group5", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "", "btn_cmd_group6", 200.0, 20.0, -1.0, "btn_cmd_group6_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_group6", 25.0, 20.0);
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButton(JsonArray(), "", "btn_cmd_group5", 200.0, 20.0, -1.0, "btn_cmd_group5_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group5", 25.0, 20.0);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "", "btn_cmd_group6", 200.0, 20.0, -1.0, "btn_cmd_group6_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_group6", 25.0, 20.0);
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 157.0;
     // Row 5 ******************************************************************* 500 / ---
-    jRow = JsonArray();
-    CreateButton(jRow, "Toggle Camera Focus", "btn_camera", 200.0, 20.0, -1.0, "btn_camera_tooltip");
-    CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Open/Close Inventory", "btn_inventory", 200.0, 20.0, -1.0, "btn_inventory_tooltip");
-    CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0);
+    jRow = CreateButton(JsonArray(), "Toggle Camera Focus", "btn_camera", 200.0, 20.0, -1.0, "btn_camera_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Open/Close Inventory", "btn_inventory", 200.0, 20.0, -1.0, "btn_inventory_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0);
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
     // Row 6+ ****************************************************************** 500 / ---
     json jDMPlugins = ai_UpdatePluginsForDM(oPC);
@@ -623,38 +587,36 @@ void ai_CreateDMCommandNUI(object oPC)
     json jPlugin = JsonArrayGet(jDMPlugins, nIndex);
     while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        jRow = JsonArray();
         sButton = IntToString(nIndex);
         sName = JsonGetString(JsonArrayGet(jPlugin, 2));
-        CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
-        CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
-        JsonArrayInsertInplace(jRow, NuiSpacer());
+        jRow = CreateButton(JsonArray(), sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+        jRow = CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
+        jRow = JsonArrayInsert(jRow, NuiSpacer());
         jPlugin = JsonArrayGet(jDMPlugins, ++nIndex);
         if(JsonGetType(jPlugin) != JSON_TYPE_NULL)
         {
             sButton = IntToString(nIndex);
             sName = JsonGetString(JsonArrayGet(jPlugin, 2));
-            CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
-            CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
+            jRow = CreateButton(jRow, sName, "btn_plugin_" + sButton, 200.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+            jRow = CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0, "chbx_plugin_tooltip");
             // Add row to the column.
-            JsonArrayInsertInplace(jCol, NuiRow(jRow));
+            jCol = JsonArrayInsert(jCol, NuiRow(jRow));
             fHeight += 28.0;
         }
         else
         {
             // Add row to the column.
-            JsonArrayInsertInplace(jCol, NuiRow(jRow));
+            jCol = JsonArrayInsert(jCol, NuiRow(jRow));
             fHeight += 28.0;
             break;
         }
         jPlugin = JsonArrayGet(jDMPlugins, ++nIndex);
     }
     // Row 7 ****************************************************************** 500 / ---
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateLabel(jRow, "", "lbl_info_1", 475.0, 20.0, NUI_HALIGN_CENTER);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateLabel(jRow, "", "lbl_info_1", 475.0, 20.0, NUI_HALIGN_CENTER);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     fHeight = fHeight + 28.0;
     // Get the window location to restore it from the database.
     sName = ai_RemoveIllegalCharacters(GetName(oPC));
@@ -811,27 +773,24 @@ void ai_CreateDMPluginManagerNUI(object oPC)
 {
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
-    json jRow = JsonArray();
-    json jCol = JsonArray();
     // Row 1 ******************************************************************* 500 / 73
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Load All Plugins", "btn_load_plugins", 150.0f, 20.0f, -1.0, "btn_load_plugins_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Check All", "btn_check_plugins", 150.0f, 20.0f, -1.0, "btn_check_plugins_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Clear All", "btn_clear_plugins", 150.0f, 20.0f, -1.0, "btn_clear_plugins_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Load All Plugins", "btn_load_plugins", 150.0f, 20.0f, -1.0, "btn_load_plugins_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Check All", "btn_check_plugins", 150.0f, 20.0f, -1.0, "btn_check_plugins_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Clear All", "btn_clear_plugins", 150.0f, 20.0f, -1.0, "btn_clear_plugins_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 500 / 101
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Add Plugin", "btn_add_plugin", 150.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateTextEditBox(jRow, "sPlaceHolder", "txt_plugin", 16, FALSE, 310.0f, 20.0f, "txt_plugin_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Add Plugin", "btn_add_plugin", 150.0f, 20.0f);
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateTextEditBox(jRow, "sPlaceHolder", "txt_plugin", 16, FALSE, 310.0f, 20.0f, "txt_plugin_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 101.0;
     // Row 3+ ****************************************************************** 500 / ---
     json jPlugins = ai_GetCampaignDbJson("plugins");
@@ -840,17 +799,16 @@ void ai_CreateDMPluginManagerNUI(object oPC)
     string sName, sButton;
     while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        jRow = JsonArray();
         sButton = IntToString(nIndex);
-        JsonArrayInsertInplace(jRow, NuiSpacer());
-        CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sButton, 150.0f, 20.0f);
-        JsonArrayInsertInplace(jRow, NuiSpacer());
+        jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+        jRow = CreateButton(jRow, "Remove Plugin", "btn_remove_plugin_" + sButton, 150.0f, 20.0f);
+        jRow = JsonArrayInsert(jRow, NuiSpacer());
         sName = JsonGetString(JsonArrayGet(jPlugin, 2));
-        CreateButton(jRow, sName, "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
-        CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0);
-        JsonArrayInsertInplace(jRow, NuiSpacer());
+        jRow = CreateButton(jRow, sName, "btn_plugin_" + sButton, 290.0f, 20.0f, -1.0, "btn_plugin_" + sButton + "_tooltip");
+        jRow = CreateCheckBox(jRow, "", "chbx_plugin_" + sButton, 25.0, 20.0);
+        jRow = JsonArrayInsert(jRow, NuiSpacer());
         // Add row to the column.
-        JsonArrayInsertInplace(jCol, NuiRow(jRow));
+        jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 28.0;
         jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
@@ -904,169 +862,169 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
 {
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
-    json jRow = JsonArray();
-    json jCol = JsonArray();
     // Row 1 ******************************************************************* 575 / 73
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Check All", "btn_check_buttons", 150.0f, 20.0f, -1.0, "btn_check_buttons_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Clear All", "btn_clear_buttons", 150.0f, 20.0f, -1.0, "btn_clear_buttons_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Check All", "btn_check_buttons", 150.0f, 20.0f, -1.0, "btn_check_buttons_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Clear All", "btn_clear_buttons", 150.0f, 20.0f, -1.0, "btn_clear_buttons_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 575 / 96
-    jRow = JsonArray();
-    CreateLabel(jRow, "This menu manages the PEPS buttons a player may have access to.", "lbl_info1", 636.0, 15.0);
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateLabel(JsonArray(), "This menu manages the PEPS buttons a player may have access to.", "lbl_info1", 636.0, 15.0);
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 575 / 119
-    jRow = JsonArray();
-    CreateLabel(jRow, "Having a check next to a button will remove that button from the players menus.", "lbl_info2", 636.0, 15.0);
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateLabel(JsonArray(), "Having a check next to a button will remove that button from the players menus.", "lbl_info2", 636.0, 15.0);
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 575 / 162
-    jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_action", 25.0, 20.0, "btn_cmd_action_tooltip");
+    jRow = CreateButtonImage(JsonArray(), "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_action", 25.0, 20.0, "btn_cmd_action_tooltip");
 
-    CreateButtonImage(jRow, "ir_guard", "btn_cmd_guard", 35.0f, 35.0f, 0.0, "btn_cmd_guard_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_guard", 25.0, 20.0, "btn_cmd_guard_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_guard", "btn_cmd_guard", 35.0f, 35.0f, 0.0, "btn_cmd_guard_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_guard", 25.0, 20.0, "btn_cmd_guard_tooltip");
 
-    CreateButtonImage(jRow, "ir_standground", "btn_cmd_hold", 35.0f, 35.0f, 0.0, "btn_cmd_hold_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_hold", 25.0, 20.0, "btn_cmd_hold_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_standground", "btn_cmd_hold", 35.0f, 35.0f, 0.0, "btn_cmd_hold_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_hold", 25.0, 20.0, "btn_cmd_hold_tooltip");
 
-    CreateButtonImage(jRow, "ir_attacknearest", "btn_cmd_attack", 35.0f, 35.0f, 0.0, "btn_cmd_attack_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_attack", 25.0, 20.0, "btn_cmd_attack_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_attacknearest", "btn_cmd_attack", 35.0f, 35.0f, 0.0, "btn_cmd_attack_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_attack", 25.0, 20.0, "btn_cmd_attack_tooltip");
 
-    CreateButtonImage(jRow, "ir_follow", "btn_cmd_follow", 35.0f, 35.0f, 0.0, "btn_cmd_follow_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_follow", 25.0, 20.0, "btn_cmd_follow_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_follow", "btn_cmd_follow", 35.0f, 35.0f, 0.0, "btn_cmd_follow_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_follow", 25.0, 20.0, "btn_cmd_follow_tooltip");
 
-    CreateButtonImage(jRow, "ir_dmchat", "btn_follow_target", 35.0f, 35.0f, 0.0, "btn_follow_target_tooltip");
-    CreateCheckBox(jRow, "", "chbx_follow_target", 25.0, 20.0, "btn_follow_target_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_dmchat", "btn_follow_target", 35.0f, 35.0f, 0.0, "btn_follow_target_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_follow_target", 25.0, 20.0, "btn_follow_target_tooltip");
 
-    CreateButtonImage(jRow, "ife_foc_search", "btn_cmd_search", 35.0f, 35.0f, 0.0, "btn_cmd_search_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_search", 25.0, 20.0, "btn_cmd_search_tooltip");
+    jRow = CreateButtonImage(jRow, "ife_foc_search", "btn_cmd_search", 35.0f, 35.0f, 0.0, "btn_cmd_search_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_search", 25.0, 20.0, "btn_cmd_search_tooltip");
 
-    CreateButtonImage(jRow, "ife_foc_hide", "btn_cmd_stealth", 35.0f, 35.0f, 0.0, "btn_cmd_stealth_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_stealth", 25.0, 20.0, "btn_cmd_stealth_tooltip");
+    jRow = CreateButtonImage(jRow, "ife_foc_hide", "btn_cmd_stealth", 35.0f, 35.0f, 0.0, "btn_cmd_stealth_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_stealth", 25.0, 20.0, "btn_cmd_stealth_tooltip");
 
-    CreateButtonImage(jRow, "ir_scommand", "btn_cmd_ai_script", 35.0f, 35.0f, 0.0, "btn_cmd_ai_script_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_ai_script", 25.0, 20.0, "btn_cmd_ai_script_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_scommand", "btn_cmd_ai_script", 35.0f, 35.0f, 0.0, "btn_cmd_ai_script_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_ai_script", 25.0, 20.0, "btn_cmd_ai_script_tooltip");
 
-    CreateButtonImage(jRow, "isk_settrap", "btn_cmd_place_trap", 35.0f, 35.0f, 0.0, "btn_cmd_place_trap_tooltip");
-    CreateCheckBox(jRow, "", "chbx_cmd_place_trap", 25.0, 20.0, "btn_cmd_place_trap_tooltip");
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButtonImage(jRow, "isk_settrap", "btn_cmd_place_trap", 35.0f, 35.0f, 0.0, "btn_cmd_place_trap_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_place_trap", 25.0, 20.0, "btn_cmd_place_trap_tooltip");
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5 ******************************************************************* 575 / 205
-    jRow = JsonArray();
-    CreateButtonImage(jRow, "isk_spellcraft", "btn_quick_widget", 35.0f, 35.0f, 0.0, "btn_quick_widget_tooltip");
-    CreateCheckBox(jRow, "", "chbx_quick_widget", 25.0, 20.0, "btn_quick_widget_tooltip");
+    jRow = CreateButtonImage(JsonArray(), "isk_spellcraft", "btn_quick_widget", 35.0f, 35.0f, 0.0, "btn_quick_widget_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_quick_widget", 25.0, 20.0, "btn_quick_widget_tooltip");
 
-    CreateButtonImage(jRow, "isk_lore", "btn_spell_memorize", 35.0f, 35.0f, 0.0, "btn_spell_memorize_tooltip");
-    CreateCheckBox(jRow, "", "chbx_spell_memorize", 25.0, 20.0, "btn_spell_memorize_tooltip");
+    jRow = CreateButtonImage(jRow, "isk_lore", "btn_spell_memorize", 35.0f, 35.0f, 0.0, "btn_spell_memorize_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_spell_memorize", 25.0, 20.0, "btn_spell_memorize_tooltip");
 
-    CreateButtonImage(jRow, "ir_cantrips", "btn_buff_short", 35.0f, 35.0f, 0.0, "btn_buff_short_tooltip");
-    CreateCheckBox(jRow, "", "chbx_buff_short", 25.0, 20.0, "btn_buff_short_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_cantrips", "btn_buff_short", 35.0f, 35.0f, 0.0, "btn_buff_short_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_buff_short", 25.0, 20.0, "btn_buff_short_tooltip");
 
-    CreateButtonImage(jRow, "ir_cast", "btn_buff_long", 35.0f, 35.0f, 0.0, "btn_buff_long_tooltip");
-    CreateCheckBox(jRow, "", "chbx_buff_long", 25.0, 20.0, "btn_buff_long_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_cast", "btn_buff_long", 35.0f, 35.0f, 0.0, "btn_buff_long_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_buff_long", 25.0, 20.0, "btn_buff_long_tooltip");
 
-    CreateButtonImage(jRow, "ir_level789", "btn_buff_all", 35.0f, 35.0f, 0.0, "btn_buff_all_tooltip");
-    CreateCheckBox(jRow, "", "chbx_buff_all", 25.0, 20.0, "btn_buff_all_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_level789", "btn_buff_all", 35.0f, 35.0f, 0.0, "btn_buff_all_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_buff_all", 25.0, 20.0, "btn_buff_all_tooltip");
 
-    CreateButtonImage(jRow, "ir_rest", "btn_buff_rest", 35.0f, 35.0f, 0.0, "btn_buff_rest_tooltip");
-    CreateCheckBox(jRow, "", "chbx_buff_rest", 25.0, 20.0, "btn_buff_rest_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_rest", "btn_buff_rest", 35.0f, 35.0f, 0.0, "btn_buff_rest_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_buff_rest", 25.0, 20.0, "btn_buff_rest_tooltip");
 
-    CreateButtonImage(jRow, "dm_jump", "btn_jump_to", 35.0f, 35.0f, 0.0, "btn_jump_to_tooltip");
-    CreateCheckBox(jRow, "", "chbx_jump_to", 25.0, 20.0, "btn_jump_to_tooltip");
+    jRow = CreateButtonImage(jRow, "dm_jump", "btn_jump_to", 35.0f, 35.0f, 0.0, "btn_jump_to_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_jump_to", 25.0, 20.0, "btn_jump_to_tooltip");
 
-    CreateButtonImage(jRow, "dm_limbo", "btn_ghost_mode", 35.0f, 35.0f, 0.0, "btn_ghost_mode_tooltip");
-    CreateCheckBox(jRow, "", "chbx_ghost_mode", 25.0, 20.0, "btn_ghost_mode_tooltip");
+    jRow = CreateButtonImage(jRow, "dm_limbo", "btn_ghost_mode", 35.0f, 35.0f, 0.0, "btn_ghost_mode_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_ghost_mode", 25.0, 20.0, "btn_ghost_mode_tooltip");
 
-    CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
-    CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0, "btn_camera_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0, "btn_camera_tooltip");
 
-    CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
-    CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0, "btn_inventory_tooltip");
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0, "btn_inventory_tooltip");
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 6 ******************************************************************* 575 / 248
-    jRow = JsonArray();
 
-    CreateButtonImage(jRow, "ife_familiar", "btn_familiar", 35.0f, 35.0f, 0.0, "btn_familiar_tooltip");
-    CreateCheckBox(jRow, "", "chbx_familiar", 25.0, 20.0, "btn_familiar_tooltip");
+    jRow = CreateButtonImage(JsonArray(), "ife_familiar", "btn_familiar", 35.0f, 35.0f, 0.0, "btn_familiar_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_familiar", 25.0, 20.0, "btn_familiar_tooltip");
 
-    CreateButtonImage(jRow, "ife_animal", "btn_companion", 35.0f, 35.0f, 0.0, "btn_companion_tooltip");
-    CreateCheckBox(jRow, "", "chbx_companion", 25.0, 20.0, "btn_companion_tooltip");
+    jRow = CreateButtonImage(jRow, "ife_animal", "btn_companion", 35.0f, 35.0f, 0.0, "btn_companion_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_companion", 25.0, 20.0, "btn_companion_tooltip");
 
-    CreateButtonImage(jRow, "dm_ai", "btn_ai", 35.0f, 35.0f, 0.0, "btn_ai_tooltip");
-    CreateCheckBox(jRow, "", "chbx_ai", 25.0, 20.0, "btn_companion_tooltip");
+    jRow = CreateButtonImage(jRow, "dm_ai", "btn_ai", 35.0f, 35.0f, 0.0, "btn_ai_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_ai", 25.0, 20.0, "btn_companion_tooltip");
 
-    CreateButtonImage(jRow, "isk_movsilent", "btn_quiet", 35.0f, 35.0f, 0.0, "btn_quiet_tooltip");
-    CreateCheckBox(jRow, "", "chbx_quiet", 25.0, 20.0, "btn_quiet_tooltip");
+    jRow = CreateButtonImage(jRow, "isk_movsilent", "btn_quiet", 35.0f, 35.0f, 0.0, "btn_quiet_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_quiet", 25.0, 20.0, "btn_quiet_tooltip");
 
-    CreateButtonImage(jRow, "ir_archer", "btn_ranged", 35.0f, 35.0f, 0.0, "btn_ranged_tooltip");
-    CreateCheckBox(jRow, "", "chbx_ranged", 25.0, 20.0, "btn_ranged_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_archer", "btn_ranged", 35.0f, 35.0f, 0.0, "btn_ranged_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_ranged", 25.0, 20.0, "btn_ranged_tooltip");
 
-    CreateButtonImage(jRow, "ir_ignore", "btn_ignore_assoc", 35.0f, 35.0f, 0.0, "btn_ignore_assoc_tooltip");
-    CreateCheckBox(jRow, "", "chbx_ignore_assoc", 25.0, 20.0, "btn_ignore_assoc_tooltip");
+    jRow = CreateButtonImage(jRow, "dm_takeitem", "btn_equip_weapon", 35.0f, 35.0f, 0.0, "btn_equip_weapon_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_equip_weapon", 25.0, 20.0, "btn_equip_weapon_tooltip");
 
-    CreateButtonImage(jRow, "isk_search", "btn_search", 35.0f, 35.0f, 0.0, "btn_search_tooltip");
-    CreateCheckBox(jRow, "", "chbx_search", 25.0, 20.0, "btn_search_tooltip");
+    jRow = CreateButtonImage(jRow, "isk_search", "btn_search", 35.0f, 35.0f, 0.0, "btn_search_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_search", 25.0, 20.0, "btn_search_tooltip");
 
-    CreateButtonImage(jRow, "isk_hide", "btn_stealth", 35.0f, 35.0f, 0.0, "btn_stealth_tooltip");
-    CreateCheckBox(jRow, "", "chbx_stealth", 25.0, 20.0, "btn_stealth_tooltip");
+    jRow = CreateButtonImage(jRow, "isk_hide", "btn_stealth", 35.0f, 35.0f, 0.0, "btn_stealth_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_stealth", 25.0, 20.0, "btn_stealth_tooltip");
 
-    CreateButtonImage(jRow, "ir_open", "btn_open_door", 35.0f, 35.0f, 0.0, "btn_open_door_tooltip");
-    CreateCheckBox(jRow, "", "chbx_open_door", 25.0, 20.0, "btn_open_door_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_open", "btn_open_door", 35.0f, 35.0f, 0.0, "btn_open_door_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_open_door", 25.0, 20.0, "btn_open_door_tooltip");
 
-    CreateButtonImage(jRow, "isk_distrap", "btn_traps", 35.0f, 35.0f, 0.0, "btn_traps_tooltip");
-    CreateCheckBox(jRow, "", "chbx_traps", 25.0, 20.0, "btn_traps_tooltip");
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButtonImage(jRow, "isk_distrap", "btn_traps", 35.0f, 35.0f, 0.0, "btn_traps_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_traps", 25.0, 20.0, "btn_traps_tooltip");
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 7 ******************************************************************* 575 / 291
-    jRow = JsonArray();
 
-    CreateButtonImage(jRow, "isk_olock", "btn_pick_locks", 35.0f, 35.0f, 0.0, "btn_pick_locks_tooltip");
-    CreateCheckBox(jRow, "", "chbx_pick_locks", 25.0, 20.0, "btn_pick_locks_tooltip");
+    jRow = CreateButtonImage(JsonArray(), "isk_olock", "btn_pick_locks", 35.0f, 35.0f, 0.0, "btn_pick_locks_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_pick_locks", 25.0, 20.0, "btn_pick_locks_tooltip");
 
-    CreateButtonImage(jRow, "ir_bash", "btn_bash_locks", 35.0f, 35.0f, 0.0, "btn_bash_locks_tooltip");
-    CreateCheckBox(jRow, "", "chbx_bash_locks", 25.0, 20.0, "btn_bash_locks_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_bash", "btn_bash_locks", 35.0f, 35.0f, 0.0, "btn_bash_locks_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_bash_locks", 25.0, 20.0, "btn_bash_locks_tooltip");
 
-    CreateButtonImage(jRow, "dm_control", "btn_magic_level", 35.0f, 35.0f, 0.0, "btn_magic_level_tooltip");
-    CreateCheckBox(jRow, "", "chbx_magic_level", 25.0, 20.0, "btn_magic_level_tooltip");
+    jRow = CreateButtonImage(jRow, "dm_control", "btn_magic_level", 35.0f, 35.0f, 0.0, "btn_magic_level_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_magic_level", 25.0, 20.0, "btn_magic_level_tooltip");
 
-    CreateButtonImage(jRow, "ir_xability", "btn_spontaneous", 35.0f, 35.0f, 0.0, "btn_spontaneous_tooltip");
-    CreateCheckBox(jRow, "", "chbx_spontaneous", 25.0, 20.0, "btn_spontaneous_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_xability", "btn_spontaneous", 35.0f, 35.0f, 0.0, "btn_spontaneous_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_spontaneous", 25.0, 20.0, "btn_spontaneous_tooltip");
 
-    CreateButtonImage(jRow, "ir_cntrspell", "btn_magic", 35.0f, 35.0f, 0.0, "btn_magic_tooltip");
-    CreateCheckBox(jRow, "", "chbx_magic", 25.0, 20.0, "btn_magic_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_cntrspell", "btn_magic", 35.0f, 35.0f, 0.0, "btn_magic_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_magic", 25.0, 20.0, "btn_magic_tooltip");
 
-    CreateButtonImage(jRow, "ir_moreattacks", "btn_magic_items", 35.0f, 35.0f, 0.0, "btn_magic_items_tooltip");
-    CreateCheckBox(jRow, "", "chbx_magic_items", 25.0, 20.0, "btn_magic_items_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_moreattacks", "btn_magic_items", 35.0f, 35.0f, 0.0, "btn_magic_items_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_magic_items", 25.0, 20.0, "btn_magic_items_tooltip");
 
-    CreateButtonImage(jRow, "ir_orisons", "btn_def_magic", 35.0f, 35.0f, 0.0, "btn_def_magic_tooltip");
-    CreateCheckBox(jRow, "", "chbx_def_magic", 25.0, 20.0, "btn_def_magic_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_orisons", "btn_def_magic", 35.0f, 35.0f, 0.0, "btn_def_magic_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_def_magic", 25.0, 20.0, "btn_def_magic_tooltip");
 
-    CreateButtonImage(jRow, "ir_metamagic", "btn_off_magic", 35.0f, 35.0f, 0.0, "btn_off_magic_tooltip");
-    CreateCheckBox(jRow, "", "chbx_off_magic", 25.0, 20.0, "btn_off_magic_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_metamagic", "btn_off_magic", 35.0f, 35.0f, 0.0, "btn_off_magic_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_off_magic", 25.0, 20.0, "btn_off_magic_tooltip");
 
-    CreateButtonImage(jRow, "isk_heal", "btn_heal_out", 35.0f, 35.0f, 0.0, "btn_heal_out_tooltip");
-    CreateCheckBox(jRow, "", "chbx_heal_out", 25.0, 20.0, "btn_heal_out_tooltip");
+    jRow = CreateButtonImage(jRow, "isk_heal", "btn_heal_out", 35.0f, 35.0f, 0.0, "btn_heal_out_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_heal_out", 25.0, 20.0, "btn_heal_out_tooltip");
 
-    CreateButtonImage(jRow, "dm_heal", "btn_heal_in", 35.0f, 35.0f, 0.0, "btn_heal_in_tooltip");
-    CreateCheckBox(jRow, "", "chbx_heal_in", 25.0, 20.0, "btn_heal_in_tooltip");
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jRow = CreateButtonImage(jRow, "dm_heal", "btn_heal_in", 35.0f, 35.0f, 0.0, "btn_heal_in_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_heal_in", 25.0, 20.0, "btn_heal_in_tooltip");
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 8 ******************************************************************* 575 / 334
-    jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_heal", "btn_heals_onoff", 35.0f, 35.0f, 0.0, "btn_heals_onoff_tooltip");
-    CreateCheckBox(jRow, "", "chbx_heals_onoff", 25.0, 20.0, "btn_heals_onoff_tooltip");
+    jRow = CreateButtonImage(JsonArray(), "ir_heal", "btn_heals_onoff", 35.0f, 35.0f, 0.0, "btn_heals_onoff_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_heals_onoff", 25.0, 20.0, "btn_heals_onoff_tooltip");
 
-    CreateButtonImage(jRow, "ir_party", "btn_healp_onoff", 35.0f, 35.0f, 0.0, "btn_healp_onoff_tooltip");
-    CreateCheckBox(jRow, "", "chbx_healp_onoff", 25.0, 20.0, "btn_healp_onoff_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_party", "btn_healp_onoff", 35.0f, 35.0f, 0.0, "btn_healp_onoff_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_healp_onoff", 25.0, 20.0, "btn_healp_onoff_tooltip");
 
-    CreateButtonImage(jRow, "ir_barter", "btn_loot", 35.0f, 35.0f, 0.0, "btn_loot_tooltip");
-    CreateCheckBox(jRow, "", "chbx_loot", 25.0, 20.0, "btn_loot_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_accept", "btn_cure_onoff", 35.0f, 35.0f, 0.0, "btn_cure_onoff_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cure_onoff", 25.0, 20.0, "btn_cure_onoff_tooltip");
 
-    CreateButtonImage(jRow, "ir_dmchat", "btn_perc_range", 35.0f, 35.0f, 0.0, "btn_perc_range_tooltip");
-    CreateCheckBox(jRow, "", "chbx_perc_range", 25.0, 20.0, "btn_perc_range_tooltip");
+    jRow = CreateButtonImage(jRow, "ir_barter", "btn_loot", 35.0f, 35.0f, 0.0, "btn_loot_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_loot", 25.0, 20.0, "btn_loot_tooltip");
+
+    jRow = CreateButtonImage(jRow, "ir_ignore", "btn_ignore_assoc", 35.0f, 35.0f, 0.0, "btn_ignore_assoc_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_ignore_assoc", 25.0, 20.0, "btn_ignore_assoc_tooltip");
+
+    jRow = CreateButtonImage(jRow, "ir_abort", "btn_ignore_traps", 35.0f, 35.0f, 0.0, "btn_ignore_traps_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_ignore_traps", 25.0, 20.0, "btn_ignore_traps_tooltip");
+
+    jRow = CreateButtonImage(jRow, "ir_dmchat", "btn_perc_range", 35.0f, 35.0f, 0.0, "btn_perc_range_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_perc_range", 25.0, 20.0, "btn_perc_range_tooltip");
 
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 334.0;
     // Get the window location to restore it from the database.
     string sName = ai_RemoveIllegalCharacters(GetName(oPC));
@@ -1116,7 +1074,7 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     int bAI = ai_GetDMAIAccessButton(BTN_AI_FOR_PC);
     int bReduceSpeech = ai_GetDMAIAccessButton(BTN_AI_REDUCE_SPEECH);
     int bRanged = ai_GetDMAIAccessButton(BTN_AI_USE_RANGED);
-    int bIgnoreAssociates = ai_GetDMAIAccessButton(BTN_AI_IGNORE_ASSOCIATES);
+    int bEquipWeapons = ai_GetDMAIAccessButton(BTN_AI_STOP_WEAPON_EQUIP);
     int bSearch = ai_GetDMAIAccessButton(BTN_AI_USE_SEARCH);
     int bStealth = ai_GetDMAIAccessButton(BTN_AI_USE_STEALTH);
     int bOpenDoors = ai_GetDMAIAccessButton(BTN_AI_OPEN_DOORS);
@@ -1133,7 +1091,10 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     int bHealIn = ai_GetDMAIAccessButton(BTN_AI_HEAL_IN);
     int bSelfHealOnOff = ai_GetDMAIAccessButton(BTN_AI_STOP_SELF_HEALING);
     int bPartyHealOnOff = ai_GetDMAIAccessButton(BTN_AI_STOP_PARTY_HEALING);
+    int bCureOnOff = ai_GetDMAIAccessButton(BTN_AI_STOP_CURE_SPELLS);
     int bLoot = ai_GetDMAIAccessButton(BTN_AI_LOOT);
+    int bIgnoreAssociates = ai_GetDMAIAccessButton(BTN_AI_IGNORE_ASSOCIATES);
+    int bIgnoreTraps = ai_GetDMAIAccessButton(BTN_AI_IGNORE_TRAPS);
     int bPercRange = ai_GetDMAIAccessButton(BTN_AI_PERC_RANGE);
     int bBtnFamiliar = ai_GetDMWAccessButton(BTN_CMD_FAMILIAR);
     int bBtnCompanion = ai_GetDMWAccessButton(BTN_CMD_COMPANION);
@@ -1290,11 +1251,11 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBind(oPC, nToken, "btn_ranged_event", JsonBool(TRUE));
     NuiSetBind (oPC, nToken, "btn_ranged_tooltip", JsonString("  Ranged button"));
 
-    NuiSetBind(oPC, nToken, "chbx_ignore_assoc_check", JsonBool(bIgnoreAssociates));
-    NuiSetBindWatch(oPC, nToken, "chbx_ignore_assoc_check", TRUE);
-    NuiSetBind(oPC, nToken, "chbx_ignore_assoc_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_ignore_assoc_event", JsonBool(TRUE));
-    NuiSetBind (oPC, nToken, "btn_ignore_assoc_tooltip", JsonString("  Ignore Associates button"));
+    NuiSetBind(oPC, nToken, "chbx_equip_weapon_check", JsonBool(bEquipWeapons));
+    NuiSetBindWatch(oPC, nToken, "chbx_equip_weapon_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_equip_weapon_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_equip_weapon_event", JsonBool(TRUE));
+    NuiSetBind (oPC, nToken, "btn_equip_weapon_tooltip", JsonString("  Auto Equip Weapons button"));
 
     NuiSetBind(oPC, nToken, "chbx_search_check", JsonBool(bSearch));
     NuiSetBindWatch (oPC, nToken, "chbx_search_check", TRUE);
@@ -1384,19 +1345,37 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBindWatch (oPC, nToken, "chbx_heals_onoff_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_heals_onoff_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_heals_onoff_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_heals_onoff_tooltip", JsonString("  Heal Self button"));
+    NuiSetBind(oPC, nToken, "btn_heals_onoff_tooltip", JsonString("  Heal Self On/Off button"));
 
     NuiSetBind(oPC, nToken, "chbx_healp_onoff_check", JsonBool(bPartyHealOnOff));
     NuiSetBind(oPC, nToken, "chbx_healp_onoff_event", JsonBool(TRUE));
     NuiSetBindWatch (oPC, nToken, "chbx_healp_onoff_check", TRUE);
     NuiSetBind(oPC, nToken, "btn_healp_onoff_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_healp_onoff_tooltip", JsonString("  Heal Party button"));
+    NuiSetBind(oPC, nToken, "btn_healp_onoff_tooltip", JsonString("  Heal Party On/Off button"));
+
+    NuiSetBind(oPC, nToken, "chbx_cure_onoff_check", JsonBool(bCureOnOff));
+    NuiSetBind(oPC, nToken, "chbx_cure_onoff_event", JsonBool(TRUE));
+    NuiSetBindWatch (oPC, nToken, "chbx_cure_onoff_check", TRUE);
+    NuiSetBind(oPC, nToken, "btn_cure_onoff_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_cure_onoff_tooltip", JsonString("  Cure Spells On/Off button"));
 
     NuiSetBind(oPC, nToken, "chbx_loot_check", JsonBool(bLoot));
     NuiSetBindWatch (oPC, nToken, "chbx_loot_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_loot_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_loot_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_loot_tooltip", JsonString("  Auto Looting button"));
+
+    NuiSetBind(oPC, nToken, "chbx_ignore_assoc_check", JsonBool(bIgnoreAssociates));
+    NuiSetBindWatch(oPC, nToken, "chbx_ignore_assoc_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_ignore_assoc_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_ignore_assoc_event", JsonBool(TRUE));
+    NuiSetBind (oPC, nToken, "btn_ignore_assoc_tooltip", JsonString("  Ignore Associates On/Off button"));
+
+    NuiSetBind(oPC, nToken, "chbx_ignore_traps_check", JsonBool(bIgnoreTraps));
+    NuiSetBindWatch(oPC, nToken, "chbx_ignore_traps_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_ignore_traps_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_ignore_traps_event", JsonBool(TRUE));
+    NuiSetBind (oPC, nToken, "btn_ignore_traps_tooltip", JsonString("  Ignore Floor Traps On/Off button"));
 
     NuiSetBind(oPC, nToken, "chbx_perc_range_check", JsonBool(bPercRange));
     NuiSetBindWatch (oPC, nToken, "chbx_perc_range_check", TRUE);

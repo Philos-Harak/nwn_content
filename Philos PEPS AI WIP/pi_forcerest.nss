@@ -55,7 +55,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_forcerest"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Force Rest"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("ir_rest"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);

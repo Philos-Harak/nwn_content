@@ -447,6 +447,8 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
 }
 int ai_TryCureConditionTalent(object oCreature, int nInMelee, object oTarget = OBJECT_INVALID)
 {
+    // Is Casting Cure spells off?
+    if(ai_GetMagicMode(oCreature, AI_MAGIC_CURE_SPELLS_OFF)) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_talents", "450", AI_MAX_TALENT + AI_TALENT_CURE + ": " +
                           IntToString(GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE)));
     // If the creature doesn't have cure talents then we set it to -1.
@@ -1059,7 +1061,7 @@ int ai_TryLayOnHands(object oCreature)
 int ai_TryTurningTalent(object oCreature)
 {
     if(!GetHasFeat(FEAT_TURN_UNDEAD, oCreature)) return FALSE;
-    if(AI_DEBUG) ai_Debug("0i_talents", "1043", "Checking for Turning Targets. ");
+    if(AI_DEBUG) ai_Debug("0i_talents", "1043", "Checking for Turning Targets.");
     int nHDCount, nHDCount2, nRacial, nHD;
     // Get characters levels.
     int nClericLevel = GetLevelByClass(CLASS_TYPE_CLERIC, oCreature);
@@ -1170,12 +1172,16 @@ int ai_TryTurningTalent(object oCreature)
     if(AI_DEBUG) ai_Debug("0i_talents", "1148", "Found " + IntToString(nHDCount2) + " hitdice to turn from enemy location.");
     if(nHDCount > nHDCount2)
     {
+        if(AI_DEBUG) ai_Debug("0i_talents", "1176", " My Location - nHDCount: " + IntToString(nHDCount) +
+                     " >= nTurnHD / 2: " + IntToString(nTurnHD / 2));
         if(nHDCount < nTurnHD / 2) return FALSE;
         ai_UseFeat(oCreature, FEAT_TURN_UNDEAD, oCreature);
         return TRUE;
     }
     else
     {
+        if(AI_DEBUG) ai_Debug("0i_talents", "1184", " Better location - nHDCount2: " + IntToString(nHDCount2) +
+                     " >= nTurnHD / 2: " + IntToString(nTurnHD / 2));
         if(nHDCount2 < nTurnHD / 2) return FALSE;
         ActionMoveToObject(oNearestEnemy, TRUE, 1.0f);
         ai_UseFeat(oCreature, FEAT_TURN_UNDEAD, oCreature);
@@ -1638,7 +1644,7 @@ object ai_CheckTalentForBuffing(object oCreature, string sCategory, int nSpell)
     // Should we buff this monster caster? Added legacy code just in case.
     if((sCategory == "P" || sCategory == "E") &&
        (GetLocalInt(GetModule(), AI_RULE_BUFF_MONSTERS) ||
-        GetLocalInt(oCreature, "NW_GENERIC_MASTER") & 0x04000000)) return ai_GetBuffTarget(oCreature, nSpell);
+        GetLocalInt(oCreature, "NW_GENERIC_MASTER") & 0x04000000))return ai_GetBuffTarget(oCreature, nSpell);
     if(sCategory == "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON)) return oCreature;
     return OBJECT_INVALID;
 }
@@ -1682,7 +1688,7 @@ int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nS
         // 8-12) Uses/Day [Note: 13 is unlimited uses per day].
         // We set the slot to -1 to let the other function know we need this talent removed.
         int nUses = GetItemPropertyCostTableValue(ipProp);
-        if(nUses == 1) JsonArrayInsertInplace(jTalent, JsonInt(-1), 4);
+        if(nUses == 1) jTalent = JsonArrayInsert(jTalent, JsonInt(-1), 4);
         else if(nUses > 1 && nUses < 7)
         {
             if(AI_DEBUG) ai_Debug("0i_talents", "1319", "Item charges: " + IntToString(GetItemCharges(oItem)));
@@ -1744,11 +1750,11 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
     if(JsonGetType(jCategory) == JSON_TYPE_NULL)
     {
         jCategory = JsonArray();
-        JsonArrayInsertInplace(jCategory, JsonArray(), 0);
+        jCategory = JsonArrayInsert(jCategory, JsonArray(), 0);
         int nNewLevel = 9;
         while(nNewLevel > 0)
         {
-            JsonArrayInsertInplace(jCategory, JsonArray());
+            jCategory = JsonArrayInsert(jCategory, JsonArray());
             nNewLevel--;
         }
     }
@@ -1757,22 +1763,22 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
     json jTalent = JsonArray();
     if(nType == AI_TALENT_TYPE_SPELL || nType == AI_TALENT_TYPE_SP_ABILITY)
     {
-        JsonArrayInsertInplace(jTalent, JsonInt(nType), 0);
-        JsonArrayInsertInplace(jTalent, JsonInt(nSpell));
-        JsonArrayInsertInplace(jTalent, JsonInt(nClass));
-        JsonArrayInsertInplace(jTalent, JsonInt(nLevel));
-        JsonArrayInsertInplace(jTalent, JsonInt(nSlot));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nType), 0);
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nSpell));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nClass));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nLevel));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nSlot));
     }
     else if(nType == AI_TALENT_TYPE_ITEM)
     {
-        JsonArrayInsertInplace(jTalent, JsonInt(nType), 0);
-        JsonArrayInsertInplace(jTalent, JsonInt(nSpell));
-        JsonArrayInsertInplace(jTalent, JsonString(ObjectToString(oItem)));
-        JsonArrayInsertInplace(jTalent, JsonInt(nLevel));
-        JsonArrayInsertInplace(jTalent, JsonInt(nSlot));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nType), 0);
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nSpell));
+        jTalent = JsonArrayInsert(jTalent, JsonString(ObjectToString(oItem)));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nLevel));
+        jTalent = JsonArrayInsert(jTalent, JsonInt(nSlot));
     }
-    JsonArrayInsertInplace(jLevel, jTalent);
-    JsonArraySetInplace(jCategory, nJsonLevel, jLevel);
+    jLevel = JsonArrayInsert(jLevel, jTalent);
+    jCategory = JsonArraySet(jCategory, nJsonLevel, jLevel);
     SetLocalJson(oCreature, sCategory, jCategory);
     if(AI_DEBUG) ai_Debug("0i_talents", "1777", sCategory + ": " + JsonDump(jCategory, 1));
     if(AI_DEBUG) ai_Debug("0i_talents", "1778", "AI_MAX_TALENT: " +
@@ -1788,9 +1794,9 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
 void ai_RemoveTalent(object oCreature, json jCategory, json jLevel, string sCategory, int nLevel, int nSlotIndex)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1400", "removing Talent from slot: " + IntToString(nSlotIndex));
-    JsonArrayDelInplace(jLevel, nSlotIndex);
+    jLevel = JsonArrayDel(jLevel, nSlotIndex);
     if(AI_DEBUG) ai_Debug("0i_talents", "1402", "jLevel: " + JsonDump(jLevel, 2));
-    JsonArraySetInplace(jCategory, nLevel, jLevel);
+    jCategory = JsonArraySet(jCategory, nLevel, jLevel);
     if(AI_DEBUG) ai_Debug("0i_talents", "1404", "jCategory: " + JsonDump(jCategory, 2));
     SetLocalJson(oCreature, sCategory, jCategory);
 }
@@ -1798,7 +1804,7 @@ void ai_RemoveTalent(object oCreature, json jCategory, json jLevel, string sCate
 void ai_RemoveTalentLevel(object oCreature, json jCategory, json jLevel, string sCategory, int nLevel)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1410", "removing Talent level: " + IntToString(nLevel));
-    JsonArrayDelInplace(jCategory, nLevel);
+    jCategory = JsonArrayDel(jCategory, nLevel);
     if(AI_DEBUG) ai_Debug("0i_talents", "1412", "jCategory: " + JsonDump(jCategory, 2));
     SetLocalJson(oCreature, sCategory, jCategory);
 }
@@ -1985,7 +1991,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bE
                 nSpellImmunity = GetItemPropertyCostTableValue(ipProp);
                 nSpellImmunity = StringToInt(Get2DAString("iprp_spellcost", "SpellIndex", nSpellImmunity));
                 //if(AI_DEBUG) ai_Debug("0i_talents", "1950", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
-                JsonArrayInsertInplace(jImmunity, JsonInt(nSpellImmunity));
+                jImmunity = JsonArrayInsert(jImmunity, JsonInt(nSpellImmunity));
             }
             else if(nIPType == ITEM_PROPERTY_HASTE)
             {
@@ -2069,6 +2075,8 @@ void ai_SetCreatureItemTalents(object oCreature, int bMonster)
 }
 void ai_SetCreatureTalents(object oCreature, int bMonster)
 {
+    json jCreature = ObjectToJson(oCreature);
+    //if(AI_DEBUG) ai_Debug("0i_talents", "2072", GetName(oCreature) + " jCreature: " + JsonDump(jCreature, 4));
     if(GetLocalInt(oCreature, AI_TALENTS_SET)) return;
     SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
     object oModule = GetModule();
@@ -2250,7 +2258,9 @@ int ai_UseCreatureItemTalent(object oCreature, json jLevel, json jTalent, string
         if(oCreature != oTarget && ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF)) return FALSE;
         if(AI_DEBUG) ai_Debug("0i_talents", "1724", "Using " + GetName(oItem) + " nInMelee: " + IntToString(nInMelee) +
                  " targeting: " + GetName(oTarget));
+        ai_SetLastAction(oCreature, AI_LAST_ACTION_USED_ITEM);
         ActionUseItemOnObject(oItem, GetFirstItemProperty(oItem), oTarget);
+        ActionDoCommand(ExecuteScript("0e_do_combat_rnd", oCreature));
         // We also must check for stack size.
         if(GetItemStackSize(oItem) == 1) JsonArrayInsertInplace(jTalent, JsonInt(-1), 4);
         return TRUE;
@@ -2747,8 +2757,10 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             float fRange;
             if(nInMelee) fRange = AI_RANGE_MELEE;
             else fRange = ai_GetOffensiveSpellSearchRange(oCreature, nSpell);
-            // Lets get a cast as they should have more buffs.
+            // Lets get a caster as they should have more buffs.
             oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_CASTER, fRange);
+            // No caster then get the most powerful enemy!
+            if(oTarget == OBJECT_INVALID) oTarget = ai_GetHighestCRTarget(oCreature, fRange);
             if(oTarget != OBJECT_INVALID)
             {
                 if(!ai_CreatureHasDispelableEffect(oCreature, oTarget)) return FALSE;
@@ -2759,6 +2771,7 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
                     if(ai_UseTalentAtLocation(oCreature, jTalent, oTarget, nInMelee)) return TRUE;
                 }
             }
+            if(oTarget == OBJECT_INVALID) return FALSE;
         }
         // Make sure the spell will work on the target.
         else if(nSpell == SPELL_HOLD_PERSON || nSpell == SPELL_DOMINATE_PERSON ||
