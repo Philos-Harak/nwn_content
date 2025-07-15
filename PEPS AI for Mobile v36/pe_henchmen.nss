@@ -11,18 +11,10 @@
 void PopupWidgetHenchmanGUIPanel(object oPC);
 void ResetHenchmanWindows(object oPC, int nToken, object oHenchman)
 {
-    int nIndex = 1;
-    object oHench = GetHenchman(oPC, nIndex);
-    while(oHench != OBJECT_INVALID)
-    {
-        oHench = GetHenchman(oPC, ++nIndex);
-    }
-    string sParty = GetHenchmanDbString(oPC, "henchname", "0");
-    SetHenchmanDbString(oPC, "image", IntToString(nIndex - 1), sParty);
-    NuiDestroy(oPC, NuiFindWindow(oPC, "henchman_nui"));
-    ExecuteScript("pi_henchmen", oPC);
-    NuiDestroy(oPC, nToken);
-    CreateCharacterEditGUIPanel(oPC, oHenchman);
+    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "henchman_nui")));
+    DelayCommand(0.1, ExecuteScript("pi_henchmen", oPC));
+    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+    DelayCommand(0.2, CreateCharacterEditGUIPanel(oPC, oHenchman));
 }
 void main()
 {
@@ -59,6 +51,11 @@ void main()
             DeleteLocalInt(oTarget, AI_ONSPAWN_EVENT);
             ai_ChangeEventScriptsForAssociate(oTarget);
             AddHenchman(oPC, oTarget);
+            // Special check for Infinite Dungeon plot givers to be changed into henchman.
+            if(GetStringLeft(GetLocalString(oTarget, "sConversation"), 8) == "id1_plot")
+            {
+                DeleteLocalString(oTarget, "sConversation");
+            }
             // Remove this variable so they may get a unique tag associate widget.
             DeleteLocalString(oTarget, AI_TAG);
             ai_SendMessages(GetName(oTarget) + " has been copied and is now in your party as a henchman.", AI_COLOR_GREEN, oPC);
@@ -104,8 +101,8 @@ void main()
                 {
                     sParty = GetStringRight(sElem, 1);
                     SetHenchmanDbString(oPC, "henchname", sParty, "0");
-                    NuiDestroy(oPC, nToken);
-                    ExecuteScript("pi_henchmen", oPC);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.1, ExecuteScript("pi_henchmen", oPC));
                 }
                 // Add an NPC in the game as a henchman.
                 else if(sElem == "btn_npc_henchman")
@@ -114,7 +111,7 @@ void main()
                     SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_henchmen");
                     // Set Targeting variables.
                     SetLocalString(oPC, AI_TARGET_MODE, "MAKE_NPC_HENCHMAN");
-                    NuiDestroy(oPC, nToken);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
                     ai_SendMessages("Select an NPC to copy and make your henchman.", AI_COLOR_YELLOW, oPC);
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
                 }
@@ -144,8 +141,8 @@ void main()
                         SetHenchmanDbString(oPC, "henchname", "", sParty);
                     }
                     else SetHenchmanDbString(oPC, "henchname", "0", sParty);
-                    NuiDestroy(oPC, nToken);
-                    ExecuteScript("pi_henchmen", oPC);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.1, ExecuteScript("pi_henchmen", oPC));
                 }
                 else if(sElem == "btn_clear_party")
                 {
@@ -178,8 +175,8 @@ void main()
                 {
                     SaveYourHenchman(oPC, nToken, sParty);
                     SetHenchmanDbString(oPC, "henchname", "0", sParty);
-                    NuiDestroy(oPC, nToken);
-                    ExecuteScript("pi_henchmen", oPC);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.1, ExecuteScript("pi_henchmen", oPC));
                 }
                 else if(sElem == "btn_save_party")
                 {
@@ -193,7 +190,7 @@ void main()
                     int bWidget = JsonGetInt(NuiGetBind(oPC, nToken, "henchman_widget_check"));
                     SetLocalInt(oPC, "AI_WIDGET_HENCHMAN", bWidget);
                     if(bWidget) PopupWidgetHenchmanGUIPanel(oPC);
-                    else NuiDestroy(oPC, NuiFindWindow(oPC, "widgethenchmanwin"));
+                    else DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "widgethenchmanwin")));
                 }
                 if(sElem == "lock_henchman_widget_check")
                 {
@@ -257,8 +254,8 @@ void main()
                     int nSelection = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_class_selected"));
                     int nClass = GetClassBySelection2DA(nSelection);
                     SetLocalInt(oHenchman, "CLASS_SELECTED_" + IntToString(nPosition), nClass);
-                    NuiDestroy(oPC, nToken);
-                    CreateCharacterEditGUIPanel(oPC, oHenchman);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.1, CreateCharacterEditGUIPanel(oPC, oHenchman));
                 }
                 else if(sElem == "cmb_package_selected")
                 {
@@ -322,19 +319,35 @@ void main()
                         return;
                     }
                     string sLevel = IntToString(GetLevelByClass(nClass, oHenchman) + 1);
-                    json jHenchman = ObjectToJson(oHenchman);
+                    json jHenchman = ObjectToJson(oHenchman, TRUE);
+                    //WriteTimestampedLogEntry("pe_henchmen, 318, jHenchman: " + JsonDump(jHenchman, 4));
                     // Check to see if this character has a LvlStatList that is required to level.
                     json jLvlStatList = JsonObjectGet(jHenchman, "LvlStatList");
-                    //WriteTimestampedLogEntry("pe_henchmen, 313, jLvlStatList: " + JsonDump(jLvlStatList));
+                    //WriteTimestampedLogEntry("pe_henchmen, 321, jLvlStatList: " + JsonDump(jLvlStatList, 4));
                     if(JsonGetType(jLvlStatList) == JSON_TYPE_NULL)
                     {
-                        oHenchman = CreateLevelStatList(oPC, oHenchman);
+                        RemoveHenchman(oPC, oHenchman);
+                        // Make sure to get a clean faction version of the henchman here.
+                        jHenchman = ObjectToJson(oHenchman, TRUE);
+                        jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC);
+                        location lLocation = GetLocation(oHenchman);
+                        int nFamiliar, nCompanion;
+                        object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oHenchman);
+                        if(oCompanion != OBJECT_INVALID) nFamiliar = TRUE;
+                        oCompanion = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oHenchman);
+                        if(oCompanion != OBJECT_INVALID) nCompanion = TRUE;
+                        AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
+                        DestroyObject(oHenchman);
+                        oHenchman = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
                         SetLocalObject(oPC, HENCHMAN_TO_EDIT, oHenchman);
+                        // We need to move party button list index to the last one since
+                        // the henchman will move to the last henchman slot.
                         int nIndex = 1;
                         object oHench = GetHenchman(oPC, nIndex);
                         while(oHench != OBJECT_INVALID)
                         {
                             oHench = GetHenchman(oPC, ++nIndex);
+                            //SendMessageToPC(oPC, "oHench: " + GetName(oHench) + " nIndex: " + IntToString(nIndex));
                         }
                         string sParty = GetHenchmanDbString(oPC, "henchname", "0");
                         SetHenchmanDbString(oPC, "image", IntToString(nIndex - 1), sParty);
@@ -361,7 +374,17 @@ void main()
                     oHenchman = ResetCharacter(oPC, oHenchman);
                     SetLocalObject(oPC, HENCHMAN_TO_EDIT, oHenchman);
                     ai_SendMessages(GetName(oHenchman) + " has been reset to level 1!", AI_COLOR_GREEN, oPC);
-                    DelayCommand(0.2, ResetHenchmanWindows(oPC, nToken, oHenchman));
+                    // We need to move party button list index to the last one since
+                    // the henchman will move to the last henchman slot.
+                    int nIndex = 1;
+                    object oHench = GetHenchman(oPC, nIndex);
+                    while(oHench != OBJECT_INVALID)
+                    {
+                        oHench = GetHenchman(oPC, ++nIndex);
+                    }
+                    string sParty = GetHenchmanDbString(oPC, "henchname", "0");
+                    SetHenchmanDbString(oPC, "image", IntToString(nIndex - 1), sParty);
+                    ResetHenchmanWindows(oPC, nToken, oHenchman);
                 }
                 else if(sElem == "btn_portrait_next")
                 {
@@ -452,8 +475,8 @@ void main()
                 {
                     int nPosition = JsonGetInt(NuiGetBind(oPC, nToken, "opt_classes_value"));
                     SetLocalInt(oHenchman, "CLASS_OPTION_POSITION", nPosition);
-                    NuiDestroy(oPC, nToken);
-                    CreateCharacterEditGUIPanel(oPC, oHenchman);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.1, CreateCharacterEditGUIPanel(oPC, oHenchman));
                     return;
                 }
                 if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
@@ -516,7 +539,7 @@ void main()
         }
         else if(sWndId == "char_description_nui")
         {
-            if(sEvent == "click" && sElem == "btn_ok") NuiDestroy(oPC, nToken);
+            if(sEvent == "click" && sElem == "btn_ok") DelayCommand(0.0, NuiDestroy(oPC, nToken));
         }
     }
 }
@@ -526,14 +549,12 @@ void PopupWidgetHenchmanGUIPanel(object oPC)
     SetLocalInt (oPC, "AI_NO_NUI_SAVE", TRUE);
     DelayCommand (0.5f, DeleteLocalInt (oPC, "AI_NO_NUI_SAVE"));
     // Row 1 (buttons)**********************************************************
-    json jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_level1", "btn_one", 30.0f, 30.0f);
-    CreateButtonImage(jRow, "ir_level2", "btn_two", 30.0f, 30.0f);
-    CreateButtonImage(jRow, "ir_level3", "btn_three", 30.0f, 30.0f);
-    CreateButtonImage(jRow, "ir_level4", "btn_four", 30.0f, 30.0f);
+    json jRow = CreateButtonImage(JsonArray(), "ir_level1", "btn_one", 30.0f, 30.0f);
+    jRow = CreateButtonImage(jRow, "ir_level2", "btn_two", 30.0f, 30.0f);
+    jRow = CreateButtonImage(jRow, "ir_level3", "btn_three", 30.0f, 30.0f);
+    jRow = CreateButtonImage(jRow, "ir_level4", "btn_four", 30.0f, 30.0f);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     int bAINPCWidgetLock = GetLocalInt(oPC, "AI_WIDGET_HENCHMAN_LOCK");
     // Get the window location to restore it from the database.
     float fX = GetLocalFloat(oPC, "widget_henchman_X");

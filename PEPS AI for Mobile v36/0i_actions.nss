@@ -94,6 +94,11 @@ void ai_HaveCreatureSpeak(object oCreature, int nRoll, string sVoiceChatArray, i
 // Returns if a spell talent was used.
 // This is a common set of AI scripts ran on associate spell casters.
 int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLevel, int nRound = 0);
+// Targets the best creature oCreature it can see.
+// This checks all physcal attack talents starting with ranged attacks then melee.
+// Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
+// If no talents are used it will do either a ranged attack or a melee attack.
+void ai_DoPhysicalAttackOnBest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE);
 // Targets the nearest creature oCreature it can see.
 // This checks all physcal attack talents starting with ranged attacks then melee.
 // Using TALENT_CATEGORY_HARMFUL_MELEE [22] talents.
@@ -119,8 +124,6 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE);
 void ai_ScoutAhead(object oCreature);
 // Have oCreature search one object, may continue from that object.
 void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce = FALSE);
-// Have oCreature search through nearby placeables for items to pickup.
-int ai_AssociateRetrievingItems(object oCreature);
 // Returns TRUE if oCreature disarms oTrap.
 // bForce if TRUE, oCreature will try to disarm the trap even if they have tried before.
 int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE);
@@ -518,11 +521,11 @@ int ai_MoralCheck(object oCreature)
     if(nHpPercent <= AI_HEALTH_WOUNDED)
     {
         // Debug code to look for multiple moral checks at once by one creature?
-        //if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
-        //{
-        //    SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
-        //    ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
-        //}
+        if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
+        {
+            SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
+            ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
+        }
         if(nHpPercent <= AI_HEALTH_BLOODY) nDC = AI_BLOODY_MORAL_DC;
         else nDC = AI_WOUNDED_MORAL_DC;
         nDC = nDC - GetLocalInt(oCreature, AI_ALLY_NUMBERS);
@@ -659,6 +662,64 @@ int ai_CheckForAssociateSpellTalent(object oAssociate, int nInMelee, int nMaxLev
     object oTarget = OBJECT_INVALID;
     if(ai_GetMagicMode(oAssociate, AI_MAGIC_BUFF_MASTER)) oTarget = GetMaster(oAssociate);
     return ai_TryDefensiveTalents(oAssociate, nInMelee, nMaxLevel, nRound, oTarget);
+}
+void ai_DoPhysicalAttackOnBest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
+{
+    talent tUse;
+    object oTarget;
+    if(AI_DEBUG) ai_Debug("0i_actions", "496", "Check for ranged attack on nearest enemy!");
+    // ************************** Ranged feat attacks **************************
+    if(!GetHasFeatEffect(FEAT_BARBARIAN_RAGE, oCreature) &&
+       !ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) &&
+       ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    {
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
+            // Lets pick off the nearest targets first.
+            if(!nInMelee)
+            {
+                if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+            }
+            else
+            {
+                if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+            }
+            if(oTarget != OBJECT_INVALID)
+            {
+                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                return;
+            }
+            else
+            {
+                ai_SearchForHiddenCreature(oCreature, TRUE);
+                return;
+            }
+        }
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+    }
+    if(AI_DEBUG) ai_Debug("0i_actions", "525", "Check for melee attack on nearest enemy!");
+    // ************************** Melee feat attacks *************************
+    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
+    if(ai_TryWhirlwindFeat(oCreature)) return;
+    if(ai_TrySneakAttack(oCreature, nInMelee, bAlwaysAtk)) return;
+    if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
+    if(oTarget == OBJECT_INVALID) oTarget = ai_GetBestTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);
+    // If we don't find a target then we don't want to fight anyone!
+    if(oTarget != OBJECT_INVALID)
+    {
+        if(ai_TryMeleeTalents(oCreature, oTarget)) return;
+        if(AI_DEBUG) ai_Debug("0i_actions", "536", "Do melee attack against nearest: " + GetName(oTarget) + "!");
+        ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+    }
+    else ai_SearchForHiddenCreature(oCreature, TRUE);
 }
 void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk = TRUE)
 {
@@ -854,6 +915,8 @@ int ai_HealSickness(object oCreature, object oTarget, object oPC, int nSickness,
     // If the player is not forcing a check.
     if(!bForce)
     {
+        // Is Casting Cure spells off?
+        if(ai_GetMagicMode(oCreature, AI_MAGIC_CURE_SPELLS_OFF)) return FALSE;
         // Do we have no magic on?
         if(ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC)) return FALSE;
         // Should we ignore associates?
@@ -1392,11 +1455,6 @@ void ai_TakeItemMessage(object oCreature, object oObject, object oItem, object o
         if(!ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK)) PlayVoiceChat(VOICE_CHAT_LOOKHERE, oCreature);
     }
 }
-void ai_ContinueRetrievingItems(object oCreature)
-{
-    if(ai_GetIsBusy(oCreature)) return;
-    ai_AssociateRetrievingItems(oCreature);
-}
 void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce = FALSE)
 {
     ai_Debug("0i_actions", "966", GetName(OBJECT_SELF) + " is opening " + GetName(oObject));
@@ -1421,42 +1479,66 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
     //         " in " + GetName(oObject));
     while(oItem != OBJECT_INVALID)
     {
-       ai_Debug("0i_actions", "987", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
-       if(ai_ShouldIPickItUp(oCreature, oItem))
-       {
-           ai_Debug("0i_actions", "1002", "Taking: " + GetName(oItem));
-           if(GetResRef(oItem) == "nw_it_gold001")
-           {
-                if(!ai_GetIsCharacter(oCreature))
+        ai_Debug("0i_actions", "987", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
+        if(ai_ShouldIPickItUp(oCreature, oItem))
+        {
+            ai_Debug("0i_actions", "1002", "Taking: " + GetName(oItem));
+            if(GetResRef(oItem) == "nw_it_gold001")
+            {
+                 if(!ai_GetIsCharacter(oCreature))
+                 {
+                     int nGold = GetItemStackSize(oItem);
+                     DestroyObject(oItem);
+                     ActionDoCommand(GiveGoldToCreature(oMaster, nGold));
+                     ActionDoCommand(ai_SendMessages(GetName(oCreature) + " has retrieved " + IntToString(nGold) +
+                                     " gold from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster));
+                 }
+                 else AssignCommand(oCreature, ActionTakeItem(oItem, oObject));
+            }
+            // Check if they are a henchman, companions and familiars give all items to the pc.
+            else if(!ai_GetLootFilter(oCreature, AI_LOOT_GIVE_TO_PC) &&
+                    GetAssociateType(oCreature) == ASSOCIATE_TYPE_HENCHMAN &&
+                    !GetPlotFlag(oItem))
+            {
+                if(GetBaseItemFitsInInventory(GetBaseItemType(oItem), oCreature))
                 {
-                    int nGold = GetItemStackSize(oItem);
-                    DestroyObject(oItem);
-                    AssignCommand(oCreature, ActionDoCommand(GiveGoldToCreature(oMaster, nGold)));
-                    AssignCommand(oCreature, ActionDoCommand(ai_SendMessages(GetName(oCreature) + " has retrieved " + IntToString(nGold) +
-                                    " gold from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster)));
+                    ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster));
+                    ActionTakeItem(oItem, oObject);
                 }
-                else AssignCommand(oCreature, ActionTakeItem(oItem, oObject));
-           }
-           // Check if they are a henchman, companions and familiars give all items to the pc.
-           else if(!ai_GetLootFilter(oCreature, AI_LOOT_GIVE_TO_PC) &&
-                   GetAssociateType(oCreature) == ASSOCIATE_TYPE_HENCHMAN &&
-                   !GetPlotFlag(oItem))
-           {
-               AssignCommand(oCreature, ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster)));
-               AssignCommand(oCreature, ActionTakeItem(oItem, oObject));
-           }
-           else
-           {
-               //ai_Debug("0i_actions", "1010", "Giving to master: " + GetName(oItem));
-               AssignCommand(oCreature, ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster)));
-               AssignCommand(oObject, ActionGiveItem(oItem, oMaster));
-           }
+                else
+                {
+                    if(GetIdentified(oItem)) SpeakString("My inventory is full! I cannot pick up the " + GetName(oItem) + ".");
+                    else
+                    {
+                        string sBaseName = GetStringByStrRef(StringToInt(Get2DAString("baseitems", "name", GetBaseItemType(oItem))));
+                        SpeakString("My inventory is full! I cannot pick up the " + sBaseName + ".");
+                    }
+                }
+            }
+            else
+            {
+                if(GetBaseItemFitsInInventory(GetBaseItemType(oItem), oMaster))
+                {
+                    //ai_Debug("0i_actions", "1010", "Giving to master: " + GetName(oItem));
+                    ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster));
+                    AssignCommand(oObject, ActionGiveItem(oItem, oMaster));
+                }
+                else
+                {
+                    if(GetIdentified(oItem)) SpeakString("Your inventory is full! You cannot take the " + GetName(oItem) + ".");
+                    else
+                    {
+                        string sBaseName = GetStringByStrRef(StringToInt(Get2DAString("baseitems", "name", GetBaseItemType(oItem))));
+                        SpeakString("Your inventory is full! You cannot take the " + sBaseName + ".");
+                    }
+                }
+            }
        }
        oItem = GetNextItemInInventory(oObject);
        //ai_Debug("0i_actions", "1016", GetName(oItem) + " is the next item.");
     }
     //ai_Debug("0i_actions", "1018", "Setting object as looted. Check for a new Placeable.");
-    if(!bOnce) AssignCommand(oCreature, ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature)));
+    if(!bOnce) ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature));
 }
 int ai_IsContainerLootable(object oCreature, object oObject)
 {
@@ -1490,9 +1572,11 @@ int ai_AttempToCastKnockSpell(object oCreature, object oLocked)
 }
 int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
 {
+    int nTrapDC = GetTrapDisarmDC(oTrap);
     if(AI_DEBUG) ai_Debug("0i_actions", "1520", "Reacting to trap on " + GetName(oTrap) +
-                          " bForce: " + IntToString(bForce) +
+                          " bForce: " + IntToString(bForce) + " nTrapDC: " + IntToString(nTrapDC) +
                           " [AI_OBJECT_IN_USE: " + IntToString(GetLocalInt(oTrap, AI_OBJECT_IN_USE)) + "].");
+    if(nTrapDC == 0) return FALSE;
     string sTag = GetTag(oCreature);
     if(bForce || ai_GetAIMode(oCreature, AI_MODE_DISARM_TRAPS))
     {
@@ -1503,7 +1587,6 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
             if(GetSkillRank(SKILL_DISABLE_TRAP, oCreature, TRUE))
             {
                 int nSkill = GetSkillRank(SKILL_DISABLE_TRAP, oCreature);
-                int nTrapDC = GetTrapDisarmDC(oTrap);
                 if(AI_DEBUG) ai_Debug("0i_actions", "1534", "nSkill: " + IntToString(nSkill) +
                          " + 20 = " + IntToString(nSkill + 20) + " nTrapDC: " + IntToString(nTrapDC));
                 if(nSkill + 20 >= nTrapDC)
@@ -1546,7 +1629,8 @@ int ai_ReactToTrap(object oCreature, object oTrap, int bForce = FALSE)
     if(GetObjectType(oTrap) == OBJECT_TYPE_TRIGGER)
     {
         object oMaster = ai_GetPlayerMaster(oCreature);
-        if(oMaster != OBJECT_INVALID && !ai_GetIsCharacter(oCreature))
+        if(oMaster != OBJECT_INVALID && !ai_GetIsCharacter(oCreature) &&
+           !ai_GetAIMode(oCreature, AI_MODE_IGNORE_TRAPS))
         {
             ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
             ai_SetAIMode(oCreature, AI_MODE_STAND_GROUND, TRUE);
@@ -1663,11 +1747,15 @@ int ai_AttemptToByPassLock(object oCreature, object oLocked, int bForce = FALSE)
     if(bForce || ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS))
     {
         //AssignCommand(oCreature, ai_ClearCreatureActions());
-        // Check to make sure we are using a melee weapon.
-        if(ai_GetIsMeleeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oCreature)) ||
-           ai_EquipBestMeleeWeapon(oCreature))
+        // Check to make sure we are not using a ranged weapon.
+        if(!ai_GetIsRangeWeapon(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oCreature)))
         {
+            if(ai_CheckClassType(oCreature, CLASS_TYPE_MONK)) ai_EquipBestMonkMeleeWeapon(oCreature);
+            else ai_EquipBestMeleeWeapon(oCreature);
             AssignCommand(oCreature, ActionWait(1.0));
+            if(ai_TryImprovedPowerAttackFeat(oCreature, oLocked)) return TRUE;
+            if(ai_TryPowerAttackFeat(oCreature, oLocked)) return TRUE;
+            if(ai_TryFlurryOfBlowsFeat(oCreature, oLocked)) return TRUE;
             AssignCommand(oCreature, ActionAttack(oLocked));
             return TRUE;
         }
@@ -1778,8 +1866,18 @@ int ai_CheckNearbyObjects(object oCreature)
         {
             if(nObjectType == OBJECT_TYPE_PLACEABLE)
             {
-                if(ai_IsContainerLootable(oCreature, oObject))
+                if(!GetLocalInt(oObject, AI_OBJECT_IN_USE) &&
+                   ai_IsContainerLootable(oCreature, oObject))
                 {
+                    if(GetLocked(oObject))
+                    {
+                        string sTag = GetTag(oCreature);
+                        if(GetLocalInt(oObject, "AI_LOCKED_" + sTag)) return FALSE;
+                        AssignCommand(oCreature, ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 0, "This " + GetName(oObject) + " is locked!", TRUE)));
+                        ActionDoCommand(ai_HaveCreatureSpeak(oCreature, 8, ":47:30:43:5:36:"));
+                        SetLocalInt(oObject, "AI_LOCKED_" + sTag, TRUE);
+                        return FALSE;
+                    }
                     ai_ClearCreatureActions();
                     ActionMoveToObject(oObject, TRUE);
                     AssignCommand(oCreature, ActionDoCommand(ai_SearchObject(oCreature, oObject, oMaster)));
@@ -1788,8 +1886,11 @@ int ai_CheckNearbyObjects(object oCreature)
             }
             else if(nObjectType == OBJECT_TYPE_ITEM)
             {
-                ActionPickUpItem(oObject);
-                return TRUE;
+                if(ai_ShouldIPickItUp(oCreature, oObject))
+                {
+                    ActionPickUpItem(oObject);
+                    return TRUE;
+                }
             }
         }
         oObject = GetNextObjectInShape(SHAPE_SPHERE, fLongestRange, lMaster, TRUE, nFilter);
@@ -2019,7 +2120,7 @@ object ai_GetRandomUseableObject(float fMaxDistance)
     object oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, nIndex);
     while(nIndex > 0)
     {
-        if(GetUseableFlag(oObject) &&
+        if(GetUseableFlag(oObject) && !GetLocked(oObject) &&
            GetDistanceBetweenLocations(GetLocation(oObject), lStartLocation) <= fMaxDistance) break;
         oObject = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lStartLocation, --nIndex);
     }
@@ -2030,7 +2131,7 @@ object ai_GetRandomUseableObject(float fMaxDistance)
 int ai_ActionFindPlaceable(float fMaxDistance)
 {
     object oPlaceable = ai_GetRandomUseableObject(fMaxDistance);
-    if (GetIsObjectValid(oPlaceable))
+    if(GetIsObjectValid(oPlaceable))
     {
         ai_ActionStartInteracting(oPlaceable);
         return 1;
@@ -2222,4 +2323,3 @@ void ai_AmbientAnimations()
     // If we get here then lets go see what we can do!
     ai_Actions();
 }
-

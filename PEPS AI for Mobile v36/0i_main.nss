@@ -106,7 +106,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
 // Checks DM's local data and if none is found will initizlize or load the
 // correct data for oPlayer.
 void ai_CheckDMData(object oPlayer);
-// Adds to jPlugins via "inplace" functions after checking if the plugin can be installed.
+// Adds to jPlugins functions after checking if the plugin can be installed.
 json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript);
 // Updates the players Plugin list and saves to the database.
 json ai_UpdatePluginsForPC(object oPC, string sAssociateType);
@@ -123,70 +123,69 @@ void ai_SetAIRules()
     json jRules = ai_GetCampaignDbJson("rules");
     if(JsonGetType(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS)) == JSON_TYPE_NULL)
     {
-        jRules = JsonObject();
         // Variable name set to a creatures full name to set debugging on.
-        JsonObjectSetInplace(jRules, AI_RULE_DEBUG_CREATURE, JsonString(""));
+        jRules = JsonObjectSet(JsonObject(), AI_RULE_DEBUG_CREATURE, JsonString(""));
         // Moral checks on or off.
         SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, AI_MORAL_CHECKS);
-        JsonObjectSetInplace(jRules, AI_RULE_MORAL_CHECKS, JsonInt(AI_MORAL_CHECKS));
+        jRules = JsonObjectSet(jRules, AI_RULE_MORAL_CHECKS, JsonInt(AI_MORAL_CHECKS));
         // Allows monsters to prebuff before combat starts.
         SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, AI_PREBUFF);
-        JsonObjectSetInplace(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(AI_PREBUFF));
+        jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(AI_PREBUFF));
         // Allows monsters cast summons spells when prebuffing.
         SetLocalInt(oModule, AI_RULE_PRESUMMON, AI_PRESUMMONS);
-        JsonObjectSetInplace(jRules, AI_RULE_PRESUMMON, JsonInt(AI_PRESUMMONS));
+        jRules = JsonObjectSet(jRules, AI_RULE_PRESUMMON, JsonInt(AI_PRESUMMONS));
         // Allows monsters to use tactical AI scripts.
         SetLocalInt(oModule, AI_RULE_AMBUSH, AI_TACTICAL);
-        JsonObjectSetInplace(jRules, AI_RULE_AMBUSH, JsonInt(AI_TACTICAL));
+        jRules = JsonObjectSet(jRules, AI_RULE_AMBUSH, JsonInt(AI_TACTICAL));
         // Enemies may summon familiars and Animal companions and will be randomized.
         SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, AI_SUMMON_COMPANIONS);
-        JsonObjectSetInplace(jRules, AI_RULE_SUMMON_COMPANIONS, JsonInt(AI_SUMMON_COMPANIONS));
+        jRules = JsonObjectSet(jRules, AI_RULE_SUMMON_COMPANIONS, JsonInt(AI_SUMMON_COMPANIONS));
         // Allow the AI to move during combat base on the situation and action taking.
         SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, AI_ADVANCED_MOVEMENT);
-        JsonObjectSetInplace(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(AI_ADVANCED_MOVEMENT));
+        jRules = JsonObjectSet(jRules, AI_RULE_ADVANCED_MOVEMENT, JsonInt(AI_ADVANCED_MOVEMENT));
         // Follow Item Level Restrictions for monsters/associates.
         SetLocalInt(oModule, AI_RULE_ILR, AI_ITEM_LEVEL_RESTRICTIONS);
-        JsonObjectSetInplace(jRules, AI_RULE_ILR, JsonInt(AI_ITEM_LEVEL_RESTRICTIONS));
+        jRules = JsonObjectSet(jRules, AI_RULE_ILR, JsonInt(AI_ITEM_LEVEL_RESTRICTIONS));
         // Allow the AI to use Use Magic Device.
         SetLocalInt(oModule, AI_RULE_ALLOW_UMD, AI_USE_MAGIC_DEVICE);
-        JsonObjectSetInplace(jRules, AI_RULE_ALLOW_UMD, JsonInt(AI_USE_MAGIC_DEVICE));
+        jRules = JsonObjectSet(jRules, AI_RULE_ALLOW_UMD, JsonInt(AI_USE_MAGIC_DEVICE));
         // Allow the AI to use healing kits.
         SetLocalInt(oModule, AI_RULE_HEALERSKITS, AI_HEALING_KITS);
-        JsonObjectSetInplace(jRules, AI_RULE_HEALERSKITS, JsonInt(AI_HEALING_KITS));
+        jRules = JsonObjectSet(jRules, AI_RULE_HEALERSKITS, JsonInt(AI_HEALING_KITS));
         // Associates are permanent and don't get removed when the master dies.
         SetLocalInt(oModule, AI_RULE_PERM_ASSOC, AI_COMPANIONS_PERMANENT);
-        JsonObjectSetInplace(jRules, AI_RULE_PERM_ASSOC, JsonInt(AI_COMPANIONS_PERMANENT));
+        jRules = JsonObjectSet(jRules, AI_RULE_PERM_ASSOC, JsonInt(AI_COMPANIONS_PERMANENT));
         // Monster AI's chance to attack the weakest target instead of the nearest.
         SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, AI_TARGET_WEAKEST);
-        JsonObjectSetInplace(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(AI_TARGET_WEAKEST));
+        jRules = JsonObjectSet(jRules, AI_RULE_AI_DIFFICULTY, JsonInt(AI_TARGET_WEAKEST));
         // Monster AI's distance they can search for the enemy.
         SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, AI_SEARCH_DISTANCE);
-        JsonObjectSetInplace(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(AI_SEARCH_DISTANCE));
+        jRules = JsonObjectSet(jRules, AI_RULE_PERCEPTION_DISTANCE, JsonFloat(AI_SEARCH_DISTANCE));
         // Enemy corpses remain on the floor instead of dissappearing.
         SetLocalInt(oModule, AI_RULE_CORPSES_STAY, AI_CORPSE_REMAIN);
-        JsonObjectSetInplace(jRules, AI_RULE_CORPSES_STAY, JsonInt(AI_CORPSE_REMAIN));
+        jRules = JsonObjectSet(jRules, AI_RULE_CORPSES_STAY, JsonInt(AI_CORPSE_REMAIN));
         // Monsters will wander around when not in combat.
         SetLocalInt(oModule, AI_RULE_WANDER, AI_WANDER);
-        JsonObjectSetInplace(jRules, AI_RULE_WANDER, JsonInt(AI_WANDER));
+        jRules = JsonObjectSet(jRules, AI_RULE_WANDER, JsonInt(AI_WANDER));
         // Increase the number of encounter creatures.
         SetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS, 0.0);
-        JsonObjectSetInplace(jRules, AI_INCREASE_ENC_MONSTERS, JsonFloat(0.0));
+        jRules = JsonObjectSet(jRules, AI_INCREASE_ENC_MONSTERS, JsonFloat(0.0));
         // Increase all monsters hitpoints by this percentage.
         SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, 0);
-        JsonObjectSetInplace(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(0));
+        jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(0));
         // Monster's perception distance.
         SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, AI_MONSTER_PERCEPTION);
-        JsonObjectSetInplace(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_MONSTER_PERCEPTION));
+        jRules = JsonObjectSet(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_MONSTER_PERCEPTION));
         // Variable name set to hold the maximum number of henchman the player wants.
         int nMaxHenchmen = GetMaxHenchmen();
         SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nMaxHenchmen);
-        JsonObjectSetInplace(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
+        jRules = JsonObjectSet(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
         // Monster AI's distance they can wander away from their spawn point.
         SetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE, AI_WANDER_DISTANCE);
-        JsonObjectSetInplace(jRules, AI_RULE_WANDER_DISTANCE, JsonFloat(AI_WANDER_DISTANCE));
+        jRules = JsonObjectSet(jRules, AI_RULE_WANDER_DISTANCE, JsonFloat(AI_WANDER_DISTANCE));
         // Monsters will open doors when wandering around and not in combat.
         SetLocalInt(oModule, AI_RULE_OPEN_DOORS, AI_WANDER);
-        JsonObjectSetInplace(jRules, AI_RULE_OPEN_DOORS, JsonInt(AI_OPEN_DOORS));
+        jRules = JsonObjectSet(jRules, AI_RULE_OPEN_DOORS, JsonInt(AI_OPEN_DOORS));
         // If the modules default XP has not been set then we do it here.
         int nDefaultXP = GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE);
         if(nDefaultXP == 0)
@@ -196,15 +195,15 @@ void ai_SetAIRules()
         }
         // Variable name set to allow the game to regulate experience based on party size.
         SetLocalInt(oModule, AI_RULE_PARTY_SCALE, AI_PARTY_SCALE);
-        JsonObjectSetInplace(jRules, AI_RULE_PARTY_SCALE, JsonInt(AI_PARTY_SCALE));
+        jRules = JsonObjectSet(jRules, AI_RULE_PARTY_SCALE, JsonInt(AI_PARTY_SCALE));
         SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, JsonArray());
-        JsonObjectSetInplace(jRules, AI_RULE_RESTRICTED_SPELLS, JsonArray());
+        jRules = JsonObjectSet(jRules, AI_RULE_RESTRICTED_SPELLS, JsonArray());
         // Variable name set to allow access to widget buttons for the players.
         SetLocalInt(oModule, sDMWidgetAccessVarname, AI_DM_WIDGET_ACCESS_BUTTONS);
-        JsonObjectSetInplace(jRules, sDMWidgetAccessVarname, JsonInt(AI_DM_WIDGET_ACCESS_BUTTONS));
+        jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(AI_DM_WIDGET_ACCESS_BUTTONS));
         // Variable name set to allow access to widget buttons for the players.
         SetLocalInt(oModule, sDMAIAccessVarname, AI_DM_AI_ACCESS_BUTTONS);
-        JsonObjectSetInplace(jRules, sDMAIAccessVarname, JsonInt(AI_DM_AI_ACCESS_BUTTONS));
+        jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(AI_DM_AI_ACCESS_BUTTONS));
         ai_SetCampaignDbJson("rules", jRules);
     }
     else
@@ -298,7 +297,7 @@ void ai_SetAIRules()
         if(JsonGetType(jRSpells) == JSON_TYPE_NULL)
         {
             jRSpells = JsonArray();
-            JsonObjectSetInplace(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
+            jRules = JsonObjectSet(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
             ai_SetCampaignDbJson("rules", jRules);
         }
         SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
@@ -1242,7 +1241,7 @@ json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
                 {
                     // Boolean - Add to widget.
                     bWidget = JsonGetInt(JsonArrayGet(jPCPlugin, 1));
-                    JsonArraySetInplace(jServerPlugin, 1, JsonBool(bWidget));
+                    jServerPlugin = JsonArraySet(jServerPlugin, 1, JsonBool(bWidget));
                     break;
                 }
                 jPCPlugin = JsonArrayGet(jPCPlugins, ++nCounter);
@@ -1250,9 +1249,9 @@ json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
             }
             if(nJsonType == JSON_TYPE_NULL)
             {
-                JsonArraySetInplace(jServerPlugin, 1, JsonBool(FALSE));
+                jServerPlugin = JsonArraySet(jServerPlugin, 1, JsonBool(FALSE));
             }
-            JsonArrayInsertInplace(jNewPCPlugins, jServerPlugin);
+            jNewPCPlugins = JsonArrayInsert(jNewPCPlugins, jServerPlugin);
         }
         jServerPlugin = JsonArrayGet(jServerPlugins, ++nIndex);
     }
@@ -1280,7 +1279,7 @@ json ai_UpdatePluginsForDM(object oPC)
             {
                 // Boolean - Add to widget.
                 bWidget = JsonGetInt(JsonArrayGet(jDMPlugin, 1));
-                JsonArraySetInplace(jServerPlugin, 1, JsonBool(bWidget));
+                jServerPlugin = JsonArraySet(jServerPlugin, 1, JsonBool(bWidget));
                 break;
             }
             jDMPlugin = JsonArrayGet(jDMPlugins, ++nCounter);
@@ -1288,9 +1287,9 @@ json ai_UpdatePluginsForDM(object oPC)
         }
         if(nJsonType == JSON_TYPE_NULL)
         {
-            JsonArraySetInplace(jServerPlugin, 1, JsonBool(FALSE));
+            jServerPlugin = JsonArraySet(jServerPlugin, 1, JsonBool(FALSE));
         }
-        JsonArrayInsertInplace(jNewDMPlugins, jServerPlugin);
+        jNewDMPlugins = JsonArrayInsert(jNewDMPlugins, jServerPlugin);
         jServerPlugin = JsonArrayGet(jServerPlugins, ++nIndex);
     }
     ai_SetCampaignDbJson("plugins", jNewDMPlugins, sDbName, AI_DM_TABLE);

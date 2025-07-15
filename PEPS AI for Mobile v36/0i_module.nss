@@ -8,6 +8,7 @@
 #include "0i_associates"
 #include "0i_menus"
 #include "0i_player_target"
+#include "0i_gui_events"
 // Add to nw_c2_default9 OnSpawn event script of monsters and
 void ai_OnMonsterSpawn(object oCreature);
 // Add to nw_ch_ac9 OnSpawn event script of henchman.
@@ -15,8 +16,8 @@ void ai_OnAssociateSpawn(object oCreature);
 // Run all of the players starting scripts.
 // If oPC is passed as Invalid then it will get the firt PC in the game.
 void ai_CheckPCStart(object oPC = OBJECT_INVALID, int bForce = FALSE);
-// Checks to see if we should change the monster via Json.
-object ai_ChangeMonster(object oCreature, object oModule);
+// Checks to see if we should copy the monster.
+void ai_CopyMonster(object oCreature, object oModule);
 // Checks to see if we should change the associate via Json.
 object ai_ChangeAssociate(object oCreature, object oModule);
 // Sets the events for oCreature that is a Monster while playing Infinite Dungeons.
@@ -39,7 +40,7 @@ void ai_OnMonsterSpawn(object oCreature)
     if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     object oModule = GetModule();
-    int nPRCID;
+    int nInfiniteDungeons;
     // If you are running a server this will not affect the module.
     if(!AI_SERVER)
     {
@@ -48,7 +49,7 @@ void ai_OnMonsterSpawn(object oCreature)
         if(sModuleName == "Neverwinter Nights - Infinite Dungeons" ||
            sModuleName == "Infinite Dungeons [PRC8]")
         {
-            nPRCID = TRUE;
+            nInfiniteDungeons = TRUE;
             if(GetLocalInt(oModule, AI_USING_PRC))
             {
                 ai_SetPRCIDMonsterEventScripts(oCreature);
@@ -63,11 +64,8 @@ void ai_OnMonsterSpawn(object oCreature)
             }
         }
     }
-    // DOES NOT WORK IN VERSION 36!
-    // Do changes before we adjust anything on the creature via Json!
-    //oCreature = ai_ChangeMonster(oCreature, oModule);
     // PRC and Infinite dungeons has issues with Ondeath script so we just leave it alone.
-    if(!nPRCID)
+    if(!GetLocalInt(oModule, AI_USING_PRC) && !nInfiniteDungeons)
     {
         // We change this script so we can setup permanent summons on/off.
         string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
@@ -99,42 +97,22 @@ void ai_OnMonsterSpawn(object oCreature)
     {
         SetLocalInt(oCreature, AI_RULE_AI_DIFFICULTY, TRUE);
     }
-    // After setting the monster lets see if we should copy it.
-    float fMonsterIncrease = GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS);
-    if(GetIsEncounterCreature(oCreature) && fMonsterIncrease > 0.0)
-    {
-        int nMonsterIncrease;
-        float fMonsterCounter = GetLocalFloat(oModule, "AI_MONSTER_COUNTER");
-        fMonsterCounter += fMonsterIncrease;
-        nMonsterIncrease = FloatToInt(fMonsterCounter);
-        if(nMonsterIncrease > 0)
-        {
-           fMonsterCounter = fMonsterCounter - IntToFloat(nMonsterIncrease);
-        }
-        SetLocalFloat(oModule, "AI_MONSTER_COUNTER", fMonsterCounter);
-        while(nMonsterIncrease > 0)
-        {
-            CopyObject(oCreature, GetLocation(oCreature), OBJECT_INVALID, "", TRUE);
-            nMonsterIncrease = nMonsterIncrease - 1;
-        }
-    }
+    // Do json changes after we have setup the creature.
+    // Version 36 does not work with this code! ai_ChangeMonster(oCreature, oModule);
+    ai_CopyMonster(oCreature, oModule);
 }
 void ai_OnAssociateSpawn(object oCreature)
 {
     if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
-    int nPRCID;
+    int bPRC = GetLocalInt(GetModule(), AI_USING_PRC);
     // If you are running a server this will not affect the module.
     if(!AI_SERVER)
     {
-        if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
-        {
-            nPRCID = TRUE;
-            ai_SetPRCAssociateEventScripts(oCreature);
-        }
+        if(bPRC) ai_SetPRCAssociateEventScripts(oCreature);
     }
-    // PRC and has issues with Ondeath script so we just leave it alone.
-    if(!nPRCID)
+    // PRC has issues with Ondeath script so we just leave it alone.
+    if(!bPRC)
     {
         // We change this script so we can setup permanent summons on/off.
         // If you don't use this you may remove the next three lines.
@@ -170,71 +148,102 @@ void ai_CheckPCStart(object oPC = OBJECT_INVALID, int bForce = FALSE)
         ai_CheckAssociateData(oPC, oPC, "pc");
         ai_StartupPlugins(oPC);
         ai_SetupPlayerTarget(oPC);
+        ai_SetupModuleGUIEvents(oPC);
         ai_CreateWidgetNUI(oPC, oPC);
         ai_SetNormalAppearance(oPC);
     }
 }
-object ai_CreateMonster(json jCreature, location lLocation, object oModule)
+void ai_CopyMonster(object oCreature, object oModule)
+{
+    // After setting the monster lets see if we should copy it.
+    float fMonsterIncrease = GetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS);
+    if(GetIsEncounterCreature(oCreature) && fMonsterIncrease > 0.0)
+    {
+        int nMonsterIncrease;
+        float fMonsterCounter = GetLocalFloat(oModule, "AI_MONSTER_COUNTER");
+        fMonsterCounter += fMonsterIncrease;
+        nMonsterIncrease = FloatToInt(fMonsterCounter);
+        if(nMonsterIncrease > 0)
+        {
+           fMonsterCounter = fMonsterCounter - IntToFloat(nMonsterIncrease);
+        }
+        SetLocalFloat(oModule, "AI_MONSTER_COUNTER", fMonsterCounter);
+        while(nMonsterIncrease > 0)
+        {
+            CopyObject(oCreature, GetLocation(oCreature), OBJECT_INVALID, "", TRUE);
+            nMonsterIncrease = nMonsterIncrease - 1;
+        }
+    }
+}
+void ai_CreateMonster(json jCreature, location lLocation, object oModule)
 {
     //WriteTimestampedLogEntry("0i_module, 106, " + JsonDump(jCreature, 1));
     object oCreature = JsonToObject(jCreature, lLocation, OBJECT_INVALID, TRUE);
-    if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY))
+    /*if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY))
     {
         AssignCommand(oCreature, SetIsDestroyable(FALSE, FALSE, TRUE));
         SetLootable(oCreature, TRUE);
-    }
-    return oCreature;
+    } */
+    ai_CopyMonster(oCreature, oModule);
+    return;
 }
-void ai_SetCompanionSummoning(object oCreature, json jCreature)
+json ai_SetCompanionSummoning(object oCreature, json jCreature)
 {
     if(GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE))
     {
         json jFamiliar = JsonObjectGet(jCreature, "FamiliarName");
-        JsonObjectSetInplace(jFamiliar, "value", JsonString("Summoned Familiar"));
-        JsonObjectSetInplace(jCreature, "FamiliarName", jFamiliar);
+        jFamiliar = JsonObjectSet(jFamiliar, "value", JsonString("Summoned Familiar"));
+        jCreature = JsonObjectSet(jCreature, "FamiliarName", jFamiliar);
         jFamiliar = JsonObjectGet(jCreature, "FamiliarType");
-        JsonObjectSetInplace(jFamiliar, "value", JsonInt(Random(11)));
-        JsonObjectSetInplace(jCreature, "FamiliarType", jFamiliar);
+        jFamiliar = JsonObjectSet(jFamiliar, "value", JsonInt(Random(11)));
+        jCreature = JsonObjectSet(jCreature, "FamiliarType", jFamiliar);
     }
     if(GetHasFeat(FEAT_ANIMAL_COMPANION , oCreature, TRUE))
     {
         json jCompanion = JsonObjectGet(jCreature, "CompanionName");
-        JsonObjectSetInplace(jCompanion, "value", JsonString("Summoned Companion"));
-        JsonObjectSetInplace(jCreature, "CompanionName", jCompanion);
+        jCompanion = JsonObjectSet(jCompanion, "value", JsonString("Summoned Companion"));
+        jCreature = JsonObjectSet(jCreature, "CompanionName", jCompanion);
         jCompanion = JsonObjectGet(jCreature, "CompanionType");
-        JsonObjectSetInplace(jCompanion, "value", JsonInt(Random(9)));
-        JsonObjectSetInplace(jCreature, "CompanionType", jCompanion);
+        jCompanion = JsonObjectSet(jCompanion, "value", JsonInt(Random(9)));
+        jCreature = JsonObjectSet(jCreature, "CompanionType", jCompanion);
     }
+    return jCreature;
 }
-object ai_ChangeMonster(object oCreature, object oModule)
+void ai_ChangeMonster(object oCreature, object oModule)
 {
     object oPC = GetNearestCreature(CREATURE_TYPE_PLAYER_CHAR, PLAYER_CHAR_IS_PC, oCreature);
-    // Lets not mess up the cutscenes with silly RULES.
-    if(GetCutsceneMode(oPC)) return oCreature;
     float fDistance = GetDistanceBetween(oCreature, oPC);
     // Looks bad to see creatures wink in and out plus could cause module errors.
-    //if(fDistance != 0.0 && fDistance < AI_RANGE_PERCEPTION) return oCreature;
-    if(IsInConversation(oCreature)) return oCreature;
-    int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS);
-    int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE);
-    //WriteTimestampedLogEntry("nStay: " + IntToString(nStay) + " nSummon: " + IntToString(nSummon) +
-    //      " nPercDist: " + IntToString(nPercDist));
-    if(nSummon || nPercDist != 11)
+    // Lets not mess up the cutscenes with silly RULES.
+    if(!GetCutsceneMode(oPC) && fDistance > AI_RANGE_LONG &&
+       !IsInConversation(oCreature))
     {
-        location lLocation = GetLocation(oCreature);
-        json jCreature = ObjectToJson(oCreature, TRUE);
-        if(nPercDist != 11)
+        int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) &&
+                     (GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE)) ||
+                      GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature, TRUE);
+        int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE) != 11 &&
+                        GetReputation(oCreature, oPC) < 11;
+        //WriteTimestampedLogEntry(GetName(oCreature) + ": fDistance: " + FloatToString(fDistance, 0, 2) + " nSummon: " + IntToString(nSummon) +
+        //      " nPercDist: " + IntToString(nPercDist) + " Reputation: " + IntToString(GetReputation(oCreature, oPC)));
+        if(nSummon || nPercDist)
         {
-            json jPerception = JsonObjectGet(jCreature, "PerceptionRange");
-            JsonObjectSetInplace(jPerception, "value", JsonInt(nPercDist));
-            JsonObjectSetInplace(jCreature, "PerceptionRange", jPerception);
+            location lLocation = GetLocation(oCreature);
+            json jCreature = ObjectToJson(oCreature, TRUE);
+            if(nPercDist)
+            {
+                //jCreature = GffReplaceByte(jCreature, "PerceptionRange", GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE));
+                WriteTimestampedLogEntry("0i_module, 233, jCreature: " + JsonDump(jCreature, 1));
+                //json jPerception = JsonObjectGet(jCreature, "PerceptionRange");
+                //jPerception = JsonObjectSet(jPerception, "value", JsonInt(GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE)));
+                //jCreature = JsonObjectSet(jCreature, "PerceptionRange", jPerception);
+            }
+            //if(nSummon) ai_SetCompanionSummoning(oCreature, jCreature);
+            //AssignCommand(oCreature, SetIsDestroyable(TRUE, FALSE, FALSE));
+            //DestroyObject(oCreature, 0.1);
+            //AssignCommand(oModule, DelayCommand(1.0, ai_CreateMonster(jCreature, lLocation, oModule)));
         }
-        if(nSummon) ai_SetCompanionSummoning(oCreature, jCreature);
-        SetIsDestroyable(TRUE, FALSE, FALSE);
-        DestroyObject(oCreature);
-        return ai_CreateMonster(jCreature, lLocation, oModule);
     }
-    return oCreature;
+    else ai_CopyMonster(oCreature, oModule);
 }
 // Special event scripts for Infinite Dungeons!
 void ai_SetIDMonsterEventScripts(object oCreature)
@@ -403,49 +412,57 @@ void ai_SetPRCIDMonsterEventScripts(object oCreature)
 // Special event scripts for PRC associates!
 void ai_SetPRCAssociateEventScripts(object oCreature)
 {
-    //if(AI_DEBUG) ai_Debug("0i_module", "433", "Changing " + GetName(oCreature) + "'s Infinte Dungeons event scripts for PRC.");
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
     SetLocalString(oCreature, "AI_ON_HEARTBEAT", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_ch_events");
-    else return;
+    else if(sScript == "nw_ch_ac1") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "0e_prc_ch_events");
     //********** On Perception **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE);
     SetLocalString(oCreature, "AI_ON_NOTICE", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac2") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "0e_prc_ch_events");
     //********** On End Combat Round **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND);
     SetLocalString(oCreature, "AI_ON_END_COMBATROUND", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac3") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "0e_prc_ch_events");
     //********** On Dialogue **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE);
     SetLocalString(oCreature, "AI_ON_DIALOGUE", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac4") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "0e_prc_ch_events");
     //********** On Melee Attacked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED);
     SetLocalString(oCreature, "AI_ON_MELEE_ATTACKED", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac5") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "0e_prc_ch_events");
     //********** On Damaged **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED);
     SetLocalString(oCreature, "AI_ON_DAMAGED", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac6") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "0e_prc_ch_events");
     //********** On Disturbed **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED);
     SetLocalString(oCreature, "AI_ON_DISTURBED", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ac8") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "0e_prc_ch_events");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
     //********** On Rested **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED);
     SetLocalString(oCreature, "AI_ON_RESTED", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_aca") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_RESTED, "0e_prc_ch_events");
     //********** On Spell Cast At **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT);
     SetLocalString(oCreature, "AI_ON_SPELLCASTAT", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_acb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "0e_prc_ch_events");
     //********** On Blocked **********
     sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
     SetLocalString(oCreature, "AI_ON_BLOCKED_BY_DOOR", sScript);
     if(sScript == "default") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_ch_events");
+    else if(sScript == "nw_ch_ace") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "0e_prc_ch_events");
     //SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
     if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
 }

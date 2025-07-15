@@ -22,8 +22,9 @@ void main()
             oAssociate = GetAssociate(nIndex, oCreature);
             if(oAssociate != OBJECT_INVALID)
             {
-                SetIsDestroyable(FALSE, FALSE, FALSE);
-                ChangeFaction(oAssociate, oCreature);
+                AssignCommand(oAssociate, SetIsDestroyable(FALSE, FALSE, FALSE));
+                DelayCommand(0.1, ChangeToStandardFaction(oAssociate, STANDARD_FACTION_HOSTILE));
+                DelayCommand(3.0, AssignCommand(oAssociate, SetIsDestroyable(TRUE, FALSE, FALSE)));
             }
         }
     }

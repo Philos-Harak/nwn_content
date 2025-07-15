@@ -450,7 +450,7 @@ void ai_AddToGroup(object oDM, object oTarget, string sTargetMode)
         NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " [Run]"));
         NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_label", JsonString(sText));
         jGroup = JsonArray();
-        JsonArrayInsertInplace(jGroup, JsonInt(1));
+        jGroup = JsonArrayInsert(jGroup, JsonInt(1));
     }
     string sUUID = GetObjectUUID(oTarget);
     int nIndex = 1;
@@ -464,7 +464,7 @@ void ai_AddToGroup(object oDM, object oTarget, string sTargetMode)
         }
         sListUUID = JsonGetString(JsonArrayGet(jGroup, ++nIndex));
     }
-    JsonArrayInsertInplace(jGroup, JsonString(sUUID));
+    jGroup = JsonArrayInsert(jGroup, JsonString(sUUID));
     ai_SendMessages(sName + " has been saved to group" + sGroup, AI_COLOR_YELLOW, oDM);
     SetLocalJson(oDM, "DM_GROUP" + sGroup, jGroup);
     EnterTargetingMode(oDM, OBJECT_TYPE_CREATURE, MOUSECURSOR_PICKUP, MOUSECURSOR_PICKUP_DOWN);
@@ -701,24 +701,21 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
             }
             SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_USE_FEAT");
         }
-        else
-        {
-            if(Get2DAString("spells", "Range", nSpell) == "P") // Self
-            {
-                if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
-                ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
-                DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                return;
-            }
-            SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
-        }
+        else SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
     }
     SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     int nObjectType;
     string sTarget = Get2DAString("spells", "TargetType", nSpell);
     int nTarget = ai_HexStringToInt(sTarget);
     //SendMessageToPC(GetFirstPC(), "nTarget: " + IntToString(nTarget));
-    if(nTarget & 2 || nTarget & 1) nObjectType += OBJECT_TYPE_CREATURE;
+    if((nTarget & 1) && !(nTarget & 2) &&!(nTarget & 4))
+    {
+        if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
+        ai_CastWidgetSpell(oPC, oAssociate, oAssociate, GetLocation(oAssociate));
+        DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+        return;
+    }
+    if((nTarget & 1) || (nTarget & 2)) nObjectType += OBJECT_TYPE_CREATURE;
     if(nTarget & 4) nObjectType += OBJECT_TYPE_TILE;
     if(nTarget & 8) nObjectType += OBJECT_TYPE_ITEM;
     if(nTarget & 16) nObjectType += OBJECT_TYPE_DOOR;

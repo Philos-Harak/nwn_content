@@ -88,7 +88,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_temple_return"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Return Dead Henchman"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_limbo"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);

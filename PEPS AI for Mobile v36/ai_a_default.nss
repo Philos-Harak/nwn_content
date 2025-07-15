@@ -1,7 +1,7 @@
 /*////////////////////////////////////////////////////////////////////////////////////////////////////
-// Script Name: ai_a_default
+// Script Name: ai_a_no_modes
 //////////////////////////////////////////////////////////////////////////////////////////////////////
- ai script for associates to use the default ai.
+ ai script for associates to not use any combat modes during combat ai.
  OBJECT_SELF is the creature running the ai.
  Our actions.
  1 - Get nearest enemy.
@@ -75,6 +75,6 @@ void main()
         }
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
+    ai_DoPhysicalAttackOnBest(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }
 

@@ -73,5 +73,5 @@ void main()
     }
     //**********************  PHYSICAL ATTACKS  ********************************
     // Even in defensive mode we want to be in battle so go find someone!
-    ai_DoPhysicalAttackOnLowestCR(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
+    ai_DoPhysicalAttackOnBest(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }

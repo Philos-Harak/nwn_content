@@ -72,7 +72,7 @@ void main()
         else if(sTargetMode == "TEST_REMOVE_TARGET")
         {
             AssignCommand(oTarget, SetIsDestroyable(TRUE, FALSE, FALSE));
-            DestroyObject(oTarget, 0.5);
+            DelayCommand(0.1, DestroyObject(oTarget));
             ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
         }
         else if(sTargetMode == "TEST_JUMP")

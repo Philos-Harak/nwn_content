@@ -24,7 +24,7 @@ void main()
         {
             return;
         }
-        // Targeting code here.
+        /*/ Targeting code here.
         if(sTargetMode == "TEST_LEVEL_TARGET")
         {
             int nLevel = ai_GetCharacterLevels(oTarget);
@@ -56,7 +56,7 @@ void main()
         else if(sTargetMode == "TEST_ID_TARGET") SetIdentified(oTarget, !GetIdentified(oTarget));
         else if(sTargetMode == "TEST_CLEAR_TARGET")
         {
-            //ClearAllActions(TRUE, oTarget);
+            AssignCommand(oTarget, ClearAllActions(TRUE));
         }
         else if(sTargetMode == "TEST_KILL_TARGET")
         {
@@ -66,10 +66,10 @@ void main()
         }
         else if(sTargetMode == "TEST_REMOVE_TARGET")
         {
-            //SetIsDestroyable(TRUE, FALSE, FALSE, oTarget);
-            DestroyObject(oTarget);
+            AssignCommand(oTarget, SetIsDestroyable(TRUE, FALSE, FALSE));
+            DelayCommand(0.1, DestroyObject(oTarget));
             ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
-        }
+        }*/
     }
     // Run all non-targeting code here, usually NUI events.
     else

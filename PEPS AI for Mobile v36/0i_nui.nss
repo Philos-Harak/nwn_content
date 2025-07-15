@@ -77,7 +77,7 @@ int SetWindow(object oPC, json jLayout, string sWinID, string sTitle, float fX, 
 // nVAlign is vertial align [NUI_VALING_*].
 // sId is the bind the event uses sId + "_event".
 // sTooltip is the tooltip bind value.
-void CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeight, int nHAlign = 0, int nVAlign = 0, float fMargin = -1.0, string sTooltip = "");
+json CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeight, int nHAlign = 0, int nVAlign = 0, float fMargin = -1.0, string sTooltip = "");
 
 // Creates a basic button element in jRow.
 // jRow is the row the label goes into.
@@ -88,7 +88,7 @@ void CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeig
 // fHeight is the Height of the button.
 // fMargin is the space around the button.
 // sTooltip is the tooltip bind value.
-void CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "");
+json CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "");
 
 // Creates a basic button select element in jRow.
 // jRow is the row the label goes into.
@@ -98,7 +98,7 @@ void CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHei
 // fWidth is the width of the button.
 // fHeight is the Height of the button.
 // sTooltip is the tooltip bind value.
-void CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sToolTip = "");
+json CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates a button element with an image in jRow.
 // jRow is the row the label goes into.
@@ -109,7 +109,7 @@ void CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, floa
 // fHeight is the Height of the button.
 // fMargin is the space around the button.
 // sTooltip is the tooltip bind value.
-void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "");
+json CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "");
 
 // Creates a basic text box that is not editable element in jRow.
 // jRow is the row the TextEdit box goes into.
@@ -119,7 +119,7 @@ void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, floa
 // bBorder will add border TRUE or remove it FALSE.
 // nScroll use NUI_SCROLLBARS_*
 // sTooltip is the tooltip bind value.
-void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, int bBorder = TRUE, int nScroll = NUI_SCROLLBARS_AUTO, string sTooltip = "");
+json CreateTextBox(json jRow, string sId, float fWidth, float fHeight, int bBorder = TRUE, int nScroll = NUI_SCROLLBARS_AUTO, string sTooltip = "");
 
 // Creates a basic text edit box element in jRow.
 // jRow is the row the TextEdit box goes into.
@@ -130,7 +130,7 @@ void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, int bBord
 // fWidth the width of the box.
 // fHeight the height of the box.
 // sTooltip is the tooltip bind value.
-void CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, int nMaxLength, int bMultiline, float fWidth, float fHeight, string sToolTip = "");
+json CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, int nMaxLength, int bMultiline, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates a combo box element in jRow.
 // jRow is the row the combo goes into.
@@ -140,7 +140,7 @@ void CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, in
 // fWidth is the width of the combo.
 // fHeight is the Height of the combo.
 // sTooltip is the tooltip bind value.
-void CreateCombo(json jRow, json jCombo, string sId, float fWidth, float fHeight, string sToolTip = "");
+json CreateCombo(json jRow, json jCombo, string sId, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates an image element in jRow.
 // jRow is the row the Image goes into.
@@ -152,7 +152,7 @@ void CreateCombo(json jRow, json jCombo, string sId, float fWidth, float fHeight
 // fWidth the width of the box.
 // fHeight the height of the box.
 // sTooltip is the tooltip bind value.
-void CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign, int nVAlign, float fWidth, float fHeight, float fMargin = -1.0, string sToolTip = "");
+json CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign, int nVAlign, float fWidth, float fHeight, float fMargin = -1.0, string sToolTip = "");
 
 // Creates a check box element in jRow.
 // jRow is the row the Checkbox box goes into.
@@ -163,7 +163,7 @@ void CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign
 // fWidth is the width of the label.
 // fHeight is the Height of the label.
 // sTooltip is the tooltip bind value.
-void CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sToolTip = "");
+json CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates a slider (Int based) element in jRow
 // jRow is the row the Check box goes into.
@@ -176,7 +176,7 @@ void CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fH
 // fWidth is the width of the slider.
 // fHeight is the Height of the slider.
 // sTooltip is the tooltip bind value.
-void CreateSlider(json jRow, string sId, float fWidth, float fHeight, string sToolTip = "");
+json CreateSlider(json jRow, string sId, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates an Options element in jRow.
 // jRow is the row the Options will start on.
@@ -188,7 +188,7 @@ void CreateSlider(json jRow, string sId, float fWidth, float fHeight, string sTo
 // fWidth is the width of the options labels.
 // fHeight is the height of the options labels.
 // sTooltip is the tooltip bind value.
-void CreateOptions(json jRow, string sId, int nDirection, json jLabels, float fWidth, float fHeight, string sToolTip = "");
+json CreateOptions(json jRow, string sId, int nDirection, json jLabels, float fWidth, float fHeight, string sToolTip = "");
 
 // Creates a list element in jRow.
 // jRow is the row the list will start on.
@@ -200,7 +200,7 @@ void CreateOptions(json jRow, string sId, int nDirection, json jLabels, float fW
 // fWidth is the width of the options labels.
 // fHeight is the height of the options labels.
 // sTooltip is the tooltip bind value.
-void CreateList(json jRow, json jElements, string sId, float fRowHeight, float fWidth, float fHeight, string sTooltip = "");
+json CreateList(json jRow, json jElements, string sId, float fRowHeight, float fWidth, float fHeight, string sTooltip = "");
 
 // Placed here temporarily until we can clean up our includes!
 void ai_SetDMWAccessButton(int nButton, int bOn = TRUE);
@@ -279,7 +279,7 @@ int SetWindow(object oPC, json jLayout, string sWinID, string sTitle, float fX, 
     NuiSetBind (oPC, nToken, "window_border", JsonBool (bBorder));
     return nToken;
 }
-void CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeight, int nHAlign = 0, int nVAlign = 0, float fMargin = -1.0, string sTooltip = "")
+json CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeight, int nHAlign = 0, int nVAlign = 0, float fMargin = -1.0, string sTooltip = "")
 {
     json jLabel;
     if(sLabel == "") jLabel = NuiId(NuiLabel(NuiBind(sId + "_label"), JsonInt(nHAlign), JsonInt(nVAlign)), sId);
@@ -288,9 +288,9 @@ void CreateLabel(json jRow, string sLabel, string sId, float fWidth, float fHeig
     jLabel = NuiHeight(jLabel, fHeight);
     if (fMargin > -1.0) jLabel = NuiMargin(jLabel, fMargin);
     if(sTooltip != "") jLabel = NuiTooltip (jLabel, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jLabel);
+    return JsonArrayInsert(jRow, jLabel);
 }
-void CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
+json CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
 {
     json jButton;
     if(sLabel == "") jButton = NuiEnabled(NuiId(NuiButton(NuiBind (sId + "_label")), sId), NuiBind(sId + "_event"));
@@ -299,9 +299,9 @@ void CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHei
     jButton = NuiHeight(jButton, fHeight);
     if (fMargin > -1.0) jButton = NuiMargin(jButton, fMargin);
     if (sTooltip != "") jButton = NuiTooltip(jButton, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jButton);
+    return JsonArrayInsert(jRow, jButton);
 }
-void CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sTooltip = "")
+json CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
     json jButton;
     if(sLabel == "") jButton = NuiEnabled(NuiId(NuiButtonSelect(NuiBind (sId + "_label"), NuiBind(sId)), sId), NuiBind(sId + "_event"));
@@ -309,9 +309,9 @@ void CreateButtonSelect(json jRow, string sLabel, string sId, float fWidth, floa
     jButton = NuiWidth(jButton, fWidth);
     jButton = NuiHeight(jButton, fHeight);
     if(sTooltip != "") jButton = NuiTooltip(jButton, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jButton);
+    return JsonArrayInsert(jRow, jButton);
 }
-void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
+json CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
 {
     json jButton;
     if(sResRef == "") jButton = NuiEnabled(NuiId (NuiButtonImage(NuiBind(sId + "_image")), sId), NuiBind(sId + "_event"));
@@ -321,25 +321,25 @@ void CreateButtonImage(json jRow, string sResRef, string sId, float fWidth, floa
     if(fMargin > -1.0) jButton = NuiMargin(jButton, fMargin);
     if(sTooltip != "") jButton = NuiTooltip(jButton, NuiBind (sTooltip));
     jButton = NuiEncouraged(jButton, NuiBind(sId + "_encouraged"));
-    JsonArrayInsertInplace(jRow, jButton);
+    return JsonArrayInsert(jRow, jButton);
 }
-void CreateTextBox(json jRow, string sId, float fWidth, float fHeight, int bBorder = TRUE, int nScroll = NUI_SCROLLBARS_AUTO, string sTooltip = "")
+json CreateTextBox(json jRow, string sId, float fWidth, float fHeight, int bBorder = TRUE, int nScroll = NUI_SCROLLBARS_AUTO, string sTooltip = "")
 {
     json jTextBox = NuiEnabled(NuiText(NuiBind(sId), bBorder, nScroll), NuiBind(sId + "_event"));
     jTextBox = NuiWidth(jTextBox, fWidth);
     jTextBox = NuiHeight(jTextBox, fHeight);
     if(sTooltip != "") jTextBox = NuiTooltip(jTextBox, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, JsonObjectSet(jTextBox, "text_color", NuiColor (255, 0, 0)));
+    return JsonArrayInsert(jRow, JsonObjectSet(jTextBox, "text_color", NuiColor (255, 0, 0)));
 }
-void CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, int nMaxLength, int bMultiline, float fWidth, float fHeight, string sTooltip = "")
+json CreateTextEditBox(json jRow, string sPlaceHolderBind, string sValueBind, int nMaxLength, int bMultiline, float fWidth, float fHeight, string sTooltip = "")
 {
     json jObject = NuiEnabled(NuiTextEdit(NuiBind(sPlaceHolderBind), NuiBind(sValueBind), nMaxLength, bMultiline), NuiBind(sValueBind + "_event"));
     jObject = NuiWidth(jObject, fWidth);
     jObject = NuiHeight(jObject, fHeight);
     if(sTooltip != "") jObject = NuiTooltip(jObject, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jObject);
+    return JsonArrayInsert(jRow, jObject);
 }
-void CreateCombo(json jRow, json jList, string sId, float fWidth, float fHeight, string sTooltip = "")
+json CreateCombo(json jRow, json jList, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
     json jCombo;
     if(JsonGetType(jList) == JSON_TYPE_NULL)
@@ -351,9 +351,9 @@ void CreateCombo(json jRow, json jList, string sId, float fWidth, float fHeight,
     jCombo = NuiWidth(jCombo, fWidth);
     jCombo = NuiHeight(jCombo, fHeight);
     if(sTooltip != "") jCombo = NuiTooltip(jCombo, NuiBind(sTooltip));
-    JsonArrayInsertInplace(jRow, jCombo);
+    return JsonArrayInsert(jRow, jCombo);
 }
-void CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign, int nVAlign, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
+json CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign, int nVAlign, float fWidth, float fHeight, float fMargin = -1.0, string sTooltip = "")
 {
     json jImage;
     if(sResRef == "") jImage = NuiEnabled(NuiId(NuiImage(NuiBind(sId + "_image"), JsonInt(nAspect), JsonInt(nHAlign), JsonInt(nVAlign)), sId), NuiBind(sId + "_event"));
@@ -362,9 +362,9 @@ void CreateImage(json jRow, string sResRef, string sId, int nAspect, int nHAlign
     jImage = NuiHeight(jImage, fHeight);
     if (fMargin > -1.0) jImage = NuiMargin(jImage, fMargin);
     if(sTooltip != "") jImage = NuiTooltip(jImage, NuiBind(sTooltip));
-    JsonArrayInsertInplace(jRow, jImage);
+    return JsonArrayInsert(jRow, jImage);
 }
-void CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sTooltip = "")
+json CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
     json jCheckBox;
     if(sLabel == "") jCheckBox = NuiEnabled(NuiId(NuiCheck(NuiBind(sId + "_label"), NuiBind(sId + "_check")), sId), NuiBind(sId + "_event"));
@@ -372,34 +372,34 @@ void CreateCheckBox(json jRow, string sLabel, string sId, float fWidth, float fH
     jCheckBox = NuiWidth(jCheckBox, fWidth);
     jCheckBox = NuiHeight(jCheckBox, fHeight);
     if (sTooltip != "") jCheckBox = NuiTooltip (jCheckBox, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jCheckBox);
+    return JsonArrayInsert(jRow, jCheckBox);
 }
-void CreateSlider(json jRow, string sId, float fWidth, float fHeight, string sTooltip = "")
+json CreateSlider(json jRow, string sId, float fWidth, float fHeight, string sTooltip = "")
 {
     json jSlider;
     jSlider = NuiEnabled(NuiId(NuiSlider(NuiBind(sId + "_value"), NuiBind(sId + "_min"), NuiBind(sId + "_max"), NuiBind(sId + "_stepsize")), sId), NuiBind(sId + "_event"));
     jSlider = NuiWidth(jSlider, fWidth);
     jSlider = NuiHeight(jSlider, fHeight);
     if(sTooltip != "") jSlider = NuiTooltip(jSlider, NuiBind(sTooltip));
-    JsonArrayInsertInplace(jRow, jSlider);
+    return JsonArrayInsert(jRow, jSlider);
 }
-void CreateOptions(json jRow, string sId, int nDirection, json jLabels, float fWidth, float fHeight, string sTooltip = "")
+json CreateOptions(json jRow, string sId, int nDirection, json jLabels, float fWidth, float fHeight, string sTooltip = "")
 {
     json jOption;
     jOption = NuiEnabled(NuiId(NuiOptions(nDirection, jLabels, NuiBind(sId + "_value")), sId), NuiBind(sId + "_event"));
     jOption = NuiWidth(jOption, fWidth);
     jOption = NuiHeight(jOption, fHeight);
     if(sTooltip != "") jOption = NuiTooltip (jOption, NuiBind (sTooltip));
-    JsonArrayInsertInplace(jRow, jOption);
+    return JsonArrayInsert(jRow, jOption);
 }
-void CreateList(json jRow, json jElements, string sId, float fRowHeight, float fWidth, float fHeight, string sTooltip = "")
+json CreateList(json jRow, json jElements, string sId, float fRowHeight, float fWidth, float fHeight, string sTooltip = "")
 {
     json jList;
     jList = NuiId(NuiList(jElements, NuiBind(sId), fRowHeight), sId + "_id");
     jList = NuiWidth(jList, fWidth);
     jList = NuiHeight(jList, fHeight);
     if (sTooltip != "") jList = NuiTooltip(jList, NuiBind(sTooltip));
-    JsonArrayInsertInplace(jRow, jList);
+    return JsonArrayInsert(jRow, jList);
 }
 void ai_SetDMWAccessButton(int nButton, int bOn = TRUE)
 {
@@ -408,7 +408,7 @@ void ai_SetDMWAccessButton(int nButton, int bOn = TRUE)
     if(bOn) nWidgetButtons = nWidgetButtons | nButton;
     else nWidgetButtons = nWidgetButtons & ~nButton;
     SetLocalInt(GetModule(), sDMWidgetAccessVarname, nWidgetButtons);
-    JsonObjectSetInplace(jRules, sDMWidgetAccessVarname, JsonInt(nWidgetButtons));
+    jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(nWidgetButtons));
     ai_SetCampaignDbJson("rules", jRules);
 }
 int ai_GetDMWAccessButton(int nButton)
@@ -423,7 +423,7 @@ void ai_SetDMAIAccessButton(int nButton, int bOn = TRUE)
     if(bOn) nWidgetButtons = nWidgetButtons | nButton;
     else nWidgetButtons = nWidgetButtons & ~nButton;
     SetLocalInt(GetModule(), sDMAIAccessVarname, nWidgetButtons);
-    JsonObjectSetInplace(jRules, sDMAIAccessVarname, JsonInt(nWidgetButtons));
+    jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(nWidgetButtons));
     ai_SetCampaignDbJson("rules", jRules);
 }
 int ai_GetDMAIAccessButton(int nButton)

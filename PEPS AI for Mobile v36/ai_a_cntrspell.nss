@@ -27,7 +27,7 @@ void main()
         if(ai_TryHealingTalent(oCreature, nInMelee)) return;
         if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
         int nDifficulty = ai_GetDifficulty(oCreature);
-        if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "32", " Counterspell Mode? " +
+        if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "30", " Counterspell Mode? " +
                  IntToString(GetActionMode(OBJECT_SELF, ACTION_MODE_COUNTERSPELL)));
         if(!GetActionMode(oCreature, ACTION_MODE_COUNTERSPELL))
         {
@@ -39,7 +39,7 @@ void main()
                 // If we have haste then we should cast it.
                 if(GetHasSpell(SPELL_HASTE, oCreature))
                 {
-                    if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "45", "Opponent is hasted! Casting Haste.");
+                    if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "42", "Opponent is hasted! Casting Haste.");
                     ActionCastSpellAtObject(SPELL_HASTE, oCreature);
                     ai_SetLastAction(oCreature, SPELL_HASTE);
                     return;
@@ -47,7 +47,7 @@ void main()
                 // If not then we need to go into normal combat.
                 else
                 {
-                    if(AI_DEBUG) ai_Debug("ai_cntrspell", "53", "Opponent is hasted! Using ranged AI.");
+                    if(AI_DEBUG) ai_Debug("ai_cntrspell", "50", "Opponent is hasted! Using ranged AI.");
                     ExecuteScript("ai_a_ranged");
                     return;
                 }
@@ -58,12 +58,12 @@ void main()
                 if(ai_TryToBecomeInvisible(oCreature)) return;
                 // If we have attempted to become invisible or are invisible then
                 // it is time to counter spell.
-                if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "64", "Setting Counterspell mode!");
+                if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "61", "Setting Counterspell mode!");
                 ActionCounterSpell(oTarget);
                 return;
             }
         }
     }
-    if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "75", "Situation is not good for counterspelling! Using ranged AI.");
+    if(AI_DEBUG) ai_Debug("ai_a_cntrspell", "67", "Situation is not good for counterspelling! Using ranged AI.");
     ExecuteScript("ai_a_ranged");
 }

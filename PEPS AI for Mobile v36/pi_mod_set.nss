@@ -18,21 +18,18 @@ void main()
     //DelayCommand (0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 450 / 73
-    json jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 300.0f, 20.0f, -1.0, "btn_combat_music_offtooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 300.0f, 20.0f, -1.0, "btn_combat_music_offtooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     float fHeight = 73.0;
     // Row 2 ******************************************************************* 450 / 73
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton(jRow, "Auto Daytime", "btn_night_to_day", 300.0f, 20.0f, -1.0, "btn_night_to_day_tooltip");
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Auto Daytime", "btn_night_to_day", 300.0f, 20.0f, -1.0, "btn_night_to_day_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     fHeight += 28.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
@@ -55,7 +52,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_mod_set"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Module settings Menu"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("ir_chatmenu"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);

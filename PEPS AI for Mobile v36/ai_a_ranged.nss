@@ -30,6 +30,8 @@ void main()
         //**************************  SKILL FEATURES  **************************
         if(ai_TryAnimalEmpathy(oCreature)) return;
         // ************************** CLASS FEATURES ***************************
+        // Turning is basically a powerful AOE so treat it like one.
+        if(ai_TryTurningTalent(oCreature)) return;
         if(ai_TryBarbarianRageFeat(oCreature)) return;
         if(ai_TryBardSongFeat(oCreature)) return;
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;

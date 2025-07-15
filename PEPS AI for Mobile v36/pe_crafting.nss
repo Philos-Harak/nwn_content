@@ -1,7 +1,7 @@
 /*//////////////////////////////////////////////////////////////////////////////
 // Script Name: pe_crafting
 ////////////////////////////////////////////////////////////////////////////////
- Used with ai_crafting to run the crafting plugin for
+ Used with pi_crafting to run the crafting plugin events for
  Philos Single Player Enhancements.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_nui"
@@ -75,7 +75,7 @@ void SetColorPalletPointer(object oPC, int nToken, object oItem);
 // Locks/Unlocks specific buttons when an item has been changed.
 void LockItemInCraftingWindow(object oPC, object oItem, object oTarget, int nToken);
 // Locks/Unlocks specific buttons when an item has been cleared.
-void ClearItemInCraftingWindow(object oPC, object oItem, object oTarget, int nToken);
+void ClearItemInCraftingWindow(object oPC, object oItem, int nToken);
 // Saves the crafted item for the player removing the original.
 void SaveCraftedItem(object oPC, object oTarget, int nToken);
 // Remove Effect of type specified from oCreature;
@@ -85,7 +85,7 @@ void RemoveTagedEffects(object oCreature, string sEffectTag);
 // Returns TRUE/FALSE if item has temporary item property.
 int CheckForTemporaryItemProperty(object oItem);
 // Updates the model number text in the NUI menu.
-void SetModelNumberText(object oPC, int nToken);
+void SetModelNumberText(object oPC, object oTarget, int nToken);
 // Sets the material buttons for use.
 // nMaterial 0,1 Cloth 2,3 Leather 4,5 Metal -1 None.
 void SetMaterialButtons(object oPC, int nToken, int nMaterial);
@@ -158,14 +158,11 @@ void main()
             if(!GetLocalInt (oPC, AI_NO_NUI_SAVE))
             {
                 json jCraft = GetLocalJson(oPC, CRAFT_JSON);
-                if(JsonGetType(jCraft) == JSON_TYPE_NULL)
-                {
-                    SetLocalJson(oPC, CRAFT_JSON, JsonObject());
-                    jCraft = GetLocalJson(oPC, CRAFT_JSON);
-                }
+                if(JsonGetType(jCraft) == JSON_TYPE_NULL) jCraft = JsonObject();
                 // Get the height, width, x, and y of the window.
                 json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
-                JsonObjectSetInplace(jCraft, "CRAFT_MENU", jGeometry);
+                jCraft = JsonObjectSet(jCraft, "CRAFT_MENU", jGeometry);
+                SetLocalJson(oPC, CRAFT_JSON, jCraft);
             }
             return;
         }
@@ -212,11 +209,11 @@ void main()
                 // Get the color they selected from the color pallet cell.
                 nColorId = GetColorPalletId(oPC, nToken);
             }
-            //else if(sEvent == "mousescroll")
-            //{
-            //    float nMouseScroll = JsonGetFloat(JsonObjectGet(JsonObjectGet(NuiGetEventPayload(), "mouse_scroll"), "y"));
-            //    nChange = FloatToInt(nMouseScroll);
-            //}
+            else if(sEvent == "mousescroll")
+            {
+                float nMouseScroll = JsonGetFloat(JsonObjectGet(JsonObjectGet(NuiGetEventPayload(), "mouse_scroll"), "y"));
+                nChange = FloatToInt(nMouseScroll);
+            }
             else return;
             if(!CanCraftItem(oPC, oItem, nToken)) return;
             int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
@@ -310,15 +307,16 @@ void main()
                     NuiSetBind(oPC, nToken, "item_combo_selected", JsonInt(nItem));
                     return;
                 }
-                JsonObjectSetInplace(jCraft, CRAFT_ITEM_SELECTION, JsonInt(nSelected));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ITEM_SELECTION, JsonInt(nSelected));
                 // Set button for cloak and helms.
                 if(nSelected == 1 || nSelected == 2)
                 {
                     int nHidden = GetHiddenWhenEquipped(oItem);
-                    if(nHidden) JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(1));
-                    else JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
+                    if(nHidden) jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(1));
+                    else jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
                 }
-                else JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
+                else jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
+                SetLocalJson(oPC, CRAFT_JSON, jCraft);
                 NuiDestroy(oPC, nToken);
                 ExecuteScript("pi_crafting", oPC);
             }
@@ -326,27 +324,62 @@ void main()
             else if(sElem == "model_combo_selected")
             {
                 int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
-                JsonObjectSetInplace(jCraft, CRAFT_MODEL_SELECTION, JsonInt(nSelected));
-                SetModelNumberText(oPC, nToken);
-                json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+                jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(nSelected));
+                SetLocalJson(oPC, CRAFT_JSON, jCraft);
+                SetModelNumberText(oPC, oTarget, nToken);
                 int nItem = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
                 if(nItem == 1) // Cloak
                 {
+                    if(!CanCraftItem(oPC, oItem, nToken)) return;
                     object oItem = GetItemInSlot(INVENTORY_SLOT_CLOAK, oTarget);
                     if(nSelected == 1) SetHiddenWhenEquipped(oItem, TRUE);
                     else SetHiddenWhenEquipped(oItem, FALSE);
+                    LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
                 }
                 else if(nItem == 2) // Headgear
                 {
+                    if(!CanCraftItem(oPC, oItem, nToken)) return;
                     object oItem = GetItemInSlot(INVENTORY_SLOT_HEAD, oTarget);
                     if(nSelected == 1) SetHiddenWhenEquipped(oItem, TRUE);
                     else SetHiddenWhenEquipped(oItem, FALSE);
+                    LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
                 }
                 else if(nItem == 4 && ai_GetIsShield(oItem))
                 {
+                    if(!CanCraftItem(oPC, oItem, nToken)) return;
                     object oItem = GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oTarget);
                     if(nSelected == 1) SetHiddenWhenEquipped(oItem, TRUE);
                     else SetHiddenWhenEquipped(oItem, FALSE);
+                    LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
+                }
+                if(ai_GetIsWeapon(oItem))
+                {
+                    // Clearing sets the module to 0 triggering an extra call.
+                    if(GetLocalInt(oPC, AI_NO_NUI_SAVE)) return;
+                    if(!CanCraftItem(oPC, oItem, nToken)) return;
+                    int nVisual;
+                    itemproperty ipProperty = GetFirstItemProperty(oItem);
+                    while(GetIsItemPropertyValid(ipProperty))
+                    {
+                        if(GetItemPropertyType(ipProperty) == ITEM_PROPERTY_VISUALEFFECT)
+                        {
+                            RemoveItemProperty(oItem, ipProperty);
+                        }
+                        ipProperty = GetNextItemProperty(oItem);
+                    }
+                    if(nSelected == 1) nVisual = ITEM_VISUAL_ACID;
+                    else if(nSelected == 2) nVisual = ITEM_VISUAL_COLD;
+                    else if(nSelected == 3) nVisual = ITEM_VISUAL_ELECTRICAL;
+                    else if(nSelected == 4) nVisual = ITEM_VISUAL_EVIL;
+                    else if(nSelected == 5) nVisual = ITEM_VISUAL_FIRE;
+                    else if(nSelected == 6) nVisual = ITEM_VISUAL_HOLY;
+                    else if(nSelected == 7) nVisual = ITEM_VISUAL_SONIC;
+                    if(nVisual)
+                    {
+                        ipProperty = ItemPropertyVisualEffect(nVisual);
+                        AddItemProperty(DURATION_TYPE_PERMANENT, ipProperty, oItem);
+                    }
+                    LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
                 }
             }
         }
@@ -381,6 +414,19 @@ void main()
                 SetLocalString(oPC, AI_TARGET_MODE, "SELECT_TARGET");
                 NuiDestroy(oPC, nToken);
                 ai_SendMessages("Select either your charcter or a henchman to craft their equipment.", AI_COLOR_YELLOW, oPC);
+                DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
+                DeleteLocalObject(oPC, CRAFT_TARGET);
+                DeleteLocalObject(oPC, "CRAFT_INFO_ITEM");
+                if(GetLocalInt(oPC, CRAFT_ULTRALIGHT))
+                {
+                    RemoveTagedEffects(oTarget, CRAFT_ULTRALIGHT);
+                    DeleteLocalInt(oPC, CRAFT_ULTRALIGHT);
+                }
+                if(GetLocalInt(oPC, CRAFT_HIGHLIGHT))
+                {
+                    RemoveTagedEffects(oTarget, CRAFT_HIGHLIGHT);
+                    DeleteLocalInt(oPC, CRAFT_HIGHLIGHT);
+                }
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             // Cancel any changes made to the selected item.
@@ -390,13 +436,16 @@ void main()
                 if(JsonGetString(NuiGetBind(oPC, nToken, "btn_cancel_label")) == "Cancel")
                 {
                     CancelCraftedItem(oPC, oTarget);
-                    ClearItemInCraftingWindow(oPC, oItem, oTarget, nToken);
+                    ClearItemInCraftingWindow(oPC, oItem, nToken);
+                    DelayCommand(0.5, NuiDestroy(oPC, nToken));
+                    DelayCommand(0.5, ExecuteScript("pi_crafting", oPC));
                 }
                 // If the button is on Exit not Cancel then exit.
                 else
                 {
                     AssignCommand(oPC, RestoreCameraFacing());
                     AttachCamera(oPC, oPC);
+                    DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
                     DeleteLocalObject(oPC, CRAFT_TARGET);
                     DeleteLocalObject(oPC, "CRAFT_INFO_ITEM");
                     NuiDestroy(oPC, nToken);
@@ -456,143 +505,144 @@ void main()
             }
             else if(sElem == "btn_left_part_color")
             {
-                int nBool = !JsonGetInt(JsonObjectGet(jCraft, CRAFT_LEFT_PART_COLOR));
-                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(nBool));
-                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(nBool));
-                if(!nBool)
-                {
-                    if(JsonGetInt(NuiGetBind(oPC, nToken, "btn_right_part_color"))) nBool = FALSE;
-                    else nBool = TRUE;
-                }
-                else nBool = FALSE;
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(nBool));
-                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(nBool));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(TRUE));
+                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(TRUE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
                 SetColorPalletPointer(oPC, nToken, oItem);
             }
             else if(sElem == "btn_all_color")
             {
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(TRUE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(TRUE));
                 NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(TRUE));
-                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
                 NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
-                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
                 NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
                 SetColorPalletPointer(oPC, nToken, oItem);
             }
             else if(sElem == "btn_right_part_color")
             {
-                int nBool = !JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR));
-                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(nBool));
-                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool (nBool));
-                if(!nBool)
-                {
-                    if(JsonGetInt(NuiGetBind(oPC, nToken, "btn_left_part_color"))) nBool = FALSE;
-                    else nBool = TRUE;
-                }
-                else nBool = FALSE;
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(nBool));
-                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool (nBool));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
+                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(TRUE));
+                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(TRUE));
                 SetColorPalletPointer(oPC, nToken, oItem);
             }
             else if(sElem == "btn_right_part_reset")
             {
-                int nIndex;
-                int nModelSelected = GetArmorModelSelected(oPC);
-                int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
-                object oNewItem;
-                if(nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
-                   nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
-                   nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
-                   nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
-                   nModelSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+                if(CanCraftItem(oPC, oItem, nToken))
                 {
-                    nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                    oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
-                    DestroyObject(oItem);
+                    int nIndex;
+                    int nModelSelected = GetArmorModelSelected(oPC);
+                    int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+                    object oNewItem;
+                    if(nModelSelected == ITEM_APPR_ARMOR_MODEL_NECK ||
+                       nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO ||
+                       nModelSelected == ITEM_APPR_ARMOR_MODEL_BELT ||
+                       nModelSelected == ITEM_APPR_ARMOR_MODEL_PELVIS ||
+                       nModelSelected == ITEM_APPR_ARMOR_MODEL_ROBE)
+                    {
+                        nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                        oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
+                        DestroyObject(oItem);
+                    }
+                    else
+                    {
+                        nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                        oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
+                        DestroyObject(oItem);
+                    }
+                    // Lock the new item so they can't change it on the character.
+                    LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
+                    // Equip new item.
+                    AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
+                    // Fix buttons.
+                    NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                    int nLeft = JsonGetInt(NuiGetBind(oPC, nToken, "btn_left_part_color"));
+                    NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(!nLeft));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(!nLeft));
+                    NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(FALSE));
+                    nLeft = JsonGetInt(NuiGetBind(oPC, nToken, "btn_left_part_reset_event"));
+                    NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nLeft));
+                    SetColorPalletPointer(oPC, nToken, oNewItem);
                 }
-                else
-                {
-                    nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                    oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
-                    DestroyObject(oItem);
-                }
-                // Lock the new item so they can't change it on the character.
-                LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
-                // Equip new item.
-                AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
-                // Fix buttons.
-                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
-                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
-                int nLeft = JsonGetInt(NuiGetBind(oPC, nToken, "btn_left_part_color"));
-                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(!nLeft));
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(!nLeft));
-                NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(FALSE));
-                nLeft = JsonGetInt(NuiGetBind(oPC, nToken, "btn_left_part_reset_event"));
-                NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nLeft));
-                SetColorPalletPointer(oPC, nToken, oNewItem);
             }
             else if(sElem == "btn_all_reset")
             {
-                int nIndex, nColor;
-                json jItem = ObjectToJson(oItem, TRUE);
-                string sColor, sPartName;
-                for(nIndex = 0;nIndex < 19;nIndex++)
+                if(CanCraftItem(oPC, oItem, nToken))
                 {
-                    sPartName = "APart_" + IntToString(nIndex) + "_Col_";
-                    for(nColor = 0;nColor < 6;nColor++)
+                    int nIndex, nColor;
+                    json jItem = ObjectToJson(oItem, TRUE);
+                    string sColor, sPartName;
+                    for(nIndex = 0;nIndex < 19;nIndex++)
                     {
-                        sColor = IntToString(nColor);
-                        if(JsonGetType(GffGetByte(jItem, sPartName + sColor)) != JSON_TYPE_NULL)
+                        sPartName = "APart_" + IntToString(nIndex) + "_Col_";
+                        for(nColor = 0;nColor < 6;nColor++)
                         {
-                            jItem = GffRemoveByte(jItem, sPartName + sColor);
+                            sColor = IntToString(nColor);
+                            if(JsonGetType(GffGetByte(jItem, sPartName + sColor)) != JSON_TYPE_NULL)
+                            {
+                                jItem = GffRemoveByte(jItem, sPartName + sColor);
+                            }
                         }
                     }
+                    object oNewItem = JsonToObject(jItem, GetLocation(oTarget), oTarget, TRUE);
+                    AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
+                    DestroyObject(oItem);
+                    // Lock the new item so they can't change it on the character.
+                    LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
+                    // Fix buttons.
+                    NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(TRUE));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
+                    SetColorPalletPointer(oPC, nToken, oNewItem);
                 }
-                object oNewItem = JsonToObject(jItem, GetLocation(oTarget), oTarget, TRUE);
-                AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
-                DestroyObject(oItem);
-                // Fix buttons.
-                NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(FALSE));
-                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
-                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(TRUE));
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(TRUE));
-                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
-                JsonObjectSetInplace(jCraft, CRAFT_RIGHT_PART_COLOR, JsonInt(FALSE));
-                NuiSetBind(oPC, nToken, "btn_right_part_reset_event", JsonBool(FALSE));
-                NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(FALSE));
-                NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
-                SetColorPalletPointer(oPC, nToken, oNewItem);
             }
             else if(sElem == "btn_left_part_reset")
             {
-                int nModelSelected = GetArmorModelSelected(oPC);
-                if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
-                else nModelSelected = nModelSelected + 1;
-                int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
-                int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
-                object oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
-                DestroyObject(oItem);
-                // Lock the new item so they can't change it on the character.
-                LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
-                // Equip new item.
-                AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
-                // Fix buttons.
-                NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
-                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
-                int nRight = JsonGetInt(NuiGetBind(oPC, nToken, "btn_right_part_color"));
-                NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(!nRight));
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonInt(!nRight));
-                NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
-                nRight = JsonGetInt(NuiGetBind(oPC, nToken, "btn_right_part_reset_event"));
-                NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nRight));
-                SetColorPalletPointer(oPC, nToken, oNewItem);
+                if(CanCraftItem(oPC, oItem, nToken))
+                {
+                    int nModelSelected = GetArmorModelSelected(oPC);
+                    if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected = nModelSelected - 1;
+                    else nModelSelected = nModelSelected + 1;
+                    int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
+                    int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
+                    object oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex, 255, TRUE);
+                    DestroyObject(oItem);
+                    // Lock the new item so they can't change it on the character.
+                    LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
+                    // Equip new item.
+                    AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_CHEST));
+                    // Fix buttons.
+                    NuiSetBind(oPC, nToken, "btn_left_part_color", JsonBool(FALSE));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_LEFT_PART_COLOR, JsonInt(FALSE));
+                    int nRight = JsonGetInt(NuiGetBind(oPC, nToken, "btn_right_part_color"));
+                    NuiSetBind(oPC, nToken, "btn_all_color", JsonBool(!nRight));
+                    jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonInt(!nRight));
+                    NuiSetBind(oPC, nToken, "btn_left_part_reset_event", JsonBool(FALSE));
+                    nRight = JsonGetInt(NuiGetBind(oPC, nToken, "btn_right_part_reset_event"));
+                    NuiSetBind(oPC, nToken, "btn_all_reset_event", JsonBool(nRight));
+                    SetColorPalletPointer(oPC, nToken, oNewItem);
+                }
             }
             // They have changed the material (color item) for the item.
             else if(GetStringLeft(sElem, 13) == "btn_material_")
             {
                 int nSelected = StringToInt(GetStringRight(sElem, 1));
                 SetMaterialButtons(oPC, nToken, nSelected);
-                JsonObjectSetInplace(jCraft, CRAFT_MATERIAL_SELECTION, JsonInt(nSelected));
+                jCraft = JsonObjectSet(jCraft, CRAFT_MATERIAL_SELECTION, JsonInt(nSelected));
                 // Change the pallet for the correct material.
                 string sColorPallet;
                 if(nSelected < 4)
@@ -614,8 +664,9 @@ void main()
                 SetLocalString(oPC, CRAFT_COLOR_PALLET, sColorPallet);
                 SetColorPalletPointer(oPC, nToken, oItem);
             }
+            SetLocalJson(oPC, CRAFT_JSON, jCraft);
         }
-        if(sEvent == "mousedown")
+        else if(sEvent == "mousedown")
         {
             int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
             if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
@@ -1061,7 +1112,11 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         AssignCommand(oTarget, ClearAllActions(TRUE));
         DestroyObject(oItem);
         // Item selected 3 is the right hand, 4 is the left hand.
-        if (nItemSelected == 3) AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_RIGHTHAND));
+        //SendMessageToPC(oPC, "nItemSelected: " + IntToString(nItemSelected));
+        if(nItemSelected == 3)
+        {
+            AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_RIGHTHAND));
+        }
         else AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_LEFTHAND));
         NuiSetBind(oPC, nToken, "txt_model_number_" + sPart, JsonString(IntToString(nModelNumber)));
     }
@@ -1215,7 +1270,7 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         }
         int nModelNumber = GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
         nModelNumber += nDirection;
-        if(nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+        if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
         else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
         if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
         else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
@@ -1225,8 +1280,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         while(ResManGetAliasFor(sModelName + sModelNumber, nResType) == "")
         {
             nModelNumber += nDirection;
-            if(nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
-            else if(nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
+            if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
+            else if (nModelNumber < 0) nModelNumber = CRAFT_MAX_MODEL_NUMBER;
             if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
             else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
             else sModelNumber = IntToString(nModelNumber);
@@ -1317,12 +1372,14 @@ object RandomizeItemsCraftAppearance(object oPC, object oTarget, int nToken, obj
         else nRoll2 = Random(175) + 1;
         jItem = GffReplaceByte(jItem, "Cloth1Color", nRoll);
         jItem = GffReplaceByte(jItem, "Cloth2Color", nRoll2);
-        nRoll = Random(175) + 1;
+        if(d100() < 50) nRoll = nRoll + Random(5) - 3;
+        else nRoll = Random(175) + 1;
         if(d100() < 50) nRoll2 = nRoll + Random(5) - 3;
         else nRoll2 = Random(175) + 1;
         jItem = GffReplaceByte(jItem, "Leather1Color", nRoll);
         jItem = GffReplaceByte(jItem, "Leather2Color", nRoll2);
-        nRoll = Random(175) + 1;
+        if(d100() < 50) nRoll = nRoll + Random(5) - 3;
+        else nRoll = Random(175) + 1;
         if(d100() < 50) nRoll2 = nRoll + Random(5) - 3;
         else nRoll2 = Random(175) + 1;
         jItem = GffReplaceByte(jItem, "Metal1Color", nRoll);
@@ -1411,10 +1468,16 @@ void SetColorPalletPointer(object oPC, int nToken, object oItem)
 {
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
-    int nModelSelected = GetArmorModelSelected(oPC);
     int nColor;
     if(!JsonGetInt(NuiGetBind(oPC, nToken, "btn_all_color")))
     {
+        int nModelSelected = GetArmorModelSelected(oPC);
+        if(!JsonGetInt(JsonObjectGet(jCraft, CRAFT_RIGHT_PART_COLOR)))
+        {
+            // Note: Right Thigh and Left Thigh are backwards so this fixes that!
+            if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
+            else nModelSelected++;
+        }
         int nIndex = ITEM_APPR_ARMOR_NUM_COLORS + (nModelSelected * ITEM_APPR_ARMOR_NUM_COLORS) + nMaterialSelected;
         nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nIndex);
     }
@@ -1437,7 +1500,7 @@ void LockItemInCraftingWindow(object oPC, object oItem, object oTarget, int nTok
     nToken = NuiFindWindow(oPC, "craft_item_nui");
     if(nToken) NuiDestroy(oPC, nToken);
 }
-void ClearItemInCraftingWindow(object oPC, object oItem, object oTarget, int nToken)
+void ClearItemInCraftingWindow(object oPC, object oItem, int nToken)
 {
     NuiSetBind(oPC, nToken, "btn_save_event", JsonBool(FALSE));
     NuiSetBind(oPC, nToken, "item_combo_event", JsonBool(TRUE));
@@ -1446,13 +1509,19 @@ void ClearItemInCraftingWindow(object oPC, object oItem, object oTarget, int nTo
     NuiSetBind(oPC, nToken, "btn_wardrobe_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cancel_label", JsonString("Exit"));
     NuiSetBind(oPC, nToken, "btn_cancel_tooltip", JsonString("  Exit the crafting menu"));
+    if(ai_GetIsWeapon(oItem))
+    {
+        SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
+        NuiSetBind(oPC, nToken, "model_combo_selected", JsonInt(0));
+        DelayCommand(1.0, DeleteLocalInt(oPC, AI_NO_NUI_SAVE));
+    }
 }
 void SaveCraftedItem(object oPC, object oTarget, int nToken)
 {
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
     object oItem = GetSelectedItem(oTarget, nItemSelected);
-    ClearItemInCraftingWindow(oPC, oItem, oTarget, nToken);
+    ClearItemInCraftingWindow(oPC, oItem, nToken);
     DestroyObject(GetLocalObject(oPC, CRAFT_ORIGINAL_ITEM));
     DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
 }
@@ -1552,11 +1621,11 @@ int GetHasPartColor(object oItem, int nPart, string sSide)
     //SendMessageToPC(GetFirstPC(), "sPartName: " + sPartName + " nPartColor: " + IntToString(nPartColor));
     return nPartColor;
 }
-void SetModelNumberText(object oPC, int nToken)
+void SetModelNumberText(object oPC, object oTarget, int nToken)
 {
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     int nItem = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
-    object oItem = GetSelectedItem(oPC, nItem);
+    object oItem = GetSelectedItem(oTarget, nItem);
     int nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
     string sModelTop, sModelMiddle, sModelBottom;
     // Model Group
@@ -1701,6 +1770,7 @@ void SetModelNumberText(object oPC, int nToken)
         NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
         NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
+        NuiSetBindWatch(oPC, nToken, "txt_color_l", TRUE);
         int nSelectedRight, nSelectedAll, nSelectedLeft;
         int nModelSelected = GetArmorModelSelected(oPC);
         int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
@@ -1719,8 +1789,8 @@ void SetModelNumberText(object oPC, int nToken)
             if(!nSelectedRight && !nSelectedAll)
             {
                 nSelectedAll = TRUE;
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
-                JsonObjectSetInplace(jCraft, CRAFT_LEFT_PART_COLOR, JsonBool(FALSE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_LEFT_PART_COLOR, JsonBool(FALSE));
             }
             NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelectedRight));
             NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
@@ -1752,7 +1822,7 @@ void SetModelNumberText(object oPC, int nToken)
             if(!nSelectedRight && !nSelectedAll && !nSelectedLeft)
             {
                 nSelectedAll = TRUE;
-                JsonObjectSetInplace(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
+                jCraft = JsonObjectSet(jCraft, CRAFT_ALL_COLOR, JsonBool(TRUE));
             }
             NuiSetBind(oPC, nToken, "btn_right_part_color", JsonBool(nSelectedRight));
             NuiSetBind(oPC, nToken, "btn_right_part_color_event", JsonBool(TRUE));
@@ -1775,6 +1845,7 @@ void SetModelNumberText(object oPC, int nToken)
             nSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
             SetMaterialButtons(oPC, nToken, nSelected);
         }
+        SetLocalJson(oPC, CRAFT_JSON, jCraft);
     }
     // Cloaks and Helmets.
     else
@@ -1815,64 +1886,55 @@ void SetMaterialButtons(object oPC, int nToken, int nMaterial)
 void CreateItemGUIPanel(object oPC, object oItem)
 {
     // Row 1 (Name)************************************************************* 73
-    json jRow = JsonArray();
-    CreateLabel(jRow, "Name:", "lbl_name_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateTextEditBox (jRow, "name_placeholder", "txt_item_name", 60, FALSE, 325.0f, 20.0f);
+    json jRow = CreateLabel(JsonArray(), "Name:", "lbl_name_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateTextEditBox (jRow, "name_placeholder", "txt_item_name", 60, FALSE, 325.0f, 20.0f);
     // Add row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Tag)************************************************************** 101
-    jRow = JsonArray();
-    CreateLabel(jRow, "Tag:", "lbl_tag_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateTextEditBox(jRow, "name_placeholder", "txt_item_tag", 60, FALSE, 325.0f, 20.0f);
+    jRow = CreateLabel(JsonArray(), "Tag:", "lbl_tag_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateTextEditBox(jRow, "name_placeholder", "txt_item_tag", 60, FALSE, 325.0f, 20.0f);
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 2 (ResRef)*********************************************************** 129
-    jRow = JsonArray();
-    CreateLabel(jRow, "ResRef:", "lbl_resref_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateTextEditBox(jRow, "name_placeholder", "txt_item_resref", 60, FALSE, 325.0f, 20.0f);
+    jRow = CreateLabel(JsonArray(), "ResRef:", "lbl_resref_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateTextEditBox(jRow, "name_placeholder", "txt_item_resref", 60, FALSE, 325.0f, 20.0f);
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 (Base Item/Weight)************************************************* 157
-    jRow = JsonArray();
-    CreateLabel(jRow, "Base Item: ", "lbl_baseitem_title", 75.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "", "lbl_baseitem", 145.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "Weight: ", "lbl_weight_title", 55.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "", "lbl_weight", 65.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(JsonArray(), "Base Item: ", "lbl_baseitem_title", 75.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "", "lbl_baseitem", 145.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "Weight: ", "lbl_weight_title", 55.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "", "lbl_weight", 65.0f, 20.0f, NUI_HALIGN_LEFT);
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 (Gold Value)******************************************************* 185
-    jRow = JsonArray();
-    CreateLabel(jRow, "Gold Value: ", "lbl_gold_title", 85.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "", "lbl_gold_value", 135.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "Minimum Level: ", "lbl_min_lvl_title", 110.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateLabel(jRow, "", "lbl_min_lvl", 20.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(JsonArray(), "Gold Value: ", "lbl_gold_title", 85.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "", "lbl_gold_value", 135.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "Minimum Level: ", "lbl_min_lvl_title", 110.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateLabel(jRow, "", "lbl_min_lvl", 20.0f, 20.0f, NUI_HALIGN_LEFT);
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5 (Plot/Stolen)****************************************************** 213
-    jRow = JsonArray();
-    CreateCheckBox(jRow, " Plot", "chbx_plot", 110.0, 20.0f, "chbx_plot_tooltip");
-    CreateCheckBox(jRow, " Stolen", "chbx_stolen", 110.0, 20.0f, "chbx_stolen_tooltip");
-    CreateCheckBox(jRow, " Cursed", "chbx_cursed", 110.0, 20.0f, "chbx_cursed_tooltip");
+    jRow = CreateCheckBox(JsonArray(), " Plot", "chbx_plot", 110.0, 20.0f, "chbx_plot_tooltip");
+    jRow = CreateCheckBox(jRow, " Stolen", "chbx_stolen", 110.0, 20.0f, "chbx_stolen_tooltip");
+    jRow = CreateCheckBox(jRow, " Cursed", "chbx_cursed", 110.0, 20.0f, "chbx_cursed_tooltip");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 6 (Identified/Droppable)********************************************* 269
-    jRow = JsonArray();
-    CreateCheckBox(jRow, " Identified", "chbx_identified", 110.0, 25.0f, "chbx_identified_tooltip");
-    CreateCheckBox(jRow, " Droppable", "chbx_droppable", 110.0, 25.0f, "chbx_droppable_tooltip");
-    CreateButton(jRow, "Save as UTI", "btn_save_uti", 110.0, 25.0, -1.0, "btn_save_uti_tooltip");
+    jRow = CreateCheckBox(JsonArray(), " Identified", "chbx_identified", 110.0, 25.0f, "chbx_identified_tooltip");
+    jRow = CreateCheckBox(jRow, " Droppable", "chbx_droppable", 110.0, 25.0f, "chbx_droppable_tooltip");
+    jRow = CreateButton(jRow, "Save as UTI", "btn_save_uti", 110.0, 25.0, -1.0, "btn_save_uti_tooltip");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 9 (Stack/Variables/Destroy/Charges)********************************** 307
-    jRow = JsonArray();
-    CreateTextEditBox(jRow, "name_placeholder", "txt_stack", 4, FALSE, 35.0f, 25.0f);
-    CreateLabel(jRow, " Stack", "lbl_stack_title", 72.0f, 20.0f, NUI_HALIGN_LEFT);
-    CreateTextEditBox(jRow, "name_placeholder", "txt_charges", 4, FALSE, 40.0f, 25.0f);
-    CreateLabel(jRow, " Charges", "lbl_charges_title", 68.0f, 25.0f, NUI_HALIGN_LEFT);
-    CreateButtonSelect(jRow, "Destroy", "btn_destroy", 110.0, 25.0, "btn_destroy_tooltip");
+    jRow = CreateTextEditBox(JsonArray(), "name_placeholder", "txt_stack", 4, FALSE, 35.0f, 25.0f);
+    jRow = CreateLabel(jRow, " Stack", "lbl_stack_title", 72.0f, 20.0f, NUI_HALIGN_LEFT);
+    jRow = CreateTextEditBox(jRow, "name_placeholder", "txt_charges", 4, FALSE, 40.0f, 25.0f);
+    jRow = CreateLabel(jRow, " Charges", "lbl_charges_title", 68.0f, 25.0f, NUI_HALIGN_LEFT);
+    jRow = CreateButtonSelect(jRow, "Destroy", "btn_destroy", 110.0, 25.0, "btn_destroy_tooltip");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 11 (Description)***************************************************** 558
-    jRow = JsonArray();
-    CreateTextEditBox(jRow, "desc_placeholder", "txt_desc", 1000, TRUE, 375.0, 243.0, "txt_desc_tooltip");
+    jRow = CreateTextEditBox(JsonArray(), "desc_placeholder", "txt_desc", 1000, TRUE, 375.0, 243.0, "txt_desc_tooltip");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 566.0;
@@ -1894,8 +1956,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     if(sBaseItemDesc == "Bad Strref") sBaseItemDesc = "";
     if(sBaseItemDesc != "")
     {
-        jRow = JsonArray();
-        CreateTextBox(jRow, "txt_base_desc", 375.0, 150.0, FALSE, NUI_SCROLLBARS_NONE, "txt_base_desc_tooltip");
+        jRow = CreateTextBox(JsonArray(), "txt_base_desc", 375.0, 150.0, FALSE, NUI_SCROLLBARS_NONE, "txt_base_desc_tooltip");
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 158.0;
@@ -2088,182 +2149,5 @@ void CraftItemInfoEvents(object oPC, int nToken)
 }
 /*void CreateDresserGUIPanel(object oPC, object oTarget)
 {
-    // Set window to not save until it has been created.
-    SetLocalInt (oPC, "0_No_Win_Save", TRUE);
-    DelayCommand (0.5f, DeleteLocalInt (oPC, "0_No_Win_Save"));
-    // Group 1 (Portrait)******************************************************* 151 / 73
-    // Group 1 Row 1 *********************************************************** 350 / 91
-    json jRow = JsonArray();
-    json jGroupRow = JsonArray();
-    json jGroupCol = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateTextEditBox (jGroupRow, "name_placeholder", "char_name", 15, FALSE, 140.0, 20.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add the group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 1 Row 1 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateTextEditBox (jGroupRow, "port_placeholder", "port_name", 15, FALSE, 140.0, 20.0, "port_tooltip");
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add the group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 1 Row 2 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateLabel(jGroupRow, "", "port_id", 140.0, 10.0f);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add the group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 1 Row 3 *********************************************************** 350 / 259
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateImage(jGroupRow, "", "port_resref", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 140.0f, 160.0f);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add the group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 1 Row 4 *********************************************************** 350 / 292
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton (jGroupRow, "<", "btn_portrait_prev", 42.0f, 25.0f);
-    CreateButton (jGroupRow, "Set", "btn_portrait_ok", 44.0f, 25.0f);
-    CreateButton (jGroupRow, ">", "btn_portrait_next", 42.0f, 25.0f);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
-    // Group 2 (Stats)********************************************************** 151 / 73
-    // Group 2 Row 1 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    jGroupCol = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateLabel(jGroupRow, "", "lbl_stats", 150.0, 15.0, 0, 0, 0.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 2 Row 2 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    json jClasses = CreateOptionsClasses(oHenchman);
-    CreateOptions(jGroupRow, "opt_classes", NUI_DIRECTION_VERTICAL, jClasses, 150.0, 144.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 2 Row 3 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateButton (jGroupRow, "Level Up", "btn_level_up", 150.0f, 25.0f);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 2 Row 4 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    CreateCombo(jGroupRow, jArrayInsertClasses(), "cmb_class", 150.0, 25.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    // Group 2 Row 5 *********************************************************** 350 / 91
-    jGroupRow = JsonArray();
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    int nClassOption = GetLocalInt(oHenchman, "CLASS_OPTION_POSITION");
-    int nClass = GetClassByPosition(nClassOption + 1, oHenchman);
-    int bNoClass = FALSE;
-    if(nClass == CLASS_TYPE_INVALID)
-    {
-        nClass = GetLocalInt(oHenchman, "CLASS_SELECTED_" + IntToString(nClassOption + 1));
-        bNoClass = TRUE;
-    }
-    string sClass = IntToString(nClass);
-    CreateCombo(jGroupRow, jArrayInsertPackages(sClass), "cmb_package", 150.0, 25.0);
-    JsonArrayInsertInplace(jGroupRow, NuiSpacer());
-    // Add group row to the group column.
-    JsonArrayInsertInplace(jGroupCol, NuiRow(jGroupRow));
-    JsonArrayInsertInplace(jRow, NuiGroup(NuiCol(jGroupCol)));
-    // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
-    // Row 5 (text edit box)**************************************************** 350 / 518
-    jRow = JsonArray();
-    CreateTextEditBox (jRow, "desc_placeholder", "desc_value", 1000, TRUE, 350.0, 150.0, "desc_tooltip");
-    // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow (jRow));
-    // Row 6 (button)*********************************************************** 350/ 546
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateButton (jRow, "Save Description", "btn_desc_save", 150.0f, 20.0f);
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    // Add row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow (jRow));
-    // Set the Layout of the window.
-    json jLayout = NuiCol (jCol);
-    // Get the window location to restore it from the database.
-    CheckHenchmanDataAndInitialize(oPC, "0");
-    json jData = GetHenchmanDbJson(oPC, "henchman", "0");
-    json jGeometry = JsonObjectGet(jData, "henchman_edit_nui");
-    float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
-    float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
-    if(fX == 0.0 && fY == 0.0)
-    {
-        fX = -1.0;
-        fY = -1.0;
-    }
-    string sName = GetName(oHenchman);
-    if(GetStringRight(sName, 1) == "s") sName = sName + "'";
-    else sName = sName + "'s";
-    int nToken = SetWindow (oPC, jLayout, "henchman_edit_nui", sName + " Character editor",
-                            fX, fY, 380.0, 555.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
-    // Set all binds, events, and watches.
-    int nID = GetPortraitId (oPC);
-    NuiSetUserData(oPC, nToken, JsonInt(nID));
-    string sResRef = GetPortraitResRef(oHenchman);
-    string sID;
-    if (nID == 65535) sID = "Custom Portrait";
-    else sID = IntToString (nID);
-    NuiSetBind(oPC, nToken, "char_name_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "char_name", JsonString(GetName(oHenchman)));
-    NuiSetBindWatch(oPC, nToken, "char_name", TRUE);
-    NuiSetBind(oPC, nToken, "port_name_event", JsonBool(TRUE));
-    NuiSetBindWatch(oPC, nToken, "port_name", TRUE);
-    NuiSetBind(oPC, nToken, "port_name", JsonString(sResRef));
-    NuiSetBind(oPC, nToken, "port_id", JsonString(sID));
-    NuiSetBind(oPC, nToken, "port_resref_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "port_resref_image", JsonString(sResRef + "l"));
-    NuiSetBind(oPC, nToken, "port_tooltip", JsonString ("  You may also type the portrait file name."));
-    // Set buttons active.
-    NuiSetBind(oPC, nToken, "btn_portrait_prev_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_portrait_next_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_desc_save_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_portrait_ok_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "desc_tooltip", JsonString("  You can use color codes!"));
-    string sDescription = GetDescription(oHenchman);
-    NuiSetBind(oPC, nToken, "desc_value_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "desc_value", JsonString (sDescription));
-    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
-    // Setup the henchman window.
-    string sStats = GetAlignText(oHenchman) + " ";
-    if(GetGender(oHenchman) == GENDER_MALE) sStats += "Male ";
-    else sStats += "Female ";
-    sStats += GetStringByStrRef (StringToInt (Get2DAString ("racialtypes", "Name", GetRacialType (oHenchman))));
-    NuiSetBind(oPC, nToken, "lbl_stats_label", JsonString(sStats));
-    json jHenchman = ObjectToJson(oHenchman);
-    json jLvlStatList = JsonObjectGet(jHenchman, "LvlStatList");
-    int bLevelUp = JsonGetType(jLvlStatList) != JSON_TYPE_NULL;
-    NuiSetBind(oPC, nToken, "opt_classes_event", JsonBool(bLevelUp));
-    NuiSetBind(oPC, nToken, "opt_classes_value", JsonInt(nClassOption));
-    NuiSetBind(oPC, nToken, "btn_level_up_event", JsonBool(bLevelUp));
-    NuiSetBind(oPC, nToken, "cmb_class_event", JsonBool(bNoClass));
-    NuiSetBindWatch(oPC, nToken, "cmb_class_selected", bNoClass);
-    int nSelection = GetSelectionByClass2DA(nClass);
-    NuiSetBind(oPC, nToken, "cmb_class_selected", JsonInt(nSelection));
-    NuiSetBind(oPC, nToken, "cmb_package_event", JsonBool(bNoClass));
-    NuiSetBindWatch(oPC, nToken, "cmb_package_selected", bNoClass);
-    int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1));
-    if(nPackage == 0)
-    {
-        if(GetClassByPosition(1, oHenchman) == nClass) nPackage = GetCreatureStartingPackage(oHenchman);
-        else nPackage = GetPackageBySelection2DA(sClass, 0);
-        SetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1), nPackage);
-    }
-    NuiSetBind(oPC, nToken, "cmb_package_selected", JsonInt(GetSelectionByPackage2DA(sClass, nPackage)));
 }
 

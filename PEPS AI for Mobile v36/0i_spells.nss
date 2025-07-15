@@ -84,6 +84,8 @@ int ai_IsAreaOfEffectSpell(int nSpell);
 // Returns 1(TRUE) if oAssociate is a spellcaster.
 // Rturns 2(TRUE) if oAssociate is a memorizing spellcaster.
 int ai_GetIsSpellCaster(object oAssociate);
+// Returns TRUE if oAssociate is restricted to a Spellbook. Has Known spells.
+int ai_GetIsSpellBookRestrictedCaster(object oAssociate);
 // Returns TRUE if oCreature is immune to nSpells effects.
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell);
 // Returns the ranged of nSpell from the spells.2da(Column "Range").
@@ -95,6 +97,8 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature);
 // Remove nEffectType of Type specified on oCreature;
 // nEffectType uses the constants EFFECT_TYPE_*
 void ai_RemoveASpecificEffect(object oCreature, int nEffectType);
+// Remove sTag effects specified on oCreature;
+void ai_RemoveTaggedEffects(object oCreature, string sTag);
 // Returns TRUE if oCreature has nEffectType.
 // nEffectType uses the constants EFFECT_TYPE_*
 int ai_GetHasEffectType(object oCreature, int nEffectType);
@@ -365,6 +369,17 @@ int ai_GetIsSpellCaster(object oAssociate)
     }
     return nSpellCaster;
 }
+int ai_GetIsSpellBookRestrictedCaster(object oAssociate)
+{
+    int nIndex, nSpellCaster, nClass;
+    for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
+    {
+        nClass = GetClassByPosition(nIndex, oAssociate);
+        if(nClass == CLASS_TYPE_INVALID) return FALSE;
+        if(Get2DAString("classes", "SpellbookRestricted", nClass) == "1") return TRUE;
+    }
+    return FALSE;
+}
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
@@ -502,6 +517,21 @@ void ai_RemoveASpecificEffect(object oCreature, int nEffectType)
    while(GetIsEffectValid(eEffect))
    {
       if(GetEffectType(eEffect) == nEffectType)
+      {
+         //Remove effect.
+         RemoveEffect(oCreature, eEffect);
+         eEffect = GetFirstEffect(oCreature);
+      }
+      else  eEffect = GetNextEffect(oCreature);
+   }
+}
+void ai_RemoveTaggedEffects(object oCreature, string sTag)
+{
+   effect eEffect = GetFirstEffect(oCreature);
+   //Search for the effect.
+   while(GetIsEffectValid(eEffect))
+   {
+      if(GetEffectTag(eEffect) == sTag)
       {
          //Remove effect.
          RemoveEffect(oCreature, eEffect);

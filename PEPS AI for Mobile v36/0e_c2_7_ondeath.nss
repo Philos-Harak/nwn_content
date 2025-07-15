@@ -15,13 +15,14 @@ void main()
     {
         object oAssociate;
         int nIndex;
-        for(nIndex = 1; nIndex < 5; nIndex++)
+        for(nIndex = 2; nIndex < 6; nIndex++)
         {
             oAssociate = GetAssociate(nIndex, oCreature);
             if(oAssociate != OBJECT_INVALID)
             {
-                SetIsDestroyable(FALSE, FALSE, FALSE);
+                AssignCommand(oAssociate, SetIsDestroyable(FALSE, FALSE, FALSE));
                 DelayCommand(0.1, ChangeToStandardFaction(oAssociate, STANDARD_FACTION_HOSTILE));
+                DelayCommand(3.0, AssignCommand(oAssociate, SetIsDestroyable(TRUE, FALSE, FALSE)));
             }
         }
     }

@@ -42,20 +42,18 @@ void main()
     json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
     if(JsonGetType(JsonArrayGet(jMenuData, 0)) == JSON_TYPE_NULL)
     {
-        jMenuData = JsonArray();
-        JsonArrayInsertInplace(jMenuData, JsonString("list1"));                       // 0 Spell List #
-        JsonArrayInsertInplace(jMenuData, JsonFloat(0.0));                            // 1 Main menu X pos.
-        JsonArrayInsertInplace(jMenuData, JsonFloat(GetGUIHeightMiddle(oPC, 257.0))); // 2 Main menu Y pos.
-        JsonArrayInsertInplace(jMenuData, JsonBool(FALSE));                           // 3 Widget on/off
-        JsonArrayInsertInplace(jMenuData, JsonBool(FALSE));                           // 4 Widget Locked
-        JsonArrayInsertInplace(jMenuData, JsonFloat(10.0));                           // 5 Widget X pos.
-        JsonArrayInsertInplace(jMenuData, JsonFloat(10.0));                           // 6 Widget Y pos.
+        jMenuData = JsonArrayInsert(JsonArray(), JsonString("list1"));                     // 0 Spell List #
+        jMenuData = JsonArrayInsert(jMenuData, JsonFloat(0.0));                            // 1 Main menu X pos.
+        jMenuData = JsonArrayInsert(jMenuData, JsonFloat(GetGUIHeightMiddle(oPC, 257.0))); // 2 Main menu Y pos.
+        jMenuData = JsonArrayInsert(jMenuData, JsonBool(FALSE));                           // 3 Widget on/off
+        jMenuData = JsonArrayInsert(jMenuData, JsonBool(FALSE));                           // 4 Widget Locked
+        jMenuData = JsonArrayInsert(jMenuData, JsonFloat(10.0));                           // 5 Widget X pos.
+        jMenuData = JsonArrayInsert(jMenuData, JsonFloat(10.0));                           // 6 Widget Y pos.
         SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
     }
     if(StartingUp(oPC)) return;
     // Row 1 (Buttons) ********************************************************* 83
-    json jRow = JsonArray();
-    CreateButtonSelect(jRow, "Save", "btn_save", 60.0f, 30.0f, "btn_save_tooltip");
+    json jRow = CreateButtonSelect(JsonArray(), "Save", "btn_save", 60.0f, 30.0f, "btn_save_tooltip");
     CreateButton(jRow, "Clear", "btn_clear", 60.0f, 30.0f, -1.0, "btn_clear_tooltip");
     CreateButton(jRow, "Buff", "btn_buff", 60.0f, 30.0f, -1.0, "btn_buff_tooltip");
     CreateButtonSelect(jRow, "List 1", "btn_list1", 60.0f, 30.0f);
@@ -63,20 +61,18 @@ void main()
     CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 30.0f);
     CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 30.0f);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Buttons) ********************************************************* 121
-    jRow = JsonArray();
-    JsonArrayInsertInplace(jRow, NuiSpacer());
-    CreateCheckBox(jRow, "Buff Widget", "buff_widget", 110.0, 30.0f, "buff_widget_tooltip");
-    CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 110.0, 30.0f, "lock_buff_widget_tooltip");
+    jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateCheckBox(jRow, "Buff Widget", "buff_widget", 110.0, 30.0f, "buff_widget_tooltip");
+    jRow = CreateCheckBox(jRow, "Lock Widget", "lock_buff_widget", 110.0, 30.0f, "lock_buff_widget_tooltip");
     if(!AI_SERVER)
     {
-        CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 30.0f, "chbx_no_monster_check_tooltip");
+        jRow = CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 30.0f, "chbx_no_monster_check_tooltip");
     }
-    JsonArrayInsertInplace(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 (List of Spells) ************************************************** 164
     // Create the button template for the List.
     jRow = JsonArray();
@@ -92,12 +88,12 @@ void main()
         if(JsonGetType(jSpell) != JSON_TYPE_NULL)
         {
             sIndex = IntToString(nIndex++);
-            CreateButtonImage(jRow, "", "btn_spell_" + sIndex, 35.0, 35.0, 0.0, "btn_spell_" + sIndex + "_tooltip");
+            jRow = CreateButtonImage(jRow, "", "btn_spell_" + sIndex, 35.0, 35.0, 0.0, "btn_spell_" + sIndex + "_tooltip");
         }
         nCntr++;
     }
     // Add the row to the column.
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Get the window location to restore it from the database.
     float fWidth = IntToFloat(nIndex) * 39;
     if(fWidth < 470.0) fWidth = 470.0;
@@ -202,7 +198,7 @@ int StartingUp(object oPC)
     {
         json jPlugin = JsonArray();
         jPlugin = JsonArrayInsert(jPlugin, JsonString("pi_buffing"));
-        jPlugin = JsonArrayInsert(jPlugin, JsonBool(FALSE));
+        jPlugin = JsonArrayInsert(jPlugin, JsonInt(FALSE));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("Quick Buff"));
         jPlugin = JsonArrayInsert(jPlugin, JsonString("dm_appear"));
         json jPlugins = GetLocalJson(oPC, AI_JSON_PLUGINS);
@@ -300,13 +296,12 @@ void PopupWidgetBuffGUIPanel(object oPC)
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
     json jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_level1", "btn_one", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level2", "btn_two", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level3", "btn_three", 30.0f, 30.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level4", "btn_four", 30.0f, 30.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
+    CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
     // Add the row to the column.
-    json jCol = JsonArray();
-    JsonArrayInsertInplace(jCol, NuiRow(jRow));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     json jWidget = GetBuffDatabaseJson(oPC, "spells", "menudata");
     int bAIBuffWidgetLock = JsonGetInt(JsonArrayGet(jWidget, 4));
     // Get the window location to restore it from the database.

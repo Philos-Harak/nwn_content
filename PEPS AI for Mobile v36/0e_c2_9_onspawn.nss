@@ -389,10 +389,6 @@ void main()
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
     SetLocalString(oCreature, "AI_ON_DEATH", sScript);
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_c2_7_ondeath");
-    // Do changes before we adjust anything on the creature via Json!
-    // If you don't use perception change, permanent corpses, permanent summons
-    // you may remove the next line 395.
-    oCreature = ai_ChangeMonster(oCreature, oModule);
     ai_SetListeningPatterns(oCreature);
     ai_SetCreatureAIScript(oCreature);
     ai_SetNormalAppearance(oCreature);
@@ -431,6 +427,10 @@ void main()
             nMonsterIncrease --;
         }
     }
+    // Do changes after we adjust anything on the creature!
+    // If you don't use perception change, permanent corpses, permanent summons
+    // you may remove the next line 395.
+    ai_CopyMonster(oCreature, oModule);
 //****************************  ADDED AI CODE  *********************************
 }
 
