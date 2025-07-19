@@ -1,16 +1,17 @@
-# nwn_content
-This is my repository for Neverwinter Nights content.
+# This is my repository for Neverwinter Nights content.
+
+Philos Player Enhancment Systems (PEPS)
 
 Folders descriptions:
 
-Philos AI for Associates: This is only the Associates AI files, place in override folder to use.
+PEPS override v36: This is the override version of PEPS for mobile v36.
 
-Philos AI for Monsters: This is only the monster AI files, place in override folder to use.
+PEPS override v37: This is the override version of PEPS for pc v37.
 
-Philos Enhancing Player System: This is the base files to use the widgets for the player and party systems. 
-Place in the override folder to use.
+PEPS PDF files: These are the manuals for using PEPS in pdf format.
 
-Philos PEPS AI WIP: This is the work in progress and is the full module folder that I use to build and work on the files.
-  ai_spells.2da has also been added and needs to be placed in the override folder.
+PEPS WIP for Mobile v36: This is my work in progress full module that I use to build and work on the files for the mobile version 36.
 
-PEPS AI for Mobile v36: Compiled for NWN version 36-13 that works on Mobile. Also adjusted some menus to work better for Mobile devices.
+PEPS WIP for PC v37: This is my work in progress full module that I use to build and work on the files for the pc version 37.
+
+PEPS WIP override files: These files must be placed in the override folder to work with any of the WIP folders.
