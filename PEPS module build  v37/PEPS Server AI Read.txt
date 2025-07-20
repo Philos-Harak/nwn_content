@@ -1,0 +1,384 @@
+Philos' Enhancing Player System and AI for Servers version 07.10.25
+
+This is the read me document for PEPS AI for Servers. It goes over how to install and use PEPS AI for builders making a module or persistant world that wants to add PEPS.
+
+********** Acknowledgements **********
+Bioware - We build upon the shoulders of giants!
+Beemdog - I never would have thought it could get better, but it did!
+clippy, Daz, Jasperre, Liareth, niv, shadguy, Soren, Squatting Monk, tinygiant, virusman - Keep up the great work!
+Special thanks to Jasperre - This project would not be as good as it is without the work on the spell scripts and other AI type improvements within the core game. 
+
+Finally thank you to those who have added to this project.
+Demoix - For testing and putting up with the issues and giving detailed feedback! 
+Dunahan - For input and feedback.
+MINOS - Testing and feedback on issues and features.
+Cypher - Testing and feedback on features.
+*********************************
+********** Description **********
+*********************************
+This system will add a whole new suite of menus and options for players and dungeon masters as well as an updated AI for monsters and associates.
+This zip holds the text (nss) version of the files (folder: module) with the 2da files needed to use as well as an override version if you don't want to add it to your module.
+
+******************************
+********** Features **********
+******************************
+There are too many options to list here. 
+Please see the Philos AI for Servers.pdf file for how to use the DM systems and the Philos AI for players.pdf to see how all the options work for players.
+
+**********************************
+********** Installation **********
+**********************************
+* Must be running version v89.8193.37-15 of the game.
+
+* ai_spells.2da should be in a hak or the override folder of the server. If the scripts cannot find this 2da THEY WILL NOT WORK. 
+     ai_spells.2da allows the talent system to categorize a creatures spells so it can cast effectively. 
+     It is also used to decide which creatures should be targeted based on immunities, saves, and resistances. 
+     It also defines how a monster can prebuff. VERY IMPORTANT for the AI!
+     If you have new spells or abilities these can be added to the ai_spells.2da just like any spell is added to the spells.2da 
+         See Philos AI for Servers.pdf for instructions on how to update.
+* Depending on your setup there are three ways to install Philos' AI to work with your server.
+
+********** Method #1 **********
+This method requires that you are using the default Bioware AI scripts and have not changed anything in those AI scripts.
+  How to install:
+  a) Place all of the files in the module folder of this zip into your server's module folder.
+  b) If you have not changed any of the default AI scripts this should NOT replace any files when adding my files to the module.
+      If some files require to overwrite when being copied then you should use method #2.
+  f) Place the prc_peps.hak into the hak order of the module.
+  d) Either place 0e_onclientload in the OnClientEnter event or add the code from this script to your OnClientEnter script.
+  e) Compile your module and test.
+
+********** Method #2 **********
+This method is used if you are using either a downloaded AI or have changed some or all of the AI scripts yourself.
+  How to install:
+  a) Rename any scripts you have changed to make sure you have backups! Always be prepaired to go back if something doesn't work like you want it to.
+  b) Place all of the files in the module folder of this zip into your server's module folder.
+  c) If you renamed all of your files you should NOT replace any files when adding my files to the module.
+  d) If you changed the original files and your monsters are using the original AI script names then you can compile your module and test.
+  e) If you changed the names of your monsters event files you can do the following:
+      1) Rename the new creature event scripts to match the names of the event scripts you changed on your monsters. 
+      This is easier than changing the names of the events on each monster in your module!
+      See "Renaming Monster Event Scripts" below.
+  f) Place the prc_peps.hak into the hak order of the module.
+  g) Either place 0e_onclientload in the OnClientEnter event or add the code from this script to your OnClientEnter script.
+  h) Compile your module and test.
+
+********** Method #3 **********
+This method can be used if you are using the default Bioware AI scripts and have not changed anything in those AI scripts and you do not want to add these files to your module.
+  * This is a good way to test the AI and systems to see if you want to add them to your server.
+  * This is a clean way to not add more script files to your server and you are fine with the default settings.
+  How to Install:
+  a) Place all of the files in the override folder of this zip into your servers override folder.
+  b) Load your server and test.
+
+****************************************************
+********** Renaming Monster Event Scripts **********
+****************************************************
+For example you are using 0e_c2_onblocked then you would change my script nw_c2_defaulte to 0e_c2_onblocked.
+Repeat for each of the following Creature events.
+  OnBlocked event: nw_c2_defaulte 
+  OnCombatRoundEnd: nw_c2_default3
+  OnConversation: nw_c2_default4
+  OnDamaged: nw_c2_default6
+  OnDeath: Not overwritten by Philos' AI. 
+    I do change the script used but it calls the original script that was set on the monster.
+    This way you can define special effects when a creature dies without having to worry about the AI.
+  OnDisturbed: nw_c2_default8
+  OnHeartbeat: nw_c2_default1
+  OnPerception: nw_c2_default2
+  OnPhysicalAttacked: nw_c2_default5
+  OnRested: Not overwritten by Philos' AI.
+  OnSpawn: Not overwritten by Philos AI. 
+    I leave this open so the builders can do special effects without having to worry about the AI.
+    There is an example script if you would prefer to setup here instead of in the heartbeat.
+  OnSpellCastAt: nw_c2_defaultb
+  OnUserDefined: Not overwritten by Philos AI. 
+
+****************************************************
+********** Renaming Associate Event Scripts **********
+****************************************************
+For example you are using 0e_ch_onblocked then you would change my script nw_ch_ace to 0e_ch_onblocked.
+Repeat for each of the following Creature events.
+  OnBlocked event: nw_ch_ace 
+  OnCombatRoundEnd: nw_ch_ac3
+  OnConversation: nw_ch_ac4
+  OnDamaged: nw_ch_ac6
+  OnDeath: Not overwritten by Philos' AI. 
+    I do change the script used but it calls the original script that was set on the monster.
+    This way you can define special effects when a creature dies without having to worry about the AI.
+  OnDisturbed: nw_ch_ac8
+  OnHeartbeat: nw_ch_ac1
+  OnPerception: nw_ch_ac2
+  OnPhysicalAttacked: nw_ch_ac5
+  OnRested: nw_ch_aca
+  OnSpawn: Not overwritten by Philos AI. 
+    I leave this open so the builders can do special effects without having to worry about the AI.
+    There is an example script if you would prefer to setup here instead of in the heartbeat.
+  OnSpellCastAt: nw_ch_acb
+  OnUserDefined: Not overwritten by Philos AI. 
+
+*****************************
+********** Changes **********
+*****************************
+---------- 7-20-25 ----------
+       CRAFTING PLUGIN
+* Recolored the color pointer from white to Red. Fixed issue with it pointing to wrong color sometimes.
+* Fixed issue where it defaults to Color All parts was not initialized properly. 
+	MENU CHANGES
+* Added subradial spells from feats to the Quick Widget.
+---------- 7-18-25 ----------
+	MENU CHANGES
+* Added Special Abilities of monsters/summons to the Quick widget. 
+* You can now have multiple summons widgets saved based on the summon created.
+* Improved Quick widget selections in quick widget menu.
+	AI CHANGES
+* Rework most class features to be checked after spells are checked. This gives spells more chances to be used.
+---------- 7-12-25 ----------
+	MENU CHANGES
+* Fixed bug where associates would not cast most spells.
+	RULES CHANGES
+* Fixed Rule Summoned associates to remain after masters death.
+	AI CHANGES
+* Fixed bug where enemy casters would summon multiple creatures when prebuffing.
+* When using AutoLoot and Loot Filters the associates follow the filters when picking up items from the ground. 
+---------- 7-10-25 ----------
+	MENU CHANGES
+* Added Ingore Floor Traps button. Now you can have your associates ignore the traps on the floor so they don't stop moving.
+	AI CHANGES
+* Added feedback if you or your henchman has a full inventory when using auto loot or action pickup items.
+---------- 7-01-25 ----------
+	GENERAL CHANGES
+* Reworked associates using healing kits in combat.
+	MENU CHANGES
+* Fixed Known spell menu error where no spells in level caused the henchman to break.
+* Known menu doesn't remove and create henchman if there are no known spell changes.
+	RULES CHANGES
+	AI CHANGES
+* Fixed an issue where ignoring associates was causing henchman to skip actions.
+* Cleaned up Dispel checks, to pick targets better.
+* Reworked targeting when looking for the best target. Now it does the following unless you pick a more specific script.
+  1) Ranged attacks select the weakest target.
+  2) Melee attacks where they are not in melee combat select the nearest target.
+  3) Melee attacks where they are in melee combat select the weakest target if we can move in combat else select nearest.
+  Move in combat = Spring Attack, High Tumble, or Mobility.
+---------- 6-29-25 ----------
+	MONSTER MODS
+* Added checks to make sure PRC and prc_add_spells.2da is loaded before activating mm_prc_spells monster mod.
+* Reworked the lookup system when modding monsters.
+        HENCHMAN PLUGIN
+* Fixed issue where plot npc's in Infinite Dungeons would not work. Now they can be used as henchman.
+* Fixed a few minor issues with the menus after implementing crash fixes. Max henchman, Xp options are back.
+	CRAFTING PLUGIN
+* Fixed menu issues after crash fixes messed up the menu.
+        COMPATIBILITY
+	GENERAL CHANGES
+	MENU CHANGES
+* Added button in the main menu to have the effect icon report goto the chat screen.
+* Added menu to change an associates known spells.
+* Added AI equiping weapons on/off button.
+* Added AI casting cure spells on/off button.
+---------- 6-27-25 ----------
+	GENERAL CHANGES
+* Non-Cohort henchman now use PRC events properly!
+  Fixes some weapon equiping issues with PRC.
+	MENU CHANGES
+* Fixed widget refresh button crashing system with new DelayCommand workaround.
+* Fixed issue where icon effect window stopped showing duration of effects.
+---------- 6-26-25 ----------
+	MENU CHANGES
+* Reworked menu code to reduce crashing on some systems.
+	AI CHANGES
+* When henchman should bash a door or chest it now checks to make sure they don't have a ranged weapon, then equips best weapon if they have one.
+  Creatures without weapons will now bash doors and chests.
+* When henchman start bashing an object it will attempt to turn on Power Attack/Flurry of blows if they have them. 
+  Usage will depend on chance to hit with them and if the damage is better using the feats.
+* Added 4 new henchman combat AI scripts. ai_a_atk_nearest, ai_a_atk_casters, ai_a_atk_warrior, ai_a_no_cmb_mode.
+---------- 6-07-25 ----------
+        COMPATIBILITY
+* Added compatibility for Swordflight Chapter One and Two.
+	GENERAL CHANGES
+* Fixed issue where you have henchman in hold mode and you try to open a locked door and they run to pick it.
+* Reworked Monster perception distance and Monster summon associates options to reduce chances of breaking quests.
+* Added Effect Icon information and ability to remove your effects.
+* Fixed Henchman to follow Voice commands, i.e. "v" then a selected voice command.
+	MENU CHANGES
+* Added ability to click on Party Bar portrait to open the PEPS Command Menu for your Associates.
+* Fix Memorize spells menu not showing the correct spell in Information Window when using the "?".
+* Fixed Search Mode and Detect Mode on the player to only effect the player and not other associates.
+	AI CHANGES
+* Fixed Henchman not healing the player when using the "Heal Me" radial menu option.
+---------- 5-11-25 ----------
+	HENCHMAN PLUGIN
+* You can now turn your familiars, animal companions, summons, and dominated creatures into henchman.
+* Added ability to do minor edits to henchman, change name, portrait, add up to 4 classes and levels.
+* Can now add classes and different packages to henchman.
+	MENU CHANGES
+* Bash locks mode has been changed to Bash mode. Now you can command associates to bash objects.
+* Fix for some spells that targeted self, but did not have personal as the range for use with the quick widget.
+* Fixed feats not working. After last rework I broke them!
+* Fixed feat action modes (Power Attack, Flurry of Blows, etc) to work as intended in the Quick widget.
+* Fixed feat attacks (stunning fist, Smite Evil, etc) to work as intended in the Quick widget.
+	RULES CHANGES
+* Added Time Stop spell as a restricted spell option.
+	AI CHANGES
+* When using Action button to have an associate use an object and bash mode is on they will bash it instead of using it.
+* Equiping weapons now checks sizes for larger and smaller weapons vs the creatures size.
+* Improve creatures reactions when in a dangerous AOE.
+* Reworked metamagic level when saving talents.
+* Reworking talent system's pruning to increase efficiency. 
+---------- 4-25-25 ----------
+	MENU CHANGES
+* Added Items powers to the quick use widget. Player can now make henchmen use items. 
+	AI CHANGES
+* Henchman flee being in a silence AOE only when they want to cast a spell.
+* Henchman will not use the last charge of an item that is equiped.
+---------- 4-22-25 ----------
+	GENERAL CHANGES
+* Removed OnDeath scripts from PRC and Infinite Dungeons run games. Fixes various issues.
+	MENU CHANGES
+* Fixed some Quick Widget feats like Wild shapes.
+* Added players widget updating when an associates widget updates.
+* Added button that allows the player to update the Quick use widget's state.
+* Added vertical widget option.
+	AI CHANGES
+* Reworked AI No Magic and No Magic Items buttons. Now No Magic is for spells only and No Magic Items is for magic items only.
+* Fixed issue with ai_a_ranged not defending themselves if they cannot or don't have a ranged weapon.
+* Fixed error where AI will get stuck on item with multiple castables spells and stop reacting in combat.
+* Sometimes an associate in hold mode would not return attacks. Now they do.
+* Adjusted when associate should heal to be as the menu states. Heal when at or below the healing percentage.
+* Action button now gives information if the associate cannot open a door or placeable due to it being trapped or locked.
+* Action button forces the associate to try disarming a trap on a locked door/placeable.
+* Action button used a second time on a trapped door they cannot disarm will force them to trip the trap.
+* Action button forces the associate to try open locks on a locked door/placeable.
+* Action button used a second time on a locked door will attempt to bash it down.
+* Fixed issue in high level games where calculating a high spell level would cause an underflow error.
+---------- 4-13-25 ----------
+	MOD_SET PLUGIN
+* Added ability to automatically pass time from nighttime to morning.
+	CRAFTING PLUGIN
+* Added item crafting plugin. Still in early stages! Be kind.
+	MENU CHANGES
+* Fixed issue with All of the magic switches. No Magic, Def Magic, Off Magic, No Magic items.
+	AI CHANGES
+* In combat the AI will use healing kits before most other healing options.
+* Reworded associates messages when attempting to open doors that require special keys.
+* Ignore Associates now works to ignore all associates to buff and heal.
+* Made changes to search, now they go to the location instead of the creature. 
+* Monsters can now use taunt.
+---------- 4-01-25 ----------
+	AUTOMATIC BUFFING PLUGIN
+* Domain spells are now cast when buffing.
+* Added Shield of Faith and Keen edge spell fixes into the package.
+* Added Don't Check monsters check box.
+	GENERAL CHANGES
+* Reworked monster summon companions code to be faster, cleaner, and reduce stuttering.
+* Reworked leave monster code to setup in OnDeath instead of OnSpawn to reduce stuttering. 
+* Reworked monster perception distance code to be faster, cleaner, and reduce stuttering. 
+	MENU CHANGES
+* Database issues in new games and menus not staying in one place!
+* Fixed issue where non-memorizing classes could not put spells in the quick use widget.
+* Added buttons to allow going from AI Menu to Command Menu and back. Main menu just overlays the other menus.
+* Copy associate settings now copies ALL settings to the associate. 0i_menu, 0e_nui
+	AI CHANGES
+* AI should stop casting Shadow Conjuration Darkness if Darkness spell is checked to be removed.
+* NPC's should stop casting invisibility when out of combat.
+---------- 3-14-25 ----------
+	MENU CHANGES
+* Adjusted the Quick Use Widget menu to only show one of each spell memorized.
+* Adjusted the Quick Use Widget to allow a right click to pull up the abilities information.
+* Fixed Subspells so they can be memorized and added to the Quick Use Widget.
+* Fixed Subfeats so they can be added to the Quick Use Widget.
+* Added Ghost Mode clipping through creatures to the Command menu/Widget.
+* Adjusted casting with the Quick Use Widget to work like the players casting.
+* Added pi_forcerest, pi_henchmen, pi_mod_set plugins to the load all button plugins button.
+* Combat tactics on the widget now shows different icons based on combat tactics selected.
+	RULES CHANGES
+	AI CHANGES
+* Rework of the combat state system and getting targets during combat, improving the checks and speed.
+* Combat tactic "peaceful" will no longer move the creature near the player that is in combat!
+* Combat tactic "peaceful" will no longer move ahead of the player searching for enemies.
+* Combat tactic "ranged" will now target other ranged attackers before the nearer targets.
+* Creature's in hold mode now stop attacking once all nearby enemies are gone.
+* Creature's in hold mode only attack enemies that attack them within melee range. 
+---------- 3-07-25 ----------
+	MENU CHANGES
+* Added ability to restrict AI from using Darkness and Dispel spells.
+* Cleaned up mode indicators to not make the action button flash or any of the mode buttons flash for the player. 
+* Combat tactics now saved for Animal Companions, Familiars, Summons, and Dominated creatures.
+	RULES CHANGES
+* Open door checkbox now limits monsters from opening any door in either wander mode or when searching.
+	AI CHANGES
+* Reworked wandering distance checks and animations including checks for 0 meters distance to just use animations.
+---------- 3-04-25 ----------
+	RULES CHANGES
+* Fixed Using the adding creatures rule creates an infinite amount of creatures. 
+	AI CHANGES
+* Reworked Associates combat perception ranges to be centered around their master.
+* Reworked Associates combat state to be centered around their master with new fixes.
+* Added adjustment to AI weapon equipping for basic PRC options.
+* Fixed AI to not actually open objects unless there is a trap on them. Fixes PC AI issues.
+* Reworked Widget tags for associates to now allow multiple associates with the same tag.
+* Fixed an issue where a creature will not equip an item due to the item not having a feat requirement.
+* Fixed an issue if you have a lot of henchman and a bunch of one buff spell it would not buff them all.
+* Fixed an issue if a creature has Weapon Finess they wouldn't get Bulls Strength on an auto buff. Now they will be the last to get the buff.
+* Adjustments to ranged, flanker, and other tactical AI's.
+---------- 2-24-25 ----------
+	CONVERSATIONS
+* Adjusted the conversation to fit the new use magic options.
+	GENERAL CHANGES
+* Remove Server messages from 0i_time include.
+* Remove Innate column from ai_spells.2da
+* Remove Range column from ai_spells.2da
+	QUICK BUFFING WIDGET
+* Fixed an issue where metamagic spells would not recast on sorcerers and bards.
+* Fixed an issue where subspells would not recast.
+	MENU CHANGES
+* Consolidated Magic on and Magic off button into one button.
+* Added widget to turn on/off item usage for associates.
+	RULES CHANGES
+	AI CHANGES
+* Renames the monster AI scripts to streamline integration for servers and PRC.
+* Fixed check for silenced spells looking in ai_spells.2da instead of spells.2da
+* Added flanking tactics to monsters... look out!
+* Fixed selecting a weapon from hanging if they have an unidentified weapon.
+* Reworked melee weapon selection to check the weapon bonuses and creatures feats for best weapon. 0i_item, 0i_combat
+* Fixed resting being interupted by henchman following the player.
+* Fixed Clarity spell not being checked when looking at an allies negative effects.
+* Changed associate targeting to be limited to the perception range set by the player instead of RANGE_PERCEPTION!
+* Changed associate targeting to be based from the player instead of the associate, should stop running off.
+---------- 2-18-25 ----------
+	AI CHANGES
+* ai_spells.2da fix for silent spell. Should now be used in combat!
+* Fix for Dispel spells. They should be cast in combat now.
+---------- 2-14-25 ----------
+	AI CHANGES
+* Fixed skills being skipped during combat due to not setting them to attacking.
+* If a skill is skipped due to combat recalculation we remove the skills cooldown.
+* Added check to Animal Empathy, Can the enemy see us? 
+* Added check for party healing to healing kits in combat.
+* Reworked flanker to hopefully be more responsive and not move away when they should attack.
+---------- 2-08-25 ----------
+	AI CHANGES
+* Added new tactical AI: ai_a_flanker. Flankers, will stay back until the enemy engages with someone else then they will move in to flank the enemy.
+---------- 2-05-25 ----------
+	RULES CHANGE
+* Add X monsters per spawned encounter monster now uses a float. To calculate how many extra monsters are spawned
+  the game keeps a total counter adding the X number to the counter. Once it is above 1 it will spawn an extra 
+  monster, keeping any remainder to be added to the counter. Thus .34 will spawn one extra monster per 3 encounter
+  monsters spawned. 1.5 will spawn 1 monsters per encounter monster and then 1 more on every other encounter monster!
+---------- 1-24-25 ---------- 
+	AI CHANGES
+* Added Open Door mode to allow AI to open any closed doors. Range can be adjusted.
+* Fixed issue where they would not equip a one-handed weapon without a shield.
+* Fixed issue where they would not equip a two-handed weapon.
+---------- 12-18-24 ---------- 
+	AI CHANGES
+* Turn Undead AI behaviour rewritten. Now does 2 checks and calculates like the spell to pick the best location.
+---------- 12/14/24 ---------- 
+	AI CHANGES
+* Fixed some issues where changing monster's stats caused the module to break.
+* Monster AI's responce to allies being attacked should be a little better.
+---------- 12/12/24 ---------- 
+	DEBUG PLUGIN
+* Added new option to allow a json dump of objects.
+

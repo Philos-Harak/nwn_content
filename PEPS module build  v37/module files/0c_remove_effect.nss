@@ -1,0 +1,14 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script:0c_remove_effect
+ Programmer:Philos
+////////////////////////////////////////////////////////////////////////////////
+ Actions Taken script that removes an effect from OBJECT_SELF.
+ Param: nEffect - the EFFECT_TYPE_* number to remove.
+*///////////////////////////////////////////////////////////////////////////////
+#include "0i_spells"
+void main ()
+{
+    int nEffect = StringToInt (GetScriptParam ("nEffectType"));
+    ai_RemoveASpecificEffect (OBJECT_SELF, nEffect);
+}
+

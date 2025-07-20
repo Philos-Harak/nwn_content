@@ -4,6 +4,8 @@ Philos Player Enhancment Systems (PEPS)
 
 Folders descriptions:
 
+PEPS module build v37: This is the nss files to put within a module and compile.
+
 PEPS override v36: This is the override version of PEPS for mobile v36.
 
 PEPS override v37: This is the override version of PEPS for pc v37.
