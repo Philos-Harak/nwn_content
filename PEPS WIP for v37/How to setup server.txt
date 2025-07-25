@@ -1,0 +1,28 @@
+This is a quick guide on how to setup a server to use the monster AI.
+
+
+The AI uses the following Event scripts with obvious names. 
+OnBlocked          - 0e_c2_e_blocked
+OnCombatRoundEnd   - 0e_c2_3_endround
+OnConversation     - 0e_c2_4_convers
+OnDamaged          - 0e_c2_6_damaged
+OnDeath            - AI doesn't use.
+OnDisturbed        - 0e_c2_8_disturbed
+OnHeartbeat        - 0e_c2_1_hb
+OnPerception       - 0e_c2_2_percept
+OnPhysicalAttacked - 0e_c2_5_phyatked
+OnRested           - AI doesn't use.
+OnSpawn            - 0e_c2_9_onspawn
+OnSpellCastAt      - 0e_c2_b_castat
+OnUserDefined      - AI doesn't use.
+
+* Make a backup before you start!
+* Renaming these scripts to the events of your monsters is the easiest way to add in the basic monster AI.
+* You can also test via the Development folder or add to your module.
+* Add the ai_spells.2da file to the override,development folder, or a hak.
+
+Naming conventions to help understand the systems:
+0e_ - is an executable script via an event.
+0i_ - is an include script.
+ai_ - is an AI script that will be called each combat round to determine the creatures actions.
+inc_sqlite_time - an include file used for combat time.
