@@ -51,7 +51,7 @@ void main()
                 else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
                 if(oTarget != OBJECT_INVALID)
                 {
-                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                     ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                     return;
                 }

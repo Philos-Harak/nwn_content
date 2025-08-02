@@ -109,7 +109,7 @@ void ai_CheckDMData(object oPlayer);
 // Adds to jPlugins functions after checking if the plugin can be installed.
 json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript);
 // Updates the players Plugin list and saves to the database.
-json ai_UpdatePluginsForPC(object oPC, string sAssociateType);
+json ai_UpdatePluginsForPC(object oPC);
 // Updates the DM's Plugin list and saves to the database.
 json ai_UpdatePluginsForDM (object oPC);
 // Runs all plugins that are loaded into the database.
@@ -117,8 +117,6 @@ void ai_StartupPlugins(object oPC);
 void ai_SetAIRules()
 {
     object oModule = GetModule();
-    if(GetLocalInt(oModule, AI_RULES_SET)) return;
-    SetLocalInt(oModule, AI_RULES_SET, TRUE);
     ai_CheckCampaignDataAndInitialize();
     json jRules = ai_GetCampaignDbJson("rules");
     if(JsonGetType(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS)) == JSON_TYPE_NULL)
@@ -703,28 +701,48 @@ void ai_CheckAssociateDataAndInitialize(object oPlayer, string sAssociateType)
 string ai_GetAssociateType(object oPlayer, object oAssociate)
 {
     if(GetIsPC(oAssociate)) return "pc";
+    int nIndex = 1;
     string sAITag = GetLocalString(oAssociate, AI_TAG);
+    object oCreature;
     if(sAITag == "")
     {
         int nAssociateType = GetAssociateType(oAssociate);
-        if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) sAITag = "companion";
-        else if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) sAITag =  "familiar";
-        else if(nAssociateType == ASSOCIATE_TYPE_SUMMONED) sAITag =  "summons";
-        else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) sAITag =  "dominated";
-        else if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN) sAITag =  GetTag(oAssociate);
-        string sCurrentAITag;
-        // Check for duplicate tags and change.
-        int nIndex;
-        object oCreature;
-        for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
+        if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
         {
+            sAITag = GetTag(oAssociate);
             oCreature = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPlayer, nIndex);
-            if(oAssociate != oCreature && sAITag == GetTag(oCreature)) sAITag += IntToString(Random(1000));
+            // Check for duplicate tags and change.
+            while(nIndex <= AI_MAX_HENCHMAN && oCreature != OBJECT_INVALID)
+            {
+                if(oAssociate != oCreature && sAITag == GetTag(oCreature))
+                {
+                    sAITag += IntToString(Random(1000));
+                    break;
+                }
+                oCreature = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPlayer, ++nIndex);
+            }
         }
-        for(nIndex = 2; nIndex < 6; nIndex++)
+        else if(nAssociateType == ASSOCIATE_TYPE_SUMMONED)
         {
-            oCreature = GetAssociate(nIndex, oPlayer, 1);
-            if(oAssociate != oCreature && sAITag == GetTag(oCreature)) sAITag += IntToString(Random(1000));
+            int nCounter;
+            sAITag = GetTag(oAssociate);
+            oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPlayer, nIndex);
+            while(nIndex <= 10 && oCreature != OBJECT_INVALID)
+            {
+                if(oAssociate != oCreature && sAITag == GetTag(oCreature))
+                {
+                    nCounter++;
+                    sAITag += IntToString(nCounter);
+                    nIndex = 0;
+                }
+                oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPlayer, ++nIndex);
+            }
+        }
+        else
+        {
+            if(nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION) sAITag = "companion";
+            else if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR) sAITag = "familiar";
+            else if(nAssociateType == ASSOCIATE_TYPE_DOMINATED) sAITag = "dominated";
         }
         SetLocalString(oAssociate, AI_TAG, sAITag);
     }
@@ -849,6 +867,8 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
     json jSpells = JsonArray();
+    jSpells = JsonArrayInsert(jSpells, JsonInt(1));
+    jSpells = JsonArrayInsert(jSpells, JsonInt(0));
     jAIData = JsonArrayInsert(jAIData, jSpells);         // 10 - Castable spells.
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
 }
@@ -886,6 +906,7 @@ void ai_SetupLocations(object oPlayer, object oAssociate, string sAssociateType)
     jLocations = JsonObjectSet(jLocations, sAssociateType + AI_COPY_NUI, jNUI);
     jLocations = JsonObjectSet(jLocations, sAssociateType + AI_QUICK_WIDGET_NUI, jNUI);
     jLocations = JsonObjectSet(jLocations, sAssociateType + AI_SPELL_MEMORIZE_NUI, jNUI);
+    jLocations = JsonObjectSet(jLocations, sAssociateType + AI_SPELL_KNOWN_NUI, jNUI);
     jNUI = JsonObjectSet(jNUI, "x", JsonFloat(0.0));
     jNUI = JsonObjectSet(jNUI, "y", JsonFloat(0.0));
     jLocations = JsonObjectSet(jLocations, sAssociateType + AI_WIDGET_NUI, jNUI);
@@ -1082,7 +1103,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
     // These are pulled straight from the database.
     // ********** Locations **********
     json jLocations = ai_GetAssociateDbJson(oPlayer, sAssociateType, "locations");
-    if(JsonGetType(JsonObjectGet(jLocations, AI_WIDGET_NUI)) == JSON_TYPE_NULL)
+    if(JsonGetType(JsonObjectGet(jLocations, sAssociateType + AI_WIDGET_NUI)) == JSON_TYPE_NULL)
     {
         ai_SetupLocations(oPlayer, oAssociate, sAssociateType);
     }
@@ -1172,7 +1193,10 @@ json ai_Plugin_Add(object oPC, json jPlugins, string sPluginScript)
     SetLocalInt(oPC, AI_ADD_PLUGIN, TRUE);
     SetLocalJson(oPC, AI_JSON_PLUGINS, jPlugins);
     ExecuteScript(sPluginScript, oPC);
-    if(GetLocalInt(oPC, AI_PLUGIN_SET))
+    int nPluginSet = GetLocalInt(oPC, AI_PLUGIN_SET);
+    // Setting AI_PLUGIN_SET to -1 means the plugin failed to load.
+    if(nPluginSet == -1) return jPlugins;
+    if(nPluginSet)
     {
         jPlugin = GetLocalJson(oPC, AI_JSON_PLUGINS);
         jPlugins = JsonArrayInsert(jPlugins, jPlugin);
@@ -1216,14 +1240,14 @@ json ai_CheckOldPluginJson(object oPC)
     }
     return jPlugins;
 }
-json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
+json ai_UpdatePluginsForPC(object oPC)
 {
     // Check if the server is running or single player.
     if(!AI_SERVER) return ai_CheckOldPluginJson(oPC);
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
     string sScript, sName, sIcon;
     json jServerPlugins = ai_GetCampaignDbJson("plugins");
-    json jPCPlugin, jPCPlugins = ai_GetAssociateDbJson(oPC, sAssociateType, "plugins");
+    json jPCPlugin, jPCPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
     json jNewPCPlugins = JsonArray();
     json jServerPlugin = JsonArrayGet(jServerPlugins, nIndex);
     while(JsonGetType(jServerPlugin) != JSON_TYPE_NULL)
@@ -1255,7 +1279,7 @@ json ai_UpdatePluginsForPC(object oPC, string sAssociateType)
         }
         jServerPlugin = JsonArrayGet(jServerPlugins, ++nIndex);
     }
-    ai_SetAssociateDbJson(oPC, sAssociateType, "plugins", jNewPCPlugins);
+    ai_SetAssociateDbJson(oPC, "pc", "plugins", jNewPCPlugins);
     return jNewPCPlugins;
 }
 json ai_UpdatePluginsForDM(object oPC)
@@ -1298,15 +1322,28 @@ json ai_UpdatePluginsForDM(object oPC)
 void ai_StartupPlugins(object oPC)
 {
     SetLocalInt(oPC, AI_STARTING_UP, TRUE);
+    int bUpdatePlugins;
+    string sScript;
     json jPlugins;
     if(GetIsDM(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
-    else jPlugins = ai_UpdatePluginsForPC(oPC, "pc");
+    else jPlugins = ai_UpdatePluginsForPC(oPC);
+    // We delete this so each mod can be added that legally loads.
+    DeleteLocalJson(GetModule(), AI_MONSTER_MOD_JSON);
     int nIndex;
     json jPlugin = JsonArrayGet(jPlugins, nIndex);
     while(JsonGetType(jPlugin) != JSON_TYPE_NULL)
     {
-        ExecuteScript(JsonGetString(JsonArrayGet(jPlugin, 0)), oPC);
+        sScript = JsonGetString(JsonArrayGet(jPlugin, 0));
+        ExecuteScript(sScript, oPC);
+        // -1 means if failed to load so lets make sure to remove it from the list.
+        if(GetLocalInt(oPC, AI_PLUGIN_SET) == -1)
+        {
+            jPlugins = JsonArrayDel(jPlugins, nIndex);
+            bUpdatePlugins = TRUE;
+            nIndex--;
+        }
         jPlugin = JsonArrayGet(jPlugins, ++nIndex);
     }
+    if(bUpdatePlugins) ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
     DeleteLocalInt(oPC, AI_STARTING_UP);
 }

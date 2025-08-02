@@ -9,9 +9,10 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_blocked", oCreature);
     // This actually gets either a Creature or Door that is blocking OBJECT_SELF.
     object oObject = GetBlockingDoor();
-    if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "14", GetName(oCreature) + " is being blocked by " + GetName(oObject));
+    if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "15", GetName(oCreature) + " is being blocked by " + GetName(oObject));
     int nObjectType = GetObjectType(oObject);
     if(nObjectType == OBJECT_TYPE_CREATURE)
     {
@@ -33,7 +34,7 @@ void main()
     else if(GetIsDoorActionPossible(oObject, DOOR_ACTION_OPEN) &&
        GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) >= 5)
     {
-        if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "33", GetName(oCreature) + " is opening " + GetName(oObject));
+        if(AI_DEBUG) ai_Debug("nw_c2_defaulte", "37", GetName(oCreature) + " is opening " + GetName(oObject));
         DoDoorAction(oObject, DOOR_ACTION_OPEN);
         return;
     }

@@ -11,11 +11,13 @@ void main()
     // If not runnning normal or better AI then exit for performance reasons
     if (GetAILevel(OBJECT_SELF) == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_hb", oCreature);
+    if(AI_DEBUG) ai_Debug("nw_c2_default1", "15", GetName(oCreature) + " Heartbeat." +
+             " OnSpawn: " + IntToString(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)));
     // We run our OnSpawn in the heartbeat so the creator can use the original
-    // OnSpawn for their own use.
-    ai_OnMonsterSpawn(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default1", "18", GetName(oCreature) + " Heartbeat." +
-             " Searching: " + IntToString(GetLocalInt(oCreature, AI_AM_I_SEARCHING)));
+    // OnSpawn for their own use. If we have to recreate the creature then we
+    // skip the rest of the heartbeat since this version is being destroyed!
+    if(ai_OnMonsterSpawn(oCreature)) return;
     if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_SLEEP))
     {
         // If we're asleep and this is the result of sleeping

@@ -12,7 +12,7 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_constants"
 #include "0i_nui"
-void ai_SetupModuleGUIEvents(object oCreature)
+void ai_SetupModuleGUIEvents()
 {
     object oModule = GetModule();
     string sModuleGUIEvents = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_GUIEVENT);

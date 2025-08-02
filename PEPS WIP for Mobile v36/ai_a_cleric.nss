@@ -30,12 +30,12 @@ void main()
         // ************************** CLASS FEATURES ***************************
         // Turning is basically a powerful AOE so treat it like one.
         if(ai_TryTurningTalent(oCreature)) return;
-        // ******************* OFFENSIVE AOE TALENTS ***********************
-        // Check the battlefield for a group of enemies to shoot a big spell at!
-        // We are checking here since these opportunities are rare and we need
-        // to take advantage of them as often as possible.
         if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
         {
+            // ******************* OFFENSIVE AOE TALENTS ***********************
+            // Check the battlefield for a group of enemies to shoot a big spell at!
+            // We are checking here since these opportunities are rare and we need
+            // to take advantage of them as often as possible.
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
         }

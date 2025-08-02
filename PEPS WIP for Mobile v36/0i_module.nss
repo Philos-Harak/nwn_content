@@ -10,12 +10,15 @@
 #include "0i_player_target"
 #include "0i_gui_events"
 // Add to nw_c2_default9 OnSpawn event script of monsters and
-void ai_OnMonsterSpawn(object oCreature);
+int ai_OnMonsterSpawn(object oCreature);
 // Add to nw_ch_ac9 OnSpawn event script of henchman.
 void ai_OnAssociateSpawn(object oCreature);
 // Run all of the players starting scripts.
 // If oPC is passed as Invalid then it will get the firt PC in the game.
 void ai_CheckPCStart(object oPC = OBJECT_INVALID, int bForce = FALSE);
+// Does not work with version 36!
+// Checks to see if we should change the monster via Json.
+//int ai_ChangeMonster(object oCreature, object oModule);
 // Checks to see if we should copy the monster.
 void ai_CopyMonster(object oCreature, object oModule);
 // Checks to see if we should change the associate via Json.
@@ -35,12 +38,13 @@ void ai_ChangeEventScriptsForAssociate(object oCreature);
 //******************************************************************************
 //********************* Creature event scripts *********************************
 //******************************************************************************
-void ai_OnMonsterSpawn(object oCreature)
+int ai_OnMonsterSpawn(object oCreature)
 {
-    if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
+    if(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return FALSE;
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     object oModule = GetModule();
     int nInfiniteDungeons;
+    int nPRC = GetLocalInt(oModule, AI_USING_PRC);
     // If you are running a server this will not affect the module.
     if(!AI_SERVER)
     {
@@ -50,10 +54,7 @@ void ai_OnMonsterSpawn(object oCreature)
            sModuleName == "Infinite Dungeons [PRC8]")
         {
             nInfiniteDungeons = TRUE;
-            if(GetLocalInt(oModule, AI_USING_PRC))
-            {
-                ai_SetPRCIDMonsterEventScripts(oCreature);
-            }
+            if(nPRC) ai_SetPRCIDMonsterEventScripts(oCreature);
             else ai_SetIDMonsterEventScripts(oCreature);
             // Fix to get plot givers, finishers from getting killed a lot.
             if(GetLocalString(oCreature, "sConversation") == "id1_plotgiver " ||
@@ -65,7 +66,7 @@ void ai_OnMonsterSpawn(object oCreature)
         }
     }
     // PRC and Infinite dungeons has issues with Ondeath script so we just leave it alone.
-    if(!GetLocalInt(oModule, AI_USING_PRC) && !nInfiniteDungeons)
+    if(!nPRC && !nInfiniteDungeons)
     {
         // We change this script so we can setup permanent summons on/off.
         string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
@@ -100,6 +101,13 @@ void ai_OnMonsterSpawn(object oCreature)
     // Do json changes after we have setup the creature.
     // Version 36 does not work with this code! ai_ChangeMonster(oCreature, oModule);
     ai_CopyMonster(oCreature, oModule);
+    // This is a hak to allow wild shaped creatures to be able to attack!
+    if(GetHasFeat(FEAT_WILD_SHAPE))
+    {
+        AssignCommand(oCreature, ActionUseFeat(FEAT_WILD_SHAPE, oCreature, SUBFEAT_WILD_SHAPE_BADGER));
+        DelayCommand(4.0, ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH));
+    }
+    return FALSE;
 }
 void ai_OnAssociateSpawn(object oCreature)
 {
@@ -209,14 +217,15 @@ json ai_SetCompanionSummoning(object oCreature, json jCreature)
     }
     return jCreature;
 }
-void ai_ChangeMonster(object oCreature, object oModule)
+/*int ai_ChangeMonster(object oCreature, object oModule)
 {
     object oPC = GetNearestCreature(CREATURE_TYPE_PLAYER_CHAR, PLAYER_CHAR_IS_PC, oCreature);
+    // Lets not mess up the cutscenes with silly RULES.
+    if(GetCutsceneMode(oPC)) return FALSE;
     float fDistance = GetDistanceBetween(oCreature, oPC);
     // Looks bad to see creatures wink in and out plus could cause module errors.
-    // Lets not mess up the cutscenes with silly RULES.
-    if(!GetCutsceneMode(oPC) && fDistance > AI_RANGE_LONG &&
-       !IsInConversation(oCreature))
+    if(fDistance != 0.0 && fDistance < 20.0) return FALSE;
+    if(IsInConversation(oCreature)) return FALSE;
     {
         int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) &&
                      (GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE)) ||
@@ -243,8 +252,9 @@ void ai_ChangeMonster(object oCreature, object oModule)
             //AssignCommand(oModule, DelayCommand(1.0, ai_CreateMonster(jCreature, lLocation, oModule)));
         }
     }
-    else ai_CopyMonster(oCreature, oModule);
-}
+    ai_CopyMonster(oCreature, oModule);
+    return FALSE;
+}*/
 // Special event scripts for Infinite Dungeons!
 void ai_SetIDMonsterEventScripts(object oCreature)
 {

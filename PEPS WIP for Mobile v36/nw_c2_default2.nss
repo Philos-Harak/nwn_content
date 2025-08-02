@@ -16,33 +16,35 @@ void main()
     // * if not runnning normal or better AI then exit for performance reasons
     //if (GetAILevel() == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
-
+    ExecuteScript("prc_npc_percep", oCreature);
+    if(AI_DEBUG) ai_Debug("nw_c2_default2", "20", "AI_ONSPAWN_EVENT: " + IntToString(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)));
+    if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     if(GetLastPerceptionSeen())
     {
-        if(AI_DEBUG) ai_Debug("nw_c2_default2", "22", GetName(oCreature) + " sees " +
+        if(AI_DEBUG) ai_Debug("nw_c2_default2", "24", GetName(oCreature) + " sees " +
                      GetName(GetLastPerceived()) + " Distance: " +
                      FloatToString(GetDistanceBetween(GetLastPerceived(), oCreature), 0, 2) + ".");
     }
     if(GetLastPerceptionHeard())
     {
-        if(AI_DEBUG) ai_Debug("nw_c2_default2", "28", GetName(oCreature) + " heard " +
+        if(AI_DEBUG) ai_Debug("nw_c2_default2", "30", GetName(oCreature) + " heard " +
                      GetName(GetLastPerceived()) + " Distance: " +
                      FloatToString(GetDistanceBetween(GetLastPerceived(), oCreature), 0, 2) + ".");
     }
     if(GetLastPerceptionVanished ())
     {
-        if(AI_DEBUG) ai_Debug("nw_c2_default2", "34", GetName(oCreature) + " lost sight of " +
+        if(AI_DEBUG) ai_Debug("nw_c2_default2", "36", GetName(oCreature) + " lost sight of " +
                      GetName(GetLastPerceived ()) + ".");
     }
     // We do nothing on Inaudibles so drop out early!
     if(GetLastPerceptionInaudible())
     {
-        if(AI_DEBUG) ai_Debug("nw_c2_default2", "41", GetName(oCreature) + " lost sound of " +
+        if(AI_DEBUG) ai_Debug("nw_c2_default2", "42", GetName(oCreature) + " lost sound of " +
                      GetName(GetLastPerceived()) + ".");
         return;
     }
     object oLastPerceived = GetLastPerceived();
-    if(AI_DEBUG) ai_Debug("nw_c2_default2", "45", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
+    if(AI_DEBUG) ai_Debug("nw_c2_default2", "47", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
                  " Enemy? " + IntToString(GetIsEnemy(oLastPerceived, oCreature)));
     if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived)) return;
@@ -79,14 +81,14 @@ void main()
         {
             // Lets keep a mental note of the invisible creature.
             SetLocalObject(oCreature, AI_IS_INVISIBLE, oLastPerceived);
-            if(AI_DEBUG) ai_Debug("0e_c2_2_percept", "82", " We saw " + GetName(oLastPerceived) + " disappear!");
+            if(AI_DEBUG) ai_Debug("0e_c2_2_percept", "84", " We saw " + GetName(oLastPerceived) + " disappear!");
             if(ai_GetIsBusy(oCreature)) return;
             // If in combat check to see if our target disappeared.
             // If they have and we are not in melee with them then reevaluate combat
             // since we lost our target.
             if(ai_GetIsInCombat(oCreature))
             {
-                if(AI_DEBUG) ai_Debug("nw_c2_default2", "89", "Is this our target? " +
+                if(AI_DEBUG) ai_Debug("nw_c2_default2", "91", "Is this our target? " +
                              IntToString(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived));
                 if(ai_GetAttackedTarget(oCreature, TRUE, TRUE) == oLastPerceived)
                 {

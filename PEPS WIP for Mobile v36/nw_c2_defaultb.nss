@@ -10,6 +10,7 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_spellat", oCreature);
     object oCaster = GetLastSpellCaster();
     SetLocalObject(oCaster, AI_ATTACKED_SPELL, oCreature);
     if(ai_Disabled(oCreature)) return;
@@ -23,7 +24,7 @@ void main()
     if(GetFactionEqual(oCaster, oCreature)) ClearPersonalReputation(oCaster, oCreature);
     // Lets see what kind of area of effect this is and select an appropriate action.
     int nSpell = GetLastSpell();
-    if(AI_DEBUG) ai_Debug("nw_c2_defaultb", "26", GetName(oCreature) + " has been hit by a harmful spell(" +
+    if(AI_DEBUG) ai_Debug("nw_c2_defaultb", "27", GetName(oCreature) + " has been hit by a harmful spell(" +
           Get2DAString("spells", "Label", nSpell) + ")!");
     if(ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
        ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;

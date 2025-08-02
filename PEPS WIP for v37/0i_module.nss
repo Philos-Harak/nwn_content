@@ -7,15 +7,18 @@
 #include "x2_inc_switches"
 #include "0i_associates"
 #include "0i_menus"
+#include "0i_menus_dm"
 #include "0i_player_target"
 #include "0i_gui_events"
 // Add to nw_c2_default9 OnSpawn event script of monsters and
 int ai_OnMonsterSpawn(object oCreature);
 // Add to nw_ch_ac9 OnSpawn event script of henchman.
 void ai_OnAssociateSpawn(object oCreature);
-// Run all of the players starting scripts.
+// Run all of the game setup scripts and build for PC.
 // If oPC is passed as Invalid then it will get the firt PC in the game.
 void ai_CheckPCStart(object oPC = OBJECT_INVALID);
+// Run all of the games setup scripts and build for DM.
+void ai_CheckDMStart(object oDM);
 // Checks to see if we should change the monster via Json.
 int ai_ChangeMonster(object oCreature, object oModule);
 // Checks to see if we should change the associate via Json.
@@ -45,7 +48,7 @@ int ai_OnMonsterSpawn(object oCreature)
     int nInfiniteDungeons;
     int nPRC = GetLocalInt(oModule, AI_USING_PRC);
     // If you are running a server this will not affect the module.
-    if(!AI_SERVER)
+    if(!ai_GetIsServer())
     {
         ai_CheckPCStart();
         string sModuleName = GetModuleName();
@@ -107,7 +110,7 @@ void ai_OnAssociateSpawn(object oCreature)
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     int bPRC = GetLocalInt(GetModule(), AI_USING_PRC);
     // If you are running a server this will not affect the module.
-    if(!AI_SERVER)
+    if(!ai_GetIsServer())
     {
         if(bPRC) ai_SetPRCAssociateEventScripts(oCreature);
     }
@@ -147,10 +150,26 @@ void ai_CheckPCStart(object oPC = OBJECT_INVALID)
         ai_SetAIRules();
         ai_CheckAssociateData(oPC, oPC, "pc");
         ai_StartupPlugins(oPC);
-        ai_SetupPlayerTarget(oPC);
-        ai_SetupModuleGUIEvents(oPC);
+        ai_SetupPlayerTarget();
+        ai_SetupModuleGUIEvents();
         ai_CreateWidgetNUI(oPC, oPC);
         ai_SetNormalAppearance(oPC);
+    }
+}
+void ai_CheckDMStart(object oDM)
+{
+    if(!NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI))
+    {
+        object oModule = GetModule();
+        // Do PRC check and save variable to the module.
+        if(ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) != "")
+            SetLocalInt(oModule, AI_USING_PRC, TRUE);
+        ai_SetAIRules();
+        ai_CheckDMData(oDM);
+        ai_StartupPlugins(oDM);
+        ai_SetupPlayerTarget();
+        ai_SetupModuleGUIEvents();
+        ai_CreateDMWidgetNUI(oDM);
     }
 }
 void ai_CopyMonster(object oCreature, object oModule)
@@ -188,6 +207,12 @@ void ai_CreateMonster(json jCreature, location lLocation, object oModule)
     } */
     if(AI_DEBUG) ai_Debug("0i_module", "187", GetName(oCreature));
     ai_CopyMonster(oCreature, oModule);
+    // This is a hak to allow wild shaped creatures to be able to attack!
+    if(GetHasFeat(FEAT_WILD_SHAPE, oCreature))
+    {
+        AssignCommand(oCreature, ActionUseFeat(FEAT_WILD_SHAPE, oCreature, SUBFEAT_WILD_SHAPE_BADGER));
+        DelayCommand(4.0, ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH));
+    }
     return;
 }
 json ai_SetCompanionSummoning(object oCreature, json jCreature)
@@ -198,7 +223,7 @@ json ai_SetCompanionSummoning(object oCreature, json jCreature)
         jFamiliar = JsonObjectSet(jFamiliar, "value", JsonString("Summoned Familiar"));
         jCreature = JsonObjectSet(jCreature, "FamiliarName", jFamiliar);
         jFamiliar = JsonObjectGet(jCreature, "FamiliarType");
-        jFamiliar = JsonObjectSet(jFamiliar, "value", JsonInt(Random(11)));
+        jFamiliar = JsonObjectSet(jFamiliar, "value", JsonInt(10)); //JsonInt(Random(11)));
         return JsonObjectSet(jCreature, "FamiliarType", jFamiliar);
     }
     if(GetHasFeat(FEAT_ANIMAL_COMPANION , oCreature, TRUE))
@@ -217,9 +242,9 @@ int ai_ChangeMonster(object oCreature, object oModule)
     object oPC = GetNearestCreature(CREATURE_TYPE_PLAYER_CHAR, PLAYER_CHAR_IS_PC, oCreature);
     // Lets not mess up the cutscenes with silly RULES.
     if(GetCutsceneMode(oPC)) return FALSE;
-    //float fDistance = GetDistanceBetween(oCreature, oPC);
+    float fDistance = GetDistanceBetween(oCreature, oPC);
     // Looks bad to see creatures wink in and out plus could cause module errors.
-    //if(fDistance != 0.0 && fDistance < AI_RANGE_PERCEPTION) return oCreature;
+    if(fDistance != 0.0 && fDistance < 20.0) return FALSE;
     if(IsInConversation(oCreature)) return FALSE;
     json jCreature = ObjectToJson(oCreature, TRUE);
     // We now use plugins to mod our monsters.
@@ -238,8 +263,8 @@ int ai_ChangeMonster(object oCreature, object oModule)
         jCreature = GetLocalJson(oModule, AI_MONSTER_JSON);
     }
     int nSummon = GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) &&
-                 (GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE)) ||
-                  GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature, TRUE);
+                 (GetHasFeat(FEAT_SUMMON_FAMILIAR, oCreature, TRUE) ||
+                  GetHasFeat(FEAT_ANIMAL_COMPANION, oCreature, TRUE));
     int nPercDist = GetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE) != 11 &&
                     GetReputation(oCreature, oPC) < 11;
     //WriteTimestampedLogEntry(GetName(oCreature) + ": fDistance: " + FloatToString(fDistance, 0, 2) + " nSummon: " + IntToString(nSummon) +
@@ -256,6 +281,7 @@ int ai_ChangeMonster(object oCreature, object oModule)
         if(nSummon) jCreature = ai_SetCompanionSummoning(oCreature, jCreature);
         SetLocalInt(oModule, AI_MONSTER_CHANGED, TRUE);
     }
+    // Did any of the Monster mods get used? These are done in independent mod scripts.
     if(GetLocalInt(oModule, AI_MONSTER_CHANGED))
     {
         SetIsDestroyable(TRUE, FALSE, FALSE, oCreature);
@@ -268,6 +294,12 @@ int ai_ChangeMonster(object oCreature, object oModule)
     else ai_CopyMonster(oCreature, oModule);
     DeleteLocalJson(oModule, AI_MONSTER_JSON);
     DeleteLocalObject(oModule, AI_MONSTER_OBJECT);
+    // This is a hak to allow wild shaped creatures to be able to attack!
+    if(GetHasFeat(FEAT_WILD_SHAPE))
+    {
+        AssignCommand(oCreature, ActionUseFeat(FEAT_WILD_SHAPE, oCreature, SUBFEAT_WILD_SHAPE_BADGER));
+        DelayCommand(4.0, ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH));
+    }
     return FALSE;
 }
 // Special event scripts for Infinite Dungeons!

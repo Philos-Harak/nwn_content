@@ -285,6 +285,7 @@ void main()
                 if(nChange) nColorId = GetColorIDChange(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected, nChange);
                 oNewItem = CopyItemAndModify(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected, nColorId, TRUE);
                 DestroyObject(oItem);
+                SetColorPalletPointer(oPC, nToken, oNewItem);
             }
             // Lock the new item so they can't change it on the character.
             LockItemInCraftingWindow(oPC, oNewItem, oTarget, nToken);
@@ -317,7 +318,7 @@ void main()
                 }
                 else jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
                 SetLocalJson(oPC, CRAFT_JSON, jCraft);
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ExecuteScript("pi_crafting", oPC);
             }
             // They have selected a part to change.
@@ -412,7 +413,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_crafting");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "SELECT_TARGET");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select either your charcter or a henchman to craft their equipment.", AI_COLOR_YELLOW, oPC);
                 DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
                 DeleteLocalObject(oPC, CRAFT_TARGET);
@@ -448,9 +449,9 @@ void main()
                     DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
                     DeleteLocalObject(oPC, CRAFT_TARGET);
                     DeleteLocalObject(oPC, "CRAFT_INFO_ITEM");
-                    NuiDestroy(oPC, nToken);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
                     nToken = NuiFindWindow(oPC, "craft_item_nui");
-                    if(nToken) NuiDestroy(oPC, nToken);
+                    if(nToken) DelayCommand(0.0, NuiDestroy(oPC, nToken));
                     if(GetLocalInt(oPC, CRAFT_ULTRALIGHT))
                     {
                         RemoveTagedEffects(oTarget, CRAFT_ULTRALIGHT);
@@ -643,6 +644,7 @@ void main()
                 int nSelected = StringToInt(GetStringRight(sElem, 1));
                 SetMaterialButtons(oPC, nToken, nSelected);
                 jCraft = JsonObjectSet(jCraft, CRAFT_MATERIAL_SELECTION, JsonInt(nSelected));
+                SetLocalJson(oPC, CRAFT_JSON, jCraft);
                 // Change the pallet for the correct material.
                 string sColorPallet;
                 if(nSelected < 4)
@@ -1498,7 +1500,7 @@ void LockItemInCraftingWindow(object oPC, object oItem, object oTarget, int nTok
     NuiSetBind(oPC, nToken, "btn_wardrobe_event", JsonBool(FALSE));
     // Make sure the item information window is closed.
     nToken = NuiFindWindow(oPC, "craft_item_nui");
-    if(nToken) NuiDestroy(oPC, nToken);
+    if(nToken) DelayCommand(0.0, NuiDestroy(oPC, nToken));
 }
 void ClearItemInCraftingWindow(object oPC, object oItem, int nToken)
 {
@@ -2056,7 +2058,7 @@ void CraftItemInfoEvents(object oPC, int nToken)
                 {
                     DestroyObject(oItem);
                     ai_SendMessages(GetName(oItem) + " has been permanently destroyed!", AI_COLOR_RED, oPC);
-                    NuiDestroy(oPC, nToken);
+                    DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 }
                 else
                 {

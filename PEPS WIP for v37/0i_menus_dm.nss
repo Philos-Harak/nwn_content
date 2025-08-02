@@ -35,6 +35,7 @@ int ai_GetDMWidgetButton(object oPlayer, int nButton)
 }
 void ai_CreateDMWidgetNUI(object oPC)
 {
+    SendMessageToPC(oPC, "Running DMWidget!");
     // Set window to not save until it has been created.
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
@@ -268,7 +269,7 @@ void ai_CreateDMOptionsNUI(object oPC)
     int nMonsterAI = (ResManGetAliasFor("ai_default", RESTYPE_NCS) != "");
     int nAssociateAI = (ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "");
     string sText = " [Single player]";
-    if(AI_SERVER) sText = " [Server]";
+    if(ai_GetIsServer()) sText = " [Server]";
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
@@ -876,6 +877,9 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateLabel(JsonArray(), "Having a check next to a button will remove that button from the players menus.", "lbl_info2", 636.0, 15.0);
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 575 / 162
+    jRow = CreateButtonImage(jRow, "ir_invite", "btn_toggle_assoc_widget", 35.0f, 35.0f, 0.0, "btn_toggle_assoc_widget_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_toggle_assoc_widget", 25.0, 20.0, "btn_toggle_assoc_widget_tooltip");
+
     jRow = CreateButtonImage(JsonArray(), "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_cmd_action", 25.0, 20.0, "btn_cmd_action_tooltip");
 
@@ -903,10 +907,11 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateButtonImage(jRow, "ir_scommand", "btn_cmd_ai_script", 35.0f, 35.0f, 0.0, "btn_cmd_ai_script_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_cmd_ai_script", 25.0, 20.0, "btn_cmd_ai_script_tooltip");
 
-    jRow = CreateButtonImage(jRow, "isk_settrap", "btn_cmd_place_trap", 35.0f, 35.0f, 0.0, "btn_cmd_place_trap_tooltip");
-    jRow = CreateCheckBox(jRow, "", "chbx_cmd_place_trap", 25.0, 20.0, "btn_cmd_place_trap_tooltip");
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5 ******************************************************************* 575 / 205
+    jRow = CreateButtonImage(jRow, "isk_settrap", "btn_cmd_place_trap", 35.0f, 35.0f, 0.0, "btn_cmd_place_trap_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_cmd_place_trap", 25.0, 20.0, "btn_cmd_place_trap_tooltip");
+
     jRow = CreateButtonImage(JsonArray(), "isk_spellcraft", "btn_quick_widget", 35.0f, 35.0f, 0.0, "btn_quick_widget_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_quick_widget", 25.0, 20.0, "btn_quick_widget_tooltip");
 
@@ -934,10 +939,10 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_camera", 25.0, 20.0, "btn_camera_tooltip");
 
-    jRow = CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
-    jRow = CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0, "btn_inventory_tooltip");
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 6 ******************************************************************* 575 / 248
+    jRow = CreateButtonImage(jRow, "ir_pickup", "btn_inventory", 35.0f, 35.0f, 0.0, "btn_inventory_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_inventory", 25.0, 20.0, "btn_inventory_tooltip");
 
     jRow = CreateButtonImage(JsonArray(), "ife_familiar", "btn_familiar", 35.0f, 35.0f, 0.0, "btn_familiar_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_familiar", 25.0, 20.0, "btn_familiar_tooltip");
@@ -966,10 +971,10 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateButtonImage(jRow, "ir_open", "btn_open_door", 35.0f, 35.0f, 0.0, "btn_open_door_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_open_door", 25.0, 20.0, "btn_open_door_tooltip");
 
-    jRow = CreateButtonImage(jRow, "isk_distrap", "btn_traps", 35.0f, 35.0f, 0.0, "btn_traps_tooltip");
-    jRow = CreateCheckBox(jRow, "", "chbx_traps", 25.0, 20.0, "btn_traps_tooltip");
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 7 ******************************************************************* 575 / 291
+    jRow = CreateButtonImage(jRow, "isk_distrap", "btn_traps", 35.0f, 35.0f, 0.0, "btn_traps_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_traps", 25.0, 20.0, "btn_traps_tooltip");
 
     jRow = CreateButtonImage(JsonArray(), "isk_olock", "btn_pick_locks", 35.0f, 35.0f, 0.0, "btn_pick_locks_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_pick_locks", 25.0, 20.0, "btn_pick_locks_tooltip");
@@ -998,10 +1003,11 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateButtonImage(jRow, "isk_heal", "btn_heal_out", 35.0f, 35.0f, 0.0, "btn_heal_out_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_heal_out", 25.0, 20.0, "btn_heal_out_tooltip");
 
-    jRow = CreateButtonImage(jRow, "dm_heal", "btn_heal_in", 35.0f, 35.0f, 0.0, "btn_heal_in_tooltip");
-    jRow = CreateCheckBox(jRow, "", "chbx_heal_in", 25.0, 20.0, "btn_heal_in_tooltip");
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 8 ******************************************************************* 575 / 334
+    jRow = CreateButtonImage(jRow, "dm_heal", "btn_heal_in", 35.0f, 35.0f, 0.0, "btn_heal_in_tooltip");
+    jRow = CreateCheckBox(jRow, "", "chbx_heal_in", 25.0, 20.0, "btn_heal_in_tooltip");
+
     jRow = CreateButtonImage(JsonArray(), "ir_heal", "btn_heals_onoff", 35.0f, 35.0f, 0.0, "btn_heals_onoff_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_heals_onoff", 25.0, 20.0, "btn_heals_onoff_tooltip");
 
@@ -1023,7 +1029,6 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     jRow = CreateButtonImage(jRow, "ir_dmchat", "btn_perc_range", 35.0f, 35.0f, 0.0, "btn_perc_range_tooltip");
     jRow = CreateCheckBox(jRow, "", "chbx_perc_range", 25.0, 20.0, "btn_perc_range_tooltip");
 
-    // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 334.0;
     // Get the window location to restore it from the database.
@@ -1049,6 +1054,7 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     // Row 2 & 3 Labels.
     // Load all the buttons states.
     //int bAIWidgetLock = ai_GetDMWAccessButton(BTN_WIDGET_LOCK);
+    int bAssocWidgetOff = ai_GetDMWAccessButton(BTN_ASSOC_WIDGETS_OFF);
     int bCmdAction = ai_GetDMWAccessButton(BTN_CMD_ACTION);
     int bCmdGuard = ai_GetDMWAccessButton(BTN_CMD_GUARD);
     int bCmdHold = ai_GetDMWAccessButton(BTN_CMD_HOLD);
@@ -1101,6 +1107,12 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     SetLocalInt(oPC, "CHBX_SKIP", TRUE);
     DelayCommand(2.0, DeleteLocalInt(oPC, "CHBX_SKIP"));
     // Row 4
+    NuiSetBind(oPC, nToken, "chbx_toggle_assoc_widget_check", JsonBool (bCmdAction));
+    NuiSetBindWatch(oPC, nToken, "chbx_toggle_assoc_widget_check", TRUE);
+    NuiSetBind(oPC, nToken, "chbx_toggle_assoc_widget_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool (TRUE));
+    NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_tooltip", JsonString("  Associate widgets"));
+
     NuiSetBind(oPC, nToken, "chbx_cmd_action_check", JsonBool (bCmdAction));
     NuiSetBindWatch(oPC, nToken, "chbx_cmd_action_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_action_event", JsonBool(TRUE));
@@ -1154,13 +1166,13 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBind(oPC, nToken, "chbx_cmd_ai_script_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_ai_script_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_ai_script_tooltip", JsonString("  Combat Tactics button"));
-
+    // Row 5
     NuiSetBind(oPC, nToken, "chbx_cmd_place_trap_check", JsonBool (bCmdPlacetrap));
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_place_trap_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_place_trap_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_place_trap_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_place_trap_tooltip", JsonString ("  Place Trap button"));
-    // Row 5
+
     NuiSetBind(oPC, nToken, "chbx_quick_widget_check", JsonBool (bSpellWidget));
     NuiSetBindWatch (oPC, nToken, "chbx_quick_widget_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_quick_widget_event", JsonBool(TRUE));
@@ -1214,13 +1226,13 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBind(oPC, nToken, "chbx_camera_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_camera_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_camera_tooltip", JsonString("  Change Camera button"));
-
+    // Row 6
     NuiSetBind(oPC, nToken, "chbx_inventory_check", JsonBool (bInventory));
     NuiSetBindWatch (oPC, nToken, "chbx_inventory_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_inventory_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_inventory_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_inventory_tooltip", JsonString("  Open Inventory button"));
-    // Row 6
+
     NuiSetBind(oPC, nToken, "chbx_familiar_check", JsonBool(bBtnFamiliar));
     NuiSetBindWatch (oPC, nToken, "chbx_familiar_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_familiar_event", JsonBool(TRUE));
@@ -1274,13 +1286,13 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBind(oPC, nToken, "chbx_open_door_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_open_door_event", JsonBool(TRUE));
     NuiSetBind (oPC, nToken, "btn_open_door_tooltip", JsonString("  Open Door button"));
-
+    // Row 7
     NuiSetBind(oPC, nToken, "chbx_traps_check", JsonBool(bTraps));
     NuiSetBindWatch (oPC, nToken, "chbx_traps_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_traps_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_traps_event", JsonBool(TRUE));
     NuiSetBind (oPC, nToken, "btn_traps_tooltip", JsonString("  Disable Traps button"));
-    // Row 7
+
     NuiSetBind(oPC, nToken, "chbx_pick_locks_check", JsonBool(bPickLocks));
     NuiSetBindWatch(oPC, nToken, "chbx_pick_locks_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_pick_locks_event", JsonBool(TRUE));
@@ -1334,13 +1346,13 @@ void ai_CreateDMWidgetManagerNUI(object oPC)
     NuiSetBind(oPC, nToken, "chbx_heal_out_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_heal_out_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_heal_out_tooltip", JsonString("  Heal Out of Combat button"));
-
+    // Row 8
     NuiSetBind(oPC, nToken, "chbx_heal_in_check", JsonBool(bHealIn));
     NuiSetBindWatch (oPC, nToken, "chbx_heal_in_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_heal_in_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_heal_in_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_heal_in_tooltip", JsonString("  Heal In Combat button"));
-    // Row 8
+
     NuiSetBind(oPC, nToken, "chbx_heals_onoff_check", JsonBool(bSelfHealOnOff));
     NuiSetBindWatch (oPC, nToken, "chbx_heals_onoff_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_heals_onoff_event", JsonBool(TRUE));

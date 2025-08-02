@@ -10,8 +10,9 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_physatt", oCreature);
     object oAttacker = GetLastAttacker(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default5", "14", GetName(oCreature) + " was attacked by " +
+    if(AI_DEBUG) ai_Debug("nw_c2_default5", "15", GetName(oCreature) + " was attacked by " +
                  GetName(oAttacker) + ".");
     SetLocalObject(oAttacker, AI_ATTACKED_PHYSICAL, oCreature);
     // Run away!
@@ -27,7 +28,7 @@ void main()
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     if(ai_GetIsInCombat(oCreature)) return;
     // We only inform others if attacked when not busy, not disabled & not in combat.
-    if(AI_DEBUG) ai_Debug("nw_c2_default5", "30", "Tell my allies I've been attacked!");
+    if(AI_DEBUG) ai_Debug("nw_c2_default5", "31", "Tell my allies I've been attacked!");
     SetLocalObject (oCreature, AI_MY_TARGET, oAttacker);
     SpeakString(AI_ATKED_BY_WEAPON, TALKVOLUME_SILENT_TALK);
     // Now move towards the attack in the hopes we can see them.

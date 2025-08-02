@@ -204,12 +204,14 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             {
                 SetLocalString(oAssociate, AI_COMBAT_SCRIPT, GetLocalString(oAssociate, AI_DEFAULT_SCRIPT));
             }
-            if(ai_GetIsInCombat(oAssociate)) ai_DoAssociateCombatRound(oAssociate, oTarget);
+            /*if(ai_GetIsInCombat(oAssociate)) ai_DoAssociateCombatRound(oAssociate, oTarget);
             else
             {
                 ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
                 ai_StartAssociateCombat(oAssociate, oTarget);
-            }
+            } */
+            if(ai_GetIsRangeWeapon(GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oAssociate))) ActionAttack(oTarget, TRUE);
+            else ActionAttack(oTarget);
             ai_SendMessages(GetName(oAssociate) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }
         else

@@ -10,7 +10,9 @@
 #include "0i_actions"
 void main()
 {
-    if(AI_DEBUG) ai_Debug("nw_c2_default8", "13", GetName(OBJECT_SELF) + " is been disturbed!");
+    object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_disturb", oCreature);
+    if(AI_DEBUG) ai_Debug("nw_c2_default8", "15", GetName(oCreature) + " is been disturbed!");
     // We do nothing at the moment... lets not mess up our factions ok?
     // This should be defined by the server admins and is commented out.
     //if(ai_GetIsBusy(OBJECT_SELF, FALSE) || ai_Disabled()) return;
@@ -19,6 +21,6 @@ void main()
     // Send the disturbed flag if appropriate.
     if(GetSpawnInCondition(NW_FLAG_DISTURBED_EVENT))
     {
-        SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_DISTURBED));
+        SignalEvent(oCreature, EventUserDefined(EVENT_DISTURBED));
     }
 }

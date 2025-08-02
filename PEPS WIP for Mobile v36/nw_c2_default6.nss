@@ -13,6 +13,7 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
+    ExecuteScript("prc_npc_damaged", oCreature);
     // Send the user-defined event signal
     if(GetSpawnInCondition(NW_FLAG_DAMAGED_EVENT))
     {
@@ -23,7 +24,7 @@ void main()
     // Make sure to clear wounded shout limit if we take damage. See ai_TryHealing.
     DeleteLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT");
     object oDamager = GetLastDamager(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default6", "23", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
+    if(AI_DEBUG) ai_Debug("nw_c2_default6", "27", GetName(oCreature) + " has been damaged by " + GetName(oDamager));
     if(ai_GetFleeToExit(oCreature)) return;
     if(GetObjectType(oDamager) == OBJECT_TYPE_AREA_OF_EFFECT &&
        ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;

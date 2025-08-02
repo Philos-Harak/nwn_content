@@ -397,6 +397,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
     if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
         int nSpellMemorized;
+        nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
         while(nIndex < nMaxIndex)
         {
             nMSpell = GetMemorizedSpellId(oCaster, nClass, nLevel, nIndex);
@@ -404,20 +405,18 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             {
                 nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
                 nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
-                //ai_Debug("pe_buffing", "308", "nMmSpell: " + IntToString(nMmSpell) +
+                //SendMessageToPC(oCaster, "pe_buffing, 308, nSpell: " + IntToString(nSpell) +
+                //         " nMSpell: " + IntToString(nMSpell) +
+                //         " nMmSpell: " + IntToString(nMmSpell) +
                 //         " nMetamagic: " + IntToString(nMetamagic) +
                 //         " nDomain: " + IntToString(nDomain) +
                 //         " nDSpell: " + IntToString(nDSpell));
-                // Cannot save the domain status so we just use the first spell ID.
-                // Then return the domain statusl.
-                //if(nMmSpell == nMetamagic &&
-                //  ((nDomain > 0 && nDSpell == TRUE) || nDomain == 0 && nDSpell == FALSE))
                 if(nMmSpell == nMetamagic)
                 {
                     nSpellMemorized = TRUE;
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
-                        if(nDSpell == nDomain) return TRUE;
+                        if((nDomain && nDSpell) || (!nDomain && !nDSpell)) return TRUE;
                     }
                 }
             }
@@ -425,18 +424,20 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             {
                 sSubRadSpell = "SubRadSpell" + IntToString(nSubRadSpell);
                 if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell)))
-                nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
-                nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
-                ai_Debug("pe_buffing", "421", "nMmSpell: " + IntToString(nMmSpell) +
-                         " nMetamagic: " + IntToString(nMetamagic) +
-                         " nDomain: " + IntToString(nDomain) +
-                         " nDSpell: " + IntToString(nDSpell));
-                if(nMmSpell == nMetamagic)
                 {
-                    nSpellMemorized = TRUE;
-                    if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
+                    nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
+                    nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
+                    //SendMessageToPC(oCaster, "pe_buffing, 433, nMmSpell: " + IntToString(nMmSpell) +
+                    //         " nMetamagic: " + IntToString(nMetamagic) +
+                    //         " nDomain: " + IntToString(nDomain) +
+                    //         " nDSpell: " + IntToString(nDSpell));
+                    if(nMmSpell == nMetamagic)
                     {
-                        if(nDSpell == nDomain) return TRUE;
+                        nSpellMemorized = TRUE;
+                        if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
+                        {
+                            if((nDomain && nDSpell) || (!nDomain && !nDSpell)) return TRUE;
+                        }
                     }
                 }
             }
@@ -531,4 +532,5 @@ void PopupWidgetBuffGUIPanel(object oPC)
     NuiSetBind (oPC, nToken, "btn_four", JsonBool (TRUE));
     NuiSetBind (oPC, nToken, "btn_four_event", JsonBool (TRUE));
 }
+
 

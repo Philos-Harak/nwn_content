@@ -17,7 +17,8 @@
 void main()
 {
     object oCreature = OBJECT_SELF;
-    if(AI_DEBUG) ai_Debug("nw_c2_default3", "20", GetName(oCreature) + " ends combat round." +
+    ExecuteScript("prc_npc_combat", oCreature);
+    if(AI_DEBUG) ai_Debug("nw_c2_default3", "21", GetName(oCreature) + " ends combat round." +
                  " Current action: " + IntToString(GetCurrentAction(oCreature)));
     if(GetSpawnInCondition(NW_FLAG_END_COMBAT_ROUND_EVENT))
     {
@@ -34,7 +35,7 @@ void main()
         if(nActionMode == 12) IncrementRemainingFeatUses(oCreature, FEAT_DWARVEN_DEFENDER_DEFENSIVE_STANCE);
     }
     int nAction = GetCurrentAction(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default3", "37", "nAction: " + IntToString(nAction));
+    if(AI_DEBUG) ai_Debug("nw_c2_default3", "38", "nAction: " + IntToString(nAction));
     switch(nAction)
     {
         // These actions are uninteruptable.
@@ -46,7 +47,7 @@ void main()
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            if(AI_DEBUG) ai_Debug("nw_c2_default3", "49", "nCombatWait: " + IntToString(nCombatWait));
+            if(AI_DEBUG) ai_Debug("nw_c2_default3", "50", "nCombatWait: " + IntToString(nCombatWait));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return;

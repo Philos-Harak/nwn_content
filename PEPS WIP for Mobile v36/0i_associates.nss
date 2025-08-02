@@ -1935,7 +1935,6 @@ void ai_Action(object oPC, object oAssociate)
 {
     if(oPC == oAssociate)
     {
-        DeleteLocalObject(oPC, "NW_ASSOCIATE_COMMAND");
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION_ALL");
         ai_SendMessages("Select an action for the party.", AI_COLOR_YELLOW, oPC);
     }
@@ -1943,6 +1942,7 @@ void ai_Action(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
+        SetLocalInt(oPC, "AI_TARGET_MODE_ON", TRUE);
         ai_SendMessages("Select an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -2167,6 +2167,7 @@ void ai_ChangeCameraView(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE", oAssociate);
         AttachCamera(oPC, oAssociate);
+        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate);
     }
 }
 void ai_SelectCameraView(object oPC)

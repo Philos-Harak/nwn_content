@@ -134,12 +134,12 @@ int ai_GetIsInCombat(object oCreature)
 }
 void ai_SetCombatRound(object oCreature)
 {
-    SetLocalInt(oCreature, "AI_COMBAT_ROUND_START", SQLite_GetTimeStamp());
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "116", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+    SetLocalInt(oCreature, "AI_COMBAT_ROUND_START", ai_GetCurrentTimeStamp());
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "116", " ===============> " + GetName(oCreature) + " ROUND START:" + IntToString(ai_GetCurrentTimeStamp()) + " <===============");
 }
 void ai_EndCombatRound(object oCreature)
 {
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "120", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(SQLite_GetTimeStamp()) + " <===============");
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "120", " ===============> " + GetName(oCreature) + " ROUND END:" + IntToString(ai_GetCurrentTimeStamp()) + " <===============");
     DeleteLocalInt(oCreature, "AI_COMBAT_ROUND_START");
 }
 int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_SECONDS)
@@ -148,10 +148,10 @@ int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_S
     if(AI_DEBUG) ai_Debug("0i_states_cond", "148", " nCombatRoundStart: " + IntToString(nCombatRoundStart));
     if(!nCombatRoundStart) return FALSE;
     // New combat round calculator. If 6 seconds has passed then we are on a new round!
-    int nSQLTime = SQLite_GetTimeStamp();
-    int nCombatRoundTime = nSQLTime - nCombatRoundStart;
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "153", " SQLite_GetTimeStamp: " + IntToString(nSQLTime) +
-             "(" + IntToString(nSQLTime - nCombatRoundStart) + ")");
+    int nTime = ai_GetCurrentTimeStamp();
+    int nCombatRoundTime = nTime - nCombatRoundStart;
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "153", " nTime + (nTime - Round Start): " + IntToString(nTime) +
+             "(" + IntToString(nTime - nCombatRoundStart) + ")");
     if(nCombatRoundTime < nCombatRound) return TRUE;
     ai_EndCombatRound(oCreature);
     return FALSE;

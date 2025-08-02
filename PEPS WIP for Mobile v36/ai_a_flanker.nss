@@ -1,7 +1,7 @@
 /*////////////////////////////////////////////////////////////////////////////////////////////////////
-// Script Name: ai_a_flanker
+// Script Name: ai_flanker
 //////////////////////////////////////////////////////////////////////////////////////////////////////
- ai script for associates to flank the enemy and not charge into combat.
+ ai script for monsters to flank the enemy and not charge into combat.
  OBJECT_SELF is the creature running the ai.
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
@@ -12,45 +12,37 @@ void main()
     object oCreature = OBJECT_SELF;
     // Get the number of enemies that we are in melee combat with.
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
-    //***************************  HEALING & CURES  ****************************
     if(ai_TryHealingTalent(oCreature, nInMelee)) return;
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
-    int nDifficulty = ai_GetDifficulty(oCreature);
-    int nMaxLevel;
-    // Check for moral and get the maximum spell level we should use.
-    if(nDifficulty >= AI_COMBAT_EFFORTLESS)
+    if(nInMelee && ai_MoralCheck(oCreature)) return;
+    int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
+    //*****************  OFFENSIVE AREA OF EFFECT TALENTS  *********************
+    // Check the battlefield for a group of enemies to shoot a big talent at!
+    // We are checking here since these opportunities are rare and we need
+    // to take advantage of them as often as possible.
+    if(ai_UseCreatureTalent(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
+    if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
+    // ***********************  DEFENSIVE TALENTS  *****************************
+    int nRound = ai_GetCurrentRound(oCreature);
+    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
+    //*******************  OFFENSIVE TARGETED TALENTS  *************************
+    // Look for a touch attack since we are in melee.
+    if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
+    if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
+    //****************************  SKILL FEATURES  ****************************
+    if(ai_TryAnimalEmpathy(oCreature)) return;
+    //****************************  CLASS FEATURES  ****************************
+    if(ai_TryBarbarianRageFeat(oCreature)) return;
+    if(ai_TryBardSongFeat(oCreature)) return;
+    if(ai_TryTurningTalent(oCreature)) return;
+    if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
     {
-        if(nInMelee && ai_MoralCheck(oCreature)) return;
-        nMaxLevel = ai_GetAssociateTalentMaxLevel(oCreature, nDifficulty);
-    }
-    // Skill, Class, Offensive AOE's, and Defensive talents.
-    if(nDifficulty >= AI_COMBAT_MODERATE)
-    {
-        // *************************** SPELL TALENTS ***************************
-        if(ai_CheckForAssociateSpellTalent(oCreature, nInMelee, nMaxLevel)) return;
-        //**************************  SKILL FEATURES  **************************
-        if(ai_TryAnimalEmpathy(oCreature)) return;
-        // ************************** CLASS FEATURES ***************************
-        if(ai_TryBarbarianRageFeat(oCreature)) return;
-        if(ai_TryBardSongFeat(oCreature)) return;
-        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
-    }
-    // Class and Offensive single target talents.
-    if(nDifficulty >= AI_COMBAT_EFFORTLESS)
-    {
-        // *************************** SPELL TALENTS ***************************
-        if(!ai_GetMagicMode(oCreature, AI_MAGIC_DEFENSIVE_CASTING))
-        {
-            if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
-            if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
-        }
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     object oTarget;
-    oTarget = GetLocalObject(oCreature, AI_PC_LOCKED_TARGET);
     // ************************** Melee feat attacks *************************
-    if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     // Lets get the nearest target that is attacking someone besides me. We want to flank!
     if(oTarget == OBJECT_INVALID)
     {
@@ -70,7 +62,7 @@ void main()
         {
             if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
             // Lets get the strongest melee opponent in melee with us.
-            object oTarget = ai_GetHighestCRTargetForMeleeCombat(oCreature, nInMelee);
+            object oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
             if(oTarget != OBJECT_INVALID)
             {
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
@@ -78,15 +70,15 @@ void main()
             }
         }
         // ************************** Ranged feat attacks **************************
-        else if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
+        if(!ai_GetAIMode(oCreature, AI_MODE_STOP_RANGED) && ai_CanIUseRangedWeapon(oCreature, nInMelee))
         {
             if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
                 if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-                oTarget = ai_GetLowestCRTarget(oCreature);
+                oTarget = ai_GetNearestTarget(oCreature);
                 if(oTarget != OBJECT_INVALID)
                 {
-                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                     ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                     return;
                 }
@@ -106,12 +98,6 @@ void main()
         ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
         return;
     }
-    // Are we too far from our master?
-    object oMaster = GetMaster();
-    if(GetDistanceBetween(oMaster, oCreature) > AI_RANGE_LONG)
-    {
-        ActionMoveToObject(oMaster, TRUE, AI_RANGE_CLOSE);
-        return;
-    }
     ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
 }
+

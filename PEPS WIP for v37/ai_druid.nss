@@ -24,14 +24,36 @@ void main()
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nMaxLevel)) return;
     //****************************  CLASS FEATURES  ****************************
     if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS) && ai_TrySummonAnimalCompanionTalent(oCreature)) return;
-    if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
-    int nRound = ai_GetCurrentRound(oCreature);
-    if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
+    // Get the Spell Level we should still cast before turning into our polymorph form.
+    int nSpellLevel = ai_GetHasPolymorphSelfFeat(oCreature);
+    if(AI_DEBUG) ai_Debug("ai_druid", "30", "nSpellLevel: " + IntToString(nSpellLevel));
+    int nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_SUMMON);
+    if(AI_DEBUG) ai_Debug("ai_druid", "32", "nMaxTalentLevel 'S' " + IntToString(nMaxTalentLevel));
+    if(nSpellLevel < nMaxTalentLevel &&
+       ai_UseCreatureTalent(oCreature, AI_TALENT_SUMMON, nInMelee, nMaxLevel)) return;
+    nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_PROTECTION);
+    if(AI_DEBUG) ai_Debug("ai_druid", "36", "nMaxTalentLevel 'P' " + IntToString(nMaxTalentLevel));
+    if(nSpellLevel < nMaxTalentLevel &&
+       ai_UseCreatureTalent(oCreature, AI_TALENT_PROTECTION, nInMelee, nMaxLevel)) return;
+    nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_ENHANCEMENT);
+    if(AI_DEBUG) ai_Debug("ai_druid", "40", "nMaxTalentLevel 'E' " + IntToString(nMaxTalentLevel));
+    if(nSpellLevel < nMaxTalentLevel &&
+       ai_UseCreatureTalent(oCreature, AI_TALENT_ENHANCEMENT, nInMelee, nMaxLevel)) return;
     //**********************  OFFENSIVE TARGETED TALENTS  **********************
     // Look for a touch attack since we are in melee.
-    if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
-    if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
+    if(nInMelee > 0)
+    {
+        nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_TOUCH);
+        if(AI_DEBUG) ai_Debug("ai_druid", "48", "nMaxTalentLevel 'T' " + IntToString(nMaxTalentLevel));
+        if(nSpellLevel < nMaxTalentLevel &&
+           ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
+    }
+    nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_RANGED);
+    if(AI_DEBUG) ai_Debug("ai_druid", "53", "nMaxTalentLevel 'R' " + IntToString(nMaxTalentLevel));
+    if(nSpellLevel < nMaxTalentLevel &&
+       ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
+    if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //****************************  SKILL FEATURES  ****************************
     if(ai_TryAnimalEmpathy(oCreature)) return;
     // All else fails lets see if we have any good potions.
@@ -47,6 +69,7 @@ void main()
             else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
             if(oTarget != OBJECT_INVALID)
             {
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
             }

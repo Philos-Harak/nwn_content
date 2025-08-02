@@ -54,12 +54,12 @@ void main()
     if(StartingUp(oPC)) return;
     // Row 1 (Buttons) ********************************************************* 83
     json jRow = CreateButtonSelect(JsonArray(), "Save", "btn_save", 60.0f, 30.0f, "btn_save_tooltip");
-    CreateButton(jRow, "Clear", "btn_clear", 60.0f, 30.0f, -1.0, "btn_clear_tooltip");
-    CreateButton(jRow, "Buff", "btn_buff", 60.0f, 30.0f, -1.0, "btn_buff_tooltip");
-    CreateButtonSelect(jRow, "List 1", "btn_list1", 60.0f, 30.0f);
-    CreateButtonSelect(jRow, "List 2", "btn_list2", 60.0f, 30.0f);
-    CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 30.0f);
-    CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 30.0f);
+    jRow = CreateButton(jRow, "Clear", "btn_clear", 60.0f, 30.0f, -1.0, "btn_clear_tooltip");
+    jRow = CreateButton(jRow, "Buff", "btn_buff", 60.0f, 30.0f, -1.0, "btn_buff_tooltip");
+    jRow = CreateButtonSelect(jRow, "List 1", "btn_list1", 60.0f, 30.0f);
+    jRow = CreateButtonSelect(jRow, "List 2", "btn_list2", 60.0f, 30.0f);
+    jRow = CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 30.0f);
+    jRow = CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 30.0f);
     // Add the row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Buttons) ********************************************************* 121
@@ -69,6 +69,13 @@ void main()
     if(!AI_SERVER)
     {
         jRow = CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 30.0f, "chbx_no_monster_check_tooltip");
+    }
+    else
+    {
+        if(ai_GetIsDungeonMaster(oPC))
+        {
+            jRow = CreateCheckBox(jRow, "Don't Check for Monsters", "chbx_no_monster_check", 200.0, 30.0f, "chbx_no_monster_check_tooltip");
+        }
     }
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add the row to the column.
@@ -335,4 +342,5 @@ void PopupWidgetBuffGUIPanel(object oPC)
     NuiSetBind(oPC, nToken, "btn_four", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_four_event", JsonBool(TRUE));
 }
+
 

@@ -8,6 +8,7 @@
 #include "nw_inc_gff"
 #include "x0_i0_assoc"
 #include "0i_menus"
+#include "0i_module"
 #include "0i_player_target"
 // Save a window ID to the database.
 void ai_SaveWindowLocation(object oPC, int nToken, string sAssociateType, string sWindowID);
@@ -94,10 +95,20 @@ void main()
     json jData = NuiGetUserData(oPC, nToken);
     object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    if(ai_GetIsDungeonMaster(oPC))
+    {
+        if(!NuiFindWindow(oPC, "dm" + AI_WIDGET_NUI))
+        {
+            ai_SendMessages(GetName(oPC) + " is now a Dungeon Master! Loading Dungeon Master widget.", AI_COLOR_YELLOW, oPC);
+            ai_CheckDMStart(oPC);
+        }
+        DelayCommand(0.0, NuiDestroy(oPC, nToken));
+        return;
+    }
     if(!ai_GetIsCharacter(oAssociate) && !GetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE") &&
       (oAssociate == OBJECT_INVALID || GetMaster(oAssociate) != oPC))
     {
-        ai_SendMessages("This creature is no longer in your party!", AI_COLOR_RED, oPC);
+        ai_SendMessages(GetName(oAssociate) + " is no longer in your party!", AI_COLOR_RED, oPC);
         DelayCommand(0.0, NuiDestroy(oPC, nToken));
         return;
     }
@@ -194,57 +205,6 @@ void main()
                         ai_SendMessages("Action Ghost mode is turned on when using commands.", AI_COLOR_YELLOW, oPC);
                     }
                     aiSaveAssociateModesToDb(oPC, oPC);
-                }
-            }
-            else if(sElem == "btn_toggle_assoc_widget")
-            {
-                int bWidgetOff = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc");
-                string sAssocType;
-                ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc", bWidgetOff);
-                object oAssoc = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
-                if(oAssoc != OBJECT_INVALID)
-                {
-                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
-                    else ai_CreateWidgetNUI(oPC, oAssoc);
-                }
-                oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
-                if(oAssoc != OBJECT_INVALID)
-                {
-                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
-                    else ai_CreateWidgetNUI(oPC, oAssoc);
-                }
-                oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
-                if(oAssoc != OBJECT_INVALID)
-                {
-                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
-                    else ai_CreateWidgetNUI(oPC, oAssoc);
-                }
-                oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
-                if(oAssoc != OBJECT_INVALID)
-                {
-                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
-                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
-                    else ai_CreateWidgetNUI(oPC, oAssoc);
-                }
-                int nIndex;
-                object oHenchman;
-                for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
-                {
-                    oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-                    if(oHenchman != OBJECT_INVALID)
-                    {
-                        sAssocType = ai_GetAssociateType(oPC, oHenchman);
-                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sAssocType, bWidgetOff);
-                        if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
-                        else ai_CreateWidgetNUI(oPC, oHenchman);
-                    }
                 }
             }
             else if(sElem == "btn_effect_icon")
@@ -579,6 +539,60 @@ void main()
             else if(sElem == "btn_familiar_name") ai_SetCompanionName(oPC, oAssociate, nToken, ASSOCIATE_TYPE_FAMILIAR);
             else if(sElem == "btn_companion_name") ai_SetCompanionName(oPC, oAssociate, nToken, ASSOCIATE_TYPE_ANIMALCOMPANION);
             else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oPC, sElem);
+            else if(sElem == "btn_toggle_assoc_widget")
+            {
+                int bWidgetOff = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc");
+                string sAssocType, sText;
+                if(bWidgetOff) sText = "  Associate Widgets [Off]";
+                else sText = "  Associate Widgets [On]";
+                ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_toggle_assoc_widget_tooltip", sText);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc", bWidgetOff);
+                object oAssoc = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                int nIndex;
+                object oHenchman;
+                for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
+                {
+                    oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
+                    if(oHenchman != OBJECT_INVALID)
+                    {
+                        sAssocType = ai_GetAssociateType(oPC, oHenchman);
+                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sAssocType, bWidgetOff);
+                        if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                        else ai_CreateWidgetNUI(oPC, oHenchman);
+                    }
+                }
+            }
         }
         else if(sEvent == "watch")
         {
@@ -601,6 +615,7 @@ void main()
                 DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
             }
             else if(sElem == "chbx_buff_rest_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_BUFF_REST, oAssociate, sAssociateType, nToken, sElem);
+            else if(sElem == "chbx_toggle_assoc_widget_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_ASSOC_WIDGETS_OFF, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_cmd_action_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_cmd_guard_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_GUARD, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_cmd_hold_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_HOLD, oAssociate, sAssociateType, nToken, sElem);
@@ -863,6 +878,60 @@ void main()
             else if(sElem == "btn_update_widget") ai_UpdateAssociateWidget(oPC, oAssociate);
             else if(GetStringLeft(sElem, 15) == "btn_exe_plugin_") ai_Plugin_Execute(oPC, sElem);
             else if(GetStringLeft(sElem, 11) == "btn_widget_") ai_SelectWidgetSpellTarget(oPC, oAssociate, sElem);
+            else if(sElem == "btn_toggle_assoc_widget")
+            {
+                int bWidgetOff = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc");
+                string sAssocType, sText;
+                if(bWidgetOff) sText = "Associate Widgets [Off]";
+                else sText = "Associate Widgets [On]";
+                ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_toggle_assoc_widget_tooltip", sText);
+                ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc", bWidgetOff);
+                object oAssoc = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
+                if(oAssoc != OBJECT_INVALID)
+                {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType, bWidgetOff);
+                    if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                    else ai_CreateWidgetNUI(oPC, oAssoc);
+                }
+                int nIndex;
+                object oHenchman;
+                for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
+                {
+                    oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
+                    if(oHenchman != OBJECT_INVALID)
+                    {
+                        sAssocType = ai_GetAssociateType(oPC, oHenchman);
+                        ai_SetWidgetButton(oPC, BTN_WIDGET_OFF, oHenchman, sAssocType, bWidgetOff);
+                        if(bWidgetOff) IsWindowClosed(oPC, sAssocType + AI_WIDGET_NUI);
+                        else ai_CreateWidgetNUI(oPC, oHenchman);
+                    }
+                }
+            }
         }
         if(sEvent == "mousescroll")
         {

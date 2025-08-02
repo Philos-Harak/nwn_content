@@ -426,7 +426,13 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
             ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
             json jHenchman = ObjectToJson(oHenchman, TRUE);
             if(!bPC) AddHenchman(oPC, oHenchman);
-            else DestroyObject(oHenchman);
+            else
+            {
+                DestroyObject(oHenchman);
+                // We need to make sure the henchman is not seen as a PC or DM!
+                jHenchman = GffReplaceByte(jHenchman, "IsPC", 0);
+                jHenchman = GffReplaceByte(jHenchman, "IsDM", 0);
+            }
             //string sPatch = "[{\"op\":\"replace\",\"path\":\"/FactionID/value\",\"value\":1}]";
             //json jPatch = JsonParse(sPatch);
             //jHenchman = JsonPatch(jHenchman, jPatch);
@@ -1242,7 +1248,7 @@ object ResetCharacter(object oPC, object oHenchman)
     json jClassList = GffGetList(jHenchman, "ClassList");
     json jClass = JsonArrayGet(jClassList, 0);
     // Set the Class list to the first class only and put at level 1.
-    int nClass = JsonGetInt(JsonObjectGet(jClass, "Class"));
+    int nClass = JsonGetInt(GffGetInt(jClass, "Class"));
     jClass = GffReplaceShort(jClass, "ClassLevel", 1);
     // Delete extra classes.
     int nClassIndex = JsonGetLength(jClassList) - 1;
@@ -1250,13 +1256,6 @@ object ResetCharacter(object oPC, object oHenchman)
     {
         jClassList = JsonArrayDel(jClassList, nClassIndex--);
     }
-    int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
-    int nMod = JsonGetInt(GffGetByte(jHenchman, "Con"));
-    if(nMod > 9) nHitPoints += (nMod - 10) / 2;
-    else nHitPoints += (nMod - 11) / 2;
-    jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
-    jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
-    jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
     jHenchman = GffReplaceDword(jHenchman, "Experience", 0);
     jHenchman = GffReplaceFloat(jHenchman, "ChallengeRating", 1.0);
     string s2DA = Get2DAString("classes", "AttackBonusTable", nClass);
@@ -1272,7 +1271,7 @@ object ResetCharacter(object oPC, object oHenchman)
     json jLvlStatList = GffGetList(jHenchman, "LvlStatList");
     if(JsonGetType(jLvlStatList) != JSON_TYPE_NULL)
     {
-        WriteTimestampedLogEntry("pinc_henchmen 1275, jLvlStatList: " + JsonDump(jLvlStatList, 4));
+        //WriteTimestampedLogEntry("pinc_henchmen 1275, jLvlStatList: " + JsonDump(jLvlStatList, 4));
         int nLevel = 1, nLevelTrack = 1;
         int nAbilityStatIncrease, nAbility;
         string sAbility;
@@ -1305,6 +1304,18 @@ object ResetCharacter(object oPC, object oHenchman)
         }
         jHenchman = GffRemoveList(jHenchman, "LvlStatList");
     }
+    int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
+    WriteTimestampedLogEntry("inc_henchmen, 1316, Starting HP: " + IntToString(nHitPoints));
+    int nConstitution = JsonGetInt(GffGetByte(jHenchman, "Con"));
+    int nRace = JsonGetInt(GffGetByte(jHenchman, "Race"));
+    nConstitution += StringToInt(Get2DAString("racialtypes", "ConAdjust", nRace));
+    WriteTimestampedLogEntry("inc_henchmen, 1318, Constitution: " + IntToString(nConstitution));
+    if(nConstitution > 9) nHitPoints += (nConstitution - 10) / 2;
+    else nHitPoints += (nConstitution - 11) / 2;
+    WriteTimestampedLogEntry("inc_henchmen, 1321, Setting Health: " + IntToString(nHitPoints));
+    jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
     jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC, 1);
     jHenchman = ResetSkills(jHenchman, oHenchman);
     jHenchman = ResetFeats(jHenchman, oHenchman);

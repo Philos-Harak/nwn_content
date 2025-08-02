@@ -152,6 +152,8 @@ void ai_AmbientAnimations();
 
 void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID)
 {
+    object oMaster = GetMaster(oCreature);
+    if(GetLocalInt(oMaster, "AI_TARGET_MODE_ON") && GetLocalObject(oMaster, AI_TARGET_ASSOCIATE) == oCreature) return;
     if(ai_StayClose(oCreature)) return;
     // Is the target our Player has locked in dead? If so then clear it.
     if(GetIsDead(GetLocalObject(oCreature, AI_PC_LOCKED_TARGET))) DeleteLocalObject(oCreature, AI_PC_LOCKED_TARGET);
@@ -176,21 +178,27 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
         // the polymorph AI script.
         if(sAI != "ai_coward" && sAI != "ai_a_peaceful")
         {
-            if(AI_DEBUG) ai_Debug("0i_actions", "173", "Should we use polymorph? " +
-                     IntToString(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)));
             if(AI_DEBUG)
             {
+                ai_Debug("0i_actions", "181", "Should we use polymorph? Current: " +
+                          IntToString(GetAppearanceType(oCreature)) + " Normal: " + IntToString(ai_GetNormalAppearance(oCreature)));
                 if(ai_GetIsHidden(oCreature))
                 {
-                    ai_Debug("0i_actions", "179", "We are hidden!" +
+                    ai_Debug("0i_actions", "185", "We are hidden!" +
                              " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
                 }
             }
-            if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
+            if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
+            else if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
             {
                 sAI = "ai_a_polymorphed";
+                if(!GetLocalInt(oCreature, AI_POLYMORPHED))
+                {
+                    SetLocalInt(oCreature, AI_POLYMORPHED, TRUE);
+                    ai_ClearTalents(oCreature);
+                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, TRUE);
+                }
             }
-            else if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
         }
         if(sAI == "") sAI = "ai_a_default";
         if(AI_DEBUG) ai_Debug("0i_actions", "190", "********** " + GetName (oCreature) + " **********");
@@ -226,11 +234,24 @@ void ai_DoMonsterCombatRound(object oMonster)
         string sAI = GetLocalString(oMonster, AI_COMBAT_SCRIPT);
         if(sAI != "ai_coward")
         {
-            if(GetAppearanceType(oMonster) != ai_GetNormalAppearance(oMonster))
+            ai_Debug("0i_actions", "235", "Should we use polymorph? Current: " +
+                      IntToString(GetAppearanceType(oMonster)) + " Normal: " + IntToString(ai_GetNormalAppearance(oMonster)));
+            if(ai_GetIsHidden(oMonster))
+            {
+                ai_Debug("0i_actions", "239", "We are hidden!" +
+                         " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oMonster)));
+            }
+            if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
+            else if(GetAppearanceType(oMonster) != ai_GetNormalAppearance(oMonster))
             {
                 sAI = "ai_polymorphed";
+                if(!GetLocalInt(oMonster, AI_POLYMORPHED))
+                {
+                    SetLocalInt(oMonster, AI_POLYMORPHED, TRUE);
+                    ai_ClearTalents(oMonster);
+                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, TRUE);
+                }
             }
-            else if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
         }
         if(sAI == "") sAI = "ai_default";
         if(AI_DEBUG) ai_Debug("0i_actions", "230", "********** " + GetName (oMonster) + " **********");

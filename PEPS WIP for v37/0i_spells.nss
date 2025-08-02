@@ -394,12 +394,112 @@ int ai_GetIsSpellBookRestrictedCaster(object oAssociate)
     }
     return FALSE;
 }
+// This is used to set immunities on a creature not using the AI.
+// Should only update every minute.
+void ai_SetCreatureItemImmunities(object oCreature)
+{
+    // Create an Immunity in json so we can check item immunities quickly for non-AI creatures.
+    SetLocalInt(oCreature, sIPTimeStampVarname, ai_GetCurrentTimeStamp());
+    if(AI_DEBUG) ai_Debug("0i_spells", "402", "Checking for Item immunities on " + GetName(oCreature));
+    int nSpellImmunity, bHasItemImmunity, nSlot;
+    json jImmunity = JsonArray();
+    DeleteLocalInt(oCreature, sIPImmuneVarname);
+    DeleteLocalInt(oCreature, sIPResistVarname);
+    DeleteLocalInt(oCreature, sIPReducedVarname);
+    int nIprpSubType, nSpell, nLevel, nIPType, nIndex;
+    itemproperty ipProp;
+    // Cycle through all the creatures equiped items.
+    object oItem = GetItemInSlot(nSlot, oCreature);
+    while(nSlot < 12)
+    {
+        if(oItem != OBJECT_INVALID)
+        {
+            if(AI_DEBUG) ai_Debug("0i_spells", "416", "Checking Item immunities on " + GetName(oItem));
+            ipProp = GetFirstItemProperty(oItem);
+            // Check for immunities on items.
+            while(GetIsItemPropertyValid(ipProp))
+            {
+                nIPType = GetItemPropertyType(ipProp);
+                if(AI_DEBUG) ai_Debug("0i_spells", "422", "ItempropertyType(53/20/23/22): " + IntToString(nIPType));
+                if(nIPType == ITEM_PROPERTY_IMMUNITY_SPECIFIC_SPELL)
+                {
+                    bHasItemImmunity = TRUE;
+                    nSpellImmunity = GetItemPropertyCostTableValue(ipProp);
+                    nSpellImmunity = StringToInt(Get2DAString("iprp_spellcost", "SpellIndex", nSpellImmunity));
+                    //if(AI_DEBUG) ai_Debug("0i_talents", "1950", "SpellImmunity to " + Get2DAString("spells", "Label", nSpellImmunity));
+                    jImmunity = JsonArrayInsert(jImmunity, JsonInt(nSpellImmunity));
+                }
+                else if(nIPType == ITEM_PROPERTY_IMMUNITY_DAMAGE_TYPE)
+                {
+                    int nBit, nIpSubType = GetItemPropertySubType(ipProp);
+                    if(AI_DEBUG) ai_Debug("0i_talents", "434", "Immune DmgType: nIPSubType: " + IntToString(nIpSubType));
+                    if(nIpSubType == 0) nBit = DAMAGE_TYPE_BLUDGEONING;
+                    else if(nIpSubType == 1) nBit = DAMAGE_TYPE_PIERCING;
+                    else if(nIpSubType == 2) nBit = DAMAGE_TYPE_SLASHING;
+                    else if(nIpSubType == 5) nBit = DAMAGE_TYPE_MAGICAL;
+                    else if(nIpSubType == 6) nBit = DAMAGE_TYPE_ACID;
+                    else if(nIpSubType == 7) nBit = DAMAGE_TYPE_COLD;
+                    else if(nIpSubType == 8) nBit = DAMAGE_TYPE_DIVINE;
+                    else if(nIpSubType == 9) nBit = DAMAGE_TYPE_ELECTRICAL;
+                    else if(nIpSubType == 10) nBit = DAMAGE_TYPE_FIRE;
+                    else if(nIpSubType == 11) nBit = DAMAGE_TYPE_NEGATIVE;
+                    else if(nIpSubType == 12) nBit = DAMAGE_TYPE_POSITIVE;
+                    else if(nIpSubType == 13) nBit = DAMAGE_TYPE_SONIC;
+                    if(nBit > 0) ai_SetItemProperty(oCreature, sIPImmuneVarname, nBit, TRUE);
+                }
+                else if(nIPType == ITEM_PROPERTY_DAMAGE_RESISTANCE)
+                {
+                    int nBit, nIpSubType = GetItemPropertySubType(ipProp);
+                    if(AI_DEBUG) ai_Debug("0i_talents", "452", "Dmg Resist: nIPSubType: " + IntToString(nIpSubType));
+                    if(nIpSubType == 0) nBit = DAMAGE_TYPE_BLUDGEONING;
+                    else if(nIpSubType == 1) nBit = DAMAGE_TYPE_PIERCING;
+                    else if(nIpSubType == 2) nBit = DAMAGE_TYPE_SLASHING;
+                    else if(nIpSubType == 5) nBit = DAMAGE_TYPE_MAGICAL;
+                    else if(nIpSubType == 6) nBit = DAMAGE_TYPE_ACID;
+                    else if(nIpSubType == 7) nBit = DAMAGE_TYPE_COLD;
+                    else if(nIpSubType == 8) nBit = DAMAGE_TYPE_DIVINE;
+                    else if(nIpSubType == 9) nBit = DAMAGE_TYPE_ELECTRICAL;
+                    else if(nIpSubType == 10) nBit = DAMAGE_TYPE_FIRE;
+                    else if(nIpSubType == 11) nBit = DAMAGE_TYPE_NEGATIVE;
+                    else if(nIpSubType == 12) nBit = DAMAGE_TYPE_POSITIVE;
+                    else if(nIpSubType == 13) nBit = DAMAGE_TYPE_SONIC;
+                    if(nBit > 0) ai_SetItemProperty(oCreature, sIPResistVarname, nBit, TRUE);
+                }
+                else if(nIPType == ITEM_PROPERTY_DAMAGE_REDUCTION)
+                {
+                    int nIpSubType = GetItemPropertySubType(ipProp);
+                    if(AI_DEBUG) ai_Debug("0i_talents", "470", "Dmg Reduction: nIPSubType: " + IntToString(nIpSubType));
+                    SetLocalInt(oCreature, sIPReducedVarname, nIpSubType);
+                }
+                nIndex++;
+                ipProp = GetNextItemProperty(oItem);
+            }
+            // If nSpellImmunity has been set then we need to save our Immunity json.
+            if(bHasItemImmunity) SetLocalJson(oCreature, AI_TALENT_IMMUNITY, jImmunity);
+        }
+        oItem = GetItemInSlot(++nSlot, oCreature);
+        // Make the final check the creatures hide.
+        if(nSlot == 11) oItem = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oCreature);
+    }
+}
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
+    // This checks for creatures not using the AI system (usually players)
+    // Creatures using the AI system will always have a value in sIPReducedVarname!
+    // Updates thier immunity values every minute. Should be good as we only update
+    // equiped items. Spell effects are checked on the creature and are not saved.
+    if(AI_DEBUG)
+    {
+        if(GetLocalInt(oCreature, sIPReducedVarname) == 0) ai_Debug("0i_spells", "492",
+           " Immunities last saved: " + IntToString(GetLocalInt(oCreature, sIPTimeStampVarname)) +
+           " + 60 < " + IntToString(ai_GetCurrentTimeStamp()));
+    }
+    if(GetLocalInt(oCreature, sIPReducedVarname) == 0 &&
+       GetLocalInt(oCreature, sIPTimeStampVarname) + 60 < ai_GetCurrentTimeStamp()) ai_SetCreatureItemImmunities(oCreature);
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
+    if(AI_DEBUG) ai_Debug("0i_spells", "499", "Checking spell immunity type(" + sIType + ").");
     if(sIType != "")
     {
-        if(AI_DEBUG) ai_Debug("0i_spells", "290", "Checking spell immunity type(" + sIType + ").");
         if(sIType == "Death" && GetIsImmune(oCreature, IMMUNITY_TYPE_DEATH)) return TRUE;
         else if(sIType == "Level_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_NEGATIVE_LEVEL)) return TRUE;
         else if(sIType == "Ability_Drain" && GetIsImmune(oCreature, IMMUNITY_TYPE_ABILITY_DECREASE)) return TRUE;
@@ -436,7 +536,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         // Negative damage does not work on undead!
         else if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
         {
-            if(AI_DEBUG) ai_Debug("0i_spell", "325", "Undead are immune to Negative energy!");
+            if(AI_DEBUG) ai_Debug("0i_spell", "538", "Undead are immune to Negative energy!");
             return TRUE;
         }
         // Elemental damage resistances should be checked.
@@ -445,22 +545,27 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         {
             if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_DAMAGE_RESISTANCE))
             {
-                if(AI_DEBUG) ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
+                if(AI_DEBUG) ai_Debug("0i_spell", "547", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
                 return TRUE;
             }
             // Check for resistances and immunities. Treat resistance as immune.
             int nIPResist = GetLocalInt(oCreature, sIPResistVarname);
-            if(AI_DEBUG) ai_Debug("0i_spell", "372", "nIPResist:" + IntToString(nIPResist));
+            if(AI_DEBUG) ai_Debug("0i_spell", "552", "nIPResist:" + IntToString(nIPResist));
             int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) | nIPResist;
-            if(AI_DEBUG) ai_Debug("0i_spell", "374", "nIPImmune:" + IntToString(nIPImmune));
-            if(nIPImmune > 0)
+            if(AI_DEBUG) ai_Debug("0i_spell", "554", "nIPImmune:" + IntToString(nIPImmune));
+            int bImmune;
+            if(nIPImmune > 0)            {
+
+                if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) bImmune = TRUE;
+                else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) bImmune = TRUE;
+                else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) bImmune = TRUE;
+                else if(sIType == "Electricity" && (nIPImmune & DAMAGE_TYPE_ELECTRICAL)) bImmune = TRUE;
+                else if(sIType == "Sonic" && (nIPImmune & DAMAGE_TYPE_SONIC)) bImmune = TRUE;
+            }
+            if(bImmune)
             {
-                if(AI_DEBUG) ai_Debug("0i_spell", "391", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
-                if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) return TRUE;
-                else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) return TRUE;
-                else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) return TRUE;
-                else if(sIType == "Electricity" && (nIPImmune & DAMAGE_TYPE_ELECTRICAL)) return TRUE;
-                else if(sIType == "Sonic" && (nIPImmune & DAMAGE_TYPE_SONIC)) return TRUE;
+                if(AI_DEBUG) ai_Debug("0i_spell", "567", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
+                return TRUE;
             }
         }
     }
@@ -479,12 +584,12 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     {
         if(nSpell == JsonGetInt(jSpell))
         {
-            if(AI_DEBUG) ai_Debug("0i_spells", "407", GetName(oCreature) + " is immune to the spell via an Item!");
+            if(AI_DEBUG) ai_Debug("0i_spells", "581", GetName(oCreature) + " is immune to the spell via an Item!");
             return TRUE;
         }
         jSpell = JsonArrayGet(jSpellImmunity, ++nIndex);
     }
-    if(AI_DEBUG) ai_Debug("0i_spell", "347", GetName(oCreature) + " is not immune to the spell.");
+    if(AI_DEBUG) ai_Debug("0i_spell", "586", GetName(oCreature) + " is not immune to the spell.");
     return FALSE;
 }
 float ai_GetSpellRange(int nSpell)
@@ -651,9 +756,9 @@ int ai_IsSilenced(object oCreature, int nSpell)
 }
 int ai_ArcaneSpellFailureTooHigh(object oCreature, int nClass, int nLevel, int nSlot)
 {
-    if(AI_DEBUG) ai_Debug("0i_spells", "561", "Arcane Spells: " + Get2DAString("classes", "ASF", nClass) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "746", "Arcane Spells: " + Get2DAString("classes", "ASF", nClass) +
              " Arcane Spell Failure: " + IntToString(GetArcaneSpellFailure(oCreature)) +
-             " AI_ASF_WILL_USE: " + IntToString(AI_ASF_WILL_USE));
+             " > " + IntToString(AI_ASF_WILL_USE) + " skip.");
     if(Get2DAString("classes", "ASF", nClass) == "1" &&
        GetArcaneSpellFailure(oCreature) > AI_ASF_WILL_USE)
     {

@@ -11,7 +11,17 @@
     AI_TARGET_MODE is the constant used.
     AI_TARGET_ASSOCIATE is the associate that triggered the target mode.
 /*//////////////////////////////////////////////////////////////////////////////
+
+const string AI_FREEZE_PLAYER = "AI_FREEZE_PLAYER";
+
 #include "0i_player_target"
+void ai_EnterAssociateTargetMode(object oPC, object oAssociate)
+{
+    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
+    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
+    SetLocalInt(oPC, "AI_TARGET_MODE_ON", TRUE);
+    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+}
 void main()
 {
     object oPC = GetLastPlayerToSelectTarget();
@@ -67,6 +77,7 @@ void main()
                     }
                     ExecuteScript("nw_ch_ac1", oAssociate);
                 }
+                DeleteLocalInt(oPC, "AI_TARGET_MODE_ON");
             }
             else if(sTargetMode == "ASSOCIATE_GET_TRAP")
             {
@@ -86,6 +97,13 @@ void main()
         // ************************* Targeted Actions **************************
         else
         {
+            // Ignore an associate action if we have frozen the PC. This means
+            // we are using the menus.
+            if(GetLocalInt(oPC, AI_FREEZE_PLAYER))
+            {
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                return;
+            }
             // This action makes an associates move to vTarget.
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
@@ -111,18 +129,21 @@ void main()
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetItem(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "ASSOCIATE_USE_FEAT")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
+                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
             {
@@ -146,9 +167,9 @@ void main()
             {
                 ai_DMAction(oPC, oTarget, lLocation, sTargetMode);
             }
-            // Get saved module player target script and execute it for pass through compatibility.
-            string sModuleTargetScript = GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT);
-            ExecuteScript(sModuleTargetScript);
+            // Get saved module player target script and execute it for pass
+            // through compatibility for plugins.
+            ExecuteScript(GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT));
         }
     }
 }

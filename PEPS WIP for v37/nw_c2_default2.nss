@@ -16,7 +16,7 @@ void main()
     // * if not runnning normal or better AI then exit for performance reasons
     //if (GetAILevel() == AI_LEVEL_VERY_LOW) return;
     object oCreature = OBJECT_SELF;
-    //ExecuteScript("prc_npc_percep", oCreature);
+    ExecuteScript("prc_npc_percep", oCreature);
     if(AI_DEBUG) ai_Debug("nw_c2_default2", "19", "AI_ONSPAWN_EVENT: " + IntToString(GetLocalInt(oCreature, AI_ONSPAWN_EVENT)));
     if(!GetLocalInt(oCreature, AI_ONSPAWN_EVENT)) return;
     if(GetLastPerceptionSeen())

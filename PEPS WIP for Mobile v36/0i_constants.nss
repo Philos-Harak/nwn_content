@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:07.12.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.02.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -219,7 +219,6 @@ const string AI_I_AM_DEAD = "AI_I_AM_DEAD";
 const string AI_I_AM_DISEASED = "AI_I_AM_DISEASED";
 const string AI_I_AM_POISONED = "AI_I_AM_POISONED";
 const string AI_I_AM_WEAK = "AI_I_AM_WEAK";
-const int AI_ALLY_SEES_AN_ENEMY = 1;
 const int AI_ALLY_HEARD_AN_ENEMY = 2;
 const int AI_ALLY_ATKED_BY_WEAPON = 3;
 const int AI_ALLY_ATKED_BY_SPELL = 4;
@@ -228,6 +227,7 @@ const int AI_ALLY_IS_DEAD = 6;
 const int AI_ALLY_IS_DISEASED = 7;
 const int AI_ALLY_IS_POISONED = 8;
 const int AI_ALLY_IS_WEAK = 9;
+const int AI_ALLY_SEES_AN_ENEMY = 10;
 const string AI_MY_TARGET = "AI_MY_TARGET";
 // Constant used by monsters to reduce checks while searching for unseen targets.
 const string AI_AM_I_SEARCHING = "AI_AM_I_SEARCHING";
@@ -255,6 +255,8 @@ const string AI_ATTACKED_PHYSICAL = "AI_ATTACKED_PHYSICAL";
 const string AI_ATTACKED_SPELL = "AI_ATTACKED_SPELL";
 // Variable name used to keep track of a creatures normal polymorph form.
 const string AI_NORMAL_FORM = "AI_NORMAL_FORM";
+// Variable name used to have associates defined as Polymorphed.
+const string AI_POLYMORPHED = "AI_POLYMORPHED";
 // Variable name used to keep track if a creature has been buffed yet.
 const string AI_CASTER_BUFFS_SET = "AI_CASTER_BUFFS_SET";
 // Variable name used to keep track of rounds in combat for a custom ai script.
@@ -394,30 +396,31 @@ const int AI_MAGIC_NO_SPONTANEOUS_CURE = 0x00000800; // Caster will stop using s
 const string AI_NO_NUI_SAVE = "AI_NO_NUI_SAVE";
 // Bitwise menu constants for Widget buttons that are used with Get/SetAssociateWidgetButtons().
 const string sWidgetButtonsVarname = "ASSOCIATE_WIDGET_BUTTONS";
-const int BTN_WIDGET_OFF       = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
-const int BTN_WIDGET_LOCK      = 0x00000002; // Locks the widget to the current coordinates.
-const int BTN_CMD_GUARD        = 0x00000004; // Command associates to Guard Me. PC widget only.
-const int BTN_CMD_FOLLOW       = 0x00000008; // Command associates to Follow. PC widget only.
-const int BTN_CMD_HOLD         = 0x00000010; // Command associates to Stand Ground. PC widget only.
-const int BTN_CMD_ATTACK       = 0x00000020; // Command associates to Attack Nearest. PC widget only.
-const int BTN_BUFF_REST        = 0x00000040; // Buffs with long duration spells after resting. Associate widget only.
-const int BTN_BUFF_SHORT       = 0x00000080; // Buffs with short duration spells.
-const int BTN_BUFF_LONG        = 0x00000100; // Buffs with long duration spells.
-const int BTN_BUFF_ALL         = 0x00000200; // Buffs with all spells.
-const int BTN_CMD_ACTION       = 0x00000400; // Command associate to do an action.
-const int BTN_CMD_GHOST_MODE   = 0x00000800; // Toggle's associates ghost mode.
-const int BTN_CMD_AI_SCRIPT    = 0x00001000; // Toggle's special tactics ai scripts.
-const int BTN_CMD_PLACE_TRAP   = 0x00002000; // A trapper may place traps.
-const int BTN_CMD_CAMERA       = 0x00004000; // Places camera view on associate.
-const int BTN_CMD_INVENTORY    = 0x00008000; // Opens inventory of associate.
-const int BTN_CMD_FAMILIAR     = 0x00010000; // Summons familiar.
-const int BTN_CMD_COMPANION    = 0x00020000; // Summons Companion.
-const int BTN_CMD_SEARCH       = 0x00040000; // Command all associates to use search mode. PC widget only.
-const int BTN_CMD_STEALTH      = 0x00080000; // Command all associates to use stealth mode. PC widget only.
-const int BTN_CMD_SCOUT        = 0x00100000; // Command associate to scout ahead of the part.
-const int BTN_CMD_SPELL_WIDGET = 0x00200000; // Allows adding or removing spells from Spell Widget.
-const int BTN_CMD_JUMP_TO      = 0x00400000; // Player can make associates jump to them.
-const int BTN_WIDGET_VERTICAL  = 0x80000000; // Widget will be displayed vertical.
+const int BTN_WIDGET_OFF        = 0x00000001; // Removes the widget from the screen, For PC it removes all associates.
+const int BTN_WIDGET_LOCK       = 0x00000002; // Locks the widget to the current coordinates.
+const int BTN_CMD_GUARD         = 0x00000004; // Command associates to Guard Me. PC widget only.
+const int BTN_CMD_FOLLOW        = 0x00000008; // Command associates to Follow. PC widget only.
+const int BTN_CMD_HOLD          = 0x00000010; // Command associates to Stand Ground. PC widget only.
+const int BTN_CMD_ATTACK        = 0x00000020; // Command associates to Attack Nearest. PC widget only.
+const int BTN_BUFF_REST         = 0x00000040; // Buffs with long duration spells after resting. Associate widget only.
+const int BTN_BUFF_SHORT        = 0x00000080; // Buffs with short duration spells.
+const int BTN_BUFF_LONG         = 0x00000100; // Buffs with long duration spells.
+const int BTN_BUFF_ALL          = 0x00000200; // Buffs with all spells.
+const int BTN_CMD_ACTION        = 0x00000400; // Command associate to do an action.
+const int BTN_CMD_GHOST_MODE    = 0x00000800; // Toggle's associates ghost mode.
+const int BTN_CMD_AI_SCRIPT     = 0x00001000; // Toggle's special tactics ai scripts.
+const int BTN_CMD_PLACE_TRAP    = 0x00002000; // A trapper may place traps.
+const int BTN_CMD_CAMERA        = 0x00004000; // Places camera view on associate.
+const int BTN_CMD_INVENTORY     = 0x00008000; // Opens inventory of associate.
+const int BTN_CMD_FAMILIAR      = 0x00010000; // Summons familiar.
+const int BTN_CMD_COMPANION     = 0x00020000; // Summons Companion.
+const int BTN_CMD_SEARCH        = 0x00040000; // Command all associates to use search mode. PC widget only.
+const int BTN_CMD_STEALTH       = 0x00080000; // Command all associates to use stealth mode. PC widget only.
+const int BTN_CMD_SCOUT         = 0x00100000; // Command associate to scout ahead of the part.
+const int BTN_CMD_SPELL_WIDGET  = 0x00200000; // Allows adding or removing spells from Spell Widget.
+const int BTN_CMD_JUMP_TO       = 0x00400000; // Player can make associates jump to them.
+const int BTN_ASSOC_WIDGETS_OFF = 0x00800000; // Turns all associate widgets on/off.
+const int BTN_WIDGET_VERTICAL   = 0x80000000; // Widget will be displayed vertical.
 // Bitwise menu constants for Associate AI buttons that are used with Get/SetAssociateAIButtons().
 const string sAIButtonsVarname = "ASSOCIATE_AI_BUTTONS";
 const int BTN_AI_FOR_PC             = 0x00000001; // PC use AI. PC widget only.
@@ -568,6 +571,8 @@ const string AI_MODULE_GUI_EVENT = "AI_MODULE_GUI_EVENT";
 const string AI_TARGET_MODE = "AI_TARGET_MODE";
 // Variable used on the player to define which associate triggered the OnPlayer Target.
 const string AI_TARGET_ASSOCIATE = "AI_TARGET_ASSOCIATE";
+// Variable used on a creature to define how long ago their immunities were saved.
+const string sIPTimeStampVarname = "AI_IP_TIMESTAMP";
 // Bitwise constants for immune damage item properties that is used with Get/SetItemProperty().
 const string sIPImmuneVarname = "AI_IP_IMMUNE";
 // Bitwise constants for resisted damage item properties that is used with Get/SetItemProperty().

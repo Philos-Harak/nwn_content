@@ -116,7 +116,7 @@ void main()
     jSpell = JsonArrayInsert(jSpell, JsonInt(nDomain));
     string sTargetName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget, TRUE)));
     jSpell = JsonArrayInsert(jSpell, JsonString(sTargetName));
-    jSpell = JsonArrayInsert(jSpells, jSpell);
+    jSpells = JsonArrayInsert(jSpells, jSpell);
     SetBuffDatabaseJson(oPC, "spells", jSpells, sList);
     SendMessageToPC(oPC, sName + " has been saved for fast buffing on " + sTargetName + ".");
     ExecuteScript("pi_buffing", oPC);

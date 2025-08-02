@@ -14,8 +14,8 @@
 void main()
 {
     object oPC = GetFirstPC();
-    ai_SetupPlayerTarget(oPC);
-    ai_SetupModuleGUIEvents(oPC);
+    ai_SetupPlayerTarget();
+    ai_SetupModuleGUIEvents();
     ai_SetAIRules();
     ai_StartupPlugins(oPC);
     if(ai_GetIsCharacter(oPC))
@@ -24,7 +24,7 @@ void main()
         ai_CreateWidgetNUI(oPC, oPC);
         ai_SetNormalAppearance(oPC);
     }
-    if(AI_SERVER && (GetIsDM(oPC) || GetIsPlayerDM(oPC)))
+    if(ai_GetIsDungeonMaster(oPC))
     {
         ai_CheckDMData(oPC);
         ai_CreateDMWidgetNUI(oPC);

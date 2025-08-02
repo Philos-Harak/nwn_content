@@ -152,6 +152,8 @@ void ai_AmbientAnimations();
 
 void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID)
 {
+    object oMaster = GetMaster(oCreature);
+    if(GetLocalInt(oMaster, AI_TARGET_MODE_ON) && GetLocalObject(oMaster, AI_TARGET_ASSOCIATE) == oCreature) return;
     if(ai_StayClose(oCreature)) return;
     // Is the target our Player has locked in dead? If so then clear it.
     if(GetIsDead(GetLocalObject(oCreature, AI_PC_LOCKED_TARGET))) DeleteLocalObject(oCreature, AI_PC_LOCKED_TARGET);
@@ -710,7 +712,7 @@ void ai_DoPhysicalAttackOnBest(object oCreature, int nInMelee, int bAlwaysAtk = 
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
@@ -768,7 +770,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
@@ -825,7 +827,7 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "559", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;

@@ -8,7 +8,7 @@
 #include "0i_menus"
 // Setup an AI OnPlayerTarget Event script while allowing any module onplayer
 // target event script to still work.
-void ai_SetupPlayerTarget(object oCreature);
+void ai_SetupPlayerTarget();
 // Selects a target for oAssocite to follow.
 void ai_AllSelectTarget(object oPC, object oAssociate, object oTarget);
 // Removes the Cutscene ghosts and variables from all associates. For original AI scripts.
@@ -30,7 +30,7 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate);
 // Sets oAssociates action mode for nFeat from the quick widget menu
 int ai_SetActionMode(object oAssociate, int nFeat);
 
-void ai_SetupPlayerTarget(object oCreature)
+void ai_SetupPlayerTarget()
 {
     object oModule = GetModule();
     string sModuleTargetEvent = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET);
@@ -204,12 +204,14 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             {
                 SetLocalString(oAssociate, AI_COMBAT_SCRIPT, GetLocalString(oAssociate, AI_DEFAULT_SCRIPT));
             }
-            if(ai_GetIsInCombat(oAssociate)) ai_DoAssociateCombatRound(oAssociate, oTarget);
-            else
-            {
-                ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
-                ai_StartAssociateCombat(oAssociate, oTarget);
-            }
+            //if(ai_GetIsInCombat(oAssociate)) ai_DoAssociateCombatRound(oAssociate, oTarget);
+            //else
+            //{
+            //    ai_HaveCreatureSpeak(oAssociate, 5, ":0:1:2:3:6:");
+            //    ai_StartAssociateCombat(oAssociate, oTarget);
+            //}
+            if(ai_GetIsRangeWeapon(GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oAssociate))) ActionAttack(oTarget, TRUE);
+            else ActionAttack(oTarget);
             ai_SendMessages(GetName(oAssociate) + " is attacking " + GetName(oTarget), AI_COLOR_RED, oPC);
         }
         else

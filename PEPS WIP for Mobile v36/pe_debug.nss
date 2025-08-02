@@ -503,7 +503,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "SET_NPC_SCRIPTS");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select an npc to change scripts for.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
             }
@@ -513,7 +513,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "SET_REPUTATION");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select a creature to set all standard reputations to neutral.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -523,7 +523,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "CLEAR_REPUTATION");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select a creature to clear your PC's reputation with that creature's faction.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -533,7 +533,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_INFO");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select an object to send it's information to the players screen.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -543,7 +543,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_JSON_DUMP");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select an object to dump it's json values to the log.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE | OBJECT_TYPE_DOOR |
                                    OBJECT_TYPE_ITEM | OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TRIGGER, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
@@ -554,7 +554,7 @@ void main()
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_LIST_VAR");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select an object to list it's variables to the player screen.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -565,7 +565,7 @@ void main()
                 // Set Targeting variables.
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_CREATURE");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select a creature to start sending debug information to the log for.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -576,7 +576,7 @@ void main()
                 // Set Targeting variables.
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "CLEAR_CREATURE_EVENTS");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select a creature to set event scripts to default.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -589,7 +589,7 @@ void main()
                 ai_SetCampaignDbJson("rules", jRules);
                 DeleteLocalObject(oPC, "AI_RULE_DEBUG_CREATURE_OBJECT");
                 ai_SendMessages("Creature Debug mode has been cleared.", AI_COLOR_YELLOW, oPC);
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ExecuteScript("pi_debug", oPC);
             }
             else if(sElem == "btn_delete_var")
@@ -602,7 +602,7 @@ void main()
                 SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
                 SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_DELETE_VARIABLE");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select Object to delete (" + sVarName + ") variable from.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -616,7 +616,7 @@ void main()
                 SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
                 SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_GET_VARIABLE");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select Object to get (" + sVarName + ") variable from.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
@@ -630,7 +630,7 @@ void main()
                 SetLocalString(oPC, "Debug_Var_Value", JsonGetString(NuiGetBind(oPC, nToken, "txt_var_value")));
                 SetLocalInt(oPC, "Debug_Var_Type", JsonGetInt(NuiGetBind (oPC, nToken, "cmb_var_type_selected")));
                 SetLocalString(oPC, AI_TARGET_MODE, "DEBUG_SET_VARIABLE");
-                NuiDestroy(oPC, nToken);
+                DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_SendMessages("Select Object to set (" + sVarName + ") variable to.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }

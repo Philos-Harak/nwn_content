@@ -26,15 +26,11 @@ void main()
     //****************************  SKILL FEATURES  ****************************
     if(ai_TryAnimalEmpathy(oCreature)) return;
     //****************************  CLASS FEATURES  ****************************
-    if(ai_TryBarbarianRageFeat(oCreature)) return;
-    if(ai_TryBardSongFeat(oCreature)) return;
-    if(ai_TryTurningTalent(oCreature)) return;
     if(GetLocalInt(GetModule(), AI_RULE_SUMMON_COMPANIONS))
     {
         if(ai_TrySummonFamiliarTalent(oCreature)) return;
         if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
     }
-    if(ai_TryPolymorphSelfFeat(oCreature)) return;
     //**************************  DEFENSIVE TALENTS  ***************************
     int nRound = ai_GetCurrentRound(oCreature);
     if(ai_TryDefensiveTalents(oCreature, nInMelee, nMaxLevel, nRound)) return;
@@ -44,6 +40,11 @@ void main()
     // Look for a touch attack since we are in melee.
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
+    //****************************  CLASS FEATURES  ****************************
+    if(ai_TryPolymorphSelfFeat(oCreature)) return;
+    if(ai_TryBarbarianRageFeat(oCreature)) return;
+    if(ai_TryBardSongFeat(oCreature)) return;
+    if(ai_TryTurningTalent(oCreature)) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     ai_DoPhysicalAttackOnNearest(oCreature, nInMelee);
 }

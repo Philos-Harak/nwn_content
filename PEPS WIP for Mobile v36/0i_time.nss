@@ -8,55 +8,42 @@ int GetPosixTimestamp();
 string GetCurrentDateTime();
 
 *///////////////////////////////////////////////////////////////////////////////
-// RETURNS a Timestamp in seconds since 1970-01-01.
-int GetCurrentTimeInSeconds();
-// RETURNS a formated date, good for timestamping logs and text.
+// Returns a Timestamp in seconds since 1970-01-01.
+int ai_GetCurrentTimeStamp();
+// Returns a formated date, good for Dating logs and text.
 string GetCurrentDateTime();
 // Sends a server shutdown message 1800 seconds i.e 30 minutes before.
 // nDuration is in seconds. i.e. one hours is 3600 defaults to 24 hours (86400).
 // Should be put into the servers OnHeartBeat.
 void CheckServerShutdownMessage(int nDuration = 86400);
+/// Returns the current time formatted according to the provided sqlite date time format string.
+/// Format string as used by sqlites STRFTIME().
+/// Returns the current time in the requested format. Empty string on error.
+string SQLite_GetFormattedSystemTime(string format);
+/// Returns the number of milliseconds since midnight on January 1, 1970.
+int SQLite_GetTimeMilliseconds();
+/// Returns the date in the format (mm/dd/yyyy).
+string SQLite_GetSystemDate();
+/// Returns the current time in the format (24:mm:ss).
+string SQLite_GetSystemTime();
 
-int GetCurrentTimeInSeconds()
+int ai_GetCurrentTimeStamp()
 {
-    string stmt = "SELECT strftime('%s','now');";
-    sqlquery sqlQuery = SqlPrepareQueryObject(GetModule(), stmt);
-    SqlStep(sqlQuery);
-    return SqlGetInt(sqlQuery, 0);
+    sqlquery query = SqlPrepareQueryObject(GetModule(), "SELECT STRFTIME('%s', 'now')");
+    SqlStep(query);
+    return SqlGetInt(query, 0);
 }
 string GetCurrentDateTime()
 {
-    string stmt = "SELECT datetime('now', 'localtime')";
-    sqlquery sqlQuery = SqlPrepareQueryObject(GetModule(), stmt);
+    sqlquery sqlQuery = SqlPrepareQueryObject(GetModule(), "SELECT datetime('now', 'localtime')");
     SqlStep(sqlQuery);
     return SqlGetString(sqlQuery, 0);
 }
-/// @addtogroup time Time
-/// @brief Provides various time related functions.
-/// @brief Returns the current time formatted according to the provided sqlite date time format string.
-/// @param format Format string as used by sqlites STRFTIME().
-/// @return The current time in the requested format. Empty string on error.
-string SQLite_GetFormattedSystemTime(string format);
-/// @return Returns the number of seconds since midnight on January 1, 1970.
-int SQLite_GetTimeStamp();
-/// @return Returns the number of milliseconds since midnight on January 1, 1970.
-int SQLite_GetTimeMilliseconds();
-/// @brief A millisecond timestamp
 struct SQLite_MillisecondTimeStamp
 {
     int seconds; ///< Seconds since epoch
     int milliseconds; ///< Milliseconds
 };
-/// @remark For mircosecond timestamps use NWNX_Utility_GetHighResTimeStamp().
-/// @return Returns the number of milliseconds since midnight on January 1, 1970.
-struct SQLite_MillisecondTimeStamp SQLite_GetMillisecondTimeStamp();
-/// @brief Returns the current date.
-/// @return The date in the format (mm/dd/yyyy).
-string SQLite_GetSystemDate();
-/// @brief Returns current time.
-/// @return The current time in the format (24:mm:ss).
-string SQLite_GetSystemTime();
-/// @}
 string SQLite_GetFormattedSystemTime(string format)
 {
     sqlquery query = SqlPrepareQueryObject(GetModule(), "SELECT STRFTIME(@format, 'now', 'localtime')");
@@ -64,26 +51,11 @@ string SQLite_GetFormattedSystemTime(string format)
     SqlStep(query); // sqlite returns NULL for invalid format in STRFTIME()
     return SqlGetString(query, 0);
 }
-int SQLite_GetTimeStamp()
-{
-    sqlquery query = SqlPrepareQueryObject(GetModule(), "SELECT STRFTIME('%s', 'now')");
-    SqlStep(query);
-    return SqlGetInt(query, 0);
-}
 int SQLite_GetTimeMillisecond()
 {
     sqlquery query = SqlPrepareQueryObject(GetModule(), "select cast((julianday('now') - 2440587.5) * 86400 * 1000 as integer)");
     SqlStep(query);
     return SqlGetInt(query, 0);
-}
-struct SQLite_MillisecondTimeStamp SQLite_GetMillisecondTimeStamp()
-{
-    sqlquery query = SqlPrepareQueryObject(GetModule(), "SELECT STRFTIME('%s', 'now'), SUBSTR(STRFTIME('%f', 'now'), 4)");
-    SqlStep(query);
-    struct SQLite_MillisecondTimeStamp t;
-    t.seconds = SqlGetInt(query, 0);
-    t.milliseconds = SqlGetInt(query, 1);
-    return t;
 }
 string SQLite_GetSystemDate()
 {
@@ -93,3 +65,4 @@ string SQLite_GetSystemTime()
 {
     return SQLite_GetFormattedSystemTime("%H:%M:%S");
 }
+

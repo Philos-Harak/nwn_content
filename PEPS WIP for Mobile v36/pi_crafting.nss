@@ -42,6 +42,7 @@ void main()
     if(oTarget == OBJECT_INVALID) oTarget = oPC;
     if(StartingUp(oPC)) return;
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
+    if(JsonGetType(jCraft) == JSON_TYPE_NULL) jCraft = JsonObject();
     // Row 1 (Object Name)****************************************************** 508 / 83
     json jRow = CreateTextEditBox(JsonArray(), "plc_hold_bind", "txt_item_name", 50, FALSE, 486.0f, 30.0f);  // 419
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
@@ -125,7 +126,7 @@ void main()
     jImage = NuiWidth(jImage, 320.0);  // 256 + 64
     jImage = NuiHeight(jImage, 220.0); // 176 + 44
     jImage = NuiTooltip(jImage, NuiBind("color_pallet_tooltip"));
-    json jIndicator = JsonArrayInsert(JsonArray(), NuiDrawListRect(JsonBool(TRUE), NuiColor(255,255,255), JsonBool(FALSE), JsonFloat(2.0), NuiBind("color_pallet_pointer")));
+    json jIndicator = JsonArrayInsert(JsonArray(), NuiDrawListRect(JsonBool(TRUE), NuiColor(255,0,0), JsonBool(FALSE), JsonFloat(2.0), NuiBind("color_pallet_pointer")));
     jImage = NuiDrawList(jImage, JsonBool(FALSE), jIndicator);
     jGroupRow = JsonArrayInsert(JsonArray(), jImage);
     jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));

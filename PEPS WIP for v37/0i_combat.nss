@@ -39,6 +39,7 @@ struct stTarget
 //******************************************************************************
 //************ GET TARGETS USING THE OBJECT SEARCH FUNCTIONS *******************
 //******************************************************************************
+
 // Returns the nearest enemy that is not disabled from oCreature.
 // You may pass in any of the CREATURE_TYPE_* constants
 // used in GetNearestCreature as nCType1 & nCType2, with
@@ -64,6 +65,7 @@ object ai_GetLowestCRAttackerOnMaster(object oCreature);
 //******************************************************************************
 //******************** SET/CLEAR COMBAT STATE FUNCTIONS ************************
 //******************************************************************************
+
 // Sets oCreatures's combat state by setting variables for AI_ALLIES and AI_ENEMIES.
 // Returns the nearest visible enemy.
 object ai_SetCombatState(object oCreature);
@@ -71,6 +73,7 @@ object ai_SetCombatState(object oCreature);
 void ai_ClearCombatState(object oCreature);
 // Clears just the Talent variables so we can recalculate the Talents.
 void ai_ClearTalents(object oCreature);
+
 //******************************************************************************
 //*************** GET TARGETS USING COMBAT STATE FUNCTIONS *********************
 //******************************************************************************
@@ -802,6 +805,7 @@ void ai_ClearCombatState(object oCreature)
     DeleteLocalInt(oCreature, sIPImmuneVarname);
     DeleteLocalInt(oCreature, sIPResistVarname);
     DeleteLocalInt(oCreature, sIPReducedVarname);
+    DeleteLocalJson(oCreature, AI_TALENT_IMMUNITY);
     ai_EndCombatRound(oCreature);
 }
 void ai_ClearTalents(object oCreature)
@@ -1247,6 +1251,7 @@ int ai_GetAllyToHealIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTIO
                               " Seen: " + IntToString(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter)) +
                               " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
         if(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter) &&
+           !ai_CheckRacialType(oCreature, RACIAL_TYPE_UNDEAD) &&
            !GetIsDead(sTarget.oTarget))
         {
             if(ai_TargetIsInRangeofCreature(oCreature, AI_ALLY, sCounter, fMaxRange) &&
@@ -3230,11 +3235,12 @@ void ai_SetCreatureAIScript(object oCreature)
         {
             sCombatAI = "ai_defensive";
         }
+        /* Needs looked at as it will soft lock some monsters!
         else if(GetHasSpell(SPELL_LESSER_DISPEL, oCreature) ||
                 GetHasSpell(SPELL_DISPEL_MAGIC, oCreature) || GetHasSpell(SPELL_GREATER_DISPELLING, oCreature))
         {
             sCombatAI = "ai_cntrspell";
-        }
+        }*/
         else if(ai_CheckClassType(oCreature, AI_CLASS_TYPE_ARCANE) &&
                ai_GetCharacterLevels(oCreature) > 4) sCombatAI = "ai_ranged";
         else if(ai_EquipBestRangedWeapon(oCreature)) sCombatAI = "ai_ranged";
@@ -3367,6 +3373,17 @@ int ai_ACAdjustmentGood(object oCreature, object oTarget, float fACAdj)
     if(AI_DEBUG) ai_Debug("0i_combat", "3448", "Adjusted Chance To Hit: " + FloatToString(fAdjChance, 0, 2) + " < 1.00");
     // Anything less than 1 helps are AC!
     return fAdjChance < 1.00;
+}
+int ai_ACAdjustmentPenalty(object oCreature, object oTarget, float fACAdj)
+{
+    float fCreatureAC = IntToFloat(GetAC(oCreature));
+    float fTargetAtk = IntToFloat(ai_GetCreatureAttackBonus(oTarget));
+    float fToHitChance = (21.0-(fCreatureAC - fTargetAtk + fACAdj))/20.0;
+    float fRoll = IntToFloat(d100());
+    if(AI_DEBUG) ai_Debug("0i_combat", "3380", "Adjusted Chance To Hit: " + FloatToString(fToHitChance, 0, 2) + " < " +
+                          FloatToString(fRoll, 0, 2) + " return TRUE");
+    // Roll % chance to see if we should ignore the penalty and go for it!
+    return fToHitChance < fRoll;
 }
 int ai_CanIMoveInCombat(object oCreature)
 {

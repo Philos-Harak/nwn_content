@@ -54,13 +54,6 @@ void main()
             if(ai_TryDivineShieldFeat(oCreature, nInMelee)) return;
             if(ai_TryDivineMightFeat(oCreature, nInMelee)) return;
         }
-        //**************************  SKILL FEATURES  **************************
-        if(ai_TryAnimalEmpathy(oCreature)) return;
-        // ************************** CLASS FEATURES ***************************
-        if(ai_TryBarbarianRageFeat(oCreature)) return;
-        if(ai_TryBardSongFeat(oCreature)) return;
-        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
-        if(ai_TrySummonFamiliarTalent(oCreature)) return;
     }
     // Class and Offensive single target talents.
     if(nDifficulty >= AI_COMBAT_EFFORTLESS)
@@ -74,7 +67,17 @@ void main()
             if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
         }
     }
+    if(nDifficulty >= AI_COMBAT_MODERATE)
+    {
+        //**************************  SKILL FEATURES  **************************
+        if(ai_TryAnimalEmpathy(oCreature)) return;
+        // ************************** CLASS FEATURES ***************************
+        if(ai_TryPolymorphSelfFeat(oCreature)) return;
+        if(ai_TryBarbarianRageFeat(oCreature)) return;
+        if(ai_TryBardSongFeat(oCreature)) return;
+        if(ai_TrySummonAnimalCompanionTalent(oCreature)) return;
+        if(ai_TrySummonFamiliarTalent(oCreature)) return;
+    }
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
     ai_DoPhysicalAttackOnBest(oCreature, nInMelee, !ai_GetAIMode(oCreature, AI_MODE_CHECK_ATTACK));
 }
-
