@@ -17,3 +17,9 @@ PEPS WIP for Mobile v36: This is my work in progress full module that I use to b
 PEPS WIP for v37: This is my work in progress full module that I use to build and work on the files for version 37.
 
 PEPS WIP override files: These files must be placed in the override folder to work with any of the WIP folders.
+
+The Zips are the easy to download compiled versions for single player use.
+
+PEPS AI v36 8-01-25.zip is the mobile executable versions.
+
+PEPS AI v37 7-18-25.zip is the pc executable versions.
