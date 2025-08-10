@@ -12,6 +12,5 @@
 
 void main()
 {
-    SendMessageToPC(GetFirstPC(), GetName(OBJECT_SELF) + " firing x2_def_onconv");
     ExecuteScript("nw_c2_default4", OBJECT_SELF);
 }

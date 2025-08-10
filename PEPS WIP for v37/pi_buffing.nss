@@ -302,44 +302,55 @@ void PopupWidgetBuffGUIPanel(object oPC)
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
-    json jRow = JsonArray();
-    CreateButtonImage(jRow, "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
-    CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
+    json jRow = CreateButtonImage(JsonArray(), "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);
+    jRow = CreateButtonImage(jRow, "ir_level4", "btn_four", 35.0f, 35.0f, 0.0);
     // Add the row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
-    json jWidget = GetBuffDatabaseJson(oPC, "spells", "menudata");
-    int bAIBuffWidgetLock = JsonGetInt(JsonArrayGet(jWidget, 4));
+    json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
+    int bAIBuffWidgetLock = JsonGetInt(JsonArrayGet(jMenuData, 4));
     // Get the window location to restore it from the database.
-    float fX = JsonGetFloat(JsonArrayGet(jWidget, 5));
-    float fY = JsonGetFloat(JsonArrayGet(jWidget, 6));
+    float fX = JsonGetFloat(JsonArrayGet(jMenuData, 5));
+    float fY = JsonGetFloat(JsonArrayGet(jMenuData, 6));
     if(fX == 0.0f && fY == 0.0f)
     {
         fX = 10.0f;
         fY = 10.0f;
     }
+    float fGUI_Scale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0;
     if(bAIBuffWidgetLock)
     {
-        fX = fX + 4.0f;
-        fY = fY + 45.0f;
+        fX += 4.0f;
+        // GUI scales are a mess, I just figured them out per scale to keep the widget from moving.
+        if(fGUI_Scale == 1.0) fY += 37.0;
+        else if(fGUI_Scale == 1.1) fY += 38.0;
+        else if(fGUI_Scale == 1.2) fY += 40.0;
+        else if(fGUI_Scale == 1.3) fY += 42.0;
+        else if(fGUI_Scale == 1.4) fY += 43.0;
+        else if(fGUI_Scale == 1.5) fY += 45.0;
+        else if(fGUI_Scale == 1.6) fY += 47.0;
+        else if(fGUI_Scale == 1.7) fY += 48.0;
+        else if(fGUI_Scale == 1.8) fY += 50.0;
+        else if(fGUI_Scale == 1.9) fY += 52.0;
+        else if(fGUI_Scale == 2.0) fY += 54.0;
     }
     // Set the layout of the window.
-    json jLayout = NuiCol (jCol);
+    json jLayout = NuiCol(jCol);
     int nToken;
-    if(bAIBuffWidgetLock) nToken = SetWindow(oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 62.0, FALSE, FALSE, FALSE, TRUE, FALSE, "pe_buffing");
-    else nToken = SetWindow(oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 95.0, FALSE, FALSE, FALSE, TRUE, TRUE, "pe_buffing");
+    if(bAIBuffWidgetLock) nToken = SetWindow (oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 62.0, FALSE, FALSE, FALSE, TRUE, FALSE, "pe_buffing");
+    else nToken = SetWindow (oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 95.0, FALSE, FALSE, FALSE, TRUE, TRUE, "pe_buffing");
     // Set event watches for window inspector and save window location.
-    //NuiSetBindWatch(oPC, nToken, "collapsed", TRUE);
-    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
+    NuiSetBindWatch (oPC, nToken, "collapsed", TRUE);
+    NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events.
     //NuiSetBind (oPC, nToken, "btn_one", JsonBool (TRUE));
-    NuiSetBind(oPC, nToken, "btn_one_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_two", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_two_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_three", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_three_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_four", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_four_event", JsonBool(TRUE));
+    NuiSetBind (oPC, nToken, "btn_one_event", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_two", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_two_event", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_three", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_three_event", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_four", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_four_event", JsonBool (TRUE));
 }
 

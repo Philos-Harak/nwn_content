@@ -16,6 +16,7 @@ void main()
         SetFormerMaster(oPC, GetHenchman(oPC));
         object oHenchman = GetHenchman(oPC);
         RemoveHenchman(oPC, GetHenchman(oPC));
+        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
         AssignCommand(oHenchman, ClearAllActions());
     }
     SetWorkingForPlayer(oPC);

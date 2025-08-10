@@ -120,8 +120,17 @@ void ai_OnAssociateSpawn(object oCreature)
         // We change this script so we can setup permanent summons on/off.
         // If you don't use this you may remove the next three lines.
         string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH);
-        SetLocalString(oCreature, "AI_ON_DEATH", sScript);
-        SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+        // If our script is set in the OnDeath event then don't save as secondary.
+        if(sScript != "0e_ch_7_ondeath")
+        {
+            SetLocalString(oCreature, "AI_ON_DEATH", sScript);
+            SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_DEATH, "0e_ch_7_ondeath");
+        }
+        else if(GetLocalString(oCreature, "AI_ON_DEATH") == "0e_ch_7_ondeath")
+        {
+            // If we have somehow saved our death script then change to default.
+            SetLocalString(oCreature, "AI_ON_DEATH", "nw_ch_ac7");
+        }
     }
     // Initialize Associate modes for basic use.
     ai_SetListeningPatterns(oCreature);

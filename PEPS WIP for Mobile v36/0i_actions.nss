@@ -298,7 +298,7 @@ int ai_StayClose(object oCreature)
     if(fPerceptionDistance == 0.0)
     {
         fPerceptionDistance = GetLocalFloat(oMaster, AI_ASSOC_PERCEPTION_DISTANCE);
-        if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
+        if(fPerceptionDistance == 0.0) fPerceptionDistance = 25.0;
     }
     object oTarget = GetLocalObject(oCreature, AI_FOLLOW_TARGET);
     if(oTarget == OBJECT_INVALID) oTarget = oMaster;

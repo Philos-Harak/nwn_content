@@ -31,6 +31,7 @@ void ai_DoLevelUp(object oPC, object oOldHenchman = OBJECT_SELF)
    if(GetStringLength(sLevel) == 1) sLevel = "0" + sLevel;
    object oMaster = GetMaster(oOldHenchman);
    RemoveHenchman(oMaster, oOldHenchman);
+   ChangeToStandardFaction(oOldHenchman, STANDARD_FACTION_DEFENDER);
    NuiDestroy(oMaster, NuiFindWindow(oMaster, GetTag(oOldHenchman) + AI_WIDGET_NUI));
    string sNewFile = GetTag(oOldHenchman) + "_" + sLevel;
    AssignCommand(oOldHenchman, ClearAllActions());

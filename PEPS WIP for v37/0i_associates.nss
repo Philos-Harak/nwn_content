@@ -161,7 +161,7 @@ object ai_GetNearestLockedObject(object oCreature)
 void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMonster)
 {
     if(GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
-    if(oSpeaker == oTarget && d100() < 34)
+    if(oSpeaker == oTarget && d100() < 16)
     {
         // Let them know we heard something in the distance!.
         if(!ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK))

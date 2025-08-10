@@ -862,7 +862,7 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     // We keep it for now as we don't want to move other data.
     jAIData = JsonArrayInsert(jAIData, JsonInt(11));     // 7 - Associate Perception DistanceDistance.
     SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, 11);
-    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, 20.0);
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, 25.0);
     jAIData = JsonArrayInsert(jAIData, JsonString(""));  // 8 - Associate Combat Tactics.
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);

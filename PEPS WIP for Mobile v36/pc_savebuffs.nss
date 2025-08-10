@@ -65,10 +65,13 @@ void main()
     // second pass.
     if(oTarget != oCaster)
     {
-        SetLocalObject(oPC, "AI_BUFF_TARGET", oTarget);
-        SetLocalObject(oPC, "AI_BUFF_CASTER", oCaster);
-        SetLocalInt(oPC, "AI_BUFF_SPELL", nSpell);
-        ExecuteScript("pc_savebuffs", oPC);
+        if(Get2DAString("spells", "TargetShape", nSpell) == "")
+        {
+            SetLocalObject(oPC, "AI_BUFF_TARGET", oTarget);
+            SetLocalObject(oPC, "AI_BUFF_CASTER", oCaster);
+            SetLocalInt(oPC, "AI_BUFF_SPELL", nSpell);
+            ExecuteScript("pc_savebuffs", oPC);
+        }
         return;
     }
     // If this is the first pass and we get here then oCaster is casting a spell

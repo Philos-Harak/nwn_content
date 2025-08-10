@@ -333,14 +333,14 @@ void CastSavedBuffSpells(object oPC)
                 string sTargetName = JsonGetString(JsonArrayGet(jSpell, 5));
                 object oTarget;
                 location lLocation = GetLocation(oPC);
-                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName (oPC)))) oTarget = oPC;
+                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
                 else
                 {
-                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 10.0, lLocation, TRUE);
+                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
                     while(oTarget != OBJECT_INVALID)
                     {
                         if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
-                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 10.0, lLocation, TRUE);
+                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
                     }
                 }
                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
@@ -480,7 +480,6 @@ void PopupWidgetBuffGUIPanel(object oPC)
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
-
     json jRow = CreateButtonImage(JsonArray(), "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
     jRow = CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
     jRow = CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);

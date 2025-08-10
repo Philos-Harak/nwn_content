@@ -298,7 +298,7 @@ int ai_StayClose(object oCreature)
     if(fPerceptionDistance == 0.0)
     {
         fPerceptionDistance = GetLocalFloat(oMaster, AI_ASSOC_PERCEPTION_DISTANCE);
-        if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
+        if(fPerceptionDistance == 0.0) fPerceptionDistance = 25.0;
     }
     object oTarget = GetLocalObject(oCreature, AI_FOLLOW_TARGET);
     if(oTarget == OBJECT_INVALID) oTarget = oMaster;
@@ -542,11 +542,11 @@ int ai_MoralCheck(object oCreature)
     if(nHpPercent <= AI_HEALTH_WOUNDED)
     {
         // Debug code to look for multiple moral checks at once by one creature?
-        if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
-        {
-            SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
-            ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
-        }
+        //if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
+        //{
+        //    SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
+        //    ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
+        //}
         if(nHpPercent <= AI_HEALTH_BLOODY) nDC = AI_BLOODY_MORAL_DC;
         else nDC = AI_WOUNDED_MORAL_DC;
         nDC = nDC - GetLocalInt(oCreature, AI_ALLY_NUMBERS);

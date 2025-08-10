@@ -11,11 +11,12 @@ to join.
 void main()
 {
     object oPC = GetPCSpeaker();
-    if (GetIsObjectValid(GetHenchman(oPC,GetMaxHenchmen())))
+    if(GetIsObjectValid(GetHenchman(oPC,GetMaxHenchmen())))
     {
-        SetFormerMaster(oPC, GetHenchman(oPC));
         object oHenchman = GetHenchman(oPC);
-        RemoveHenchman(oPC, GetHenchman(oPC));
+        SetFormerMaster(oPC, oHenchman);
+        RemoveHenchman(oPC, oHenchman);
+        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
         AssignCommand(oHenchman, ClearAllActions());
     }
     SetWorkingForPlayer(oPC);

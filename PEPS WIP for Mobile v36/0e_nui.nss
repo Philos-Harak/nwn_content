@@ -1595,6 +1595,7 @@ void main()
                     AssignCommand(oAssociate, SetIsDestroyable(TRUE, FALSE, FALSE));
                     DestroyObject(oAssociate);
                     oAssociate = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
+                    DeleteLocalJson(oAssociate, AI_CLASS_LIST_JSON);
                     DeleteLocalInt(oAssociate, "AI_KNOWN_SPELL_CHANGE");
                     DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
                 }
@@ -1765,6 +1766,7 @@ void main()
                 AssignCommand(oAssociate, SetIsDestroyable(TRUE, FALSE, FALSE));
                 DestroyObject(oAssociate);
                 oAssociate = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
+                DeleteLocalJson(oAssociate, AI_CLASS_LIST_JSON);
                 DeleteLocalInt(oAssociate, "AI_KNOWN_SPELL_CHANGE");
                 DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
             }
@@ -1925,12 +1927,12 @@ void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateT
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     int nBtnPercRange = GetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION + "_MENU");
     string sText, sText2;
-    float fRange = 20.0;
+    float fRange = 25.0;
     if(nBtnPercRange == 8)
     {
         sText = "short";
         sText2 = "  Perception Range Short [10 meters Sight / 10 meters Listen]";
-        fRange = 10.0;
+        fRange = 15.0;
     }
     else if(nBtnPercRange == 9)
     {
@@ -1941,7 +1943,7 @@ void ai_Perc_Range(object oPC, object oAssociate, int nToken, string sAssociateT
     {
         sText = "long";
         sText2 = "  Perception Range Long [35 meters Sight / 20 meters Listen]";
-        fRange = 35.0;
+        fRange = 40.0;
     }
     else if(nBtnPercRange == 11)
     {

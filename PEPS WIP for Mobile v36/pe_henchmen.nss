@@ -16,6 +16,11 @@ void ResetHenchmanWindows(object oPC, int nToken, object oHenchman)
     DelayCommand(0.0, NuiDestroy(oPC, nToken));
     DelayCommand(0.2, CreateCharacterEditGUIPanel(oPC, oHenchman));
 }
+void ai_RemovePlayerFreeze(object oPC)
+{
+    DelayCommand(0.5, DeleteLocalInt(oPC, "AI_FREEZE_PLAYER"));
+    DelayCommand(0.5, ai_RemoveTaggedEffects(oPC, "Freeze_Player"));
+}
 void main()
 {
     //**************************************************************************
@@ -75,6 +80,17 @@ void main()
         string sElem   = NuiGetEventElement();
         int    nIndex  = NuiGetEventArrayIndex();
         string sWndId  = NuiGetWindowId (oPC, nToken);
+        if(!GetLocalInt(oPC, "AI_FREEZE_PLAYER") && GetLocalInt(oPC, AI_FREEZE_OPTION))
+        {
+            SetLocalInt(oPC, "AI_FREEZE_PLAYER", TRUE);
+            effect eImmobilize = EffectCutsceneImmobilize();
+            eImmobilize = TagEffect(eImmobilize, "Freeze_Player");
+            ApplyEffectToObject(DURATION_TYPE_PERMANENT, eImmobilize, oPC);
+        }
+        else if(NuiGetEventType() == "close")
+        {
+            ai_RemovePlayerFreeze(oPC);
+        }
         //SendMessageToPC(oPC, "pe_henchmen , 26 sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
         //                " nToken: " + IntToString(nToken) + " nIndex: " + IntToString(nIndex) +
         //                " oPC: " + GetName(oPC));
@@ -112,6 +128,7 @@ void main()
                     // Set Targeting variables.
                     SetLocalString(oPC, AI_TARGET_MODE, "MAKE_NPC_HENCHMAN");
                     DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                    ai_RemovePlayerFreeze(oPC);
                     ai_SendMessages("Select an NPC to copy and make your henchman.", AI_COLOR_YELLOW, oPC);
                     EnterTargetingMode(oPC, OBJECT_TYPE_ALL , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
                 }

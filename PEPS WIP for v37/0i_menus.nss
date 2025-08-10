@@ -4381,7 +4381,13 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
         jAIData = JsonArraySet(jAIData, 10, jSpells);
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     }
-    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER) nClassSelected = 1;
+    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER)
+    {
+        nClassSelected = 1;
+        jSpells = JsonArraySet(jSpells, 0, JsonInt(1));
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    }
     nClass = GetClassByPosition(nClassSelected, oAssociate);
     int nMaxMemorizationSlots = GetMemorizedSpellCountByLevel(oAssociate, nClass, nLevelSelected);
     jRow = JsonArray();
@@ -4678,7 +4684,13 @@ void ai_CreateSpellKnownNUI(object oPC, object oAssociate)
         jAIData = JsonArraySet(jAIData, 10, jSpells);
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     }
-    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER) nClassSelected = 1;
+    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER)
+    {
+        nClassSelected = 1;
+        jSpells = JsonArraySet(jSpells, 0, JsonInt(1));
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    }
     nClass = GetClassByPosition(nClassSelected, oAssociate);
     jRow = JsonArray();
     for(nIndex = 0; nIndex < 10; nIndex++)

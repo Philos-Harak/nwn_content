@@ -54,6 +54,8 @@ void main()
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
                 ai_SendMessages("You have exited selecting an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
+                DeleteLocalObject(oPC, AI_TARGET_ASSOCIATE);
+                DeleteLocalInt(oPC, "AI_TARGET_MODE_ON");
                 if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))

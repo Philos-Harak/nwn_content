@@ -369,6 +369,7 @@ void RemoveYourHenchman(object oPC, int nToken, string sParty)
     else
     {
         RemoveHenchman(oPC, oHenchman);
+        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
         AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
         NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
         DestroyObject(oHenchman);
@@ -388,6 +389,7 @@ void RemoveWholeParty(object oPC, int nToken, string sParty)
         {
             ai_SendMessages(GetName(oHenchman) + " has been remove from your Party.", AI_COLOR_YELLOW, oPC);
             RemoveHenchman(oPC, oHenchman);
+            ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
             AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
             NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
             DestroyObject(oHenchman);
@@ -417,7 +419,11 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
         if(sName == sHenchmanName || sName == "")
         {
             sSlot = sParty + sIndex;
-            if(!bPC) RemoveHenchman(oPC, oHenchman);
+            if(!bPC)
+            {
+                RemoveHenchman(oPC, oHenchman);
+                ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
+            }
             // Special check for Infinite Dungeon plot givers to be changed into henchman.
             if(GetStringLeft(GetLocalString(oHenchman, "sConversation"), 8) == "id1_plot")
             {
@@ -1251,6 +1257,7 @@ object ResetCharacter(object oPC, object oHenchman)
 {
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     RemoveHenchman(oPC, oHenchman);
+    ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
     json jHenchman = ObjectToJson(oHenchman, TRUE);
     json jClassList = GffGetList(jHenchman, "ClassList");
     json jClass = JsonArrayGet(jClassList, 0);

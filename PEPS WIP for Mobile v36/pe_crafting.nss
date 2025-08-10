@@ -8,6 +8,7 @@
 #include "nw_inc_gff"
 #include "0i_main"
 #include "0i_items"
+#include "0i_module"
 // Maximum model number for all items except weapons.
 const int CRAFT_MAX_MODEL_NUMBER = 999;
 
