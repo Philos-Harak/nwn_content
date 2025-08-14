@@ -103,7 +103,7 @@ void main()
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;

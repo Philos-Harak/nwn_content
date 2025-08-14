@@ -25,6 +25,8 @@ const string AI_DM_TABLE = "DM_TABLE";
 // Sets PEPS RULES from the database to the module.
 // Creates default rules if they do not exist.
 void ai_SetAIRules();
+// Returns TRUE if the module is being run as a server.
+int ai_GetIsServer();
 // Returns TRUE if oCreature is controlled by a player.
 int ai_GetIsCharacter(object oCreature);
 // Returns TRUE if oCreature is controlled by a dungeon master.
@@ -307,13 +309,17 @@ void ai_SetAIRules()
         SetLocalInt(oModule, sDMAIAccessVarname, bValue);
    }
 }
+int ai_GetIsServer()
+{
+    return GetLocalInt(GetModule(), AI_IS_SERVER) || AI_SERVER;
+}
 int ai_GetIsCharacter(object oCreature)
 {
-    return (GetIsPC(oCreature) && !GetIsDM(oCreature) && !GetIsDMPossessed(oCreature));
+    return (GetIsPC(oCreature) && !GetIsDM(oCreature) && !GetIsDMPossessed(oCreature) && !GetIsPlayerDM(oCreature));
 }
 int ai_GetIsDungeonMaster(object oCreature)
 {
-    return (GetIsDM(oCreature) || GetIsDMPossessed(oCreature));
+    return (GetIsDM(oCreature) || GetIsDMPossessed(oCreature) || GetIsPlayerDM(oCreature));
 }
 object ai_GetPlayerMaster(object oAssociate)
 {
@@ -862,7 +868,7 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     // We keep it for now as we don't want to move other data.
     jAIData = JsonArrayInsert(jAIData, JsonInt(11));     // 7 - Associate Perception DistanceDistance.
     SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, 11);
-    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, 20.0);
+    SetLocalFloat(oAssociate, AI_ASSOC_PERCEPTION_DISTANCE, 25.0);
     jAIData = JsonArrayInsert(jAIData, JsonString(""));  // 8 - Associate Combat Tactics.
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
@@ -1241,7 +1247,7 @@ json ai_CheckOldPluginJson(object oPC)
 json ai_UpdatePluginsForPC(object oPC)
 {
     // Check if the server is running or single player.
-    if(!AI_SERVER) return ai_CheckOldPluginJson(oPC);
+    if(!ai_GetIsServer()) return ai_CheckOldPluginJson(oPC);
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
     string sScript, sName, sIcon;
     json jServerPlugins = ai_GetCampaignDbJson("plugins");
@@ -1323,7 +1329,7 @@ void ai_StartupPlugins(object oPC)
     int bUpdatePlugins;
     string sScript;
     json jPlugins;
-    if(GetIsDM(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
+    if(ai_GetIsDungeonMaster(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
     else jPlugins = ai_UpdatePluginsForPC(oPC);
     // We delete this so each mod can be added that legally loads.
     DeleteLocalJson(GetModule(), AI_MONSTER_MOD_JSON);

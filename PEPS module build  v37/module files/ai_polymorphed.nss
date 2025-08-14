@@ -8,16 +8,21 @@
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
-void ai_DoActions(object oCreature, int nForm)
+void main()
 {
+    object oCreature = OBJECT_SELF;
     int nInMelee = ai_GetNumOfEnemiesInRange(oCreature);
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     if(ai_TryHealingTalent(oCreature, nInMelee)) return;
     if(ai_TryCureConditionTalent(oCreature, nInMelee)) return;
     if(GetPercentageHPLoss(oCreature) <= AI_HEALTH_BLOODY)
     {
-        if(AI_DEBUG) ai_Debug("ai_polymorphed", "19", "We are wounded and are transforming back!");
+        if(AI_DEBUG) ai_Debug("ai_polymorphed", "20", "We are wounded and are transforming back!");
         ai_RemoveASpecificEffect(oCreature, EFFECT_TYPE_POLYMORPH);
+        DeleteLocalInt(oCreature, AI_POLYMORPHED);
+        // We need to create the creatures normal forms talent list.
+        DelayCommand(0.0, ai_ClearTalents(oCreature));
+        DelayCommand(0.1, ai_SetCreatureTalents(oCreature, TRUE, TRUE));
         return;
     }
     int nMaxLevel = ai_GetMonsterTalentMaxLevel(oCreature);
@@ -31,25 +36,30 @@ void ai_DoActions(object oCreature, int nForm)
     if(nInMelee > 0 && ai_UseCreatureTalent(oCreature, AI_TALENT_TOUCH, nInMelee, nMaxLevel)) return;
     if(ai_UseCreatureTalent(oCreature, AI_TALENT_RANGED, nInMelee, nMaxLevel)) return;
     // PHYSICAL ATTACKS - Either we don't have talents or we are saving them.
-    object oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
-    // If we don't find a target then we don't want to fight anyone!
+    // ***************************  RANGED ATTACKS  ****************************
+    object oTarget;
+    if(ai_CanIUseRangedWeapon(oCreature, nInMelee))
+    {
+        if(ai_HasRangedWeaponWithAmmo(oCreature))
+        {
+            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
+            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            if(oTarget != OBJECT_INVALID)
+            {
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
+                ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
+                return;
+            }
+            else
+            {
+                ai_SearchForHiddenCreature(oCreature, TRUE);
+                return;
+            }
+        }
+        else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+    }
+    // ****************************  MELEE ATTACKS  ****************************
+    oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
     if(oTarget != OBJECT_INVALID) ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     else ai_SearchForHiddenCreature(oCreature, TRUE);
-}
-void main()
-{
-    object oCreature = OBJECT_SELF;
-    // Need to know who we are so we can use thier abilities.
-    int nForm = GetAppearanceType(oCreature);
-    // Check to see if we are back to our normal form?(-1 to get the actual form #)
-    if(nForm == GetLocalInt(oCreature, AI_NORMAL_FORM) - 1)
-    {
-        // If we are transformed back then go back to our primary ai.
-        ai_SetCreatureAIScript(oCreature);
-        DeleteLocalInt(oCreature, AI_NORMAL_FORM);
-        string sAI = GetLocalString(oCreature, AI_COMBAT_SCRIPT);
-        if(sAI == "ai_polymorphed" || sAI == "") sAI = "ai_default";
-        ExecuteScript(sAI, oCreature);
-    }
-    else ai_DoActions(oCreature, nForm);
 }

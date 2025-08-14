@@ -120,6 +120,41 @@ Repeat for each of the following Creature events.
 *****************************
 ********** Changes **********
 *****************************
+---------- 8-09-25 ----------
+       BUFFING PLUGIN
+* Buffing widget now loads properly on startup.
+* Area of Effect spells will save on the caster only. Buffs more reliably now.
+       MENU CHANGES
+* Fixed henchman losing levels when changing their known spells.
+	AI CHANGES
+* Associates will now attack after the Action button has been used on them.
+* Did some distance tweaks to reduce the henchman yoyoing when a player stays at extreme distances when in combat.
+---------- 8-02-25 ----------
+       HENCHMAN PLUGIN
+* Henchman now get the correct health when being reset.
+* Make sure to remove the PC and DM state when copying a PC to henchman!
+	GENERAL CHANGES
+* Added a variable check to see if the module is running as a server.
+	MENU CHANGES
+* Fixed Custom Token errors in conversations.
+* Now changing from a DM to a Player will change the widget to the correct widget for player or DM.
+* Moved Associate Menus on/off from the main menu to the players widget.
+* Going to a henchman with camera focus will now automatically put them in action mode.
+* If the henchman is in action mode and then casts a spell they will go back to action mode after casting.
+* When in combat and using Action mode on an associate they now disengage the AI and only listen to the players commands.
+	AI CHANGES
+* Add checks to make sure when healing in combat we are not undead.
+* Reworked ai_flanker to account for no allies being present.
+* Added checks for AI to ressurect allies during combat.
+* Added Turn Undead within the Use/Not Use Magic button section so you can control if your henchman use it. 0i_talent 1109
+* Removed ai_cntrspell from being used due to soft locking some monsters. 0i_combat 3236 - 3241
+* Improved immunity checks to all creatures the AI attacks.
+* Reworked Talent system level pruning. Reduces pointless checks for spells.
+* Druid AI scripts reworked to balance spell use vs polymorphing!
+* Fixed issue where polymorphed creatures would not attack. 
+* Fixed bug where Druid class would sometimes(most of the time) ignore NPC's shouts.
+* Reworked ai_a_polymorph and ai_polymorph to actually change talents during combat.
+* Added some extra Target searches if a target is not found due to AOE effects.
 ---------- 7-20-25 ----------
        CRAFTING PLUGIN
 * Recolored the color pointer from white to Red. Fixed issue with it pointing to wrong color sometimes.

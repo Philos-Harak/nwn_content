@@ -48,10 +48,10 @@ void main()
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Object Name)****************************************************** 508 / 121
     jRow = JsonArray();
-    if(!AI_SERVER) jRow = CreateButton(jRow, "Information", "btn_info", 160.0f, 30.0f, -1.0, "btn_info_tooltip");
+    if(!ai_GetIsServer()) jRow = CreateButton(jRow, "Information", "btn_info", 160.0f, 30.0f, -1.0, "btn_info_tooltip");
     else
     {
-        if(GetIsDM(oTarget))
+        if(ai_GetIsDungeonMaster(oTarget))
         {
             jRow = CreateButton(jRow, "Information", "btn_info", 160.0f, 30.0f, -1.0, "btn_info_tooltip");
         }

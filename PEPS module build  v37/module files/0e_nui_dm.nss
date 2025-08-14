@@ -5,6 +5,7 @@
  Menu event script
     sEvent: close, click, mousedown, mouseup, watch (if bindwatch is set).
 /*//////////////////////////////////////////////////////////////////////////////
+#include "0i_menus"
 #include "0i_menus_dm"
 void ai_SetDMWidgetButtonToCheckbox(object oDM, int nButton, int nToken, string sElem);
 void ai_SetDMWAccessButtonToCheckbox(object oDM, int nButton, int nToken, string sElem);
@@ -32,6 +33,16 @@ void main()
     //             " nToken: " + IntToString(nToken) + " oPC: " + GetName(oPC));
     //WriteTimestampedLogEntry("0e_nui, 58, sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
     //             " nToken: " + IntToString(nToken) + " oDM: " + GetName(oDM));
+    if(ai_GetIsCharacter(oDM))
+    {
+        if(!NuiFindWindow(oDM, "pc" + AI_WIDGET_NUI))
+        {
+            ai_SendMessages(GetName(oDM) + " is now a Player! Loading player widget.", AI_COLOR_YELLOW, oDM);
+            ai_CreateWidgetNUI(oDM, oDM);
+        }
+        DelayCommand(0.0, NuiDestroy(oDM, nToken));
+        return;
+    }
     //**************************************************************************
     string sName = ai_RemoveIllegalCharacters(GetName(oDM));
     // Watch to see if the window moves and save.

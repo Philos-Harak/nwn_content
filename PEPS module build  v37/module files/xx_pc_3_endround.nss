@@ -1,8 +1,8 @@
 /*//////////////////////////////////////////////////////////////////////////////
- Script: nw_c2_default3
+ Script: xx_pc_3_endround
  Programmer: Philos
 ////////////////////////////////////////////////////////////////////////////////
-  Monster OnCombatRoundEnd event script;
+  Player OnCombatRoundEnd event script for PC AI;
   Fires at the end of each combat round (6 seconds).
   This will fire as long as oCreature is in combat (GetIsInCombat()).
   This event starts counting once a combat action is started.
@@ -13,17 +13,11 @@
   GetAttemptedAttackTarget() & GetAttemptedSpellTarget() also get cleared prior to this event.
   This event can be canceled with ClearAllActions(TRUE) and SurrenderToEnemies.
 *///////////////////////////////////////////////////////////////////////////////
-#include "0i_actions"
+#include "0i_associates"
 void main()
 {
     object oCreature = OBJECT_SELF;
-    ExecuteScript("prc_npc_combat", oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default3", "20", GetName(oCreature) + " ends combat round." +
-                 " Current action: " + IntToString(GetCurrentAction(oCreature)));
-    if(GetSpawnInCondition(NW_FLAG_END_COMBAT_ROUND_EVENT))
-    {
-        SignalEvent(OBJECT_SELF, EventUserDefined(1003));
-    }
+    if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "20", GetName(oCreature) + " ends combat round.");
     if(ai_Disabled(oCreature)) return;
     // Action modes get cleared prior to each OnCombatRoundEnd!
     // We do this to keep the action mode going.
@@ -35,7 +29,7 @@ void main()
         if(nActionMode == 12) IncrementRemainingFeatUses(oCreature, FEAT_DWARVEN_DEFENDER_DEFENSIVE_STANCE);
     }
     int nAction = GetCurrentAction(oCreature);
-    if(AI_DEBUG) ai_Debug("nw_c2_default3", "37", "nAction: " + IntToString(nAction));
+    if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "32", "nAction: " + IntToString(nAction));
     switch(nAction)
     {
         // These actions are uninteruptable.
@@ -47,24 +41,20 @@ void main()
         case ACTION_INVALID :
         {
             int nCombatWait = GetLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
-            if(AI_DEBUG) ai_Debug("nw_c2_default3", "49", "nCombatWait: " + IntToString(nCombatWait));
+            if(AI_DEBUG) ai_Debug("xx_pc_3_endround", "47", "nCombatWait: " + IntToString(nCombatWait));
             if(nCombatWait)
             {
                 if(ai_IsInCombatRound(oCreature, nCombatWait)) return;
                 DeleteLocalInt(oCreature, AI_COMBAT_WAIT_IN_SECONDS);
             }
+            break;
         }
-        // We always want to interupt an attack action at the end of a round.
-        //case ACTION_ATTACKOBJECT :
+        // We always want to interupt an attack action at the end of a round (6 seconds).
+        case ACTION_ATTACKOBJECT :
+        {
+            if(ai_IsInCombatRound(oCreature, AI_COMBAT_ROUND_IN_SECONDS)) return;
+        }
     }
-    if(ai_GetIsInCombat(oCreature))
-    {
-        ai_DoMonsterCombatRound (oCreature);
-        return;
-    }
-    if(ai_GetBehaviorState(NW_FLAG_BEHAVIOR_SPECIAL)) ai_DetermineSpecialBehavior(oCreature);
+    if(ai_GetIsInCombat(oCreature)) ai_DoAssociateCombatRound (oCreature);
 }
-
-
-
 

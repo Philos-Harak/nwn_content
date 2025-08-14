@@ -81,6 +81,8 @@ void main()
                 json jObject = ObjectToJson(oTarget);
                 string sConversation = JsonGetString(GffGetResRef(jObject, "Conversation"));
                 ai_SendMessages("Conversation: " + sConversation, AI_COLOR_CYAN, oPC);
+                int nCurrentAction = GetCurrentAction(oTarget);
+                ai_SendMessages("Current Action: " + IntToString(nCurrentAction), AI_COLOR_RED, oPC);
                 SendMessageToPC(oPC, "Creature Event Scripts:");
                 string sScript = GetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
                 sScript += " [" + ResManGetAliasFor(sScript, RESTYPE_NCS) + "]";

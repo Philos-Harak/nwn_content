@@ -152,6 +152,8 @@ void ai_AmbientAnimations();
 
 void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID)
 {
+    object oMaster = GetMaster(oCreature);
+    if(GetLocalInt(oMaster, AI_TARGET_MODE_ON) && GetLocalObject(oMaster, AI_TARGET_ASSOCIATE) == oCreature) return;
     if(ai_StayClose(oCreature)) return;
     // Is the target our Player has locked in dead? If so then clear it.
     if(GetIsDead(GetLocalObject(oCreature, AI_PC_LOCKED_TARGET))) DeleteLocalObject(oCreature, AI_PC_LOCKED_TARGET);
@@ -176,21 +178,27 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
         // the polymorph AI script.
         if(sAI != "ai_coward" && sAI != "ai_a_peaceful")
         {
-            if(AI_DEBUG) ai_Debug("0i_actions", "173", "Should we use polymorph? " +
-                     IntToString(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature)));
             if(AI_DEBUG)
             {
+                ai_Debug("0i_actions", "181", "Should we use polymorph? Current: " +
+                          IntToString(GetAppearanceType(oCreature)) + " Normal: " + IntToString(ai_GetNormalAppearance(oCreature)));
                 if(ai_GetIsHidden(oCreature))
                 {
-                    ai_Debug("0i_actions", "179", "We are hidden!" +
+                    ai_Debug("0i_actions", "185", "We are hidden!" +
                              " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oCreature)));
                 }
             }
-            if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
+            if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
+            else if(GetAppearanceType(oCreature) != ai_GetNormalAppearance(oCreature))
             {
                 sAI = "ai_a_polymorphed";
+                if(!GetLocalInt(oCreature, AI_POLYMORPHED))
+                {
+                    SetLocalInt(oCreature, AI_POLYMORPHED, TRUE);
+                    ai_ClearTalents(oCreature);
+                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, TRUE);
+                }
             }
-            else if(ai_GetIsHidden(oCreature) && !ai_GetNearestIndexThatSeesUs(oCreature)) sAI = "ai_a_invisible";
         }
         if(sAI == "") sAI = "ai_a_default";
         if(AI_DEBUG) ai_Debug("0i_actions", "190", "********** " + GetName (oCreature) + " **********");
@@ -226,11 +234,24 @@ void ai_DoMonsterCombatRound(object oMonster)
         string sAI = GetLocalString(oMonster, AI_COMBAT_SCRIPT);
         if(sAI != "ai_coward")
         {
-            if(GetAppearanceType(oMonster) != ai_GetNormalAppearance(oMonster))
+            if(AI_DEBUG) ai_Debug("0i_actions", "235", "Should we use polymorph? Current: " +
+                      IntToString(GetAppearanceType(oMonster)) + " Normal: " + IntToString(ai_GetNormalAppearance(oMonster)));
+            if(ai_GetIsHidden(oMonster))
+            {
+                if(AI_DEBUG) ai_Debug("0i_actions", "239", "We are hidden!" +
+                         " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oMonster)));
+            }
+            if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
+            else if(GetAppearanceType(oMonster) != ai_GetNormalAppearance(oMonster))
             {
                 sAI = "ai_polymorphed";
+                if(!GetLocalInt(oMonster, AI_POLYMORPHED))
+                {
+                    SetLocalInt(oMonster, AI_POLYMORPHED, TRUE);
+                    ai_ClearTalents(oMonster);
+                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, TRUE);
+                }
             }
-            else if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";
         }
         if(sAI == "") sAI = "ai_default";
         if(AI_DEBUG) ai_Debug("0i_actions", "230", "********** " + GetName (oMonster) + " **********");
@@ -277,7 +298,7 @@ int ai_StayClose(object oCreature)
     if(fPerceptionDistance == 0.0)
     {
         fPerceptionDistance = GetLocalFloat(oMaster, AI_ASSOC_PERCEPTION_DISTANCE);
-        if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
+        if(fPerceptionDistance == 0.0) fPerceptionDistance = 25.0;
     }
     object oTarget = GetLocalObject(oCreature, AI_FOLLOW_TARGET);
     if(oTarget == OBJECT_INVALID) oTarget = oMaster;
@@ -521,11 +542,11 @@ int ai_MoralCheck(object oCreature)
     if(nHpPercent <= AI_HEALTH_WOUNDED)
     {
         // Debug code to look for multiple moral checks at once by one creature?
-        if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
-        {
-            SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
-            ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
-        }
+        //if(GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) == "")
+        //{
+        //    SetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE, GetName(oCreature));
+        //    ai_Debug("0i_actions", "424", GetName(oCreature) + " starting debug mode to test Moral checks!");
+        //}
         if(nHpPercent <= AI_HEALTH_BLOODY) nDC = AI_BLOODY_MORAL_DC;
         else nDC = AI_WOUNDED_MORAL_DC;
         nDC = nDC - GetLocalInt(oCreature, AI_ALLY_NUMBERS);
@@ -691,7 +712,7 @@ void ai_DoPhysicalAttackOnBest(object oCreature, int nInMelee, int bAlwaysAtk = 
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
@@ -749,7 +770,7 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "519", "Do ranged attack against nearest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
@@ -806,7 +827,7 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("0i_actions", "559", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;

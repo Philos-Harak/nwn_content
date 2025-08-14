@@ -51,7 +51,7 @@ void ai_CreateDescriptionNUI(object oPC, json jSpell, int nSpell = 0);
 string ai_GetRandomTip()
 {
     int nRoll;
-    if(AI_SERVER) nRoll = Random(26);
+    if(ai_GetIsServer()) nRoll = Random(26);
     else nRoll = Random(46);
     return Get2DAString("ai_messages", "Text", nRoll);
 }
@@ -344,7 +344,7 @@ void ai_CreateAIMainNUI(object oPC)
     int nMonsterAI = (ResManGetAliasFor("ai_default", RESTYPE_NCS) != "");
     int nAssociateAI = (ResManGetAliasFor("ai_a_default", RESTYPE_NCS) != "");
     string sText = " [Single player]";
-    if(AI_SERVER) sText = " [Server]";
+    if(ai_GetIsServer()) sText = " [Server]";
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
@@ -357,10 +357,9 @@ void ai_CreateAIMainNUI(object oPC)
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 129
-    jRow = CreateButton(JsonArray(), "Plugin Manager", "btn_plugin_manager", 120.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
-    if(nAssociateAI) jRow = CreateButtonSelect(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 140.0f, 20.0f, "btn_assoc_widget_tooltip");
-    jRow = CreateButtonSelect(jRow, "Action Ghost Mode", "btn_action_ghost", 160.0f, 20.0f, "btn_action_ghost_tooltip");
-    jRow = CreateButtonSelect(jRow, "Effect Icons", "btn_effect_icon", 100.0f, 20.0f, "btn_effect_icon_tooltip");
+    jRow = CreateButton(JsonArray(), "Plugin Manager", "btn_plugin_manager", 175.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
+    jRow = CreateButtonSelect(jRow, "Action Ghost Mode", "btn_action_ghost", 175.0f, 20.0f, "btn_action_ghost_tooltip");
+    jRow = CreateButtonSelect(jRow, "Effect Icons", "btn_effect_icon", 175.0f, 20.0f, "btn_effect_icon_tooltip");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 ******************************************************************* 500 / 157
@@ -500,13 +499,6 @@ void ai_CreateAIMainNUI(object oPC)
     // Row 3
     NuiSetBind(oPC, nToken, "btn_plugin_manager_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_plugin_manager_tooltip", JsonString("  Manages external executable scripts."));
-    if(nAssociateAI)
-    {
-        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool(TRUE));
-        int bWidgetOn = !ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, OBJECT_INVALID, "pc");
-        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget", JsonBool(bWidgetOn));
-        NuiSetBind(oPC, nToken, "btn_assoc_widget_tooltip", JsonString("  Turns On/Off all associate widgets."));
-    }
     int bActionGhost = ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST);
     NuiSetBind(oPC, nToken, "btn_action_ghost", JsonBool (bActionGhost));
     NuiSetBind(oPC, nToken, "btn_action_ghost_event", JsonBool(TRUE));
@@ -649,13 +641,14 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     {
         if(bIsPC)
         {
-            if(bUsingPCAI || !AI_SERVER)
+            bLeft = ai_GetIsServer();
+            if(bUsingPCAI || !bLeft)
             {
                 if(bUsingPCAI)
                 {
                     jRow = CreateButton(jRow, "AI Menu", "btn_ai_menu", 232.0, 20.0, -1.0, "btn_ai_menu_tooltip");
                 }
-                if(!AI_SERVER)
+                if(!bLeft)
                 {
                     jRow = CreateButton(jRow, "Main Menu", "btn_main_menu", 232.0, 20.0, -1.0, "btn_main_menu_tooltip");
                 }
@@ -681,6 +674,29 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     jRow = CreateButtonSelect(jRow, "Vertical Widget", "btn_vertical_widget", 154.0, 20.0, "btn_vertical_widget_tooltip");
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 129
+    bRight = !ai_GetDMWAccessButton(BTN_ASSOC_WIDGETS_OFF);
+    //bLeft = !ai_GetDMWAccessButton(BTN_CMD_GUARD);
+    if(bRight)// || bLeft)
+    {
+        jRow = JsonArray();
+        if(bRight)
+        {
+            if(bIsPC && bUsingHenchAI)
+            {
+                jRow = CreateButton(jRow, "Associate Widgets", "btn_toggle_assoc_widget", 200.0f, 20.0f, -1.0, "btn_toggle_assoc_widget_tooltip");
+                jRow = CreateCheckBox(jRow, "", "chbx_toggle_assoc_widget", 25.0, 20.0);
+                jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+                fHeight += 28.0;
+            }
+        }
+        jRow = JsonArrayInsert(jRow, NuiSpacer());
+        //if(bLeft)
+        //{
+        //}
+        //jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+        //fHeight += 28.0;
+    }
+    // Row 4 ******************************************************************* 500 / 129
     bRight = !ai_GetDMWAccessButton(BTN_CMD_ACTION);
     bLeft = !ai_GetDMWAccessButton(BTN_CMD_GUARD);
     if(bRight || bLeft)
@@ -700,7 +716,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 28.0;
     }
-    // Row 4 ******************************************************************* 500 / 157
+    // Row 5 ******************************************************************* 500 / 157
     jRow = JsonArray();
     bRight = !ai_GetDMWAccessButton(BTN_CMD_HOLD);
     bLeft = !ai_GetDMWAccessButton(BTN_CMD_ATTACK);
@@ -721,7 +737,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 28.0;
     }
-    // Row 5 ******************************************************************* 500 / 213
+    // Row 6 ******************************************************************* 500 / 213
     bRight = !ai_GetDMWAccessButton(BTN_CMD_FOLLOW);
     bLeft = !ai_GetDMAIAccessButton(BTN_AI_FOLLOW_TARGET);
     if(bRight || bLeft)
@@ -741,7 +757,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 28.0;
     }
-    // Row 6 ******************************************************************* 500 / 185
+    // Row 7 ******************************************************************* 500 / 185
     if(bIsPC)
     {
         bRight = !ai_GetDMWAccessButton(BTN_CMD_SEARCH);
@@ -764,7 +780,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
             fHeight = fHeight + 28.0;
         }
     }
-    // Row 7 ******************************************************************* 500 / 241
+    // Row 8 ******************************************************************* 500 / 241
     bRight = !ai_GetDMWAccessButton(BTN_CMD_AI_SCRIPT);
     bLeft = !ai_GetDMWAccessButton(BTN_CMD_PLACE_TRAP);
     if(bRight || bLeft)
@@ -785,7 +801,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 8 ******************************************************************* 500 / ---
+    // Row 9 ******************************************************************* 500 / ---
     int bMemorize = ai_GetIsSpellCaster(oAssociate);
     int bSpellbook = ai_GetIsSpellBookRestrictedCaster(oAssociate);
     bRight = !ai_GetDMWAccessButton(BTN_CMD_SPELL_WIDGET);
@@ -821,7 +837,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 9 ******************************************************************* 500 / 269
+    // Row 10 ******************************************************************* 500 / 269
     bRight = !ai_GetDMWAccessButton(BTN_BUFF_SHORT);
     bLeft = !ai_GetDMWAccessButton(BTN_BUFF_LONG);
     if(bRight || bLeft)
@@ -842,7 +858,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 10 ******************************************************************* 500 / 297
+    // Row 11 ******************************************************************* 500 / 297
     bRight = !ai_GetDMWAccessButton(BTN_BUFF_ALL);
     bLeft = !ai_GetDMWAccessButton(BTN_BUFF_REST);
     if(bRight || bLeft)
@@ -863,7 +879,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 11 ******************************************************************* 500 / 325
+    // Row 12 ******************************************************************* 500 / 325
     bRight = !ai_GetDMWAccessButton(BTN_CMD_JUMP_TO);
     bLeft = !ai_GetDMWAccessButton(BTN_CMD_GHOST_MODE);
     if(bRight || bLeft)
@@ -884,7 +900,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 12 ****************************************************************** 500 / 353
+    // Row 13 ****************************************************************** 500 / 353
     bRight = !ai_GetDMWAccessButton(BTN_CMD_CAMERA);
     bLeft = !ai_GetDMWAccessButton(BTN_CMD_INVENTORY);
     if(bRight || bLeft)
@@ -905,7 +921,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 13 ******************************************************************* 500 / ---
+    // Row 14 ******************************************************************* 500 / ---
     int bFamiliar = GetHasFeat(FEAT_SUMMON_FAMILIAR, oAssociate, TRUE);
     if(!ai_GetDMWAccessButton(BTN_CMD_FAMILIAR) && bFamiliar)
     {
@@ -916,7 +932,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
-        // Row 14 ******************************************************************* 500 / ---
+        // Row 15 ******************************************************************* 500 / ---
         jRow = JsonArray();
         jRow = CreateCombo(jRow, ai_CreateCompanionJson(oPC, "hen_familiar"), "cmb_familiar", 200.0, 20.0);
         jRow = CreateCheckBox(jRow, "", "chbx_familiar", 25.0, 20.0);
@@ -926,7 +942,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 15 ******************************************************************* 500 / ---
+    // Row 16 ******************************************************************* 500 / ---
     int bCompanion = GetHasFeat(FEAT_ANIMAL_COMPANION, oAssociate, TRUE);
     if(!ai_GetDMWAccessButton(BTN_CMD_COMPANION) && bCompanion)
     {
@@ -937,7 +953,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
-        // Row 16 ******************************************************************* 500 / ---
+        // Row 17 ******************************************************************* 500 / ---
         jRow = JsonArray();
         jRow = CreateCombo(jRow, ai_CreateCompanionJson(oPC, "hen_companion"), "cmb_companion", 200.0, 20.0);
         jRow = CreateCheckBox(jRow, "", "chbx_companion", 25.0, 20.0);
@@ -947,7 +963,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight = fHeight + 28.0;
     }
-    // Row 17+ ****************************************************************** 500 / ---
+    // Row 18+ ****************************************************************** 500 / ---
     string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
     json jPCPlugins;
     if(bIsPC)
@@ -986,7 +1002,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
             jPlugin = JsonArrayGet(jPCPlugins, ++nIndex);
         }
     }
-    // Row 18 ****************************************************************** 500 / ---
+    // Row 19+ ****************************************************************** 500 / ---
     jRow = JsonArray();
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateLabel(jRow, "", "lbl_info_1", 475.0, 20.0, NUI_HALIGN_CENTER);
@@ -1033,6 +1049,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     int bInventory = ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType);
     int bBtnFamiliar = ai_GetWidgetButton(oPC, BTN_CMD_FAMILIAR, oAssociate, sAssociateType);
     int bBtnCompanion = ai_GetWidgetButton(oPC, BTN_CMD_COMPANION, oAssociate, sAssociateType);
+    int bAssocWidgetOff = ai_GetWidgetButton(oPC, BTN_ASSOC_WIDGETS_OFF, oAssociate, sAssociateType);
     int bVertical = ai_GetWidgetButton(oPC, BTN_WIDGET_VERTICAL, oAssociate, sAssociateType);
     // Save the associate to the nui for use in 0e_nui
     json jData = JsonArray();
@@ -1056,7 +1073,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
             NuiSetBind(oPC, nToken, "btn_copy_settings_event", JsonBool (TRUE));
             sText = "  Copy AI and command settings for one creature to others.";
             NuiSetBind(oPC, nToken, "btn_copy_settings_tooltip", JsonString(sText));
-            if(!AI_SERVER)
+            if(!ai_GetIsServer())
             {
                 NuiSetBind(oPC, nToken, "btn_main_menu_event", JsonBool(TRUE));
                 NuiSetBind(oPC, nToken, "btn_main_menu_tooltip", JsonString("  Module Options"));
@@ -1102,6 +1119,17 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_vertical_widget_tooltip", JsonString(
                             "  " + sName + " widget will display vertically"));
     // Row 3
+    if(bIsPC && bUsingHenchAI)
+    {
+        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool(TRUE));
+        if(ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc")) sText = "  Associate Widgets [Off]";
+        else sText = "  Associate Widgets [On]";
+        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_tooltip", JsonString(sText));
+        NuiSetBind(oPC, nToken, "chbx_toggle_assoc_widget_check", JsonBool (bAssocWidgetOff));
+        NuiSetBindWatch (oPC, nToken, "chbx_toggle_assoc_widget_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_toggle_assoc_widget_event", JsonBool(TRUE));
+    }
+    // Row 4
     NuiSetBind(oPC, nToken, "chbx_cmd_action_check", JsonBool (bCmdAction));
     NuiSetBindWatch(oPC, nToken, "chbx_cmd_action_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_action_event", JsonBool(TRUE));
@@ -1110,7 +1138,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_guard_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_guard_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_guard_event", JsonBool (TRUE));
-    // Row 4
+    // Row 5
     NuiSetBind(oPC, nToken, "chbx_cmd_hold_check", JsonBool (bCmdHold));
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_hold_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_hold_event", JsonBool(TRUE));
@@ -1119,7 +1147,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_attack_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_attack_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cmd_attack_event", JsonBool (TRUE));
-    // Row 5
+    // Row 6
     NuiSetBind(oPC, nToken, "chbx_cmd_follow_check", JsonBool (bCmdFollow));
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_follow_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_follow_event", JsonBool(TRUE));
@@ -1128,7 +1156,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBindWatch (oPC, nToken, "chbx_follow_target_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_follow_target_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_follow_target_event", JsonBool (TRUE));
-    // Row 6
+    // Row 7
     if(bIsPC)
     {
         NuiSetBind(oPC, nToken, "chbx_cmd_search_check", JsonBool (bCmdSearch));
@@ -1181,7 +1209,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         else sTarget = GetName(oPC);
     }
     NuiSetBind(oPC, nToken, "btn_follow_target_tooltip", JsonString("  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]"));
-    // Row 7
+    // Row 8
     NuiSetBind(oPC, nToken, "chbx_cmd_ai_script_check", JsonBool (bCmdAIScript));
     NuiSetBindWatch (oPC, nToken, "chbx_cmd_ai_script_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_cmd_ai_script_event", JsonBool(TRUE));
@@ -1214,7 +1242,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         NuiSetBind(oPC, nToken, "btn_cmd_place_trap_tooltip", JsonString (
                    "  Place a trap at the location selected"));
     }
-    // Row 8
+    // Row 9
     NuiSetBind(oPC, nToken, "btn_quick_widget_event", JsonBool(TRUE));
     NuiSetBind (oPC, nToken, "btn_quick_widget_tooltip", JsonString(
                "  Add/Remove abilities and spells from creatures widget"));
@@ -1233,7 +1261,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         NuiSetBind (oPC, nToken, "btn_spell_known_tooltip", JsonString(
                    "  Change known spell list."));
     }
-    // Row 9
+    // Row 10
     NuiSetBind(oPC, nToken, "chbx_buff_short_check", JsonBool (bBuffShort));
     NuiSetBindWatch (oPC, nToken, "chbx_buff_short_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_buff_short_event", JsonBool(TRUE));
@@ -1246,7 +1274,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_buff_long_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_buff_long_tooltip", JsonString (
                "  Buff the party with long duration spells"));
-    // Row 10
+    // Row 11
     NuiSetBind(oPC, nToken, "chbx_buff_all_check", JsonBool (bBuffAll));
     NuiSetBindWatch (oPC, nToken, "chbx_buff_all_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_buff_all_event", JsonBool(TRUE));
@@ -1263,7 +1291,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         else sText = "  [Off] Turn buffing after resting on";
         NuiSetBind (oPC, nToken, "btn_buff_rest_tooltip", JsonString (sText));
     }
-    // Row 11
+    // Row 12
     NuiSetBind(oPC, nToken, "chbx_jump_to_check", JsonBool(bJumpTo));
     NuiSetBindWatch (oPC, nToken, "chbx_jump_to_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_jump_to_event", JsonBool(TRUE));
@@ -1283,7 +1311,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     if(ai_GetAIMode(oAssociate, AI_MODE_GHOST)) sText = "Off";
     NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString (
                "  Turn " + sText + " clipping through creatures for " + GetName(oAssociate)));
-    // Row 12
+    // Row 13
     NuiSetBind(oPC, nToken, "chbx_camera_check", JsonBool (bCamera));
     NuiSetBindWatch (oPC, nToken, "chbx_camera_check", TRUE);
     NuiSetBind(oPC, nToken, "chbx_camera_event", JsonBool(TRUE));
@@ -1296,7 +1324,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_inventory_event", JsonBool (TRUE));
     NuiSetBind(oPC, nToken, "btn_inventory_tooltip", JsonString (
                "  Open " + sName + " inventory"));
-    // Row 13 & 14
+    // Row 14 & 15
     if(bFamiliar)
     {
         NuiSetBind(oPC, nToken, "chbx_familiar_check", JsonBool(bBtnFamiliar));
@@ -1322,7 +1350,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
             NuiSetBind(oPC, nToken, "lbl_familiar_name_label", JsonString("Familiar name"));
         }
     }
-    // Row 15 & 16
+    // Row 16 & 17
     if(bCompanion)
     {
         NuiSetBind(oPC, nToken, "chbx_companion_check", JsonBool(bBtnCompanion));
@@ -1350,7 +1378,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     }
     if(bIsPC)
     {
-        // Row 17+
+        // Row 18+
         int nIndex, bWidget;
         string sButton, sText;
         json jPlugin = JsonArrayGet(jPCPlugins, nIndex);
@@ -1371,7 +1399,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         }
         NuiSetBind(oPC, nToken, "chbx_plugin_tooltip", JsonString("  Adds the plugin to your widget."));
     }
-    // Row 18
+    // Row 19+
     sText = ai_GetRandomTip();
     NuiSetBind(oPC, nToken, "lbl_info_1_label", JsonString(sText));
 }
@@ -1393,7 +1421,8 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     if(bIsPC)
     {
         bRight = GetLocalInt(GetModule(), sDMWidgetAccessVarname) != 7340028;
-        if(!AI_SERVER || bRight)
+        bLeft = ai_GetIsServer();
+        if(!bLeft || bRight)
         {
             // If all the Command buttons are blocked then don't load the menu.
             if(bRight)
@@ -1402,10 +1431,10 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
                 jRow = CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
             }
             jRow = JsonArrayInsert(jRow, NuiSpacer());
-            if(!AI_SERVER)
+            if(!bLeft)
             {
-                CreateButton(jRow, "Main Menu", "btn_main_menu", 200.0, 20.0, -1.0, "btn_main_menu_tooltip");
-                CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
+                jRow = CreateButton(jRow, "Main Menu", "btn_main_menu", 200.0, 20.0, -1.0, "btn_main_menu_tooltip");
+                jRow = CreateLabel(jRow, "", "blank_label_2", 25.0, 20.0);
             }
             jCol = JsonArrayInsert(jCol, NuiRow(jRow));
             fHeight += 28.0;
@@ -1767,7 +1796,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     if(bIsPC)
     {
         bRight = GetLocalInt(GetModule(), sDMWidgetAccessVarname) != 7340028;
-        if(!AI_SERVER || bRight)
+        if(!ai_GetIsServer() || bRight)
         {
             // If all the Command buttons are blocked then don't load the menu.
             if(bRight)
@@ -1775,7 +1804,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
                 NuiSetBind(oPC, nToken, "btn_command_menu_event", JsonBool(TRUE));
                 NuiSetBind(oPC, nToken, "btn_command_menu_tooltip", JsonString("  " + sName + " Command options"));
             }
-            if(!AI_SERVER)
+            if(!ai_GetIsServer())
             {
                 NuiSetBind(oPC, nToken, "btn_main_menu_event", JsonBool(TRUE));
                 NuiSetBind(oPC, nToken, "btn_main_menu_tooltip", JsonString("  Module Options"));
@@ -2028,6 +2057,13 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
     NuiSetBind(oPC, nToken, "btn_open_main_image", JsonString(GetPortraitResRef(oAssociate) + "s"));
     NuiSetBind(oPC, nToken, "btn_open_main_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_open_main_tooltip", JsonString("  " + sName + " widget menu"));
+    if(ai_GetWidgetButton(oPC, BTN_ASSOC_WIDGETS_OFF, oAssociate, sAssociateType))
+    {
+        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_event", JsonBool(TRUE));
+        if(ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oPC, "pc")) sText = "  Associate Widgets [Off]";
+        else sText = "  Associate Widgets [On]";
+        NuiSetBind(oPC, nToken, "btn_toggle_assoc_widget_tooltip", JsonString(sText));
+    }
     if(bIsPC) sText = "  All associates";
     else sText = "  " + GetName(oAssociate);
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
@@ -2689,6 +2725,11 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     jButton = NuiTooltip(jButton, NuiBind ("btn_open_main_tooltip"));
     jButton = NuiImageRegion(jButton, NuiRect(0.0, 0.0, 32.0, 35.0));
     json jRow = JsonArrayInsert(JsonArray(), jButton);
+    if(ai_GetWidgetButton(oPC, BTN_ASSOC_WIDGETS_OFF, oAssociate, sAssociateType))
+    {
+        jRow = CreateButtonImage(jRow, "ir_invite", "btn_toggle_assoc_widget", 35.0f, 35.0f, 0.0, "btn_toggle_assoc_widget_tooltip");
+        fButtons += 1.0;
+    }
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
     {
         jRow = CreateButtonImage(jRow, "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
@@ -4340,7 +4381,13 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
         jAIData = JsonArraySet(jAIData, 10, jSpells);
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     }
-    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER) nClassSelected = 1;
+    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER)
+    {
+        nClassSelected = 1;
+        jSpells = JsonArraySet(jSpells, 0, JsonInt(1));
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    }
     nClass = GetClassByPosition(nClassSelected, oAssociate);
     int nMaxMemorizationSlots = GetMemorizedSpellCountByLevel(oAssociate, nClass, nLevelSelected);
     jRow = JsonArray();
@@ -4637,7 +4684,13 @@ void ai_CreateSpellKnownNUI(object oPC, object oAssociate)
         jAIData = JsonArraySet(jAIData, 10, jSpells);
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
     }
-    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER) nClassSelected = 1;
+    if(nClassSelected < 1 || nClassSelected > AI_MAX_CLASSES_PER_CHARACTER)
+    {
+        nClassSelected = 1;
+        jSpells = JsonArraySet(jSpells, 0, JsonInt(1));
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    }
     nClass = GetClassByPosition(nClassSelected, oAssociate);
     jRow = JsonArray();
     for(nIndex = 0; nIndex < 10; nIndex++)

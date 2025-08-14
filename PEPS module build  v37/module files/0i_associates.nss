@@ -161,7 +161,7 @@ object ai_GetNearestLockedObject(object oCreature)
 void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMonster)
 {
     if(GetLocalInt(oCreature, AI_AM_I_SEARCHING)) return;
-    if(oSpeaker == oTarget && d100() < 34)
+    if(oSpeaker == oTarget && d100() < 16)
     {
         // Let them know we heard something in the distance!.
         if(!ai_GetAIMode(oCreature, AI_MODE_DO_NOT_SPEAK))
@@ -232,7 +232,7 @@ void ai_FindTheEnemy(object oCreature, object oSpeaker, object oTarget, int bMon
             if(AI_DEBUG) ai_Debug("0i_associates", "176", "Moving and searching for " + GetName(oTarget));
             SetActionMode(oCreature, ACTION_MODE_DETECT, TRUE);
             ActionMoveToLocation(GetLocation(oTarget), FALSE);
-        //ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
+            //ActionMoveToObject(oTarget, FALSE, AI_RANGE_MELEE);
             AssignCommand(oCreature, ActionDoCommand(DeleteLocalInt(oCreature, AI_AM_I_SEARCHING)));
             return;
         }
@@ -835,7 +835,7 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
             ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
         }
         SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
-        SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
+        SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
         ai_StartMonsterCombat(oCreature);
     }
     else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived, TRUE);
@@ -1907,7 +1907,6 @@ void ai_Action(object oPC, object oAssociate)
 {
     if(oPC == oAssociate)
     {
-        DeleteLocalObject(oPC, "NW_ASSOCIATE_COMMAND");
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION_ALL");
         ai_SendMessages("Select an action for the party.", AI_COLOR_YELLOW, oPC);
     }
@@ -1915,6 +1914,7 @@ void ai_Action(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
+        SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
         ai_SendMessages("Select an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -2139,6 +2139,7 @@ void ai_ChangeCameraView(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE", oAssociate);
         AttachCamera(oPC, oAssociate);
+        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate);
     }
 }
 void ai_SelectCameraView(object oPC)

@@ -65,10 +65,14 @@ void main()
     // second pass.
     if(oTarget != oCaster)
     {
-        SetLocalObject(oPC, "AI_BUFF_TARGET", oTarget);
-        SetLocalObject(oPC, "AI_BUFF_CASTER", oCaster);
-        SetLocalInt(oPC, "AI_BUFF_SPELL", nSpell);
-        ExecuteScript("pc_savebuffs", oPC);
+        // if it is an area of effect spell then we skip it on all but the caster.
+        if(Get2DAString("spells", "TargetShape", nSpell) == "")
+        {
+            SetLocalObject(oPC, "AI_BUFF_TARGET", oTarget);
+            SetLocalObject(oPC, "AI_BUFF_CASTER", oCaster);
+            SetLocalInt(oPC, "AI_BUFF_SPELL", nSpell);
+            ExecuteScript("pc_savebuffs", oPC);
+        }
         return;
     }
     // If this is the first pass and we get here then oCaster is casting a spell
@@ -116,7 +120,7 @@ void main()
     jSpell = JsonArrayInsert(jSpell, JsonInt(nDomain));
     string sTargetName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget, TRUE)));
     jSpell = JsonArrayInsert(jSpell, JsonString(sTargetName));
-    jSpell = JsonArrayInsert(jSpells, jSpell);
+    jSpells = JsonArrayInsert(jSpells, jSpell);
     SetBuffDatabaseJson(oPC, "spells", jSpells, sList);
     SendMessageToPC(oPC, sName + " has been saved for fast buffing on " + sTargetName + ".");
     ExecuteScript("pi_buffing", oPC);

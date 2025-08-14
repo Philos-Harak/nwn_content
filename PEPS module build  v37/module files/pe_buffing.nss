@@ -333,14 +333,14 @@ void CastSavedBuffSpells(object oPC)
                 string sTargetName = JsonGetString(JsonArrayGet(jSpell, 5));
                 object oTarget;
                 location lLocation = GetLocation(oPC);
-                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName (oPC)))) oTarget = oPC;
+                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
                 else
                 {
-                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 10.0, lLocation, TRUE);
+                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
                     while(oTarget != OBJECT_INVALID)
                     {
                         if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
-                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 10.0, lLocation, TRUE);
+                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
                     }
                 }
                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
@@ -397,6 +397,7 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
     if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {
         int nSpellMemorized;
+        nMaxIndex = GetMemorizedSpellCountByLevel(oCaster, nClass, nLevel);
         while(nIndex < nMaxIndex)
         {
             nMSpell = GetMemorizedSpellId(oCaster, nClass, nLevel, nIndex);
@@ -404,20 +405,18 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             {
                 nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
                 nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
-                //ai_Debug("pe_buffing", "308", "nMmSpell: " + IntToString(nMmSpell) +
+                //SendMessageToPC(oCaster, "pe_buffing, 308, nSpell: " + IntToString(nSpell) +
+                //         " nMSpell: " + IntToString(nMSpell) +
+                //         " nMmSpell: " + IntToString(nMmSpell) +
                 //         " nMetamagic: " + IntToString(nMetamagic) +
                 //         " nDomain: " + IntToString(nDomain) +
                 //         " nDSpell: " + IntToString(nDSpell));
-                // Cannot save the domain status so we just use the first spell ID.
-                // Then return the domain statusl.
-                //if(nMmSpell == nMetamagic &&
-                //  ((nDomain > 0 && nDSpell == TRUE) || nDomain == 0 && nDSpell == FALSE))
                 if(nMmSpell == nMetamagic)
                 {
                     nSpellMemorized = TRUE;
                     if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
                     {
-                        if(nDSpell == nDomain) return TRUE;
+                        if((nDomain && nDSpell) || (!nDomain && !nDSpell)) return TRUE;
                     }
                 }
             }
@@ -425,18 +424,20 @@ int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetam
             {
                 sSubRadSpell = "SubRadSpell" + IntToString(nSubRadSpell);
                 if(nSpell == StringToInt(Get2DAString("spells", sSubRadSpell, nMSpell)))
-                nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
-                nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
-                ai_Debug("pe_buffing", "421", "nMmSpell: " + IntToString(nMmSpell) +
-                         " nMetamagic: " + IntToString(nMetamagic) +
-                         " nDomain: " + IntToString(nDomain) +
-                         " nDSpell: " + IntToString(nDSpell));
-                if(nMmSpell == nMetamagic)
                 {
-                    nSpellMemorized = TRUE;
-                    if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
+                    nMmSpell = GetMemorizedSpellMetaMagic(oCaster, nClass, nLevel, nIndex);
+                    nDSpell = GetMemorizedSpellIsDomainSpell(oCaster, nClass, nLevel, nIndex);
+                    //SendMessageToPC(oCaster, "pe_buffing, 433, nMmSpell: " + IntToString(nMmSpell) +
+                    //         " nMetamagic: " + IntToString(nMetamagic) +
+                    //         " nDomain: " + IntToString(nDomain) +
+                    //         " nDSpell: " + IntToString(nDSpell));
+                    if(nMmSpell == nMetamagic)
                     {
-                        if(nDSpell == nDomain) return TRUE;
+                        nSpellMemorized = TRUE;
+                        if(GetMemorizedSpellReady(oCaster, nClass, nLevel, nIndex))
+                        {
+                            if((nDomain && nDSpell) || (!nDomain && !nDSpell)) return TRUE;
+                        }
                     }
                 }
             }
@@ -479,7 +480,6 @@ void PopupWidgetBuffGUIPanel(object oPC)
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // Row 1 (buttons)**********************************************************
-
     json jRow = CreateButtonImage(JsonArray(), "ir_level1", "btn_one", 35.0f, 35.0f, 0.0);
     jRow = CreateButtonImage(jRow, "ir_level2", "btn_two", 35.0f, 35.0f, 0.0);
     jRow = CreateButtonImage(jRow, "ir_level3", "btn_three", 35.0f, 35.0f, 0.0);

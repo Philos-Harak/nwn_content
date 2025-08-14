@@ -12,6 +12,7 @@ void ai_MonsterCommands(object oCreature, object oSpeaker, int nMatch);
 void main()
 {
     object oCreature = OBJECT_SELF;
+    object oLastSpeaker = GetLastSpeaker();
     ExecuteScript("prc_npc_conv", oCreature);
     if(AI_DEBUG) ai_Debug("nw_c2_default4", "15", GetName(oCreature) + " listens " +
                  IntToString(GetListenPatternNumber()) + " to " + GetName(GetLastSpeaker()) + "." +
@@ -22,7 +23,7 @@ void main()
         ai_DoMonsterCombatRound(oCreature);
         return;
     }
-    object oLastSpeaker = GetLastSpeaker();
+    //object oLastSpeaker = GetLastSpeaker();
     int nMatch = GetListenPatternNumber();
     if(nMatch != -1)
     {

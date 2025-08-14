@@ -15,9 +15,5 @@ void main()
     object oCreature = OBJECT_SELF;
     // This can be moved to the OnClientLoad script event of your module.
     if(ai_GetIsCharacter(oCreature)) ai_CheckPCStart(oCreature);
-    // If this is a server you can add this as well.
-    else if(AI_SERVER && (GetIsDM(oCreature) || GetIsPlayerDM(oCreature)))
-    {
-        ai_CheckPCStart(oCreature);
-    }
+    else if(ai_GetIsDungeonMaster(oCreature)) ai_CheckDMStart(oCreature);
 }

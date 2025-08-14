@@ -60,7 +60,7 @@ void main()
         {
             oTarget = ai_GetFlankTarget(oCreature, AI_RANGE_MELEE);
         }
-        // Ok we are in a serious fight so lets not give attack of opportunities.
+        // Ok we are in a serious fight so lets not give attacks of opportunities.
         else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
     }
     // If there are no enemies being attacked then lets stay back.
@@ -86,7 +86,7 @@ void main()
                 oTarget = ai_GetLowestCRTarget(oCreature);
                 if(oTarget != OBJECT_INVALID)
                 {
-                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                     ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                     return;
                 }
@@ -97,6 +97,12 @@ void main()
                 ai_SearchForHiddenCreature(oCreature, FALSE, OBJECT_INVALID, AI_RANGE_CLOSE);
                 return;
             }
+        }
+        // Make sure we are not the only one here. Moving around looks funny when we are by ourselves.
+        else if(ai_GetNearestAlly(oCreature, 1, 7, 7) == OBJECT_INVALID)
+        {
+            oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
         }
     }
     if(oTarget != OBJECT_INVALID)

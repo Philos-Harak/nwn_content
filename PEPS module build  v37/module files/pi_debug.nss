@@ -16,7 +16,7 @@ void main()
     //SetLocalInt (oPC, AI_NO_NUI_SAVE, TRUE);
     //DelayCommand (0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     string sText = " [Single player]";
-    if(AI_SERVER) sText = " [Server]";
+    if(ai_GetIsServer()) sText = " [Server]";
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 500 / 73
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());

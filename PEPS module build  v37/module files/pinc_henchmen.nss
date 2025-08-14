@@ -369,6 +369,7 @@ void RemoveYourHenchman(object oPC, int nToken, string sParty)
     else
     {
         RemoveHenchman(oPC, oHenchman);
+        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
         AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
         NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
         DestroyObject(oHenchman);
@@ -388,6 +389,7 @@ void RemoveWholeParty(object oPC, int nToken, string sParty)
         {
             ai_SendMessages(GetName(oHenchman) + " has been remove from your Party.", AI_COLOR_YELLOW, oPC);
             RemoveHenchman(oPC, oHenchman);
+            ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
             AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
             NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
             DestroyObject(oHenchman);
@@ -417,7 +419,11 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
         if(sName == sHenchmanName || sName == "")
         {
             sSlot = sParty + sIndex;
-            if(!bPC) RemoveHenchman(oPC, oHenchman);
+            if(!bPC)
+            {
+                RemoveHenchman(oPC, oHenchman);
+                ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
+            }
             // Special check for Infinite Dungeon plot givers to be changed into henchman.
             if(GetStringLeft(GetLocalString(oHenchman, "sConversation"), 8) == "id1_plot")
             {
@@ -426,10 +432,13 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
             ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
             json jHenchman = ObjectToJson(oHenchman, TRUE);
             if(!bPC) AddHenchman(oPC, oHenchman);
-            else DestroyObject(oHenchman);
-            //string sPatch = "[{\"op\":\"replace\",\"path\":\"/FactionID/value\",\"value\":1}]";
-            //json jPatch = JsonParse(sPatch);
-            //jHenchman = JsonPatch(jHenchman, jPatch);
+            else
+            {
+                DestroyObject(oHenchman);
+                // We need to make sure the henchman is not seen as a PC or DM!
+                jHenchman = GffReplaceByte(jHenchman, "IsPC", 0);
+                jHenchman = GffReplaceByte(jHenchman, "IsDM", 0);
+            }
             CheckHenchmanDataAndInitialize(oPC, sSlot);
             SetHenchmanDbString(oPC, "image", GetPortraitResRef(oHenchman), sSlot);
             SetHenchmanDbString(oPC, "henchname", sHenchmanName, sSlot);
@@ -1248,11 +1257,12 @@ object ResetCharacter(object oPC, object oHenchman)
 {
     SetLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE", TRUE);
     RemoveHenchman(oPC, oHenchman);
+    ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
     json jHenchman = ObjectToJson(oHenchman, TRUE);
     json jClassList = GffGetList(jHenchman, "ClassList");
     json jClass = JsonArrayGet(jClassList, 0);
     // Set the Class list to the first class only and put at level 1.
-    int nClass = JsonGetInt(JsonObjectGet(jClass, "Class"));
+    int nClass = JsonGetInt(GffGetInt(jClass, "Class"));
     jClass = GffReplaceShort(jClass, "ClassLevel", 1);
     // Delete extra classes.
     int nClassIndex = JsonGetLength(jClassList) - 1;
@@ -1260,13 +1270,6 @@ object ResetCharacter(object oPC, object oHenchman)
     {
         jClassList = JsonArrayDel(jClassList, nClassIndex--);
     }
-    int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
-    int nMod = JsonGetInt(GffGetByte(jHenchman, "Con"));
-    if(nMod > 9) nHitPoints += (nMod - 10) / 2;
-    else nHitPoints += (nMod - 11) / 2;
-    jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
-    jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
-    jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
     jHenchman = GffReplaceDword(jHenchman, "Experience", 0);
     jHenchman = GffReplaceFloat(jHenchman, "ChallengeRating", 1.0);
     string s2DA = Get2DAString("classes", "AttackBonusTable", nClass);
@@ -1282,7 +1285,7 @@ object ResetCharacter(object oPC, object oHenchman)
     json jLvlStatList = GffGetList(jHenchman, "LvlStatList");
     if(JsonGetType(jLvlStatList) != JSON_TYPE_NULL)
     {
-        WriteTimestampedLogEntry("pinc_henchmen 1275, jLvlStatList: " + JsonDump(jLvlStatList, 4));
+        //WriteTimestampedLogEntry("pinc_henchmen 1289, jLvlStatList: " + JsonDump(jLvlStatList, 4));
         int nLevel = 1, nLevelTrack = 1;
         int nAbilityStatIncrease, nAbility;
         string sAbility;
@@ -1304,7 +1307,7 @@ object ResetCharacter(object oPC, object oHenchman)
                 if(nAbilityStatIncrease == ABILITY_CHARISMA) sAbility = "Cha";
                 nAbility = JsonGetInt(GffGetByte(jHenchman, sAbility)) - 1;
                 jHenchman = GffReplaceByte(jHenchman, sAbility, nAbility);
-                WriteTimestampedLogEntry("pinc_henchmen, 1314, Removing " + sAbility + " level bonus ability score point.");
+                WriteTimestampedLogEntry("pinc_henchmen, 1311, Removing " + sAbility + " level bonus ability score point.");
             }
             jLvlStatList = JsonArrayDel(jLvlStatList, nLevel);
             // Note: nLevel is not incremented since we are removing the previous level.
@@ -1316,12 +1319,24 @@ object ResetCharacter(object oPC, object oHenchman)
         jHenchman = GffRemoveList(jHenchman, "LvlStatList");
     }
     jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC, 1);
+    int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
+    WriteTimestampedLogEntry("inc_henchmen, 1316, Starting HP: " + IntToString(nHitPoints));
+    int nConstitution = JsonGetInt(GffGetByte(jHenchman, "Con"));
+    int nRace = JsonGetInt(GffGetByte(jHenchman, "Race"));
+    nConstitution += StringToInt(Get2DAString("racialtypes", "ConAdjust", nRace));
+    WriteTimestampedLogEntry("inc_henchmen, 1318, Constitution: " + IntToString(nConstitution));
+    if(nConstitution > 9) nHitPoints += (nConstitution - 10) / 2;
+    else nHitPoints += (nConstitution - 11) / 2;
+    WriteTimestampedLogEntry("inc_henchmen, 1321, Setting Health: " + IntToString(nHitPoints));
+    jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
+    jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
     jHenchman = ResetSkills(jHenchman, oHenchman);
     jHenchman = ResetFeats(jHenchman, oHenchman);
     jClass = ResetSpellsKnown(jClass, oHenchman);
     jClassList = JsonArraySet(jClassList, 0, jClass);
     jHenchman = GffReplaceList(jHenchman, "ClassList", jClassList);
-    //WriteTimestampedLogEntry("pinc_henchmen 1397, jHenchman: " + JsonDump(jHenchman, 4));
+    //WriteTimestampedLogEntry("pinc_henchmen 1331, jHenchman: " + JsonDump(jHenchman, 4));
     location lLocation = GetLocation(oHenchman);
     int nFamiliar, nCompanion;
     object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oHenchman);

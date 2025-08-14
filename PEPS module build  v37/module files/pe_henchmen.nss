@@ -327,6 +327,7 @@ void main()
                     if(JsonGetType(jLvlStatList) == JSON_TYPE_NULL)
                     {
                         RemoveHenchman(oPC, oHenchman);
+                        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
                         // Make sure to get a clean faction version of the henchman here.
                         jHenchman = ObjectToJson(oHenchman, TRUE);
                         jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC);

@@ -68,7 +68,7 @@ int StartingConditional()
     {
         string sHealingIn = IntToString(GetLocalInt(oAssociate, AI_HEAL_IN_COMBAT_LIMIT)) + "%";
         string sHealingOut = IntToString(GetLocalInt(oAssociate, AI_HEAL_OUT_OF_COMBAT_LIMIT)) + "%";
-        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 5, "I'm healing our allies if they go below " +
+        SetCustomToken(AI_BASE_CUSTOM_TOKEN + 4, "I'm healing our allies if they go below " +
                  sHealingIn + " health in combat and " + sHealingOut + " out of combat.");
     }
     else if(sParam == "Spells")
