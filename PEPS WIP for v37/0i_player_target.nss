@@ -793,3 +793,47 @@ int ai_SetActionMode(object oAssociate, int nFeat)
     }
     return FALSE;
 }
+void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
+{
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI On");
+    ai_SendMessages("AI turned on for " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_4_convers");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_5_phyatked");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_6_damaged");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_8_disturb");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_b_castat");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_e_blocked");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    // This sets the script for the PC to run AI based on class.
+    ai_SetAssociateAIScript(oTarget, FALSE);
+    // Set so PC can hear associates talking in combat.
+    ai_SetListeningPatterns(oTarget);
+}
+void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
+{
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI Off");
+    ai_SendMessages("AI Turned off for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_NOTICE, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    DeleteLocalInt(oAssociate, "AI_I_AM_BEING_HEALED");
+    DeleteLocalString(oAssociate, "AIScript");
+    ai_ClearCreatureActions();
+}
+

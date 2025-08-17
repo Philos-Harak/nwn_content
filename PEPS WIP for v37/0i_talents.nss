@@ -1650,10 +1650,11 @@ int ai_TryMeleeTalents(object oCreature, object oTarget)
 
 int ai_GetMonsterTalentMaxLevel(object oCreature)
 {
-    int nMaxLevel = (ai_GetCharacterLevels(oCreature) + 1) / 2;
-    if(nMaxLevel > 9) nMaxLevel = 9;
-    if(AI_DEBUG) ai_Debug("0i_talents", "1258", "nMaxLevel: " + IntToString(nMaxLevel));
-    return nMaxLevel;
+    return 9;
+    //int nMaxLevel = (ai_GetCharacterLevels(oCreature) + 1) / 2;
+    //if(nMaxLevel > 9) nMaxLevel = 9;
+    //if(AI_DEBUG) ai_Debug("0i_talents", "1258", "nMaxLevel: " + IntToString(nMaxLevel));
+    //return nMaxLevel;
 }
 int ai_GetAssociateTalentMaxLevel(object oCreature, int nDifficulty)
 {

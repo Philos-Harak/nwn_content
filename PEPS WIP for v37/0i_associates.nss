@@ -130,6 +130,10 @@ void ai_ChangeCameraView(object oPC, object oAssociate);
 void ai_OpenInventory(object oAssociate, object oPC);
 // Executes an installed plugin.
 void ai_Plugin_Execute(object oPC, string sElem, int bUser = 0);
+// Turns on oAssociate AI, Setting all event scripts.
+void ai_TurnOn(object oPC, object oAssociate, string sAssociateType);
+// Turns off oAssociate AI, Setting all event scripts.
+void ai_TurnOff(object oPC, object oAssociate, string sAssociateType);
 
 int ai_CanIAttack(object oCreature)
 {
@@ -1915,6 +1919,7 @@ void ai_Action(object oPC, object oAssociate)
         SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
         SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
+        if(!GetLocalInt(GetModule(), AI_USING_PRC)) ai_TurnOn(oPC, oPC, "pc");
         ai_SendMessages("Select an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);

@@ -10,13 +10,15 @@
     action of the target.
     AI_TARGET_MODE is the constant used.
     AI_TARGET_ASSOCIATE is the associate that triggered the target mode.
+
+    AI_TARGET_MODE_ON defines if the player is in target mode for a henchman instead of the PC.
 /*//////////////////////////////////////////////////////////////////////////////
 #include "0i_player_target"
 void ai_EnterAssociateTargetMode(object oPC, object oAssociate)
 {
     SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
-    SetLocalInt(oPC, "AI_TARGET_MODE_ON", TRUE);
+    SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
 }
 void main()
@@ -38,10 +40,22 @@ void main()
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
         object oAssociate = GetLocalObject(oPC, AI_TARGET_ASSOCIATE);
         string sTargetMode = GetLocalString(oPC, AI_TARGET_MODE);
+        SendMessageToPC(oPC, "AI_TARGET_MODE_ON: " + IntToString(GetLocalInt(oPC, AI_TARGET_MODE_ON)) +
+                             " oAssociate: " + GetName(GetLocalObject(oPC, AI_TARGET_ASSOCIATE)));
         // ********************* Exiting Target Actions ************************
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())
         {
+            // The player is canceling an action target so remove that we are in tareget mode
+            // and AI target associate so the henchman will go back to AI mode.
+            DeleteLocalInt(oPC, AI_TARGET_MODE_ON);
+            DeleteLocalObject(oPC, AI_TARGET_ASSOCIATE);
+            if(GetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE") != OBJECT_INVALID)
+            {
+                DeleteLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE");
+                AttachCamera(oPC, oPC);
+            }
+            if(!GetLocalInt(GetModule(), AI_USING_PRC)) ai_TurnOff(oPC, oPC, "pc");
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
                 ai_SendMessages("You have exited selecting an action for the party.", AI_COLOR_YELLOW, oPC);
@@ -55,7 +69,7 @@ void main()
             {
                 ai_SendMessages("You have exited selecting an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
                 DeleteLocalObject(oPC, AI_TARGET_ASSOCIATE);
-                DeleteLocalInt(oPC, "AI_TARGET_MODE_ON");
+
                 if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
@@ -120,21 +134,21 @@ void main()
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetItem(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "ASSOCIATE_USE_FEAT")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, oAssociate);
             }
             else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
             {

@@ -234,11 +234,11 @@ void ai_DoMonsterCombatRound(object oMonster)
         string sAI = GetLocalString(oMonster, AI_COMBAT_SCRIPT);
         if(sAI != "ai_coward")
         {
-            ai_Debug("0i_actions", "235", "Should we use polymorph? Current: " +
+            if(AI_DEBUG) ai_Debug("0i_actions", "235", "Should we use polymorph? Current: " +
                       IntToString(GetAppearanceType(oMonster)) + " Normal: " + IntToString(ai_GetNormalAppearance(oMonster)));
             if(ai_GetIsHidden(oMonster))
             {
-                ai_Debug("0i_actions", "239", "We are hidden!" +
+                if(AI_DEBUG) ai_Debug("0i_actions", "239", "We are hidden!" +
                          " Can they see us? " + IntToString(ai_GetNearestIndexThatSeesUs(oMonster)));
             }
             if(ai_GetIsHidden(oMonster) && !ai_GetNearestIndexThatSeesUs(oMonster)) sAI = "ai_invisible";

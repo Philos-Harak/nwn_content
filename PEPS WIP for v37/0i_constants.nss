@@ -18,7 +18,7 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08
 // This will only work if you are using the PEPS menu system.
 const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
-const int AI_SERVER = FALSE;
+const int AI_SERVER = TRUE;
 // The number of classes allowed for a creature to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 8;
 // Taunts cool down time before the AI attemps another Taunt.
