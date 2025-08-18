@@ -35,7 +35,6 @@ int ai_GetDMWidgetButton(object oPlayer, int nButton)
 }
 void ai_CreateDMWidgetNUI(object oPC)
 {
-    SendMessageToPC(oPC, "Running DMWidget!");
     // Set window to not save until it has been created.
     SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
     DelayCommand(0.5f, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));

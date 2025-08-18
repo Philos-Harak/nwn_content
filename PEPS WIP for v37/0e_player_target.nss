@@ -40,8 +40,6 @@ void main()
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
         object oAssociate = GetLocalObject(oPC, AI_TARGET_ASSOCIATE);
         string sTargetMode = GetLocalString(oPC, AI_TARGET_MODE);
-        SendMessageToPC(oPC, "AI_TARGET_MODE_ON: " + IntToString(GetLocalInt(oPC, AI_TARGET_MODE_ON)) +
-                             " oAssociate: " + GetName(GetLocalObject(oPC, AI_TARGET_ASSOCIATE)));
         // ********************* Exiting Target Actions ************************
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())

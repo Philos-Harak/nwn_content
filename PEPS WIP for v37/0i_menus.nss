@@ -2066,6 +2066,11 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
     }
     if(bIsPC) sText = "  All associates";
     else sText = "  " + GetName(oAssociate);
+    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
+    {
+        NuiSetBind(oPC, nToken, "btn_camera_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_camera_tooltip", JsonString("  Toggle camera view for " + sName));
+    }
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
     {
         NuiSetBind(oPC, nToken, "btn_cmd_action_event", JsonBool(TRUE));
@@ -2231,11 +2236,6 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
         if(ai_GetAIMode(oAssociate, AI_MODE_GHOST)) sText = "Off";
         NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString (
                    "  Turn " + sText + " clipping through creatures for " + GetName(oAssociate)));
-    }
-    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
-    {
-        NuiSetBind(oPC, nToken, "btn_camera_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_camera_tooltip", JsonString("  Toggle camera view for " + sName));
     }
     if(ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType))
     {
@@ -2730,6 +2730,11 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
         jRow = CreateButtonImage(jRow, "ir_invite", "btn_toggle_assoc_widget", 35.0f, 35.0f, 0.0, "btn_toggle_assoc_widget_tooltip");
         fButtons += 1.0;
     }
+    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
+    {
+        jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
+        fButtons += 1.0;
+    }
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
     {
         jRow = CreateButtonImage(jRow, "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
@@ -2811,11 +2816,6 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     if(ai_GetWidgetButton(oPC, BTN_CMD_GHOST_MODE, oAssociate, sAssociateType))
     {
         jRow = CreateButtonImage(jRow, "dm_limbo", "btn_ghost_mode", 35.0f, 35.0f, 0.0, "btn_ghost_mode_tooltip");
-        fButtons += 1.0;
-    }
-    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
-    {
-        jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
         fButtons += 1.0;
     }
     if(ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType))

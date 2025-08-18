@@ -222,7 +222,8 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
 int ai_UseTalent(object oCreature, int nTalent, object oTarget);
 // Returns TRUE if jTalent is used on oTarget by oCaster.
 // Checks the talent type and casts the correct spell. For items it checks uses.
-int ai_UseTalentOnObject(object oCaster, json jTalent, object oTarget, int nInMelee);
+// bCheckPosition will see if we should move back due to spell failure in combat.
+int ai_UseTalentOnObject(object oCaster, json jTalent, object oTarget, int nInMelee, int bCheckPosition = TRUE);
 // Returns TRUE if jTalent is used at lTarget location by oCaster.
 // Checks the talent type and cast the correct spell. For items it checks uses.
 int ai_UseTalentAtLocation(object oCaster, json jTalent, object oTarget, int nInMelee);
@@ -2365,7 +2366,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
     if(nMaxTalentLevel < nLevel) nLevel = nMaxTalentLevel;
     if(nLevel < 0 || nLevel > 10) nLevel = 9;
     json jLevel, jTalent;
-    int nClass, nSlot, nType, nSlotIndex, nMaxSlotIndex, nTalentUsed, nSpell;
+    int bHasTalent, nClass, nSlot, nType, nSlotIndex, nMaxSlotIndex, nTalentUsed, nSpell;
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     int bUseMagicItems = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC_ITEMS);
     if(AI_DEBUG) ai_Debug("0i_talents", "2339", "bUseMagic: " + IntToString(bUseMagic) +
@@ -2381,6 +2382,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
                  " nMaxSlotIndex: " + IntToString(nMaxSlotIndex));
         if(nMaxSlotIndex > 0)
         {
+            bHasTalent = TRUE;
             // Get the talent within nLevel cycling from the first to the last.
             nSlotIndex = 0;
             while (nSlotIndex < nMaxSlotIndex)
@@ -2441,7 +2443,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
                 nSlotIndex++;
             }
         }
-        else SetLocalInt(oCreature, AI_MAX_TALENT + sCategory, nLevel - 1);
+        else if(!bHasTalent) SetLocalInt(oCreature, AI_MAX_TALENT + sCategory, nLevel - 1);
         nLevel--;
     }
     return FALSE;
@@ -2509,7 +2511,7 @@ int ai_UseTalent(object oCreature, int nTalent, object oTarget)
     }
     return FALSE;
 }
-int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nInMelee)
+int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nInMelee, int bCheckPosition = TRUE)
 {
     int nClass, nLevel, nSlot, nMetaMagic, nDomain;
     int nSpell = JsonGetInt(JsonArrayGet(jTalent, 1));
@@ -2538,13 +2540,13 @@ int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nIn
         if(AI_DEBUG) ai_Debug("0i_talents", "1790", GetName(oCreature) + " is using a special ability!");
         nSpell = JsonGetInt(JsonArrayGet(jTalent, 1));
         nClass = 255;
-        if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
+        if(bCheckPosition && ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
     }
     else if(nType == AI_TALENT_TYPE_ITEM)
     {
         object oItem = StringToObject(JsonGetString(JsonArrayGet(jTalent, 2)));
         int nBaseItemType = GetBaseItemType(oItem);
-        if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell, nBaseItemType)) return TRUE;
+        if(bCheckPosition && ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell, nBaseItemType)) return TRUE;
         int nIndex, nSubIndex = 0;
         nSlot = JsonGetInt(JsonArrayGet(jTalent, 4));
         itemproperty ipProp = GetFirstItemProperty(oItem);
@@ -2766,6 +2768,25 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             int nUndead = ai_GetRacialTypeCount(oCreature, RACIAL_TYPE_UNDEAD, fRange);
             if(nUndead < 3) return FALSE;
             oTarget = ai_GetLowestCRRacialTarget(oCreature, RACIAL_TYPE_UNDEAD, fRange);
+        }
+        else if(nSpell == SPELLABILITY_PULSE_DROWN || nSpell == SPELLABILITY_PULSE_WHIRLWIND)
+        {
+            if(AI_DEBUG) ai_Debug("0i_talents", "2773", GetName(oCreature) +
+                   " nInMelee: " + IntToString(nInMelee));
+            if(nInMelee > 1)
+            {
+                oTarget = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
+                int nRace = GetRacialType(oTarget);
+                if(AI_DEBUG) ai_Debug("0i_talents", "2773", "nRace(10/24/16): " + IntToString(nRace));
+                if(nRace != RACIAL_TYPE_CONSTRUCT &&
+                   nRace != RACIAL_TYPE_UNDEAD &&
+                   nRace != RACIAL_TYPE_ELEMENTAL)
+                {
+                    if(AI_DEBUG) ai_Debug("0i_talents", "2784", "Using Pulse talent!");
+                    if(ai_UseTalentOnObject(oCreature, jTalent, oCreature, nInMelee, FALSE)) return TRUE;
+                }
+            }
+            return FALSE;
         }
         // Get a target for discriminant spells if one is not already set.
         if(oTarget == OBJECT_INVALID)
