@@ -94,9 +94,9 @@ Repeat for each of the following Creature events.
   OnSpellCastAt: nw_c2_defaultb
   OnUserDefined: Not overwritten by Philos AI. 
 
-****************************************************
+******************************************************
 ********** Renaming Associate Event Scripts **********
-****************************************************
+******************************************************
 For example you are using 0e_ch_onblocked then you would change my script nw_ch_ace to 0e_ch_onblocked.
 Repeat for each of the following Creature events.
   OnBlocked event: nw_ch_ace 
@@ -117,9 +117,38 @@ Repeat for each of the following Creature events.
   OnSpellCastAt: nw_ch_acb
   OnUserDefined: Not overwritten by Philos AI. 
 
+************************************************************
+********** Making sure the Auto Loot system works **********
+************************************************************
+When testing if the auto loot system does not trigger your loot scripts, you might need to add the following code.
+// ********************* ADD AI CODE FOR LOOTING *******************************
+// *************** SHOULD NOT CHANGE ORIGINAL BEHAVIOR *************************
+    object oPC = GetLocalObject(OBJECT_SELF, "AI_GET_LAST_OPENED_BY");
+    if(GetIsObjectValid(oPC)) oLastOpener = oPC;
+// ********************* ADD AI CODE FOR LOOTING *******************************
+oLastOpener is what is used in the Original campaign to call the treasure scripts. 
+If you are dependent on the player to be the opener of your chests then you need to get the PC when a henchmen loots the chest. 
+I do that by setting the variable "AI_GET_LAST_OPENED_BY" on the chest to the PC that way you can get the PC even when 
+your chests are opened by a henchmen.
+
 *****************************
 ********** Changes **********
 *****************************
+---------- 8-22-25 ----------
+	GENERAL CHANGES
+* Remove AI checks in main menu for server builds.
+* Fixed PC not stoping to follow a henchmen when clicking on the PC with the follow button.
+* Reworked the camera view for henchman. When entering camera view the henchman is also put into action mode.
+* When going to camera view with a henchman the players character will start using AI to fight. This will not be used for PRC mods.
+* Reworked the camera view for henchman. When leaving action mode while in camera view moves the camera back to the player.
+* When leaving camera view with a henchman the players character will stop using AI to fight. This will not be used for PRC mods.
+	MENU CHANGES
+* Added combat modes to the quick widget menu.
+* Moved the Camera view button just before the Action button on the Widget menu.
+	AI CHANGES
+* Reworked healing if an undead is hurt they will check for inflict spells to cast on them.
+* Do specific checks for elemental pulse attacks.
+* Removed level check for talents, now lower level cretures can use higher level abilities.
 ---------- 8-09-25 ----------
        BUFFING PLUGIN
 * Buffing widget now loads properly on startup.

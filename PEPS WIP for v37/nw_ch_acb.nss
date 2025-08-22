@@ -27,7 +27,10 @@ void main()
     int nSpell = GetLastSpell();
     if(AI_DEBUG) ai_Debug("nw_ch_acb", "21", GetName(OBJECT_SELF) + " has been hit by a harmful spell(" +
                  Get2DAString("spells", "Label", nSpell) + ")!");
-    if(ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
+    object oMaster = GetMaster(oCreature);
+    if((!GetLocalInt(oMaster, AI_TARGET_MODE_ON) ||
+       GetLocalObject(oMaster, AI_TARGET_MODE_ASSOCIATE) != oCreature) &&
+       ai_GetInAOEReaction(oCreature, oCaster, nSpell) &&
        ai_IsInADangerousAOE(oCreature, AI_RANGE_BATTLEFIELD, TRUE)) return;
     if(ai_GetIsBusy(oCreature)) return;
     if(ai_CheckForCombat(oCreature, FALSE)) return;

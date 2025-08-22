@@ -33,10 +33,6 @@ void ai_RulePercDistInc(object oPC, object oModule, int nIncrement, int nToken);
 // Adds a spell to a json AI restricted spell list then returns jRules.
 // bRestrict = TRUE will add to the list FALSE will remove it from the list.
 json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE);
-// Turns on oAssociate AI, Setting all event scripts.
-void ai_TurnOn(object oPC, object oAssociate, string sAssociateType);
-// Turns off oAssociate AI, Setting all event scripts.
-void ai_TurnOff(object oPC, object oAssociate, string sAssociateType);
 // Adds a henchman back into the players party.
 object ai_AddHenchman(object oPC, json jHenchman, location lLocation, int nFamiliar, int nCompanion);
 
@@ -611,8 +607,11 @@ void main()
                 jPlugin = JsonArraySet(jPlugin, 1, JsonBool(bCheck));
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                }
             }
             else if(sElem == "chbx_buff_rest_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_BUFF_REST, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_toggle_assoc_widget_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_ASSOC_WIDGETS_OFF, oAssociate, sAssociateType, nToken, sElem);
@@ -638,8 +637,11 @@ void main()
             else if(sElem == "chbx_companion_check") ai_SetWidgetButtonToCheckbox(oPC, BTN_CMD_COMPANION, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "cmb_familiar_selected") ai_SetCompanionType(oPC, oAssociate, nToken, ASSOCIATE_TYPE_FAMILIAR);
             else if(sElem == "cmb_companion_selected") ai_SetCompanionType(oPC, oAssociate, nToken, ASSOCIATE_TYPE_ANIMALCOMPANION);
-            DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI)));
-            DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+            if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+            {
+                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+            }
         }
         else if(sEvent == "mousescroll")
         {
@@ -737,8 +739,11 @@ void main()
             else if(sElem == "chbx_ignore_traps_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_IGNORE_TRAPS, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "chbx_perc_range_check") ai_SetAIButtonToCheckbox(oPC, BTN_AI_PERC_RANGE, oAssociate, sAssociateType, nToken, sElem);
             else if(sElem == "cmb_ai_script_selected") ai_SetAIScript(oPC, oAssociate, nToken);
-            DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI)));
-            DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+            if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+            {
+                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI)));
+                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+            }
         }
         else if(sEvent == "mousescroll")
         {
@@ -1278,8 +1283,11 @@ void main()
                 ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
                 DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 DelayCommand(0.1, ai_CreatePluginNUI(oPC));
-                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                }
             }
             if(sElem == "btn_clear_plugins")
             {
@@ -1298,8 +1306,11 @@ void main()
                 ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
                 DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 DelayCommand(0.1, ai_CreatePluginNUI(oPC));
-                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                }
             }
             else if(sElem == "btn_add_plugin")
             {
@@ -1318,8 +1329,11 @@ void main()
                 ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
                 DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 DelayCommand(0.1, ai_CreatePluginNUI(oPC));
-                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                }
             }
             else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oPC, sElem);
         }
@@ -1334,8 +1348,11 @@ void main()
                 jPlugin = JsonArraySet(jPlugin, 1, JsonBool(bCheck));
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI)));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                }
             }
         }
         return;
@@ -1417,11 +1434,14 @@ void main()
         }
         else if(sEvent == "close")
         {
-            int nUIToken = NuiFindWindow(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
-            if(nUIToken)
+            if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
             {
-                DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                int nUIToken = NuiFindWindow(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
+                if(nUIToken)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                }
             }
         }
         return;
@@ -1504,11 +1524,14 @@ void main()
         }
         else if(sEvent == "close")
         {
-            int nUIToken = NuiFindWindow(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
-            if(nUIToken)
+            if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
             {
-                DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                int nUIToken = NuiFindWindow(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
+                if(nUIToken)
+                {
+                    DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                }
             }
         }
         return;
@@ -1699,7 +1722,10 @@ void main()
                 oAssociate = ai_AddHenchman(oPC, jHenchman, lLocation, nFamiliar, nCompanion);
                 DeleteLocalJson(oAssociate, AI_CLASS_LIST_JSON);
                 DeleteLocalInt(oAssociate, "AI_KNOWN_SPELL_CHANGE");
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                {
+                    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+                }
             }
         }
         return;
@@ -1769,7 +1795,11 @@ void ai_AddAssociate(object oPC, int nToken, json jAssociate, location lLocation
     AddHenchman(oPC, oAssociate);
     DeleteLocalInt(oPC, "AI_IGNORE_NO_ASSOCIATE");
     DelayCommand(0.0, NuiDestroy(oPC, nToken));
-    DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+    {
+        DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+    }
     if(nRange) SetLocalInt(oAssociate, AI_ASSOCIATE_PERCEPTION, nRange);
     if(nFamiliar) SummonFamiliar(oAssociate);
     if(nCompanion) SummonAnimalCompanion(oAssociate);
@@ -1984,49 +2014,6 @@ json ai_AddRestrictedSpell(json jRules, int nSpell, int bRestrict = TRUE)
     }
     SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
     return JsonObjectSet(jRules, AI_RULE_RESTRICTED_SPELLS, jRSpells);
-}
-void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
-{
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI On");
-    ai_SendMessages("AI turned on for " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_4_convers");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_5_phyatked");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_6_damaged");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_8_disturb");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_b_castat");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_e_blocked");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
-    // This sets the script for the PC to run AI based on class.
-    ai_SetAssociateAIScript(oTarget, FALSE);
-    // Set so PC can hear associates talking in combat.
-    ai_SetListeningPatterns(oTarget);
-}
-void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
-{
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI Off");
-    ai_SendMessages("AI Turned off for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_NOTICE, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
-    DeleteLocalInt(oAssociate, "AI_I_AM_BEING_HEALED");
-    DeleteLocalString(oAssociate, "AIScript");
-    ai_ClearCreatureActions();
 }
 object ai_AddHenchman(object oPC, json jHenchman, location lLocation, int nFamiliar, int nCompanion)
 {

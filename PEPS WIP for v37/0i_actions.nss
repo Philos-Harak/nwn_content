@@ -153,7 +153,7 @@ void ai_AmbientAnimations();
 void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID)
 {
     object oMaster = GetMaster(oCreature);
-    if(GetLocalInt(oMaster, AI_TARGET_MODE_ON) && GetLocalObject(oMaster, AI_TARGET_ASSOCIATE) == oCreature) return;
+    if(GetLocalInt(oMaster, AI_TARGET_MODE_ON) && GetLocalObject(oMaster, AI_TARGET_MODE_ASSOCIATE) == oCreature) return;
     if(ai_StayClose(oCreature)) return;
     // Is the target our Player has locked in dead? If so then clear it.
     if(GetIsDead(GetLocalObject(oCreature, AI_PC_LOCKED_TARGET))) DeleteLocalObject(oCreature, AI_PC_LOCKED_TARGET);
@@ -1133,7 +1133,7 @@ void ai_ActionTryHealing(object oCreature, object oTarget)
 }
 int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
 {
-    if(AI_DEBUG) ai_Debug("0i_actions", "733", "Try healing: oCreature: " + GetName(oCreature) +
+    if(AI_DEBUG) ai_Debug("0i_actions", "1136", "Try healing: oCreature: " + GetName(oCreature) +
              " oTarget: " + GetName(oTarget) + " No Party Healing: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF)) +
              " No Self Healing: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF)) +
              " AI_I_AM_BEING_HEALED: " + IntToString(GetLocalInt(oTarget, "AI_I_AM_BEING_HEALED")) +
@@ -1154,52 +1154,92 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
        oCreature != oTarget) return FALSE;
     if(ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF) &&
        oCreature == oTarget) return FALSE;
-    // Undead don't heal so lets skip this for them, maybe later we can fix this.
-    if(GetRacialType(oTarget) == RACIAL_TYPE_UNDEAD) return FALSE;
     int nHpLost = ai_GetPercHPLoss(oTarget);
+    // If the player is forcing a heal then we always heal.
     if(bForce && nHpLost < 100) nHpLost = 0;
-    if(AI_DEBUG) ai_Debug("0i_actions", "743", "nHpLost: " + IntToString(nHpLost) +
+    if(AI_DEBUG) ai_Debug("0i_actions", "1160", "nHpLost: " + IntToString(nHpLost) +
              " limit: " + IntToString(ai_GetHealersHpLimit(oTarget, FALSE)));
-    if(nHpLost >= ai_GetHealersHpLimit(oTarget, FALSE))
+    // Check to see if we need poison, disease, or ability drain removed.
+    int nEffectType;
+    effect eEffect = GetFirstEffect(oTarget);
+    while(GetIsEffectValid(eEffect))
     {
-        // Check to see if we need poison, disease, or ability drain removed.
-        int nEffectType;
-        effect eEffect = GetFirstEffect(oTarget);
-        while(GetIsEffectValid(eEffect))
+        nEffectType = GetEffectType(eEffect);
+        if(AI_DEBUG) ai_Debug("0i_actions", "1168", "Checking to cure(31/32/39) nEffectType: " + IntToString(nEffectType));
+        if(nEffectType == EFFECT_TYPE_DISEASE)
         {
-            nEffectType = GetEffectType(eEffect);
-            if(AI_DEBUG) ai_Debug("0i_actions", "1094", "Checking to cure(31/32/39) nEffectType: " + IntToString(nEffectType));
-            if(nEffectType == EFFECT_TYPE_DISEASE)
+            if(AI_DEBUG) ai_Debug("0i_actions", "1171", GetName(oTarget) + " is diseased!");
+            if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_DISEASED, bForce)) return TRUE;
+            if(oCreature == oTarget)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "1097", "I am diseased!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_DISEASED, bForce)) return TRUE;
-                if(oCreature == oTarget)
-                {
-                    if(!d20()) ai_HaveCreatureSpeak(oCreature, 5, ":43:4:14:15:16:");
-                    SpeakString(AI_I_AM_DISEASED, TALKVOLUME_SILENT_TALK);
-                }
+                if(!Random(20)) ai_HaveCreatureSpeak(oCreature, 5, ":43:4:14:15:16:");
+                SpeakString(AI_I_AM_DISEASED, TALKVOLUME_SILENT_TALK);
             }
-            else if(nEffectType == EFFECT_TYPE_POISON)
+        }
+        else if(nEffectType == EFFECT_TYPE_POISON)
+        {
+            if(AI_DEBUG) ai_Debug("0i_actions", "1181", GetName(oTarget) + " is poisoned!");
+            if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_POISONED, bForce)) return TRUE;
+            if(oCreature == oTarget)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "1107", "I am poisoned!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_POISONED, bForce)) return TRUE;
-                if(oCreature == oTarget)
-                {
-                    if(!d20()) ai_HaveCreatureSpeak(oCreature, 6, ":43:4:14:15:16:19:");
-                    SpeakString(AI_I_AM_POISONED, TALKVOLUME_SILENT_TALK);
-                }
+                if(!Random(20)) ai_HaveCreatureSpeak(oCreature, 6, ":43:4:14:15:16:19:");
+                SpeakString(AI_I_AM_POISONED, TALKVOLUME_SILENT_TALK);
             }
-            else if(nEffectType == EFFECT_TYPE_ABILITY_DECREASE)
+        }
+        else if(nEffectType == EFFECT_TYPE_ABILITY_DECREASE)
+        {
+            if(AI_DEBUG) ai_Debug("0i_actions", "1191", GetName(oTarget) + " is weak!");
+            if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_WEAK, bForce)) return TRUE;
+            if(oCreature == oTarget)
             {
-                if(AI_DEBUG) ai_Debug("0i_actions", "1117", "I am weak!");
-                if(ai_HealSickness(oCreature, oTarget, ai_GetPlayerMaster(oCreature), AI_ALLY_IS_WEAK, bForce)) return TRUE;
-                if(oCreature == oTarget)
-                {
-                    if(!d20()) ai_HaveCreatureSpeak(oCreature, 3, ":43:4:5:");
-                    SpeakString(AI_I_AM_WEAK, TALKVOLUME_SILENT_TALK);
-                }
+                if(!Random(20)) ai_HaveCreatureSpeak(oCreature, 3, ":43:4:5:");
+                SpeakString(AI_I_AM_WEAK, TALKVOLUME_SILENT_TALK);
             }
-            eEffect = GetNextEffect(oTarget);
+        }
+        eEffect = GetNextEffect(oTarget);
+    }
+    // Everything below here is for healing.
+    if(nHpLost >= ai_GetHealersHpLimit(oTarget, FALSE)) return FALSE;
+    // Undead require inflict spells to heal!
+    object oMaster = ai_GetPlayerMaster(oCreature);
+    if(GetRacialType(oTarget) == RACIAL_TYPE_UNDEAD)
+    {
+        // Do we have no magic on?
+        if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
+        {
+            int nClass, nPosition = 1;
+            string sMemorized;
+            while(nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
+            {
+                nClass = GetClassByPosition(nPosition, oCreature);
+                if(AI_DEBUG) ai_Debug("0i_actions", "753", "nClass: " + IntToString(nClass));
+                if(nClass == CLASS_TYPE_INVALID) break;
+                sMemorized = Get2DAString("classes", "MemorizesSpells", nClass);
+                // If Memorized column is "" then they are not a caster.
+                if(sMemorized != "")
+                {
+                    if(sMemorized == "1")
+                    {
+                        if(ai_CastMemorizedInflict(oCreature, oTarget, oMaster, nClass))
+                        {
+                            SetLocalInt(oTarget, "AI_I_AM_BEING_HEALED", TRUE);
+                            return TRUE;
+                        }
+                    }
+                    else if(ai_CastKnownInflict(oCreature, oTarget, oMaster, nClass))
+                    {
+                        SetLocalInt(oTarget, "AI_I_AM_BEING_HEALED", TRUE);
+                        return TRUE;
+                    }
+                }
+                nPosition++;
+            }
+        }
+        // We can't heal ourselves! Can any of our allies? Lets ask.
+        if(oCreature == oTarget)
+        {
+            SetLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT", GetLocalInt(oCreature, "AI_WOUNDED_SHOUT_LIMIT") + 1);
+            SpeakString(AI_I_AM_WOUNDED, TALKVOLUME_SILENT_TALK);
         }
         return FALSE;
     }
@@ -1213,7 +1253,6 @@ int ai_TryHealing(object oCreature, object oTarget, int bForce = FALSE)
             return TRUE;
         }
     }
-    object oMaster = ai_GetPlayerMaster(oCreature);
     // Do we have no magic on?
     if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC))
     {

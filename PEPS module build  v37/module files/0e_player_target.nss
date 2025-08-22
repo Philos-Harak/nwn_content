@@ -10,13 +10,15 @@
     action of the target.
     AI_TARGET_MODE is the constant used.
     AI_TARGET_ASSOCIATE is the associate that triggered the target mode.
+
+    AI_TARGET_MODE_ON defines if the player is in target mode for a henchman instead of the PC.
 /*//////////////////////////////////////////////////////////////////////////////
 #include "0i_player_target"
 void ai_EnterAssociateTargetMode(object oPC, object oAssociate)
 {
     SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
-    SetLocalInt(oPC, "AI_TARGET_MODE_ON", TRUE);
+    SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
 }
 void main()
@@ -54,8 +56,17 @@ void main()
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
                 ai_SendMessages("You have exited selecting an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
+                // Clean up any PC AI being turned on as well as variables.
+                if(!GetLocalInt(GetModule(), AI_USING_PRC)) ai_TurnOff(oPC, oPC, "pc");
                 DeleteLocalObject(oPC, AI_TARGET_ASSOCIATE);
-                DeleteLocalInt(oPC, "AI_TARGET_MODE_ON");
+                DeleteLocalInt(oPC, AI_TARGET_MODE_ON);
+                DeleteLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE);
+                // Make sure the camera goes back to the player since we are leaving henchmen control.
+                if(GetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE") != OBJECT_INVALID)
+                {
+                    DeleteLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE");
+                    AttachCamera(oPC, oPC);
+                }
                 if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
                 {
                     if(GetLocalInt(oPC, sGhostModeVarname))
@@ -80,15 +91,26 @@ void main()
             else if(sTargetMode == "ASSOCIATE_GET_TRAP")
             {
                 ai_SendMessages(GetName(oAssociate) + " has exited selecing a trap!", AI_COLOR_YELLOW, oPC);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             else if(sTargetMode == "ASSOCIATE_PLACE_TRAP")
             {
                 ai_SendMessages(GetName(oAssociate) + " has exited placing the trap!", AI_COLOR_YELLOW, oPC);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
             {
                 AttachCamera(oPC, oPC);
                 ai_SendMessages(GetName(oPC) + " has defaulted camera view back to the player!", AI_COLOR_YELLOW, oPC);
+            }
+            // If these actions are canceled and we are in target mode with a henchmen
+            // then turn target mode back on for that henchmen.
+            else if(sTargetMode == "ASSOCIATE_USE_ITEM" ||
+                    sTargetMode == "ASSOCIATE_USE_FEAT" ||
+                    sTargetMode == "ASSOCIATE_CAST_SPELL" ||
+                    sTargetMode == "ASSOCIATE_FOLLOW_TARGET")
+            {
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             return;
         }
@@ -120,21 +142,21 @@ void main()
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetItem(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             else if(sTargetMode == "ASSOCIATE_USE_FEAT")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_UseWidgetFeat(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             else if(sTargetMode == "ASSOCIATE_CAST_SPELL")
             {
                 if(oTarget == GetArea(oPC)) oTarget = OBJECT_INVALID;
                 ai_CastWidgetSpell(oPC, oAssociate, oTarget, lLocation);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
-                if(GetLocalInt(oPC, "AI_TARGET_MODE_ON")) ai_EnterAssociateTargetMode(oPC, oAssociate);
+                if(GetLocalInt(oPC, AI_TARGET_MODE_ON)) ai_EnterAssociateTargetMode(oPC, GetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE));
             }
             else if(sTargetMode == "DM_SELECT_CAMERA_VIEW")
             {
@@ -159,8 +181,7 @@ void main()
                 ai_DMAction(oPC, oTarget, lLocation, sTargetMode);
             }
             // Get saved module player target script and execute it for pass through compatibility.
-            string sModuleTargetScript = GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT);
-            ExecuteScript(sModuleTargetScript);
+            ExecuteScript(GetLocalString(GetModule(), AI_MODULE_TARGET_EVENT));
         }
     }
 }

@@ -25,4 +25,3 @@ Naming conventions to help understand the systems:
 0e_ - is an executable script via an event.
 0i_ - is an include script.
 ai_ - is an AI script that will be called each combat round to determine the creatures actions.
-inc_sqlite_time - an include file used for combat time.

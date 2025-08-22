@@ -222,7 +222,8 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
 int ai_UseTalent(object oCreature, int nTalent, object oTarget);
 // Returns TRUE if jTalent is used on oTarget by oCaster.
 // Checks the talent type and casts the correct spell. For items it checks uses.
-int ai_UseTalentOnObject(object oCaster, json jTalent, object oTarget, int nInMelee);
+// bCheckPosition will see if we should move back due to spell failure in combat.
+int ai_UseTalentOnObject(object oCaster, json jTalent, object oTarget, int nInMelee, int bCheckPosition = TRUE);
 // Returns TRUE if jTalent is used at lTarget location by oCaster.
 // Checks the talent type and cast the correct spell. For items it checks uses.
 int ai_UseTalentAtLocation(object oCaster, json jTalent, object oTarget, int nInMelee);
@@ -264,41 +265,100 @@ int ai_TryHealingTalent(object oCreature, int nInMelee, object oTarget = OBJECT_
        GetAssociateType(oTarget) > 1) return FALSE;
     int nHp = ai_GetPercHPLoss(oTarget);
     int nHpLimit = ai_GetHealersHpLimit(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_talents", "256", "nHp: " + IntToString(nHp) +
+    if(AI_DEBUG) ai_Debug("0i_talents", "268", "nHp: " + IntToString(nHp) +
              "< nHpLimit: " + IntToString(nHpLimit));
     if(nHp > nHpLimit) return FALSE;
     int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
-    if(AI_DEBUG) ai_Debug("0i_talents", "260", GetName(oTarget) + " has lost " + IntToString(nDamage) + " hitpoints!");
-    // Do they have Lay on Hands?
+    if(AI_DEBUG) ai_Debug("0i_talents", "272", GetName(oTarget) + " has lost " + IntToString(nDamage) + " hitpoints!");
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
-    if(bUseMagic && GetHasFeat(FEAT_LAY_ON_HANDS, oCreature))
-    {
-        int nCanHeal = GetAbilityModifier(ABILITY_CHARISMA, oCreature) * ai_GetCharacterLevels(oCreature);
-        if(nCanHeal <= nDamage)
-        {
-            ai_UseFeat(oCreature, FEAT_LAY_ON_HANDS, oTarget);
-            return TRUE;
-        }
-    }
-    int nMaxLevel = 9;
     // If they are about to die then throw caution to the wind and HEAL!
     if(nHp <= AI_HEALTH_BLOODY || nHp < 11) nInMelee = 0;
-    if(ai_UseCreatureTalent(oCreature, AI_TALENT_HEALING, nInMelee, nMaxLevel, oTarget)) return TRUE;
-    if(AI_DEBUG) ai_Debug("0i_talents", "275", GetName(oCreature) + " has no healing spells!" +
-             " Cleric lvls: " + IntToString(GetLevelByClass(CLASS_TYPE_CLERIC, oCreature)) +
-             " Sontaneous casting: " + IntToString(ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE)));
-    if(bUseMagic && GetLevelByClass(CLASS_TYPE_CLERIC, oCreature) &&
-       !ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE))
+    int nRace = GetRacialType(oTarget);
+    if(nRace == RACIAL_TYPE_UNDEAD)
     {
-        // We need to check our talents and see what spells we can convert.
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_ENHANCEMENT, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_PROTECTION, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_TOUCH, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_RANGED, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_SUMMON, nInMelee, nDamage, oTarget)) return TRUE;
-        if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_CURE, nInMelee, nDamage, oTarget)) return TRUE;
+        json jCategory = GetLocalJson(oCreature, AI_TALENT_TOUCH);
+        if(JsonGetType(jCategory) == JSON_TYPE_NULL) return FALSE;
+        int nLevel = 4, bFound, nSlotIndex, nMaxSlotIndex, nSpell;
+        json jLevel, jTalent;
+        // Loop through nLevels looking for nTalent
+        while(nLevel > 0)
+        {
+            // Get the array of nLevel.
+            jLevel = JsonArrayGet(jCategory, nLevel);
+            nMaxSlotIndex = JsonGetLength(jLevel);
+            if(nMaxSlotIndex > 0)
+            {
+                // Get the talent within nLevel cycling from the first to the last.
+                nSlotIndex = 0;
+                while (nSlotIndex < nMaxSlotIndex)
+                {
+                    jTalent = JsonArrayGet(jLevel, nSlotIndex);
+                    if(AI_DEBUG) ai_Debug("0i_talents", "296", "jTalent: " + JsonDump(jTalent, 4));
+                    nSpell = JsonGetInt(JsonArrayGet(jTalent, 1));
+                    if(nSpell == SPELL_INFLICT_CRITICAL_WOUNDS)
+                    {
+                        bFound = TRUE;
+                        break;
+                    }
+                    else if(nSpell == SPELL_INFLICT_SERIOUS_WOUNDS)
+                    {
+                        bFound = TRUE;
+                        break;
+                    }
+                    else if(nSpell == SPELL_INFLICT_MODERATE_WOUNDS)
+                    {
+                        bFound = TRUE;
+                        break;
+                    }
+                    else if(nSpell == SPELL_INFLICT_LIGHT_WOUNDS)
+                    {
+                        bFound = TRUE;
+                        break;
+                    }
+                    nSlotIndex++;
+                }
+            }
+            if(bFound) break;
+            nLevel--;
+        }
+        if(bFound)
+        {
+            if(ai_UseTalentOnObject(oCreature, jTalent, oTarget, nInMelee))
+            {
+                ai_RemoveTalent(oCreature, jCategory, jLevel, AI_TALENT_TOUCH, nLevel, nSlotIndex);
+                return TRUE;
+            }
+        }
+    }
+    else
+    {
+        // Do they have Lay on Hands?
+        if(bUseMagic && GetHasFeat(FEAT_LAY_ON_HANDS, oCreature))
+        {
+            int nCanHeal = GetAbilityModifier(ABILITY_CHARISMA, oCreature) * ai_GetCharacterLevels(oCreature);
+            if(nCanHeal <= nDamage)
+            {
+                ai_UseFeat(oCreature, FEAT_LAY_ON_HANDS, oTarget);
+                return TRUE;
+            }
+        }
+        int nMaxLevel = 9;
+        if(ai_UseCreatureTalent(oCreature, AI_TALENT_HEALING, nInMelee, nMaxLevel, oTarget)) return TRUE;
+        if(AI_DEBUG) ai_Debug("0i_talents", "275", GetName(oCreature) + " has no healing spells!" +
+                 " Cleric lvls: " + IntToString(GetLevelByClass(CLASS_TYPE_CLERIC, oCreature)) +
+                 " Sontaneous casting: " + IntToString(ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE)));
+        if(bUseMagic && GetLevelByClass(CLASS_TYPE_CLERIC, oCreature) &&
+           !ai_GetMagicMode(oCreature, AI_MAGIC_NO_SPONTANEOUS_CURE))
+        {
+            // We need to check our talents and see what spells we can convert.
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_ENHANCEMENT, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_PROTECTION, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_DISCRIMINANT_AOE, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_INDISCRIMINANT_AOE, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_TOUCH, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_RANGED, nInMelee, nDamage, oTarget)) return TRUE;
+            if(ai_UseSpontaneousCureTalentFromCategory(oCreature, AI_TALENT_SUMMON, nInMelee, nDamage, oTarget)) return TRUE;
+        }
     }
     return FALSE;
 }
@@ -352,6 +412,9 @@ int ai_CheckTargetVsConditions(object oTarget, json jTalent, int nConditions)
             if(ai_GetHasNegativeCondition(AI_CONDITION_ATK_DECREASE, nConditions)) return TRUE;
             if(ai_GetHasNegativeCondition(AI_CONDITION_DMG_DECREASE, nConditions)) return TRUE;
             if(ai_GetHasNegativeCondition(AI_CONDITION_DMG_I_DECREASE, nConditions)) return TRUE;
+        case SPELL_RAISE_DEAD :
+        case SPELL_RESURRECTION :
+            if(ai_GetHasNegativeCondition(AI_CONDITION_DEAD, nConditions)) return TRUE;
     }
     return FALSE;
 }
@@ -359,7 +422,7 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
 {
    // Get the saved category from oCreature.
     json jCategory = GetLocalJson(oCreature, AI_TALENT_CURE);
-    if(AI_DEBUG) ai_Debug("0i_talents", "357", "jCategory: " + AI_TALENT_CURE + " " + JsonDump(jCategory, 2));
+    if(AI_DEBUG) ai_Debug("0i_talents", "362", "jCategory: " + AI_TALENT_CURE + " " + JsonDump(jCategory, 2));
     if(JsonGetType(jCategory) == JSON_TYPE_NULL)
     {
         SetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE, -1);
@@ -367,7 +430,7 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
     }
     // Get the max talent level so we can skip the higher ones and save time.
     int nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE);
-    if(AI_DEBUG) ai_Debug("0i_talents", "365", AI_MAX_TALENT + AI_TALENT_CURE + ": " +
+    if(AI_DEBUG) ai_Debug("0i_talents", "370", AI_MAX_TALENT + AI_TALENT_CURE + ": " +
              IntToString(nMaxTalentLevel) +
              "  nLevel: " + IntToString(nLevel));
     if(nMaxTalentLevel < nLevel) nLevel = nMaxTalentLevel;
@@ -376,7 +439,7 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
     int nClass, nSlot, nType, nSlotIndex, nMaxSlotIndex, nTalentUsed;
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     int bUseMagicItems = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC_ITEMS);
-    if(AI_DEBUG) ai_Debug("0i_talents", "374", "bUseMagic: " + IntToString(bUseMagic) +
+    if(AI_DEBUG) ai_Debug("0i_talents", "379", "bUseMagic: " + IntToString(bUseMagic) +
                           " bUseMagicItems: " + IntToString(bUseMagicItems));
     // Loop through nLevels down to 0 looking for the first talent (i.e. the highest).
     while(nLevel >= 0)
@@ -384,7 +447,7 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
         // Get the array of nLevel cycling down to 0.
         jLevel = JsonArrayGet(jCategory, nLevel);
         nMaxSlotIndex = JsonGetLength(jLevel);
-        if(AI_DEBUG) ai_Debug("0i_talents", "382", "nLevel: " + IntToString(nLevel) +
+        if(AI_DEBUG) ai_Debug("0i_talents", "387", "nLevel: " + IntToString(nLevel) +
                  " nMaxSlotIndex: " + IntToString(nMaxSlotIndex));
         if(nMaxSlotIndex > 0)
         {
@@ -393,9 +456,9 @@ int ai_CheckTalentsVsConditions(object oCreature, int nConditions, int nInMelee,
             while (nSlotIndex <= nMaxSlotIndex)
             {
                 jTalent= JsonArrayGet(jLevel, nSlotIndex);
-                if(AI_DEBUG) ai_Debug("0i_talents", "391", "nSlotIndex: " + IntToString(nSlotIndex) +
+                if(AI_DEBUG) ai_Debug("0i_talents", "396", "nSlotIndex: " + IntToString(nSlotIndex) +
                          " jTalent Type: " + IntToString(JsonGetType(jTalent)));
-                // Check to see if the talent matches oTargets nConditionss.
+                // Check to see if the talent matches oTargets nConditions.
                 if(ai_CheckTargetVsConditions(oTarget, jTalent, nConditions))
                 {
                     nType = JsonGetInt(JsonArrayGet(jTalent, 0));
@@ -454,14 +517,16 @@ int ai_TryCureConditionTalent(object oCreature, int nInMelee, object oTarget = O
 {
     // Is Casting Cure spells off?
     if(ai_GetMagicMode(oCreature, AI_MAGIC_CURE_SPELLS_OFF)) return FALSE;
-    if(AI_DEBUG) ai_Debug("0i_talents", "450", AI_MAX_TALENT + AI_TALENT_CURE + ": " +
+    if(AI_DEBUG) ai_Debug("0i_talents", "460", AI_MAX_TALENT + AI_TALENT_CURE + ": " +
                           IntToString(GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE)));
     // If the creature doesn't have cure talents then we set it to -1.
     if(GetLocalInt(oCreature, AI_MAX_TALENT + AI_TALENT_CURE) == -1) return FALSE;
     // We check targets to see if they need to be cured.
     int nNegativeConditions, nTargetNegConds, nIndex, nCnt = 1;
+    // Check for dead allies.
     object oTarget;
-    if(oTarget == OBJECT_INVALID)
+    object oDead = ai_GetNearestAlly(oCreature, 1, CREATURE_TYPE_IS_ALIVE, FALSE);
+    if(oDead == OBJECT_INVALID)
     {
         oTarget = GetLocalObject(oCreature, AI_ALLY + "1");
         while(oTarget != OBJECT_INVALID)
@@ -485,15 +550,15 @@ int ai_TryCureConditionTalent(object oCreature, int nInMelee, object oTarget = O
     }
     else
     {
-        nNegativeConditions = ai_GetNegativeConditions(oTarget);
-        if(!nNegativeConditions) return FALSE;
+        nNegativeConditions = AI_CONDITION_DEAD;
+        oTarget = oDead;
     }
     if(oTarget == oCreature)
     {
         if(ai_GetAIMode(oCreature, AI_MODE_SELF_HEALING_OFF)) return FALSE;
     }
     else if(ai_GetAIMode(oCreature, AI_MODE_PARTY_HEALING_OFF)) return FALSE;
-    if(AI_DEBUG) ai_Debug("0i_talents", "489", "nNegativeConditions: " + IntToString(nNegativeConditions) +
+    if(AI_DEBUG) ai_Debug("0i_talents", "501", "nNegativeConditions: " + IntToString(nNegativeConditions) +
              " on " + GetName(oTarget));
     if(ai_CheckTalentsVsConditions(oCreature, nNegativeConditions, nInMelee, 9, oTarget)) return TRUE;
     return FALSE;
@@ -1645,10 +1710,11 @@ int ai_TryMeleeTalents(object oCreature, object oTarget)
 
 int ai_GetMonsterTalentMaxLevel(object oCreature)
 {
-    int nMaxLevel = (ai_GetCharacterLevels(oCreature) + 1) / 2;
-    if(nMaxLevel > 9) nMaxLevel = 9;
-    if(AI_DEBUG) ai_Debug("0i_talents", "1258", "nMaxLevel: " + IntToString(nMaxLevel));
-    return nMaxLevel;
+    return 9;
+    //int nMaxLevel = (ai_GetCharacterLevels(oCreature) + 1) / 2;
+    //if(nMaxLevel > 9) nMaxLevel = 9;
+    //if(AI_DEBUG) ai_Debug("0i_talents", "1258", "nMaxLevel: " + IntToString(nMaxLevel));
+    //return nMaxLevel;
 }
 int ai_GetAssociateTalentMaxLevel(object oCreature, int nDifficulty)
 {
@@ -2343,7 +2409,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
 {
     // Get the Max Talent Level to see if we even need to pull this talent.
     int nMaxTalentLevel = GetLocalInt(oCreature, AI_MAX_TALENT + sCategory);
-    if(AI_DEBUG) ai_Debug("0i_talents", "2320", AI_MAX_TALENT + sCategory + ": " +
+    if(AI_DEBUG) ai_Debug("0i_talents", "2394", AI_MAX_TALENT + sCategory + ": " +
              IntToString(nMaxTalentLevel) +
              "  nLevel: " + IntToString(nLevel));
     if(nMaxTalentLevel == -1) return FALSE;
@@ -2359,10 +2425,10 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
     if(nMaxTalentLevel < nLevel) nLevel = nMaxTalentLevel;
     if(nLevel < 0 || nLevel > 10) nLevel = 9;
     json jLevel, jTalent;
-    int nClass, nSlot, nType, nSlotIndex, nMaxSlotIndex, nTalentUsed, nSpell;
+    int bHasTalent, nClass, nSlot, nType, nSlotIndex, nMaxSlotIndex, nTalentUsed, nSpell;
     int bUseMagic = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC);
     int bUseMagicItems = !ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC_ITEMS);
-    if(AI_DEBUG) ai_Debug("0i_talents", "2339", "bUseMagic: " + IntToString(bUseMagic) +
+    if(AI_DEBUG) ai_Debug("0i_talents", "2413", "bUseMagic: " + IntToString(bUseMagic) +
                           " bUseMagicItems: " + IntToString(bUseMagicItems));
     // Loop through nLevels starting at the highest then going to the lowest.
     // (i.e. the highest or best is our assumption).
@@ -2371,16 +2437,17 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
         // Get the array of nLevel cycling down to 0.
         jLevel = JsonArrayGet(jCategory, nLevel);
         nMaxSlotIndex = JsonGetLength(jLevel);
-        if(AI_DEBUG) ai_Debug("0i_talents", "2349", "nLevel: " + IntToString(nLevel) +
+        if(AI_DEBUG) ai_Debug("0i_talents", "2422", "nLevel: " + IntToString(nLevel) +
                  " nMaxSlotIndex: " + IntToString(nMaxSlotIndex));
         if(nMaxSlotIndex > 0)
         {
+            bHasTalent = TRUE;
             // Get the talent within nLevel cycling from the first to the last.
             nSlotIndex = 0;
             while (nSlotIndex < nMaxSlotIndex)
             {
                 jTalent= JsonArrayGet(jLevel, nSlotIndex);
-                if(AI_DEBUG) ai_Debug("0i_talents", "2358", "nSlotIndex: " + IntToString(nSlotIndex) +
+                if(AI_DEBUG) ai_Debug("0i_talents", "2432", "nSlotIndex: " + IntToString(nSlotIndex) +
                          " jTalent Type: " + IntToString(JsonGetInt(JsonArrayGet(jTalent, 0))));
                 nType = JsonGetInt(JsonArrayGet(jTalent, 0));
                 if(bUseMagic)
@@ -2421,7 +2488,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
                     // Items do not need to concentrate.
                     if(ai_UseCreatureItemTalent(oCreature, jLevel, jTalent, sCategory, nInMelee, oTarget))
                     {
-                        if(AI_DEBUG) ai_Debug("0i_talents", "2398", "Checking if Item is used up: " +
+                        if(AI_DEBUG) ai_Debug("0i_talents", "2473", "Checking if Item is used up: " +
                                  IntToString(JsonGetInt(JsonArrayGet(jTalent, 4))));
                         if(JsonGetInt(JsonArrayGet(jTalent, 4)) == -1)
                         {
@@ -2435,7 +2502,7 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
                 nSlotIndex++;
             }
         }
-        else SetLocalInt(oCreature, AI_MAX_TALENT + sCategory, nLevel - 1);
+        else if(!bHasTalent) SetLocalInt(oCreature, AI_MAX_TALENT + sCategory, nLevel - 1);
         nLevel--;
     }
     return FALSE;
@@ -2503,7 +2570,7 @@ int ai_UseTalent(object oCreature, int nTalent, object oTarget)
     }
     return FALSE;
 }
-int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nInMelee)
+int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nInMelee, int bCheckPosition = TRUE)
 {
     int nClass, nLevel, nSlot, nMetaMagic, nDomain;
     int nSpell = JsonGetInt(JsonArrayGet(jTalent, 1));
@@ -2532,13 +2599,13 @@ int ai_UseTalentOnObject(object oCreature, json jTalent, object oTarget, int nIn
         if(AI_DEBUG) ai_Debug("0i_talents", "1790", GetName(oCreature) + " is using a special ability!");
         nSpell = JsonGetInt(JsonArrayGet(jTalent, 1));
         nClass = 255;
-        if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
+        if(bCheckPosition && ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell)) return TRUE;
     }
     else if(nType == AI_TALENT_TYPE_ITEM)
     {
         object oItem = StringToObject(JsonGetString(JsonArrayGet(jTalent, 2)));
         int nBaseItemType = GetBaseItemType(oItem);
-        if(ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell, nBaseItemType)) return TRUE;
+        if(bCheckPosition && ai_CheckCombatPosition(oCreature, oTarget, nInMelee, nSpell, nBaseItemType)) return TRUE;
         int nIndex, nSubIndex = 0;
         nSlot = JsonGetInt(JsonArrayGet(jTalent, 4));
         itemproperty ipProp = GetFirstItemProperty(oItem);
@@ -2760,6 +2827,32 @@ int ai_CheckSpecialTalentsandUse(object oCreature, json jTalent, string sCategor
             int nUndead = ai_GetRacialTypeCount(oCreature, RACIAL_TYPE_UNDEAD, fRange);
             if(nUndead < 3) return FALSE;
             oTarget = ai_GetLowestCRRacialTarget(oCreature, RACIAL_TYPE_UNDEAD, fRange);
+        }
+        else if(nSpell == SPELLABILITY_PULSE_DROWN)
+        {
+            if(nInMelee > 1)
+            {
+                oTarget = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
+                int nRace = GetRacialType(oTarget);
+                if(AI_DEBUG) ai_Debug("0i_talents", "2778", "nRace(10/24/16): " + IntToString(nRace));
+                if(nRace != RACIAL_TYPE_CONSTRUCT &&
+                   nRace != RACIAL_TYPE_UNDEAD &&
+                   nRace != RACIAL_TYPE_ELEMENTAL)
+                {
+                    if(AI_DEBUG) ai_Debug("0i_talents", "2783", "Using Pulse Drown talent!");
+                    if(ai_UseTalentOnObject(oCreature, jTalent, oCreature, nInMelee, FALSE)) return TRUE;
+                }
+            }
+            return FALSE;
+        }
+        else if(nSpell == SPELLABILITY_PULSE_WHIRLWIND)
+        {
+            if(nInMelee > 1)
+            {
+                if(AI_DEBUG) ai_Debug("0i_talents", "2793", "Using Pulse Whirlwind talent!");
+                if(ai_UseTalentOnObject(oCreature, jTalent, oCreature, nInMelee, FALSE)) return TRUE;
+            }
+            return FALSE;
         }
         // Get a target for discriminant spells if one is not already set.
         if(oTarget == OBJECT_INVALID)

@@ -16,6 +16,6 @@ PEPS WIP override files: These files must be placed in the override folder to wo
 
 I will be putting the compiled zips with all the files in folders for easy install in the Release section from now on.
 
-PEPS AI v36 is the mobile installable version.
+PEPS AI v36 Release is the mobile installable version.
 
-PEPS AI v37 is the pc installable version.
+PEPS AI v37 Release is the pc installable version.

@@ -8,6 +8,7 @@
 #include "0i_menus"
 void ai_ActionFollow(object oCreature, object oTarget)
 {
+    if(!ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) return;
     if(GetLocalInt(OBJECT_SELF, AI_CURRENT_ACTION_MODE) == AI_LAST_ACTION_MOVE)
     {
         float fDistance = GetDistanceBetween(oCreature, oTarget);

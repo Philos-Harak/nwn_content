@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.09.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.22.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -322,6 +322,7 @@ const int AI_CONDITION_CONFUSED       = 0x00020000;
 const int AI_CONDITION_CURSE          = 0x00040000;
 const int AI_CONDITION_PARALYZE       = 0x00080000;
 const int AI_CONDITION_DOMINATED      = 0x00100000;
+const int AI_CONDITION_DEAD           = 0x00200000;
 // Database constants for Associate modes.
 const string AI_MODE_DB_TABLE = "AI_MODE_DB_TABLE";
 // Bitwise constants for Associate modes that are used with Get/SetAssociateMode().
@@ -571,6 +572,10 @@ const string AI_MODULE_GUI_EVENT = "AI_MODULE_GUI_EVENT";
 const string AI_TARGET_MODE = "AI_TARGET_MODE";
 // Variable used on the player to define which associate triggered the OnPlayer Target.
 const string AI_TARGET_ASSOCIATE = "AI_TARGET_ASSOCIATE";
+// Variable use on the player to define if the player is using target mode on an associate.
+const string AI_TARGET_MODE_ON = "AI_TARGET_MODE_ON";
+// Variable used on the player to define what associate has Target Mode set on it.
+const string AI_TARGET_MODE_ASSOCIATE = "AI_TARGET_MODE_ASSOCIATE";
 // Variable used on a creature to define how long ago their immunities were saved.
 const string sIPTimeStampVarname = "AI_IP_TIMESTAMP";
 // Bitwise constants for immune damage item properties that is used with Get/SetItemProperty().

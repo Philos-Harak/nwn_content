@@ -30,20 +30,26 @@ void main()
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 101
-    sText = "Monster AI (nw_c2_default1): " + ResManGetAliasFor("nw_c2_default1", RESTYPE_NCS);
-    jRow = CreateLabel(JsonArray(), sText, "monster_1_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
-    // Add row to the column.
-    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    sText = ResManGetAliasFor("nw_c2_default1", RESTYPE_NCS);
+    if(sText != "")
+    {
+        jRow = CreateLabel(JsonArray(), "Monster AI (nw_c2_default1): " + sText, "monster_1_ai", 470.0f, 20.0f);
+        jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    }
     // Row 4 ******************************************************************* 500 / 157
-    sText = "Monster AI (j_ai_onheartbeat): " + ResManGetAliasFor("j_ai_onheartbeat", RESTYPE_NCS);
-    jRow = CreateLabel(JsonArray(), sText, "monster_2_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
-    // Add row to the column.
-    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    sText = ResManGetAliasFor("j_ai_onheartbeat", RESTYPE_NCS);
+    if(sText != "")
+    {
+        jRow = CreateLabel(JsonArray(), "Monster AI (j_ai_onheartbeat): " + sText, "monster_2_ai", 470.0f, 20.0f);
+        jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    }
     // Row 5 ******************************************************************* 500 / 213
-    sText = "Associate AI (nw_ch_ac1): " + ResManGetAliasFor("nw_ch_ac1", RESTYPE_NCS);
-    jRow = CreateLabel(JsonArray(), sText, "henchman_ai", 470.0f, 20.0f, NUI_HALIGN_CENTER);
-    // Add row to the column.
-    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    sText = ResManGetAliasFor("nw_ch_ac1", RESTYPE_NCS);
+    if(sText != "")
+    {
+        jRow = CreateLabel(JsonArray(), "Associate AI (nw_ch_ac1): " + sText, "henchman_ai", 470.0f, 20.0f);
+        jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    }
     // Row 6 ******************************************************************* 500 / 241
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateButton(jRow, "Set NPC's scripts", "btn_npc_scripts", 150.0f, 20.0f, -1.0, "btn_npc_scripts_tooltip");

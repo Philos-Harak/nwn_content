@@ -1251,7 +1251,6 @@ int ai_GetAllyToHealIndex(object oCreature, float fMaxRange = AI_RANGE_PERCEPTIO
                               " Seen: " + IntToString(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter)) +
                               " GetIsDead: " + IntToString(GetIsDead(sTarget.oTarget)));
         if(GetLocalInt(oCreature, AI_ALLY_PERCEIVED + sCounter) &&
-           !ai_CheckRacialType(oCreature, RACIAL_TYPE_UNDEAD) &&
            !GetIsDead(sTarget.oTarget))
         {
             if(ai_TargetIsInRangeofCreature(oCreature, AI_ALLY, sCounter, fMaxRange) &&

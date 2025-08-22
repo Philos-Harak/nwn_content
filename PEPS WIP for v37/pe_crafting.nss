@@ -46,6 +46,7 @@ const string CRAFT_LEFT_PART_COLOR = "CRAFT_LEFT_PART_COLOR";
 const string CRAFT_ALL_COLOR = "CRAFT_ALL_COLOR";
 const string CRAFT_RIGHT_PART_COLOR = "CRAFT_RIGHT_PART_COLOR";
 const string CRAFT_TARGET = "CRAFT_TARGET";
+const string CRAFT_ITEM = "CRAFT_ITEM";
 // Tag used in lighting effects.
 const string CRAFT_HIGHLIGHT = "CRAFT_HIGHLIGHT";
 const string CRAFT_ULTRALIGHT = "CRAFT_ULTRALIGHT";
@@ -196,9 +197,9 @@ void main()
             return;
         }
         // Delay crafting so it has time to equip and unequip as well as remove.
-        //if(GetLocalInt(oPC, CRAFT_COOL_DOWN)) return;
-        //SetLocalInt(oPC, CRAFT_COOL_DOWN, TRUE);
-        //DelayCommand(0.25f, DeleteLocalInt(oPC, CRAFT_COOL_DOWN));
+        if(GetLocalInt(oPC, CRAFT_COOL_DOWN)) return;
+        SetLocalInt(oPC, CRAFT_COOL_DOWN, TRUE);
+        DelayCommand(0.25f, DeleteLocalInt(oPC, CRAFT_COOL_DOWN));
         // They have selected a color.
         if(sElem == "color_pallet")
         {
@@ -1433,17 +1434,18 @@ void CancelCraftedItem(object oPC, object oTarget)
 {
     json jCraft = GetLocalJson(oPC, CRAFT_JSON);
     int nItemSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_ITEM_SELECTION));
-    object oItem = GetSelectedItem(oTarget, nItemSelected);
+    object oItem = GetLocalObject(oPC, CRAFT_ITEM);
     object oOriginalItem = GetLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
     if(oOriginalItem != OBJECT_INVALID)
     {
-        DestroyObject(oItem);
         int nSlot = GetItemSelectedEquipSlot(nItemSelected);
         // Give item Backup to Player
         oOriginalItem = CopyItem(oOriginalItem, oTarget, TRUE);
         DelayCommand(0.2f, AssignCommand (oTarget, ActionEquipItem(oOriginalItem, nSlot)));
         DeleteLocalObject(oPC, CRAFT_ORIGINAL_ITEM);
     }
+    DestroyObject(oItem);
+    DeleteLocalObject(oPC, CRAFT_ITEM);
 }
 // Gets the colorId from a image of the color pallet.
 // Thanks Zunath for the base code.
@@ -1501,6 +1503,7 @@ void LockItemInCraftingWindow(object oPC, object oItem, object oTarget, int nTok
     // Make sure the item information window is closed.
     nToken = NuiFindWindow(oPC, "craft_item_nui");
     if(nToken) NuiDestroy(oPC, nToken);
+    SetLocalObject(oPC, CRAFT_ITEM, oItem);
 }
 void ClearItemInCraftingWindow(object oPC, object oItem, int nToken)
 {

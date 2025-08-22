@@ -163,6 +163,12 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC);
 // Returns TRUE if oCaster cast spontaneous cure spell on oTarget.
 // This uses an action and must use AssignCommand or OBJECT_SELF is the caster!
 int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC);
+// Returns TRUE if oCaster casts a memorized inflict spell on oTarget.
+// This uses an action and must use AssignCommand or OBJECT_SELF is the caster!
+int ai_CastMemorizedInflict(object oCreature, object oTarget, object oPC, int nClass);
+// Returns TRUE if oCaster casts a known inflict spell on oTarget.
+// This uses an action and must use AssignCommand or OBJECT_SELF is the caster!
+int ai_CastKnownInflict(object oCreature, object oTarget, object oPC, int nClass);
 // Returns TRUE if oCaster casts a memorized cure spell on oTarget.
 // This uses an action and must use AssignCommand or OBJECT_SELF is the caster!
 int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nClass);
@@ -178,6 +184,8 @@ void ai_SpellConcentrationCheck(object oCaster);
 int ai_CastInMelee(object oCreature, int nSpell, int nInMelee);
 // Returns a float range for the caster to search for a target of an offensive spell.
 float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell);
+// Returns TRUE if nSpell is an inflict spell and will not over heal for nDamage.
+int ai_ShouldWeCastThisInflictSpell(int nSpell, int nDamage);
 // Returns TRUE if nSpell is a cure spell and will not over heal for nDamage.
 int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage);
 // Casts the spell on the current target for oAssociate.
@@ -1988,6 +1996,98 @@ int ai_CastSpontaneousCure(object oCreature, object oTarget, object oPC)
     }
     return FALSE;
 }
+int ai_CastMemorizedInflict(object oCreature, object oTarget, object oPC, int nClass)
+{
+    if(AI_DEBUG) ai_Debug("0i_spells", "1993", GetName(oCreature) + " is looking to cast a memorized inflict spell.");
+    int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
+    int nSpell, nSlot, nMaxSlots, nLevel = 9;
+    int nClassSave, nSlotSave, nLevelSave = 10;
+    while(nLevel > -1)
+    {
+        nMaxSlots = GetMemorizedSpellCountByLevel(oCreature, nClass, nLevel);
+        nSlot = 0;
+        if(AI_DEBUG) ai_Debug("0i_spells", "2001", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
+        while(nSlot < nMaxSlots)
+        {
+            if(AI_DEBUG) ai_Debug("0i_spells", "2004", "nSlot: " + IntToString(nSlot) +
+                     " Spell Ready: " + IntToString(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot)));
+            if(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlot))
+            {
+                nSpell = GetMemorizedSpellId(oCreature, nClass, nLevel, nSlot);
+                if(ai_ShouldWeCastThisInflictSpell(nSpell, nDamage))
+                {
+                    string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                    if(AI_DEBUG) ai_Debug("0i_spells", "2012", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
+                    ai_CastMemorizedSpell(oCreature, nClass, nLevel, nSlot, oTarget, FALSE, oPC);
+                    return TRUE;
+                }
+                // Save the lowest level inflict spell as we might need to cast it.
+                else if(nLevel < nLevelSave && (nSpell > 430 && nSpell < 436))
+                {
+                    nClassSave = nClass;
+                    nLevelSave = nLevel;
+                    nSlotSave = nSlot;
+                }
+            }
+            nSlot++;
+        }
+        nLevel--;
+    }
+    // Did we find a cure spell? If we did then use it.
+    if(nLevelSave < 10)
+    {
+        if(AI_DEBUG) ai_Debug("0i_spells", "1740", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
+        ai_CastMemorizedSpell(oCreature, nClassSave, nLevelSave, nSlotSave, oTarget, FALSE, oPC);
+        return TRUE;
+    }
+    return FALSE;
+}
+int ai_CastKnownInflict(object oCreature, object oTarget, object oPC, int nClass)
+{
+    if(AI_DEBUG) ai_Debug("0i_spells", "2041", GetName(oCreature) + " is looking to cast a known inflict spell.");
+    int nDamage = GetMaxHitPoints(oTarget) - GetCurrentHitPoints(oTarget);
+    int nSpell, nSlot, nMaxSlots, nLevel = 9;
+    int nClassSave, nSpellSave, nLevelSave = 10;
+    while(nLevel > -1)
+    {
+        nMaxSlots = GetKnownSpellCount(oCreature, nClass, nLevel);
+        nSlot = 0;
+        if(AI_DEBUG) ai_Debug("0i_spells", "2049", "nLevel: " + IntToString(nLevel) + " nMaxSlots: " + IntToString(nMaxSlots));
+        while(nSlot < nMaxSlots)
+        {
+            nSpell = GetKnownSpellId(oCreature, nClass, nLevel, nSlot);
+            if(AI_DEBUG) ai_Debug("0i_spells", "2053", "nSlot: " + IntToString(nSlot) +
+                     " Spell Ready: " + IntToString(GetSpellUsesLeft(oCreature, nClass, nSpell)));
+            if(GetSpellUsesLeft(oCreature, nClass, nSpell))
+            {
+                if(ai_ShouldWeCastThisInflictSpell(nSpell, nDamage))
+                {
+                    string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+                    if(AI_DEBUG) ai_Debug("0i_spells", "2060", GetName(oCreature) + " has cast " + sSpellName + " on " + GetName(oTarget) + ".");
+                    ai_CastKnownSpell(oCreature, nClass, nSpell, oTarget, FALSE, oPC);
+                    return TRUE;
+                }
+                // Save the lowest level cure spell as we might need to cast it.
+                else if(nLevel < nLevelSave && (nSpell > 430 && nSpell < 436))
+                {
+                    nClassSave = nClass;
+                    nLevelSave = nLevel;
+                    nSpellSave = nSpell;
+                }
+            }
+            nSlot++;
+        }
+        nLevel--;
+    }
+    return FALSE;
+    // Did we find a cure spell? If we did then use it.
+    if(nLevelSave < 10)
+    {
+        if(AI_DEBUG) ai_Debug("0i_spells", "1781", GetName(oCreature) + " has cast the lowest level cure spell on " + GetName(oTarget) + ".");
+        ai_CastKnownSpell(oCreature, nClassSave, nSpellSave, oTarget, FALSE, oPC);
+        return TRUE;
+    }
+}
 int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nClass)
 {
     if(AI_DEBUG) ai_Debug("0i_spells", "1702", GetName(oCreature) + " is looking to cast a memorized cure spell.");
@@ -2014,7 +2114,7 @@ int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nC
                     return TRUE;
                 }
                 // Save the lowest level cure spell as we might need to cast it.
-                else if(nLevel < nLevelSave && (nSpell > 26 && nSpell < 32))
+                else if(nLevel < nLevelSave && (nSpell > 30 && nSpell < 36))
                 {
                     nClassSave = nClass;
                     nLevelSave = nLevel;
@@ -2060,7 +2160,7 @@ int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass
                     return TRUE;
                 }
                 // Save the lowest level cure spell as we might need to cast it.
-                else if(nLevel < nLevelSave && (nSpell > 26 && nSpell < 32))
+                else if(nLevel < nLevelSave && (nSpell > 30 && nSpell < 36))
                 {
                     nClassSave = nClass;
                     nLevelSave = nLevel;
@@ -2179,7 +2279,7 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
         // We check this because if the enemy is moving or has not started acting
         // then we don't want to move up on them as they might move towards us!
         int nAction = GetCurrentAction(oNearestEnemy);
-        if(AI_DEBUG) ai_Debug("0i_spells", "1130", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
+        if(AI_DEBUG) ai_Debug("0i_spells", "2228", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
         if(nAction != ACTION_MOVETOPOINT || nAction != ACTION_ITEMCASTSPELL ||
            nAction != ACTION_INVALID || nAction != ACTION_USEOBJECT ||
            nAction != ACTION_RANDOMWALK) fRange = fEnemyDistance + (fRange - 7.5);
@@ -2187,6 +2287,18 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
     if(fRange > AI_RANGE_BATTLEFIELD) return AI_RANGE_BATTLEFIELD;
     else if(fRange < 0.1f) return 0.1f;
     return fRange;
+}
+int ai_ShouldWeCastThisInflictSpell(int nSpell, int nDamage)
+{
+    if(AI_DEBUG) ai_Debug("0i_spells", "2239", "nSpell: " + IntToString(nSpell) + " nDamage: " +
+             IntToString(nDamage));
+    if(nSpell == SPELL_HEAL && nDamage > 50) return TRUE;
+    else if(nSpell == SPELL_INFLICT_CRITICAL_WOUNDS && nDamage > 31) return TRUE;
+    else if(nSpell == SPELL_INFLICT_SERIOUS_WOUNDS && nDamage > 23) return TRUE;
+    else if(nSpell == SPELL_INFLICT_MODERATE_WOUNDS && nDamage > 15) return TRUE;
+    else if(nSpell == SPELL_INFLICT_LIGHT_WOUNDS && nDamage > 6) return TRUE;
+    else if(nSpell == SPELL_INFLICT_MINOR_WOUNDS) return TRUE;
+    return FALSE;
 }
 int ai_ShouldWeCastThisCureSpell(int nSpell, int nDamage)
 {

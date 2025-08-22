@@ -1751,6 +1751,11 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
     }
     if(bIsPC) sText = "  All associates";
     else sText = "  " + GetName(oAssociate);
+    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
+    {
+        NuiSetBind(oPC, nToken, "btn_camera_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "btn_camera_tooltip", JsonString("  Toggle camera view for " + sName));
+    }
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
     {
         NuiSetBind(oPC, nToken, "btn_cmd_action_event", JsonBool(TRUE));
@@ -1916,11 +1921,6 @@ void ai_SetWidgetBinds(object oPC, object oAssociate, string sAssociateType, int
         if(ai_GetAIMode(oAssociate, AI_MODE_GHOST)) sText = "Off";
         NuiSetBind(oPC, nToken, "btn_ghost_mode_tooltip", JsonString (
                    "  Turn " + sText + " clipping through creatures for " + GetName(oAssociate)));
-    }
-    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
-    {
-        NuiSetBind(oPC, nToken, "btn_camera_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "btn_camera_tooltip", JsonString("  Toggle camera view for " + sName));
     }
     if(ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType))
     {
@@ -2415,6 +2415,11 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
         jRow = CreateButtonImage(jRow, "ir_invite", "btn_toggle_assoc_widget", 35.0f, 35.0f, 0.0, "btn_toggle_assoc_widget_tooltip");
         fButtons += 1.0;
     }
+    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
+    {
+        jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
+        fButtons += 1.0;
+    }
     if(ai_GetWidgetButton(oPC, BTN_CMD_ACTION, oAssociate, sAssociateType))
     {
         jRow = CreateButtonImage(jRow, "ir_action", "btn_cmd_action", 35.0f, 35.0f, 0.0, "btn_cmd_action_tooltip");
@@ -2496,11 +2501,6 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     if(ai_GetWidgetButton(oPC, BTN_CMD_GHOST_MODE, oAssociate, sAssociateType))
     {
         jRow = CreateButtonImage(jRow, "dm_limbo", "btn_ghost_mode", 35.0f, 35.0f, 0.0, "btn_ghost_mode_tooltip");
-        fButtons += 1.0;
-    }
-    if(ai_GetWidgetButton(oPC, BTN_CMD_CAMERA, oAssociate, sAssociateType))
-    {
-        jRow = CreateButtonImage(jRow, "ir_examine", "btn_camera", 35.0f, 35.0f, 0.0, "btn_camera_tooltip");
         fButtons += 1.0;
     }
     if(ai_GetWidgetButton(oPC, BTN_CMD_INVENTORY, oAssociate, sAssociateType))
@@ -3722,70 +3722,70 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
     // Special abilities and skills.
     else if(nLevel == 10)
     {
-        for(nIndex = 1; nIndex <= AI_MAX_CLASSES_PER_CHARACTER; nIndex++)
+        json jCreature = ObjectToJson(oAssociate);
+        json jFeatList = GffGetList(jCreature, "FeatList");
+        int nIndex, nSuccessor;
+        json jFeat = JsonArrayGet(jFeatList, nIndex);
+        while(JsonGetType(jFeat) != JSON_TYPE_NULL)
         {
-            nClassIndex = GetClassByPosition(nIndex, oAssociate);
-            if(nClassIndex != CLASS_TYPE_INVALID)
+            nFeat = JsonGetInt(GffGetWord(jFeat, "Feat"));
+            if(Get2DAString("feat", "USESPERDAY", nFeat) != "" ||
+               Get2DAString("feat", "HostileFeat", nFeat) != "")
             {
-                nCounter = 0;
-                sClassFeats = Get2DAString("classes", "FeatsTable", nClassIndex);
-                nMax2daRow = Get2DARowCount(sClassFeats);
-                while(nCounter < nMax2daRow)
+                // Check for subfeats.
+                nSpell = StringToInt(Get2DAString("feat", "SPELLID", nFeat));
+                nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell1", nSpell));
+                //SendMessageToPC(oPC, "nFeat: " + IntToString(nFeat) +
+                //            " nSpell: " + IntToString(nSpell) +
+                //            " nSubSpell: " + IntToString(nSubSpell));
+                if(nSubSpell)
                 {
-                    if(Get2DAString(sClassFeats, "OnMenu", nCounter) != "0")
+                    for(nSubSpellIndex = 1; nSubSpellIndex <= 5; nSubSpellIndex++)
                     {
-                        nFeat = StringToInt(Get2DAString(sClassFeats, "FeatIndex", nCounter));
-                        if(GetHasFeat(nFeat, oAssociate, TRUE))
+                        sSubSpellIndex = IntToString(nSubSpellIndex);
+                        nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell" + sSubSpellIndex, nSpell));
+                        //SendMessageToPC(oPC, " nSpell: " + IntToString(nSpell) +
+                        //            " nSubSpell: " + IntToString(nSubSpell));
+                        if(nSubSpell != 0)
                         {
-                            // Check for subfeats.
-                            nSpell = StringToInt(Get2DAString("feat", "SPELLID", nFeat));
-                            nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell1", nSpell));
-                            //SendMessageToPC(oPC, "nFeat: " + IntToString(nFeat) +
-                            //            " nSpell: " + IntToString(nSpell) +
-                            //            " nSubSpell: " + IntToString(nSubSpell));
-                            if(nSubSpell)
-                            {
-                                for(nSubSpellIndex = 1; nSubSpellIndex <= 5; nSubSpellIndex++)
-                                {
-                                    sSubSpellIndex = IntToString(nSubSpellIndex);
-                                    nSubSpell = StringToInt(Get2DAString("spells", "SubRadSpell" + sSubSpellIndex, nSpell));
-                                    //SendMessageToPC(oPC, " nSpell: " + IntToString(nSpell) +
-                                    //            " nSubSpell: " + IntToString(nSubSpell));
-                                    if(nSubSpell != 0)
-                                    {
-                                        sSpellIcon = Get2DAString("spells", "iConResRef", nSubSpell);
-                                        jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
-                                        sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSubSpell)));
-                                        jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
-                                        jSpell = JsonArrayInsert(JsonArray(), JsonInt(nSubSpell));
-                                        jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
-                                        jSpell = JsonArrayInsert(jSpell, JsonInt(-1)); // Level
-                                        jSpell = JsonArrayInsert(jSpell, JsonInt(255)); // MetaMagic
-                                        jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Domain
-                                        jSpell = JsonArrayInsert(jSpell, JsonInt(nFeat));
-                                        jQuickListArray = JsonArrayInsert(jQuickListArray, jSpell);
-                                    }
-                                }
-                            }
-                            else if((nFeat < 71 || nFeat > 81))
-                            {
-                                sSpellIcon = Get2DAString("feat", "ICON", nFeat);
-                                jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
-                                sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
-                                jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
-                                jSpell = JsonArrayInsert(JsonArray(), JsonInt(nSpell));
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Level
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // MetaMagic
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Domain
-                                jSpell = JsonArrayInsert(jSpell, JsonInt(nFeat));
-                                jQuickListArray = JsonArrayInsert(jQuickListArray, jSpell);
-                            }
+                            sSpellIcon = Get2DAString("spells", "iConResRef", nSubSpell);
+                            jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                            sSpellName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSubSpell)));
+                            jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                            jSpell = JsonArray();
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(nSubSpell));
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(-1)); // Level
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(255)); // MetaMagic
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Domain
+                            jSpell = JsonArrayInsert(jSpell, JsonInt(nFeat));
+                            jQuickListArray = JsonArrayInsert(jQuickListArray, jSpell);
                         }
                     }
-                    nCounter++;
+                }
+                else if((nFeat < 71 || nFeat > 81))
+                {
+                    nSuccessor = StringToInt(Get2DAString("feat", "SUCCESSOR", nFeat));
+                    if(nSuccessor && GetHasFeat(nSuccessor, oAssociate, TRUE))
+                    { /* Don't do anything we just skip adding this feat. */}
+                    else
+                    {
+                        sSpellIcon = Get2DAString("feat", "ICON", nFeat);
+                        jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
+                        sSpellName = GetStringByStrRef(StringToInt(Get2DAString("feat", "FEAT", nFeat)));
+                        jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
+                        jSpell = JsonArray();
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Level
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // MetaMagic
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Domain
+                        jSpell = JsonArrayInsert(jSpell, JsonInt(nFeat));
+                        jQuickListArray = JsonArrayInsert(jQuickListArray, jSpell);
+                    }
                 }
             }
+            jFeat = JsonArrayGet(jFeatList, ++nIndex);
         }
         // Checks for monsters special abilities.
         int nCounter = 0, nPreviousSpell = -1, nMaxSpellAbility = GetSpellAbilityCount(oAssociate);

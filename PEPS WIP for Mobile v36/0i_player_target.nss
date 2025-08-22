@@ -696,8 +696,7 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
                     EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ATTACK, MOUSECURSOR_NOATTACK);
                 }
                 // Check feat and adjust if it is an action mode feat.
-                if(ai_SetActionMode(oAssociate, nFeat)) return;
-                AssignCommand(oAssociate, ActionUseFeat(nFeat, oAssociate, nSpell));
+                if(!ai_SetActionMode(oAssociate, nFeat)) AssignCommand(oAssociate, ActionUseFeat(nFeat, oAssociate, nSpell));
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
                 return;
             }
@@ -786,6 +785,7 @@ int ai_SetActionMode(object oAssociate, int nFeat)
     else if(nFeat == FEAT_EXPERTISE) nMode = ACTION_MODE_EXPERTISE;
     else if(nFeat == FEAT_IMPROVED_EXPERTISE) nMode = ACTION_MODE_IMPROVED_EXPERTISE;
     else if(nFeat == FEAT_DIRTY_FIGHTING) nMode = ACTION_MODE_DIRTY_FIGHTING;
+    else if(nFeat == FEAT_DWARVEN_DEFENDER_DEFENSIVE_STANCE) nMode = 12; // ACTION_MODE_DEFENSIVE_STANCE
     if(nMode)
     {
         SetActionMode(oAssociate, nMode, !GetActionMode(oAssociate, nMode));
