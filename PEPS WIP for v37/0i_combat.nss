@@ -1293,7 +1293,7 @@ object ai_GetLowestFortitudeSaveTarget(object oCreature, float fMaxRange = AI_RA
         if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
            !GetIsDead(sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 sTarget.nValue = GetFortitudeSavingThrow(sTarget.oTarget);
@@ -1328,7 +1328,7 @@ object ai_GetLowestReflexSaveTarget(object oCreature, float fMaxRange = AI_RANGE
         if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
            !GetIsDead(sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 sTarget.nValue = GetReflexSavingThrow(sTarget.oTarget);
@@ -1363,7 +1363,7 @@ object ai_GetLowestWillSaveTarget(object oCreature, float fMaxRange = AI_RANGE_P
         if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
            !GetIsDead(sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 sTarget.nValue = GetWillSavingThrow(sTarget.oTarget);
@@ -1407,7 +1407,7 @@ int ai_GetNearestIndexThatSeesUs(object oCreature, float fMaxRange = AI_RANGE_PE
         if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
            !GetIsDead(sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 if(AI_DEBUG) ai_Debug("0i_combat", "1373", GetName(sTarget.oTarget) + " can see us? " +
@@ -1445,7 +1445,7 @@ int ai_GetBestSneakAttackIndex(object oCreature, float fMaxRange = AI_RANGE_PERC
            !GetIsDead(sTarget.oTarget) &&
            !ai_IsImmuneToSneakAttacks(oCreature, sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 oAttacking = ai_GetAttackedTarget(sTarget.oTarget);
@@ -1489,7 +1489,7 @@ int ai_GetNearestIndexNotInAOE(object oCreature, float fMaxRange = AI_RANGE_PERC
         if(GetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCounter) &&
            !GetIsDead(sTarget.oTarget) && !ai_IsInADangerousAOE(sTarget.oTarget))
         {
-            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+            if(ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
             {
                 sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
@@ -2009,7 +2009,7 @@ object ai_GetNearestFavoredEnemyTarget(object oCreature, float fMaxRange = AI_RA
                 {
                     if(AI_DEBUG) ai_Debug("0i_combat", "1947", "bAlwaysAtk: " + IntToString(bAlwaysAtk));
                     if((bAlwaysAtk || !ai_IsStrongerThanMe(oCreature, nCounter)) &&
-                       ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) +
+                       ai_TargetIsInRangeofCreature(oCreature, AI_ENEMY, sCounter, fMaxRange) &&
                        ai_TargetIsInRangeofMaster(oCreature, sTarget.oTarget))
                     {
                         sTarget = ai_CheckForNearestTarget(oCreature, sTarget, nCounter, sCounter);
