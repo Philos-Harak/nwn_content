@@ -43,6 +43,8 @@ void main()
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 636 / 101
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Damage Creature", "btn_damage", 150.0f, 20.0f, -1.0, "btn_damage_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Jump To", "btn_jump", 150.0f, 20.0f, -1.0, "btn_jump_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Kill In Area", "btn_kill_area", 150.0f, 20.0f, -1.0, "btn_kill_area_tooltip");
@@ -77,6 +79,8 @@ void main()
     NuiSetBind(oPC, nToken, "btn_remove_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_remove_tooltip", JsonString("  Remove selected object or the nearest object to ground selection."));
     // Row 3
+    NuiSetBind(oPC, nToken, "btn_damage_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_damage_tooltip", JsonString("  Damage target creature for 5 hitpoints."));
     NuiSetBind(oPC, nToken, "btn_jump_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_jump_tooltip", JsonString("  Jump to target location."));
     NuiSetBind(oPC, nToken, "btn_kill_area_event", JsonBool(TRUE));

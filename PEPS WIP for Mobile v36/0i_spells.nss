@@ -2391,7 +2391,7 @@ void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lL
     json jWidget = JsonArrayGet(jSpells, 2);
     json jItem = JsonArrayGet(jWidget, nIndex);
     int nSpell = JsonGetInt(JsonArrayGet(jItem, 0));
-    int nIprpSubType = JsonGetInt(JsonArrayGet(jItem, 4));
+    int nIprpSubType = JsonGetInt(JsonArrayGet(jSpells, 4));
     object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jItem, 5)));
     itemproperty ipProperty;
     if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));

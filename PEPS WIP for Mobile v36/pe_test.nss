@@ -75,6 +75,17 @@ void main()
             DelayCommand(0.1, DestroyObject(oTarget));
             ai_SendMessages(GetName(oTarget) + " has been removed!", AI_COLOR_RED, oPC);
         }
+        else if(sTargetMode == "TEST_DAMAGE_TARGET")
+        {
+            effect eDamage = EffectDamage(5);
+            ApplyEffectToObject(DURATION_TYPE_INSTANT, eDamage, oTarget);
+            // Set this variable on the player so PEPS can run the targeting script for this plugin.
+            SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+            // Set Targeting variables.
+            SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+            SetLocalString(oPC, AI_TARGET_MODE, "TEST_DAMAGE_TARGET");
+            EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+        }
         else if(sTargetMode == "TEST_JUMP")
         {
             JumpToLocation(lLocation);
@@ -194,6 +205,15 @@ void main()
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE |
                                  OBJECT_TYPE_DOOR | OBJECT_TYPE_ITEM |
                                  OBJECT_TYPE_PLACEABLE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+            }
+            else if(sElem == "btn_damage")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_DAMAGE_TARGET");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_HEAL, MOUSECURSOR_NOHEAL);
             }
             else if(sElem == "btn_jump")
             {

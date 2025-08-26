@@ -462,6 +462,90 @@ void main()
                 SetModuleXPScale(nDefaultXP);
                 NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nDefaultXP)));
             }
+            if(sElem == "btn_max_hench_up")
+            {
+                int nMaxHench = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_max_henchman"))) + 1;
+                if(nMaxHench > AI_MAX_HENCHMAN) nMaxHench = 1;
+                NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(nMaxHench)));
+            }
+            if(sElem == "btn_max_hench_down")
+            {
+                int nMaxHench = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_max_henchman"))) - 1;
+                if(nMaxHench < 1) nMaxHench = AI_MAX_HENCHMAN;
+                NuiSetBind(oPC, nToken, "txt_max_henchman", JsonString(IntToString(nMaxHench)));
+            }
+            if(sElem == "btn_xp_scale_up")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_xp_scale"))) + 5;
+                if(nXPScale > 200) nXPScale = 0;
+                NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_xp_scale_down")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_xp_scale"))) - 5;
+                if(nXPScale < 0) nXPScale = 200;
+                NuiSetBind(oPC, nToken, "txt_xp_scale", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_ai_diff_up")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_ai_difficulty"))) + 1;
+                if(nXPScale > 100) nXPScale = 0;
+                NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_ai_diff_down")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_ai_difficulty"))) - 1;
+                if(nXPScale < 0) nXPScale = 100;
+                NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_perc_up")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_perception_distance"))) + 1;
+                if(nXPScale > 60) nXPScale = 10;
+                NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_perc_down")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_perception_distance"))) - 1;
+                if(nXPScale < 10) nXPScale = 60;
+                NuiSetBind(oPC, nToken, "txt_perception_distance", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_wander_up")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_wander_distance"))) + 1;
+                if(nXPScale > 60) nXPScale = 0;
+                NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_wander_down")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_wander_distance"))) - 1;
+                if(nXPScale < 0) nXPScale = 60;
+                NuiSetBind(oPC, nToken, "txt_wander_distance", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_encounter_up")
+            {
+                float fXPScale = StringToFloat(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_enc"))) + 0.05;
+                if(fXPScale > 9.0) fXPScale = 0.0;
+                NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(fXPScale, 0, 2)));
+            }
+            if(sElem == "btn_encounter_down")
+            {
+                float fXPScale = StringToFloat(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_enc"))) - 0.05;
+                if(fXPScale < 0.0) fXPScale = 9.0;
+                NuiSetBind(oPC, nToken, "txt_inc_enc", JsonString(FloatToString(fXPScale, 0, 2)));
+            }
+            if(sElem == "btn_inc_hp_up")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) + 1;
+                if(nXPScale > 100) nXPScale = 0;
+                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nXPScale)));
+            }
+            if(sElem == "btn_inc_hp_down")
+            {
+                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) - 1;
+                if(nXPScale < 0) nXPScale = 100;
+                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nXPScale)));
+            }
         }
         else if(sEvent == "watch")
         {
@@ -600,6 +684,8 @@ void main()
                     SetLocalInt(oModule, AI_RULE_WANDER, bCheck);
                     jRules = JsonObjectSet(jRules, AI_RULE_WANDER, JsonInt(bCheck));
                     NuiSetBind(oPC, nToken, "txt_wander_distance_event", JsonBool(bCheck));
+                    NuiSetBind(oPC, nToken, "btn_wander_up_event", JsonBool(bCheck));
+                    NuiSetBind(oPC, nToken, "btn_wander_down_event", JsonBool(bCheck));
                 }
                 else if(sElem == "chbx_open_doors_check")
                 {
