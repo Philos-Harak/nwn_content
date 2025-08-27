@@ -637,6 +637,7 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     json jSpell = JsonArrayGet(jWidget, nIndex);
     int nSpell = JsonGetInt(JsonArrayGet(jSpell, 0));
     int nClass = JsonGetInt(JsonArrayGet(jSpell, 1));
+    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     if(nClass == -1) // This is an Item.
     {
         object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jSpell, 5)));
@@ -704,7 +705,6 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
         }
         else SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_CAST_SPELL");
     }
-    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
     int nObjectType;
     string sTarget = Get2DAString("spells", "TargetType", nSpell);
     int nTarget = ai_HexStringToInt(sTarget);

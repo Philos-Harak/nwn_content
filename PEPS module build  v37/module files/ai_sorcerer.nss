@@ -37,8 +37,8 @@ void main()
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
-            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            if(!nInMelee) oTarget = ai_GetNearestPhysicalTarget(oCreature);
+            else oTarget = ai_GetNearestPhysicalTarget(oCreature, AI_RANGE_MELEE);
             if(oTarget != OBJECT_INVALID)
             {
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);

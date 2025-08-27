@@ -73,8 +73,8 @@ void main()
             if(oTarget == OBJECT_INVALID)
             {
                 // Paladins face off against the strongest opponents first.
-                if(!nInMelee) oTarget = ai_GetHighestCRTarget(oCreature);
-                else oTarget = ai_GetHighestCRTarget(oCreature, AI_RANGE_MELEE);
+                if(!nInMelee) oTarget = ai_GetHighestCRPhysicalTarget(oCreature);
+                else oTarget = ai_GetHighestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {

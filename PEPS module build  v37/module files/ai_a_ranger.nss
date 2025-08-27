@@ -59,12 +59,12 @@ void main()
                 if(!nInMelee)
                 {
                     oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature);
                 }
                 else
                 {
                     oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
                 }
             }
             if(oTarget != OBJECT_INVALID)

@@ -53,7 +53,7 @@ void main()
             oTarget = ai_GetFlankTarget(oCreature, AI_RANGE_MELEE);
         }
         // Ok we are in a serious fight so lets not give attack of opportunities.
-        else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+        else oTarget = ai_GetNearestPhysicalTarget(oCreature, AI_RANGE_MELEE);
     }
     // If there are no enemies being attacked then lets stay back.
     if(oTarget == OBJECT_INVALID)
@@ -75,7 +75,7 @@ void main()
             if(ai_HasRangedWeaponWithAmmo(oCreature))
             {
                 if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-                oTarget = ai_GetNearestTarget(oCreature);
+                oTarget = ai_GetNearestPhysicalTarget(oCreature);
                 if(oTarget != OBJECT_INVALID)
                 {
                     if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;

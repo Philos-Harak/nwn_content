@@ -492,7 +492,7 @@ void ai_SetCreatureItemImmunities(object oCreature)
 }
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
-    // This checks for creatures not using the AI system (usually players)
+    // This checks for creatures not using the AI system (usually players).
     // Creatures using the AI system will always have a value in sIPReducedVarname!
     // Updates thier immunity values every minute. Should be good as we only update
     // equiped items. Spell effects are checked on the creature and are not saved.
@@ -505,6 +505,8 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     if(GetLocalInt(oCreature, sIPReducedVarname) == 0 &&
        GetLocalInt(oCreature, sIPTimeStampVarname) + 60 < ai_GetCurrentTimeStamp()) ai_SetCreatureItemImmunities(oCreature);
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
+    // Let us check if the creature is disabled while we look for immunities.
+    int nDisabled = ai_Disabled(oCreature);
     if(AI_DEBUG) ai_Debug("0i_spells", "499", "Checking spell immunity type(" + sIType + ").");
     if(sIType != "")
     {
@@ -514,32 +516,34 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         else if(sIType == "Poison" && GetIsImmune(oCreature, IMMUNITY_TYPE_POISON)) return TRUE;
         else if(sIType == "Disease" && GetIsImmune(oCreature, IMMUNITY_TYPE_DISEASE)) return TRUE;
         else if(sIType == "Curse" && GetIsImmune(oCreature, IMMUNITY_TYPE_CURSED)) return TRUE;
-        else if(sIType == "Mind_Affecting" && GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS)) return TRUE;
-        else if(sIType == "Petrification" && ai_IsImmuneToPetrification(oCaster, oCreature)) return TRUE;
+        else if(sIType == "Mind_Affecting" &&
+               (GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
+        else if(sIType == "Petrification" &&
+               (ai_IsImmuneToPetrification(oCaster, oCreature) && nDisabled)) return TRUE;
         else if(sIType == "Fear" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_FEAR) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Sleep" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_SLEEP) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Paralysis" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_PARALYSIS) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Domination" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DOMINATE) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Confusion" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CONFUSED) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Blindness" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_BLINDNESS) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || ai_GetHasEffectType(oCreature, EFFECT_TYPE_BLINDNESS))) return TRUE;
         else if(sIType == "Dazed" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DAZED) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Charm" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CHARM) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         // Check for damage immunities.
         // Negative damage does not work on undead!
         else if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
@@ -547,6 +551,8 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
             if(AI_DEBUG) ai_Debug("0i_spell", "538", "Undead are immune to Negative energy!");
             return TRUE;
         }
+        else if(sIType == "Poison" && ai_GetHasEffectType(oCreature, EFFECT_TYPE_POISON)) return TRUE;
+        else if(sIType == "Disease" && ai_GetHasEffectType(oCreature, EFFECT_TYPE_DISEASE)) return TRUE;
         // Elemental damage resistances should be checked.
         if(sIType == "Acid" || sIType == "Cold"  || sIType == "Fire" ||
             sIType == "Electricty" || sIType == "Sonic")
@@ -573,6 +579,20 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
             if(bImmune)
             {
                 if(AI_DEBUG) ai_Debug("0i_spell", "567", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell through an item!");
+                return TRUE;
+            }
+        }
+        // Lets also check undead and constructs vs mind spells.
+        int nRace = GetRacialType(oCreature);
+        int nClass = GetClassByPosition(1, oCreature);
+        if(nRace == RACIAL_TYPE_UNDEAD || nRace == RACIAL_TYPE_CONSTRUCT ||
+           nClass == CLASS_TYPE_UNDEAD || nClass == CLASS_TYPE_CONSTRUCT)
+        {
+            if(sIType == "Mind_Affecting" || sIType == "Fear" || sIType == "Sleep" ||
+               sIType == "Confusion" || sIType == "Blindness" || sIType == "Daze" ||
+               sIType == "Poison" || sIType == "Disease" || sIType == "Charm")
+            {
+                if(AI_DEBUG) ai_Debug("0i_spell", "595", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell because they are Undead or a Construct!");
                 return TRUE;
             }
         }

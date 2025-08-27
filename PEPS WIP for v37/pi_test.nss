@@ -43,6 +43,8 @@ void main()
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 636 / 101
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+    jRow = CreateButton(jRow, "Damage Creature", "btn_damage", 150.0f, 20.0f, -1.0, "btn_damage_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Jump To", "btn_jump", 150.0f, 20.0f, -1.0, "btn_jump_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Kill In Area", "btn_kill_area", 150.0f, 20.0f, -1.0, "btn_kill_area_tooltip");
@@ -56,7 +58,7 @@ void main()
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, "pi_test_nui", sName + " PEPS Testing Menu",
-                             -1.0, -1.0, 636.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_test");
+                             -1.0, 0.0, 636.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_test");
     // Set all binds, events, and watches.
     // Row 1
     NuiSetBind(oPC, nToken, "btn_level_event", JsonBool(TRUE));
@@ -77,6 +79,8 @@ void main()
     NuiSetBind(oPC, nToken, "btn_remove_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_remove_tooltip", JsonString("  Remove selected object or the nearest object to ground selection."));
     // Row 3
+    NuiSetBind(oPC, nToken, "btn_damage_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_damage_tooltip", JsonString("  Damage target creature for 5 hitpoints."));
     NuiSetBind(oPC, nToken, "btn_jump_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_jump_tooltip", JsonString("  Jump to target location."));
     NuiSetBind(oPC, nToken, "btn_kill_area_event", JsonBool(TRUE));

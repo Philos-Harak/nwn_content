@@ -200,9 +200,11 @@ int ai_Disabled(object oCreature)
     effect eEffect = GetFirstEffect(oCreature);
     while(GetIsEffectValid(eEffect))
     {
-        switch(GetEffectType(eEffect))
+        switch(GetEffectType(eEffect, TRUE))
         {
+            WriteTimestampedLogEntry("Effect Type: " + IntToString(GetEffectType(eEffect, TRUE)));
             case EFFECT_TYPE_DOMINATED :
+            case EFFECT_TYPE_CUTSCENE_DOMINATED :
             {
                 if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
                 return FALSE;
@@ -213,6 +215,7 @@ int ai_Disabled(object oCreature)
             case EFFECT_TYPE_CONFUSED :
             case EFFECT_TYPE_FRIGHTENED :
             case EFFECT_TYPE_PARALYZE :
+            case EFFECT_TYPE_CUTSCENE_PARALYZE :
             case EFFECT_TYPE_TURNED :
             case EFFECT_TYPE_CHARMED :
             case EFFECT_TYPE_PETRIFY :

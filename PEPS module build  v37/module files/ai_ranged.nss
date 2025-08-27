@@ -59,12 +59,12 @@ void main()
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
                 if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestPhysicalTarget(oCreature);
             }
             else
             {
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {

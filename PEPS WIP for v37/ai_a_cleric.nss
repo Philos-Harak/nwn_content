@@ -72,8 +72,8 @@ void main()
             if(oTarget == OBJECT_INVALID)
             {
                 // Lets pick off the weakest targets.
-                if(!nInMelee) oTarget = ai_GetLowestCRTarget(oCreature);
-                else oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                if(!nInMelee) oTarget = ai_GetLowestCRPhysicalTarget(oCreature);
+                else oTarget = ai_GetLowestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {

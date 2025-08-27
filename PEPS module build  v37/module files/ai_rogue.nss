@@ -38,7 +38,7 @@ void main()
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
             if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
-            oTarget = ai_GetNearestTarget (oCreature);
+            oTarget = ai_GetNearestPhysicalTarget (oCreature);
             if(oTarget != OBJECT_INVALID)
             {
                 if (ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;

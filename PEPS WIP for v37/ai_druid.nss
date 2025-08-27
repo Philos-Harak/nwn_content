@@ -65,8 +65,8 @@ void main()
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
             // Lets pick off the nearest targets.
-            if(!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-            else oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+            if(!nInMelee) oTarget = ai_GetNearestPhysicalTarget(oCreature);
+            else oTarget = ai_GetNearestPhysicalTarget(oCreature, AI_RANGE_MELEE);
             if(oTarget != OBJECT_INVALID)
             {
                 if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;

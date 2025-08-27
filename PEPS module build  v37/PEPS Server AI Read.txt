@@ -134,6 +134,14 @@ your chests are opened by a henchmen.
 *****************************
 ********** Changes **********
 *****************************
+---------- 8-27-25 ----------
+	GENERAL CHANGES
+* Fixed ai_spell.2da: Ray of Enfeeblement to check for Immunity to Ability drain.
+	MENU CHANGES
+* Fixed Healing Kits not working in the Quick widget unless you cast a spell from the quick widget first.
+	AI CHANGES
+* Added another check when casting spells. If they are disabled lets not continue to cast disabling spells.
+* Added checks for ranged and melee target selection that eliminates enemies that cannot be damaged.
 ---------- 8-22-25 ----------
 	GENERAL CHANGES
 * Remove AI checks in main menu for server builds.

@@ -702,13 +702,13 @@ void ai_DoPhysicalAttackOnBest(object oCreature, int nInMelee, int bAlwaysAtk = 
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature);
             }
             else
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {
@@ -760,13 +760,13 @@ void ai_DoPhysicalAttackOnNearest(object oCreature, int nInMelee, int bAlwaysAtk
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestPhysicalTarget(oCreature);
             }
             else
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {
@@ -817,13 +817,13 @@ void ai_DoPhysicalAttackOnLowestCR(object oCreature, int nInMelee, int bAlwaysAt
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature);
             }
             else
             {
                 if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                 if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
             }
             if(oTarget != OBJECT_INVALID)
             {

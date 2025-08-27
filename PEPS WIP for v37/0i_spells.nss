@@ -506,7 +506,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
        GetLocalInt(oCreature, sIPTimeStampVarname) + 60 < ai_GetCurrentTimeStamp()) ai_SetCreatureItemImmunities(oCreature);
     string sIType = Get2DAString("ai_spells", "ImmunityType", nSpell);
     // Let us check if the creature is disabled while we look for immunities.
-    int nDisable = ai_Disabled(oCreature);
+    int nDisabled = ai_Disabled(oCreature);
     if(AI_DEBUG) ai_Debug("0i_spells", "499", "Checking spell immunity type(" + sIType + ").");
     if(sIType != "")
     {
@@ -517,33 +517,33 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         else if(sIType == "Disease" && GetIsImmune(oCreature, IMMUNITY_TYPE_DISEASE)) return TRUE;
         else if(sIType == "Curse" && GetIsImmune(oCreature, IMMUNITY_TYPE_CURSED)) return TRUE;
         else if(sIType == "Mind_Affecting" &&
-               (GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 29)) return TRUE;
+               (GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Petrification" &&
-               (ai_IsImmuneToPetrification(oCaster, oCreature) && nDisable == 79)) return TRUE;
+               (ai_IsImmuneToPetrification(oCaster, oCreature) && nDisabled)) return TRUE;
         else if(sIType == "Fear" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_FEAR) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 25)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Sleep" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_SLEEP) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 30)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Paralysis" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_PARALYSIS) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 27)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Domination" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DOMINATE) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS))) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Confusion" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CONFUSED) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 24)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Blindness" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_BLINDNESS) ||
            GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || ai_GetHasEffectType(oCreature, EFFECT_TYPE_BLINDNESS))) return TRUE;
         else if(sIType == "Dazed" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_DAZED) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 28)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         else if(sIType == "Charm" &&
           (GetIsImmune(oCreature, IMMUNITY_TYPE_CHARM) ||
-           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisable == 23)) return TRUE;
+           GetIsImmune(oCreature, IMMUNITY_TYPE_MIND_SPELLS) || nDisabled)) return TRUE;
         // Check for damage immunities.
         // Negative damage does not work on undead!
         else if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
@@ -584,11 +584,17 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         }
         // Lets also check undead and constructs vs mind spells.
         int nRace = GetRacialType(oCreature);
-        if(nRace == RACIAL_TYPE_UNDEAD || nRace == RACIAL_TYPE_CONSTRUCT)
+        int nClass = GetClassByPosition(1, oCreature);
+        if(nRace == RACIAL_TYPE_UNDEAD || nRace == RACIAL_TYPE_CONSTRUCT ||
+           nClass == CLASS_TYPE_UNDEAD || nClass == CLASS_TYPE_CONSTRUCT)
         {
             if(sIType == "Mind_Affecting" || sIType == "Fear" || sIType == "Sleep" ||
                sIType == "Confusion" || sIType == "Blindness" || sIType == "Daze" ||
-               sIType == "Poison" || sIType == "Disease" || sIType == "Charm") return TRUE;
+               sIType == "Poison" || sIType == "Disease" || sIType == "Charm")
+            {
+                if(AI_DEBUG) ai_Debug("0i_spell", "595", GetName(oCreature) + " is immune/resistant to my " + sIType + " spell because they are Undead or a Construct!");
+                return TRUE;
+            }
         }
     }
     int nLevel = StringToInt(Get2DAString("spells", "Innate", nSpell));

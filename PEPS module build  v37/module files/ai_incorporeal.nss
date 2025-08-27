@@ -44,8 +44,8 @@ void main()
         {
             if (ai_TryRangedSneakAttack (oCreature, nInMelee)) return;
             string sIndex;
-            if (!nInMelee) oTarget = ai_GetNearestTarget(oCreature);
-            else oTarget = ai_GetNearestTarget (oCreature, AI_RANGE_MELEE);
+            if (!nInMelee) oTarget = ai_GetNearestPhysicalTarget(oCreature);
+            else oTarget = ai_GetNearestPhysicalTarget (oCreature, AI_RANGE_MELEE);
             if(oTarget != OBJECT_INVALID)
             {
                 if(ai_TryRapidShotFeat (oCreature, oTarget, nInMelee)) return;

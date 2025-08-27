@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.23.25 test";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.27.25 test";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
