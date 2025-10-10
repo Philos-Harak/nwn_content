@@ -26,77 +26,84 @@ json GetBuffDatabaseJson(object oPlayer, string sDataField, string sTag = "");
 // Returns the level if this spell has a domain spell on nLevel, or 0.
 int GetHasDomainSpell(object oCaster, int nClass, int nLevel, int nSpell);
 
-// We do some crazy hack to get all the correct information when casting spells.
-// GetLastSpellCastClass() will only give the class if this script is running
-//                         on the actual caster, i.e. our PC.
-// GetLastSpellLevel() will only give the level if this script is running on
-//                     the actual caster, i.e. our PC.
-// So for this to work we run this scrip in the event OnSpellCastAt of our
-// target, then we ExecuteScript this script again with the Caster (oPC)
-// as OBJECT_SELF for this script on its second pass. This allows us to get the
-// information from the above functions! Neat!
 void main()
 {
     object oTarget = OBJECT_SELF;
-    // The first pass we get oCaster via GetLastSpellCaster() fails in ExecuteScript!
-    // The second pass we get oCaster via the variable "AI_BUFF_CASTER".
-    object oCaster = GetLocalObject(oTarget, "AI_BUFF_CASTER");
-    if(oCaster == OBJECT_INVALID) oCaster = GetLastSpellCaster();
-    // We setting up the save spells button we saved the PC to itself.
-    // Here we get the PC to make sure the caster of this spell is our saving PC.
-    object oPC = GetLocalObject(oCaster, "AI_BUFF_PC");
-    // The first pass we get nspell via GetLastSpell() fails in ExecuteScript!
-    // The second pass we get nSpell via the variable "AI_BUFF_SPELL".
-    int nSpell = GetLocalInt(oTarget, "AI_BUFF_SPELL");
-    if(nSpell == 0) nSpell = GetLastSpell();
-    // If this is a harful spell or The caster does not equal our saving PC then
-    // we need to fix the targets scripts back and run the correct OnSpellCastAt script.
-    if(GetLastSpellHarmful() || oPC != oCaster)
+    object oCaster = GetLastSpellCaster();
+    // When setting up the save spells button we saved the PC to itself.
+    // Here we get the PC from either our henchmen or ourselves.
+    // We do this to make sure that this PC and henchmen are the ones saving spells.
+    object oPC = GetLocalObject(ai_GetPlayerMaster(oCaster), "AI_BUFF_PC");
+    // If this is a harmful spell or we couldn't find oPC then we need to fix
+    // the targets scripts back and run the correct OnSpellCastAt script.
+    if(GetLastSpellHarmful() || oPC == OBJECT_INVALID)
     {
-        string sScript = GetLocalString(oTarget, "AI_BUFF_CAST_AT_SCRIPT");
-        SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
+        DeleteLocalObject(oPC, "AI_BUFF_PC");
+        string sScript = GetLocalString(oPC, "AI_BUFF_CAST_AT_SCRIPT");
+        SetEventScript(oPC, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
+        DeleteLocalString(oPC, "AI_BUFF_CAST_AT_SCRIPT");
+        // Cleanup your followers to allow spells to be reacted to as normal.
+        int nAssociateType = 2;
+        object oAssociate = GetAssociate(nAssociateType, oPC);
+        while(nAssociateType < 5)
+        {
+            if(oAssociate != OBJECT_INVALID)
+            {
+               sScript = GetLocalString(oAssociate, "AI_BUFF_CAST_AT_SCRIPT");
+               SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
+               DeleteLocalString(oAssociate, "AI_BUFF_CAST_AT_SCRIPT");
+            }
+            oAssociate = GetAssociate(++nAssociateType, oPC);
+        }
+        int nIndex = 1;
+        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
+        while(nIndex <= AI_MAX_HENCHMAN)
+        {
+            if(oAssociate != OBJECT_INVALID)
+            {
+               sScript = GetLocalString(oAssociate, "AI_BUFF_CAST_AT_SCRIPT");
+               SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, sScript);
+               DeleteLocalString(oAssociate, "AI_BUFF_CAST_AT_SCRIPT");
+            }
+            oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++nIndex);
+        }
+        NuiSetBind(oPC, NuiFindWindow(oPC, "widgetbuffwin"), "btn_save", JsonBool(FALSE));
+        ai_SendMessages("Saving spells to the list has been turned off.", AI_COLOR_YELLOW, oPC);
         ExecuteScript(sScript, oTarget);
         return;
     }
-    // If the oTarget != oCaster then we are casting a spell on one of our
-    // associates. We must make a second pass to get the correct information.
-    // We do this by saving the Target, Caster, and Spell so we can get them
-    // in the second pass as Execute Script makes them impossible to get on a
-    // second pass.
-    if(oTarget != oCaster)
-    {
-        // if it is an area of effect spell then we skip it on all but the caster.
-        if(Get2DAString("spells", "TargetShape", nSpell) == "")
-        {
-            SetLocalObject(oPC, "AI_BUFF_TARGET", oTarget);
-            SetLocalObject(oPC, "AI_BUFF_CASTER", oCaster);
-            SetLocalInt(oPC, "AI_BUFF_SPELL", nSpell);
-            ExecuteScript("pc_savebuffs", oPC);
-        }
-        return;
-    }
-    // If this is the first pass and we get here then oCaster is casting a spell
-    // on themselves. So oTarget will be invalid and we should use oPC.
-    // If this is the second pass and we get here then we have saved oTarget
-    // to oPC and this will get them so we can save the target to the spell!
-    oTarget = GetLocalObject(oPC, "AI_BUFF_TARGET");
-    if(oTarget == OBJECT_INVALID) oTarget = oPC;
-    // We need to clean up this mess!
-    DeleteLocalObject(oPC, "AI_BUFF_TARGET");
-    DeleteLocalObject(oPC, "AI_BUFF_CASTER");
-    DeleteLocalInt(oPC, "AI_BUFF_SPELL");
     // This blocks one spell from saving multiple times due to being an AOE.
     if(GetLocalInt(oPC, "AI_ONLY_ONE")) return;
     SetLocalInt(oPC, "AI_ONLY_ONE", TRUE);
     // We delay this for just less than half a round due to haste.
     DelayCommand(2.5, DeleteLocalInt(oPC, "AI_ONLY_ONE"));
-    // Here is the whole problem and why we must do a second pass if the target
-    // is not the caster. These only work if this script is run by the caster.
-    int nClass = GetLastSpellCastClass();
-    int nLevel = GetLastSpellLevel();
-    // Everything below saves the spell to the database with all our now correct info.
-    int nDomain = GetHasDomainSpell(oPC, nClass, nLevel, nSpell);
-    int nMetaMagic = GetMetaMagicFeat();
+    // If the oTarget != oCaster then we are casting a spell on one of our
+    // associates. Some functions expect OBJECT_SELF to be the caster.
+    // We get around that by doing some ExecuteScriptChunk shenanigans.
+    int nClass, nLevel, nMetaMagic;
+    if(oTarget != oCaster)
+    {
+        SetLocalObject(oCaster, "AI_BUFF_PC", oPC);
+        // These functions need the caster to be OBJECT_SELF so lets do a HACK!
+        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_CASTCLASS\", GetLastSpellCastClass());", oCaster);
+        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_SPELLLEVEL\", GetLastSpellLevel());", oCaster);
+        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_METAMAGIC\", GetMetaMagicFeat());", oCaster);
+        nClass = GetLocalInt(oPC, "AI_BUFF_CASTCLASS");
+        nLevel = GetLocalInt(oPC, "AI_BUFF_SPELLLEVEL");
+        nMetaMagic = GetLocalInt(oPC, "AI_METAMAGIC");
+        DeleteLocalObject(oCaster, "AI_BUFF_PC");
+        DeleteLocalInt(oPC, "AI_BUFF_CASTCLASS");
+        DeleteLocalInt(oPC, "AI_BUFF_SPELLLEVEL");
+        DeleteLocalInt(oPC, "AI_BUFF_METAMAGIC");
+    }
+    else
+    {
+        nClass = GetLastSpellCastClass();
+        nLevel = GetLastSpellLevel();
+        nMetaMagic = GetMetaMagicFeat();
+    }
+    int nSpell = GetLastSpell();
+    int nDomain = GetHasDomainSpell(oCaster, nClass, nLevel, nSpell);
     string sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
     if(nDomain) sName += " [Domain]";
     if(nMetaMagic > 0 && StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
@@ -118,11 +125,13 @@ void main()
     jSpell = JsonArrayInsert(jSpell, JsonInt(nLevel));
     jSpell = JsonArrayInsert(jSpell, JsonInt(nMetaMagic));
     jSpell = JsonArrayInsert(jSpell, JsonInt(nDomain));
-    string sTargetName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget, TRUE)));
+    string sCasterName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oCaster)));
+    jSpell = JsonArrayInsert(jSpell, JsonString(sCasterName));
+    string sTargetName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)));
     jSpell = JsonArrayInsert(jSpell, JsonString(sTargetName));
     jSpells = JsonArrayInsert(jSpells, jSpell);
     SetBuffDatabaseJson(oPC, "spells", jSpells, sList);
-    SendMessageToPC(oPC, sName + " has been saved for fast buffing on " + sTargetName + ".");
+    SendMessageToPC(oPC, sCasterName + " has cast " + sName + " to be saved for fast buffing on " + sTargetName + ".");
     ExecuteScript("pi_buffing", oPC);
 }
 string GetBuffDatabaseString(object oPlayer, string sDataField, string sTag)

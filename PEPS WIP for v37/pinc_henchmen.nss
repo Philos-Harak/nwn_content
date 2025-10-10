@@ -373,8 +373,8 @@ void RemoveYourHenchman(object oPC, int nToken, string sParty)
         AssignCommand(oHenchman, SetIsDestroyable(TRUE, FALSE, FALSE));
         NuiDestroy(oPC, NuiFindWindow(oPC, ai_GetAssociateType(oPC, oHenchman) + AI_WIDGET_NUI));
         DestroyObject(oHenchman);
+        ai_SendMessages(GetName(oHenchman) + " has been removed from the party!", AI_COLOR_GREEN, oPC);
     }
-    ai_SendMessages(GetName(oHenchman) + " has been removed from the party!", AI_COLOR_GREEN, oPC);
     NuiDestroy(oPC, nToken);
     ExecuteScript("pi_henchmen", oPC);
 }
@@ -419,11 +419,7 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
         if(sName == sHenchmanName || sName == "")
         {
             sSlot = sParty + sIndex;
-            if(!bPC)
-            {
-                RemoveHenchman(oPC, oHenchman);
-                ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
-            }
+            if(!bPC) RemoveHenchman(oPC, oHenchman);
             // Special check for Infinite Dungeon plot givers to be changed into henchman.
             if(GetStringLeft(GetLocalString(oHenchman, "sConversation"), 8) == "id1_plot")
             {
@@ -438,6 +434,13 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
                 // We need to make sure the henchman is not seen as a PC or DM!
                 jHenchman = GffReplaceByte(jHenchman, "IsPC", 0);
                 jHenchman = GffReplaceByte(jHenchman, "IsDM", 0);
+                // Rename them with a number added to the end, helps tell the
+                // difference between the PC and the new henchman.
+                string sNameIndex, sLastName = JsonGetString(GffGetLocString(jHenchman, "LastName"));
+                int nNameIndex = StringToInt(GetStringRight(sLastName, 1));
+                if(nNameIndex > 0) GetStringLeft(sLastName, GetStringLength(sLastName) -1) + IntToString(nNameIndex++);
+                else sNameIndex = "_1";
+                jHenchman = GffReplaceLocString(jHenchman, "LastName", sLastName + "_");
             }
             CheckHenchmanDataAndInitialize(oPC, sSlot);
             SetHenchmanDbString(oPC, "image", GetPortraitResRef(oHenchman), sSlot);
@@ -459,15 +462,13 @@ void SaveYourHenchman(object oPC, int nToken, string sParty)
             SetHenchmanDbString(oPC, "stats", sStats, sSlot);
             SetHenchmanDbString(oPC, "classes", sClasses, sSlot);
             SetHenchmanDbJson(oPC, "henchman", jHenchman, sSlot);
-            if(sName == "") ai_SendMessages(sHenchmanName + " has been saved to the party.", AI_COLOR_GREEN, oPC);
-            else ai_SendMessages(sHenchmanName + " has replaced a copy of themselves in the party.", AI_COLOR_GREEN, oPC);
+            if(sName == "") ai_SendMessages(sHenchmanName + " has been saved to the party " + sParty + ".", AI_COLOR_GREEN, oPC);
+            else ai_SendMessages(sHenchmanName + " has replaced a copy of themselves in the party " + sParty + ".", AI_COLOR_GREEN, oPC);
             break;
         }
         nIndex++;
     }
-if(nIndex == nMaxHenchman) ai_SendMessages("This party is full!", AI_COLOR_RED, oPC);
-    NuiDestroy(oPC, nToken);
-    ExecuteScript("pi_henchmen", oPC);
+    if(nIndex == nMaxHenchman) ai_SendMessages("This party is full!", AI_COLOR_RED, oPC);
 }
 void SaveWholeParty(object oPC, int nToken, string sParty)
 {
@@ -681,11 +682,8 @@ int GetSelectionByPackage2DA(string sClass, int nPackage)
         if(Get2DAString("packages", "ClassID", nIndex) == sClass)
         {
             sPackageName = GetStringByStrRef(StringToInt(Get2DAString("packages", "Name", nIndex)));
-            if(sPackageName != "Bad Strref" && sPackageName != "")
-            {
-                if(nPackage == nIndex) return nSelection;
-                nSelection++;
-            }
+            if(nPackage == nIndex) return nSelection;
+            nSelection++;
         }
         nIndex++;
     }
@@ -826,7 +824,22 @@ json CreateLevelStatList(json jHenchman, object oHenchman, object oPC, int nLeve
     WriteTimestampedLogEntry("pinc_henchmen, 813, Creating LvlStatList for " + GetName(oHenchman));
     return GffAddList(jHenchman, "LvlStatList", jLevelArray);
 }
-int CanSelectFeat(json jCreature, object oCreature, int nFeat, int nPosition = 1)
+int GetHasJFeat(int nFeat, json jFeatList)
+{
+    int nIndex, nJFeat, nMaxFeats = JsonGetLength(jFeatList);
+    json jFeat;
+    //WriteTimestampedLogEntry("pinc_henchmen, 831, nFeat: " + IntToString(nFeat) + " nMaxFeats: " + IntToString(nMaxFeats) + ".");
+    while(nIndex < nMaxFeats)
+    {
+        jFeat = JsonArrayGet(jFeatList, nIndex);
+        nJFeat = JsonGetInt(GffGetWord(jFeat, "Feat"));
+        //WriteTimestampedLogEntry("pinc_henchmen, 831, nJFeat: " + IntToString(nJFeat) + ".");
+        if(nJFeat == nFeat) return TRUE;
+        nIndex++;
+    }
+    return FALSE;
+}
+int CanSelectFeat(json jCreature, object oCreature, int nFeat, json jFeats, int nPosition = 1)
 {
     // Check if all classes can use.
     int n2DAStat = StringToInt(Get2DAString("feat", "ALLCLASSESCANUSE", nFeat));
@@ -864,28 +877,30 @@ int CanSelectFeat(json jCreature, object oCreature, int nFeat, int nPosition = 1
     n2DAStat = StringToInt(Get2DAString("feat", "MINSPELLLVL", nFeat));
     int nSpellLevel = 0, nClass = GetClassByPosition(nPosition, oCreature);
     string s2DAName = Get2DAString("classes", "SpellGainTable", nClass);
-    int nLevel = GetLevelByPosition(nPosition, oCreature);
     if(s2DAName != "")
     {
+        int nLevel = GetLevelByPosition(nPosition, oCreature);
         nSpellLevel = StringToInt(Get2DAString(s2DAName, "NumSpellLevels", nLevel - 1)) - 1;
+        if(nSpellLevel < 0) nSpellLevel = 0;
     }
     if(nSpellLevel < n2DAStat) return FALSE;
     n2DAStat = StringToInt(Get2DAString("feat", "PREREQFEAT1", nFeat));
-    if(n2DAStat > 0)
+    if(n2DAStat > 0 && GetHasJFeat(n2DAStat, jFeats))
     {
-        // ************************************** Add code to search jCreature's feats!
-        if(!GetHasFeat(n2DAStat, oCreature)) return FALSE;
         n2DAStat = StringToInt(Get2DAString("feat", "PREREQFEAT2", nFeat));
-        if(!GetHasFeat(n2DAStat, oCreature)) return FALSE;
+        if(n2DAStat > 0 && !GetHasJFeat(n2DAStat, jFeats)) return FALSE;
     }
     int nIndex;
     while(nIndex < 5)
     {
         n2DAStat = StringToInt(Get2DAString("feat", "OrReqFeat" + IntToString(nIndex), nFeat));
         if(nIndex == 0 && n2DAStat == 0) break;
-        if(GetHasFeat(n2DAStat, oCreature)) break;
-        nIndex++;
-        if(nIndex == 5) return FALSE;
+        if(n2DAStat > 0)
+        {
+            if(GetHasJFeat(n2DAStat, jFeats)) break;
+        }
+        else return FALSE;
+        ++nIndex;
     }
     string s2DAStat = Get2DAString("feat", "REQSKILL", nFeat);
     if(s2DAStat != "")
@@ -978,7 +993,7 @@ json ResetFeats(json jHenchman, object oHenchman)
     int nRace = GetRacialType(oHenchman);
     string sRace2DAName = Get2DAString("racialtypes", "FeatsTable", nRace);
     // Give racial feats.
-    WriteTimestampedLogEntry("pinc_henchmen, 972, Checking for racial feats.");
+    WriteTimestampedLogEntry("pinc_henchmen, 996, Checking for racial feats.");
     int nRaceRow, nRaceFeat;
     int nRaceMaxRow = Get2DARowCount(sRace2DAName);
     while(nRaceRow < nRaceMaxRow)
@@ -988,12 +1003,12 @@ json ResetFeats(json jHenchman, object oHenchman)
         jFeat = GffAddWord(jFeat, "Feat", nRaceFeat);
         jFeat = JsonObjectSet(jFeat, "__struct_id", JsonInt(1));
         jFeatList = JsonArrayInsert(jFeatList, jFeat);
-        WriteTimestampedLogEntry("pinc_henchmen, 982, Adding racial feat: " +
+        WriteTimestampedLogEntry("pinc_henchmen, 999, Adding racial feat: " +
                       Get2DAString("feat", "LABEL", nRaceFeat));
         nRaceRow++;
     }
     // Give class feats.
-    WriteTimestampedLogEntry("pinc_henchmen, 972, Checking for class feats.");
+    WriteTimestampedLogEntry("pinc_henchmen, 1004, Checking for class feats.");
     int nClass = GetClassByPosition(1, oHenchman);
     string sGranted, sList;
     string sClsFeat2DAName = Get2DAString("classes", "FeatsTable", nClass);
@@ -1011,17 +1026,17 @@ json ResetFeats(json jHenchman, object oHenchman)
                 jFeat = GffAddWord(jFeat, "Feat", nClassFeat);
                 jFeat = JsonObjectSet(jFeat, "__struct_id", JsonInt(1));
                 jFeatList = JsonArrayInsert(jFeatList, jFeat);
-                WriteTimestampedLogEntry("pinc_henchmen, 1005, Adding class feat: " +
+                WriteTimestampedLogEntry("pinc_henchmen, 1022, Adding class feat: " +
                            Get2DAString("feat", "LABEL", nClassFeat));
             }
         }
         nClassRow++;
     }
     // Give any bonus feats from package.
-    WriteTimestampedLogEntry("pinc_henchmen, 1012, Checking for selectable feats.");
     int nPackageFeat, nPackageRow;
     string sBonusFeat2DAName = Get2DAString("classes", "BonusFeatsTable", nClass);
     int nNumOfFeats = StringToInt(Get2DAString(sBonusFeat2DAName, "Bonus", nLevel));
+    WriteTimestampedLogEntry("pinc_henchmen, 1032, Select " + IntToString(nNumOfFeats) + " bonus feats.");
     string sPackage2DAName = Get2DAString("packages", "FeatPref2DA", nClass);
     int nPackageMaxRow = Get2DARowCount(sPackage2DAName);
     // Give bonus feats based on the package.
@@ -1038,13 +1053,13 @@ json ResetFeats(json jHenchman, object oHenchman)
                 if(nClassFeat == nPackageFeat)
                 {
                     sList = Get2DAString(sClsFeat2DAName, "List", nClassRow);
-                    if((sList == "1" || sList == "2") && CanSelectFeat(jHenchman, oHenchman, nClassFeat))
+                    if((sList == "1" || sList == "2") && CanSelectFeat(jHenchman, oHenchman, nClassFeat, jFeatList))
                     {
                         jFeat = JsonObject();
                         jFeat = GffAddWord(jFeat, "Feat", nClassFeat);
                         jFeat = JsonObjectSet(jFeat, "__struct_id", JsonInt(1));
                         jFeatList = JsonArrayInsert(jFeatList, jFeat);
-                        WriteTimestampedLogEntry("pinc_henchmen, 1028, Adding class bonus feat: " +
+                        WriteTimestampedLogEntry("pinc_henchmen, 1055, Adding class bonus feat: " +
                                   Get2DAString("feat", "LABEL", nPackageFeat));
                         nNumOfFeats--;
                     }
@@ -1056,44 +1071,46 @@ json ResetFeats(json jHenchman, object oHenchman)
         }
     }
     // Give picked feats from package.
-    WriteTimestampedLogEntry("pinc_henchmen, 972, Checking for select feats.");
     nNumOfFeats = 1;
     if(GetHasFeat(FEAT_QUICK_TO_MASTER, oHenchman)) nNumOfFeats++;
+    WriteTimestampedLogEntry("pinc_henchmen, 1069, Select " + IntToString(nNumOfFeats) + " feats for character.");
     nPackageRow = 0;
-    while(nPackageRow < nPackageMaxRow || nNumOfFeats > 0)
+    while(nPackageRow < nPackageMaxRow)
     {
         nClassRow = 0;
         nPackageFeat = StringToInt(Get2DAString(sPackage2DAName, "FeatIndex", nPackageRow));
-        if(CanSelectFeat(jHenchman, oHenchman, nPackageFeat))
+        //WriteTimestampedLogEntry("pinc_henchmen, 1075, nPackageFeat: " + Get2DAString("feat", "LABEL", nPackageFeat) + ".");
+        if(CanSelectFeat(jHenchman, oHenchman, nPackageFeat, jFeatList))
         {
             jFeat = JsonObject();
             jFeat = GffAddWord(jFeat, "Feat", nPackageFeat);
             jFeat = JsonObjectSet(jFeat, "__struct_id", JsonInt(1));
             jFeatList = JsonArrayInsert(jFeatList, jFeat);
-            WriteTimestampedLogEntry("pinc_henchmen, 1053, Adding character bonus feat: " +
+            WriteTimestampedLogEntry("pinc_henchmen, 1082, Selecting character feat: " +
                           Get2DAString("feat", "LABEL", nPackageFeat));
             nNumOfFeats--;
         }
         if(nNumOfFeats < 1) break;
         nPackageRow++;
     }
-    WriteTimestampedLogEntry("pinc_henchmen, 1071, Adding feat list.");
+    WriteTimestampedLogEntry("pinc_henchmen, 1089, Adding feat list.");
     jHenchman = GffReplaceList(jHenchman, "FeatList", jFeatList);
     return jHenchman;
 }
-json ResetSkills(json jHenchman, object oHenchman)
+json ResetSkills(json jHenchman, object oHenchman, int nLevel)
 {
     // We remake the Skill List if the character doesn't have a level list!
     int nClass = GetClassByPosition(1, oHenchman);
     int nSkillPoints, nIntMod = GetAbilityModifier(ABILITY_INTELLIGENCE, oHenchman);
-    if(nIntMod > 0) nSkillPoints = nIntMod * 4;
-    if(GetRacialType(oHenchman) == RACIAL_TYPE_HUMAN) nSkillPoints += 4;
-    nSkillPoints += StringToInt(Get2DAString("classes", "SkillPointBase", nClass)) * 4;
-    int nMaxRanks = 5;
+    if(nIntMod > 0) nSkillPoints = nIntMod;
+    if(GetRacialType(oHenchman) == RACIAL_TYPE_HUMAN) nSkillPoints += 1;
+    nSkillPoints += StringToInt(Get2DAString("classes", "SkillPointBase", nClass));
+    nSkillPoints = nSkillPoints * (nLevel + 3);
+    int nMaxRanks = 3 + nLevel;
     json jSkillList = JsonArray();
     json jSkill;
     // Setup the Skill List.
-    WriteTimestampedLogEntry("pinc_henchmen, 1087, Generating skill list.");
+    WriteTimestampedLogEntry("pinc_henchmen, 1112, Generating skill list.");
     int nIndex, nSkillMaxRow = Get2DARowCount("skills");
     for(nIndex = 0; nIndex < nSkillMaxRow; nIndex++)
     {
@@ -1103,7 +1120,7 @@ json ResetSkills(json jHenchman, object oHenchman)
         jSkillList = JsonArrayInsert(jSkillList, jSkill);
     }
     // Give skill points based on the package.
-    WriteTimestampedLogEntry("pinc_henchmen, 1097, Gets " + IntToString(nSkillPoints) + " skill points.");
+    WriteTimestampedLogEntry("pinc_henchmen, 1116, Gets " + IntToString(nSkillPoints) + " skill points.");
     int nPackageSkill, nPackageRow, nCurrentRanks, bCrossClass, nClassRow, nNewRanks;
     string sPackage2DAName = Get2DAString("packages", "SkillPref2DA", nClass);
     int nPackageMaxRow = Get2DARowCount(sPackage2DAName);
@@ -1132,7 +1149,7 @@ json ResetSkills(json jHenchman, object oHenchman)
         {
             jSkill = GffReplaceByte(jSkill, "Rank", nCurrentRanks + nNewRanks);
             jSkillList = JsonArraySet(jSkillList, nPackageSkill, jSkill);
-            WriteTimestampedLogEntry("pinc_henchmen, 1126, Adding " + IntToString(nNewRanks) +
+            WriteTimestampedLogEntry("pinc_henchmen, 1145, Adding " + IntToString(nNewRanks) +
                    " ranks to " + Get2DAString("skills", "Label", nPackageSkill) +
                    " CrossClass: " + IntToString(bCrossClass));
             nSkillPoints -= nNewRanks;
@@ -1144,9 +1161,9 @@ json ResetSkills(json jHenchman, object oHenchman)
 }
 json ResetSpellsKnown(json jClass, object oHenchman)
 {
-    WriteTimestampedLogEntry("pinc_henchmen, 1138, Checking for spells known.");
+    WriteTimestampedLogEntry("pinc_henchmen, 1157, Checking for spells known.");
     int nClass = GetClassByPosition(1, oHenchman);
-    WriteTimestampedLogEntry("pinc_henchmen, 1140, SpellCaster: " + Get2DAString("classes", "SpellCaster", nClass));
+    WriteTimestampedLogEntry("pinc_henchmen, 1159, SpellCaster: " + Get2DAString("classes", "SpellCaster", nClass));
     if(Get2DAString("classes", "SpellCaster", nClass) == "0") return jClass;
     int nLevel = 0;
     // We remake the Known spell list if the character doesn't have a level list!
@@ -1188,7 +1205,7 @@ json ResetSpellsKnown(json jClass, object oHenchman)
                 {
                     nSpellsKnown = StringToInt(Get2DAString(sSpellKnown2DAName, "SpellLevel" + sSpellLevel, nLevel));
                 }
-                WriteTimestampedLogEntry("pinc_henchmen, 1165, nSpellsKnown: " + IntToString(nSpellsKnown));
+                WriteTimestampedLogEntry("pinc_henchmen, 1201, nSpellsKnown: " + IntToString(nSpellsKnown));
                 jKnownList = JsonArray();
                 nPackageRow = 0;
                 while(nPackageRow < nPackageMaxRow && nSpellsKnown > 0)
@@ -1210,7 +1227,7 @@ json ResetSpellsKnown(json jClass, object oHenchman)
                 if(JsonGetLength(jKnownList) == 0)
                 {
                     jClass = GffRemoveList(jClass, "KnownList" + sSpellLevel);
-                    WriteTimestampedLogEntry("pinc_henchmen, 1187, Removing KnownList" + sSpellLevel);
+                    WriteTimestampedLogEntry("pinc_henchmen, 1223, Removing KnownList" + sSpellLevel);
                 }
                 else if(JsonGetType(GffGetList(jClass, "KnownList" + sSpellLevel)) != JSON_TYPE_NULL)
                 {
@@ -1226,7 +1243,7 @@ json ResetSpellsKnown(json jClass, object oHenchman)
             if(JsonGetType(jKnownList) != JSON_TYPE_NULL)
             {
                 jClass = GffRemoveList(jClass, "KnownList" + sSpellLevel);
-                WriteTimestampedLogEntry("pinc_henchmen, 1203, Removing KnownList" + sSpellLevel);
+                WriteTimestampedLogEntry("pinc_henchmen, 1239, Removing KnownList" + sSpellLevel);
             }
         }
         if(bMemorizesSpells)
@@ -1235,7 +1252,7 @@ json ResetSpellsKnown(json jClass, object oHenchman)
             if(JsonGetType(jMemorizedList) != JSON_TYPE_NULL)
             {
                 jClass = GffRemoveList(jClass, "MemorizedList" + sSpellLevel);
-                WriteTimestampedLogEntry("pinc_henchmen, 1210, Removing MemorizedList" + sSpellLevel);
+                WriteTimestampedLogEntry("pinc_henchmen, 1248, Removing MemorizedList" + sSpellLevel);
             }
         }
         else
@@ -1246,7 +1263,7 @@ json ResetSpellsKnown(json jClass, object oHenchman)
             jSpell = GffReplaceByte(jSpell, "NumSpellsLeft", nSpellsKnown);
             jSpellsPerDayList = JsonArraySet(jSpellsPerDayList, nSpellLevel, jSpell);
             jClass = GffReplaceList(jClass, "SpellsPerDayList", jSpellsPerDayList);
-            WriteTimestampedLogEntry("pinc_henchmen, 1223, Setting SpellsPerDay to " +
+            WriteTimestampedLogEntry("pinc_henchmen, 1259, Setting SpellsPerDay to " +
                           IntToString(nSpellsKnown));
         }
         nSpellLevel++;
@@ -1272,6 +1289,8 @@ object ResetCharacter(object oPC, object oHenchman)
     }
     jHenchman = GffReplaceDword(jHenchman, "Experience", 0);
     jHenchman = GffReplaceFloat(jHenchman, "ChallengeRating", 1.0);
+//    int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_1");
+//    if(nPackage) jHenchman = GffReplaceByte(jHenchman, "StartingPackage", nPackage);
     string s2DA = Get2DAString("classes", "AttackBonusTable", nClass);
     int nAtk = StringToInt(Get2DAString(s2DA, "BAB", 0));
     jHenchman = GffReplaceByte(jHenchman, "BaseAttackBonus", nAtk);
@@ -1285,7 +1304,7 @@ object ResetCharacter(object oPC, object oHenchman)
     json jLvlStatList = GffGetList(jHenchman, "LvlStatList");
     if(JsonGetType(jLvlStatList) != JSON_TYPE_NULL)
     {
-        //WriteTimestampedLogEntry("pinc_henchmen 1289, jLvlStatList: " + JsonDump(jLvlStatList, 4));
+        //WriteTimestampedLogEntry("pinc_henchmen 1300, jLvlStatList: " + JsonDump(jLvlStatList, 4));
         int nLevel = 1, nLevelTrack = 1;
         int nAbilityStatIncrease, nAbility;
         string sAbility;
@@ -1293,7 +1312,7 @@ object ResetCharacter(object oPC, object oHenchman)
         json jLevel = JsonArrayGet(jLvlStatList, nLevel);
         while(JsonGetType(jLevel) != JSON_TYPE_NULL)
         {
-            WriteTimestampedLogEntry("inc_henchmen, 1297, Checking level " + IntToString(nLevelTrack));
+            WriteTimestampedLogEntry("inc_henchmen, 1308, Checking level " + IntToString(nLevelTrack));
             // Remove all Ability score increases for each level from ability scores.
             jAbility = GffGetByte(jLevel, "LvlStatAbility");
             if(JsonGetType(jAbility) != JSON_TYPE_NULL)
@@ -1307,7 +1326,7 @@ object ResetCharacter(object oPC, object oHenchman)
                 if(nAbilityStatIncrease == ABILITY_CHARISMA) sAbility = "Cha";
                 nAbility = JsonGetInt(GffGetByte(jHenchman, sAbility)) - 1;
                 jHenchman = GffReplaceByte(jHenchman, sAbility, nAbility);
-                WriteTimestampedLogEntry("pinc_henchmen, 1311, Removing " + sAbility + " level bonus ability score point.");
+                WriteTimestampedLogEntry("pinc_henchmen, 1314, Removing " + sAbility + " level bonus ability score point.");
             }
             jLvlStatList = JsonArrayDel(jLvlStatList, nLevel);
             // Note: nLevel is not incremented since we are removing the previous level.
@@ -1320,23 +1339,20 @@ object ResetCharacter(object oPC, object oHenchman)
     }
     jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC, 1);
     int nHitPoints = StringToInt(Get2DAString("classes", "HitDie", nClass));
-    WriteTimestampedLogEntry("inc_henchmen, 1316, Starting HP: " + IntToString(nHitPoints));
     int nConstitution = JsonGetInt(GffGetByte(jHenchman, "Con"));
     int nRace = JsonGetInt(GffGetByte(jHenchman, "Race"));
     nConstitution += StringToInt(Get2DAString("racialtypes", "ConAdjust", nRace));
-    WriteTimestampedLogEntry("inc_henchmen, 1318, Constitution: " + IntToString(nConstitution));
     if(nConstitution > 9) nHitPoints += (nConstitution - 10) / 2;
     else nHitPoints += (nConstitution - 11) / 2;
-    WriteTimestampedLogEntry("inc_henchmen, 1321, Setting Health: " + IntToString(nHitPoints));
     jHenchman = GffReplaceShort(jHenchman, "CurrentHitPoints", nHitPoints);
     jHenchman = GffReplaceShort(jHenchman, "HitPoints", nHitPoints);
     jHenchman = GffReplaceShort(jHenchman, "MaxHitPoints", nHitPoints);
-    jHenchman = ResetSkills(jHenchman, oHenchman);
+    jHenchman = ResetSkills(jHenchman, oHenchman, 1);
     jHenchman = ResetFeats(jHenchman, oHenchman);
     jClass = ResetSpellsKnown(jClass, oHenchman);
     jClassList = JsonArraySet(jClassList, 0, jClass);
     jHenchman = GffReplaceList(jHenchman, "ClassList", jClassList);
-    //WriteTimestampedLogEntry("pinc_henchmen 1331, jHenchman: " + JsonDump(jHenchman, 4));
+    //WriteTimestampedLogEntry("pinc_henchmen 1348, jHenchman: " + JsonDump(jHenchman, 4));
     location lLocation = GetLocation(oHenchman);
     int nFamiliar, nCompanion;
     object oCompanion = GetAssociate(ASSOCIATE_TYPE_FAMILIAR, oHenchman);
@@ -1357,13 +1373,13 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     // Group 1 (Portrait)******************************************************* 151 / 73
     // Group 1 Row 1 *********************************************************** 350 / 91
     json jGroupRow = JsonArrayInsert(JsonArray(), NuiSpacer());
-    jGroupRow = CreateTextEditBox (jGroupRow, "name_placeholder", "char_name", 15, FALSE, 140.0, 20.0);
+    jGroupRow = CreateTextEditBox (jGroupRow, "name_placeholder", "char_name", 50, FALSE, 140.0, 20.0);
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
     // Add the group row to the group column.
     json jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
     // Group 1 Row 1 *********************************************************** 350 / 91
     jGroupRow = JsonArrayInsert(JsonArray(), NuiSpacer());
-    jGroupRow = CreateTextEditBox (jGroupRow, "port_placeholder", "port_name", 15, FALSE, 140.0, 20.0, "port_tooltip");
+    jGroupRow = CreateTextEditBox (jGroupRow, "port_placeholder", "port_name", 16, FALSE, 140.0, 20.0, "port_tooltip");
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
     // Add the group row to the group column.
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
@@ -1518,11 +1534,13 @@ void CreateCharacterEditGUIPanel(object oPC, object oHenchman)
     NuiSetBindWatch(oPC, nToken, "cmb_class_selected", bNoClass);
     NuiSetBind(oPC, nToken, "cmb_class_event", JsonBool(bNoClass));
     int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1));
+    //SendMessageToPC(oPC, "nPackage: " + IntToString(nPackage) + " nSelection: " + IntToString(GetSelectionByPackage2DA(sClass, nPackage)));
     if(nPackage == 0)
     {
         nPackage = GetPackageBySelection2DA(sClass, 0);
         SetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nClassOption + 1), nPackage);
     }
+    //SendMessageToPC(oPC, "nPackage: " + IntToString(nPackage) + " sClass: " + sClass);
     NuiSetBind(oPC, nToken, "cmb_package_selected", JsonInt(GetSelectionByPackage2DA(sClass, nPackage)));
     NuiSetBindWatch(oPC, nToken, "cmb_package_selected", bNoClass);
     NuiSetBind(oPC, nToken, "cmb_package_event", JsonBool(bNoClass));
@@ -1553,4 +1571,3 @@ void CreateCharacterDescriptionNUI(object oPC, string sName, string sIcon, strin
     // Row 2
     NuiSetBind(oPC, nToken, "btn_ok_event", JsonBool(TRUE));
 }
-

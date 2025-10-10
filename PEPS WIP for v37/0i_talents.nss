@@ -219,13 +219,13 @@ int ai_GetHasTalent(object oCreature, int nTalent);
 // Type 4)item 0-type, 1-spell, 2-item object, 3-level, 4-slot.
 // jJsonLevel is the level to place the talent in the json array
 //     maybe different then the talents actual level which is passed in nLevel.
-void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bBuff, int bDisablePreBuffs, object oItem = OBJECT_INVALID);
+void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bBuff, int bPreBuff, int bFullBuff, object oItem = OBJECT_INVALID);
 // Removes a talent nSlotIndex from jLevel in jCategory.
 void ai_RemoveTalent(object oCreature, json jCategory, json jLevel, string sCategory, int nLevel, int nSlotIndex);
 // Saves a creatures talents to variables upon them for combat use.
 // bMonster will check to see if they should be buffed when we set the talents.
-// bDisablePrebuffs - Tells the talent system
-void ai_SetCreatureTalents(object oCreature, int bMonster, int bDisablePreBuffs = FALSE);
+// bForceTalentSetup - Tells the talent system to force a talent setup but no Buffing.
+void ai_SetCreatureTalents(object oCreature, int bMonster, int bForceTalentSetup = FALSE);
 // Return TRUE if oCreature spontaneously casts a cure spell from a talent in sCategory.
 int ai_UseSpontaneousCureTalentFromCategory(object oCreature, string sCategory, int nInMelee, int nDamage, object oTarget = OBJECT_INVALID);
 // Returns TRUE if oCreature uses jTalent on oTarget.
@@ -2044,10 +2044,8 @@ int ai_GetHasTalent(object oCreature, int nTalent)
 object ai_CheckTalentForBuffing(object oCreature, string sCategory, int nSpell)
 {
     // Should we buff this monster caster? Added legacy code just in case.
-    if((sCategory == "P" || sCategory == "E" ||
-       (sCategory == "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON))) &&
-       (GetLocalInt(GetModule(), AI_RULE_BUFF_MONSTERS) ||
-        GetLocalInt(oCreature, "NW_GENERIC_MASTER") & 0x04000000)) return ai_GetBuffTarget(oCreature, nSpell);
+    if(sCategory == "P" || sCategory == "E" ||
+       (sCategory == "S" && GetLocalInt(GetModule(), AI_RULE_PRESUMMON))) return ai_GetBuffTarget(oCreature, nSpell);
     return OBJECT_INVALID;
 }
 int ai_UseBuffTalent(object oCreature, int nClass, int nLevel, int nSlot, int nSpell, int nType, object oTarget, object oItem)
@@ -2127,7 +2125,7 @@ int ai_SpellRestricted(int nSpell)
     }
     return FALSE;
 }
-void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bMonster, int bDisablePreBuffs, object oItem = OBJECT_INVALID)
+void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int nSlot, int nSpell, int nType, int bMonster, int bPreBuff, int bFullBuff, object oItem = OBJECT_INVALID)
 {
     // Players/Admins can restrict some spells.
     if(ai_SpellRestricted(nSpell)) return;
@@ -2136,10 +2134,10 @@ void ai_SaveTalent(object oCreature, int nClass, int nJsonLevel, int nLevel, int
     // If it is a blank talent or it is an Area of Effect talent we skip.
     if(sCategory == "" || sCategory == "A") return;
     // Check to see if we should be prebuffing.
-    if(bMonster && !bDisablePreBuffs)
+    if(bMonster && bPreBuff)
     {
         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-        if(nSpellBuffDuration == 3)
+        if(nSpellBuffDuration == 3 || (nSpellBuffDuration == 2 && bFullBuff))
         {
             object oTarget = ai_CheckTalentForBuffing(oCreature, sCategory, nSpell);
             if(oTarget != OBJECT_INVALID)
@@ -2213,7 +2211,7 @@ void ai_RemoveTalentLevel(object oCreature, json jCategory, json jLevel, string 
     if(AI_DEBUG) ai_Debug("0i_talents", "1861", "jCategory: " + JsonDump(jCategory, 2));
     SetLocalJson(oCreature, sCategory, jCategory);
 }
-void ai_SetCreatureSpellTalents(object oCreature, int bMonster, int bDisablePreBuffs)
+void ai_SetCreatureSpellTalents(object oCreature, int bMonster, int bPreBuff, int bFullBuff)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1417", GetName(oCreature) + ": Setting Spell Talents for combat [Buff: " +
              IntToString(bMonster) + "].");
@@ -2266,7 +2264,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bMonster, int bDisablePreB
                                 if(nAdjLevel > 9) nAdjLevel = 9;
                             }
                             else nAdjLevel = nLevel; */
-                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster, bDisablePreBuffs);
+                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster, bPreBuff, bFullBuff);
                         }
                         nSlot++;
                     }
@@ -2295,7 +2293,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bMonster, int bDisablePreB
                                  IntToString(GetSpellUsesLeft(oCreature, nClass, nSpell)));
                         if(GetSpellUsesLeft(oCreature, nClass, nSpell) > 0)
                         {
-                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster, bDisablePreBuffs);
+                            ai_SaveTalent(oCreature, nClass, nLevel, nLevel, nSlot, nSpell, AI_TALENT_TYPE_SPELL, bMonster, bPreBuff, bFullBuff);
                         }
                         nSlot++;
                     }
@@ -2307,7 +2305,7 @@ void ai_SetCreatureSpellTalents(object oCreature, int bMonster, int bDisablePreB
         nClass = GetClassByPosition(nClassPosition, oCreature);
     }
 }
-void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bMonster, int bDisablePreBuffs)
+void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bMonster, int bPreBuff, int bFullBuff)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1488", GetName(oCreature) + ": Setting Special Ability Talents for combat.");
     // Cycle through all the creatures special abilities.
@@ -2322,13 +2320,13 @@ void ai_SetCreatureSpecialAbilityTalents(object oCreature, int bMonster, int bDi
             if(GetSpellAbilityReady(oCreature, nSpell))
             {
                 nLevel = StringToInt(Get2DAString("spells", "Innate", nSpell));
-                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_SP_ABILITY, bMonster, bDisablePreBuffs);
+                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_SP_ABILITY, bMonster, bPreBuff, bFullBuff);
             }
             nIndex++;
         }
     }
 }
-void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bDisablePreBuffs, int bEquiped = FALSE)
+void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bPreBuff, int bFullBuff, int bEquiped = FALSE)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1509", "Checking Item properties on " + GetName(oItem));
     // We have established that we can use the item if it is equiped.
@@ -2374,7 +2372,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bD
                 nIprpSubType = GetItemPropertySubType(ipProp);
                 nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
                 nLevel = StringToInt(Get2DAString("iprp_spells", "InnateLvl", nIprpSubType));
-                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, bDisablePreBuffs, oItem);
+                ai_SaveTalent(oCreature, 255, nLevel, nLevel, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, bPreBuff, bFullBuff, oItem);
             }
         }
         else if(nIPType == ITEM_PROPERTY_HEALERS_KIT)
@@ -2385,7 +2383,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bD
             // Must also have ranks in healing kits.
             if(GetSkillRank(SKILL_HEAL, oCreature) > 0)
             {
-                ai_SaveTalent(oCreature, 255, 7, 0, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, bDisablePreBuffs, oItem);
+                ai_SaveTalent(oCreature, 255, 7, 0, nIndex, nSpell, AI_TALENT_TYPE_ITEM, bMonster, bPreBuff, bFullBuff, oItem);
             }
         }
         if(bEquiped)
@@ -2449,7 +2447,7 @@ void ai_CheckItemProperties(object oCreature, object oItem, int bMonster, int bD
     // If any Immunity has been set then we need to save our Immunity json.
     if(bHasItemImmunity) SetLocalJson(oCreature, AI_TALENT_IMMUNITY, jImmunity);
 }
-void ai_SetCreatureItemTalents(object oCreature, int bMonster, int bDisablePreBuffs)
+void ai_SetCreatureItemTalents(object oCreature, int bMonster, int bPreBuff, int bFullBuff)
 {
     if(AI_DEBUG) ai_Debug("0i_talents", "1561", GetName(oCreature) + ": Setting Item Talents for combat.");
     int bEquiped;
@@ -2465,7 +2463,7 @@ void ai_SetCreatureItemTalents(object oCreature, int bMonster, int bDisablePreBu
             // Does the item need to be equiped to use its powers?
             sSlots = Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem));
             if(AI_DEBUG) ai_Debug("0i_talents", "1572", GetName(oItem) + " requires " + Get2DAString("baseitems", "EquipableSlots", GetBaseItemType(oItem)) + " slots.");
-            if(sSlots == "0x00000") ai_CheckItemProperties(oCreature, oItem, bMonster, bDisablePreBuffs);
+            if(sSlots == "0x00000") ai_CheckItemProperties(oCreature, oItem, bMonster, bPreBuff, bFullBuff);
         }
         oItem = GetNextItemInInventory(oCreature);
     }
@@ -2474,29 +2472,31 @@ void ai_SetCreatureItemTalents(object oCreature, int bMonster, int bDisablePreBu
     oItem = GetItemInSlot(nSlot, oCreature);
     while(nSlot < 11)
     {
-        if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bMonster, TRUE);
+        if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bMonster, bPreBuff, bFullBuff, TRUE);
         oItem = GetItemInSlot(++nSlot, oCreature);
     }
     oItem = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oCreature);
-    if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bMonster, TRUE);
+    if(oItem != OBJECT_INVALID) ai_CheckItemProperties(oCreature, oItem, bMonster, bPreBuff, bFullBuff, TRUE);
 }
-void ai_SetCreatureTalents(object oCreature, int bMonster, int bDisablePreBuffs = FALSE)
+void ai_SetCreatureTalents(object oCreature, int bMonster, int bForceTalentSetup = FALSE)
 {
     //json jCreature = ObjectToJson(oCreature);
     //if(AI_DEBUG) ai_Debug("0i_talents", "2072", GetName(oCreature) + " jCreature: " + JsonDump(jCreature, 4));
-    if(GetLocalInt(oCreature, AI_TALENTS_SET) && !bDisablePreBuffs) return;
+    if(GetLocalInt(oCreature, AI_TALENTS_SET) && !bForceTalentSetup) return;
     SetLocalInt(oCreature, AI_TALENTS_SET, TRUE);
     object oModule = GetModule();
+    int bPreBuff = GetLocalInt(GetModule(), AI_RULE_BUFF_MONSTERS) || (GetLocalInt(oCreature, "NW_GENERIC_MASTER") & 0x04000000);
+    int bFullBuff = GetLocalInt(GetModule(), AI_RULE_FULL_BUFF_MONSTERS);
     ai_Counter_Start();
-    ai_SetCreatureSpellTalents(oCreature, bMonster, bDisablePreBuffs);
+    ai_SetCreatureSpellTalents(oCreature, bMonster, bPreBuff, bFullBuff);
     ai_Counter_End(GetName(oCreature) + ": Spell Talents");
-    ai_SetCreatureSpecialAbilityTalents(oCreature, bMonster, bDisablePreBuffs);
+    ai_SetCreatureSpecialAbilityTalents(oCreature, bMonster, bPreBuff, bFullBuff);
     ai_Counter_End(GetName(oCreature) + ": Special Ability Talents");
     DeleteLocalJson(oCreature, AI_TALENT_IMMUNITY);
-    ai_SetCreatureItemTalents(oCreature, bMonster, bDisablePreBuffs);
+    ai_SetCreatureItemTalents(oCreature, bMonster, bPreBuff, bFullBuff);
     ai_Counter_End(GetName(oCreature) + ": Item Talents");
     if(GetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS) &&
-       GetLocalInt(oModule, AI_RULE_PRESUMMON) && bMonster && !bDisablePreBuffs)
+       GetLocalInt(oModule, AI_RULE_PRESUMMON) && bMonster && bPreBuff)
     {
         ai_TrySummonFamiliarTalent(oCreature);
         ai_TrySummonAnimalCompanionTalent(oCreature);

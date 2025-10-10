@@ -63,19 +63,21 @@ void main()
     // *************************  MELEE ATTACKS  *******************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
     oTarget = ai_GetNearestTargetForMeleeCombat (oCreature, nInMelee);
-    if (oTarget != OBJECT_INVALID)
+    if(oTarget != OBJECT_INVALID)
     {
         // If we are using our hands then do a touch attack instead.
-        if (GetItemInSlot (INVENTORY_SLOT_RIGHTHAND) == OBJECT_INVALID)
+        if(GetItemInSlot(INVENTORY_SLOT_RIGHTHAND) == OBJECT_INVALID)
         {
-            if (GetItemInSlot (INVENTORY_SLOT_CWEAPON_L) != OBJECT_INVALID)
+            // If they don't have a claw then we need to do a special attack instead.
+            if(GetItemInSlot(INVENTORY_SLOT_CWEAPON_L) != OBJECT_INVALID)
             {
                 // Randomize so they don't appear synchronized.
                 float fDelay = IntToFloat(Random(2) + 1);
                 DelayCommand(fDelay, ActionCastSpellAtObject (769/*Shadow_Attack*/, oTarget, METAMAGIC_ANY, TRUE));
                 ai_SetLastAction(oCreature, AI_LAST_ACTION_MELEE_ATK);
-                SetLocalObject (oCreature, AI_ATTACKED_PHYSICAL, oTarget);
+                SetLocalObject(oCreature, AI_ATTACKED_PHYSICAL, oTarget);
             }
+            else ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
         }
         else ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
     }

@@ -20,7 +20,7 @@ struct stWeaponAppearance
 };
 // Maximum model number for weapons. Note this will be the 100s and 10s places.
 // The color number uses the ones place. Thus 25 is actually 250.
-const int    ALLOW_CRAFT_NAMES = TRUE;
+const int    ALLOW_CRAFT_NAMES = FALSE;
 const int    CRAFT_MAX_WEAPON_MODEL_NUMBER = 99;
 const string CRAFT_JSON = "CRAFT_JSON";
 const string CRAFT_ORIGINAL_ITEM = "CRAFT_ORIGINAL_ITEM";

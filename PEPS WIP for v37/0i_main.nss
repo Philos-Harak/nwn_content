@@ -131,6 +131,9 @@ void ai_SetAIRules()
         // Allows monsters to prebuff before combat starts.
         SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, AI_PREBUFF);
         jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(AI_PREBUFF));
+        // Allows monsters to prebuff with all spells before combat starts.
+        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, AI_FULL_BUFF);
+        jRules = JsonObjectSet(jRules, AI_RULE_FULL_BUFF_MONSTERS, JsonInt(AI_FULL_BUFF));
         // Allows monsters cast summons spells when prebuffing.
         SetLocalInt(oModule, AI_RULE_PRESUMMON, AI_PRESUMMONS);
         jRules = JsonObjectSet(jRules, AI_RULE_PRESUMMON, JsonInt(AI_PRESUMMONS));
@@ -217,6 +220,9 @@ void ai_SetAIRules()
         // Allows monsters to prebuff before combat starts.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_BUFF_MONSTERS));
         SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bValue);
+        // Allows monsters to buff with all spells before combat starts.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_FULL_BUFF_MONSTERS));
+        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bValue);
         // Allows monsters cast summons spells when prebuffing.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
         SetLocalInt(oModule, AI_RULE_PRESUMMON, bValue);
@@ -1146,7 +1152,7 @@ void ai_SetupDMData(object oPlayer, string sName)
 void ai_CheckDMData(object oPlayer)
 {
     //ai_Debug("0i_main", "898", "Checking data for DM: " + GetName(oPlayer));
-    string sName = ai_RemoveIllegalCharacters(GetName(oPlayer));
+    string sName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPlayer)));
     // ********** Buttons **********
     json jButtons = ai_GetCampaignDbJson("buttons", sName, AI_DM_TABLE);
     // if there is no saved AImodes then set the defaults.
@@ -1289,7 +1295,7 @@ json ai_UpdatePluginsForPC(object oPC)
 json ai_UpdatePluginsForDM(object oPC)
 {
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
-    string sName, sIcon, sDbName = ai_RemoveIllegalCharacters(GetName(oPC));
+    string sName, sIcon, sDbName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)));
     json jServerPlugins = ai_GetCampaignDbJson("plugins");
     ai_CheckDMDataAndInitialize(oPC);
     json jDMPlugin, jDMPlugins = ai_GetCampaignDbJson("plugins", sDbName, AI_DM_TABLE);

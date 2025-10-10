@@ -264,6 +264,11 @@ void main()
                     SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bCheck);
                     jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
                 }
+                else if(sElem == "chbx_full_buff_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bCheck);
+                    jRules = JsonObjectSet(jRules, AI_RULE_FULL_BUFF_MONSTERS, JsonInt(bCheck));
+                }
                 else if(sElem == "chbx_buff_summons_check")
                 {
                     SetLocalInt(oModule, AI_RULE_PRESUMMON, bCheck);

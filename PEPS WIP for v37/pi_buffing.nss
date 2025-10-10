@@ -161,7 +161,7 @@ void main()
     }
     // Create buttons with spells listed.
     int nSpell, nClass, nLevel, nMetamagic, nDomain;
-    string sName, sTargetName, sResRef;
+    string sName, sTargetName, sCasterName, sResRef;
     nCntr = 0;
     nIndex = 0;
     while(nCntr <= BUFF_MAX_SPELLS)
@@ -174,11 +174,13 @@ void main()
             nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
             nMetamagic = JsonGetInt(JsonArrayGet(jSpell, 3));
             nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-            sTargetName = JsonGetString(JsonArrayGet(jSpell, 5));
+            sCasterName = JsonGetString(JsonArrayGet(jSpell, 5));
+            sTargetName = JsonGetString(JsonArrayGet(jSpell, 6));
             sResRef = Get2DAString("spells", "IconResRef", nSpell);
-            sName = "  " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-            sName += " (" + GetStringByStrRef(StringToInt(Get2DAString("classes", "Short", nClass)));
-            sName += " / " + IntToString (nLevel);
+            sName = "  " + sCasterName + " (";
+            sName += GetStringByStrRef(StringToInt(Get2DAString("classes", "Short", nClass)));
+            sName += " / " + IntToString (nLevel) + ") casting ";
+            sName += GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
             if(nMetamagic > 0)
             {
                 if(nMetamagic == METAMAGIC_EMPOWER) sName += " / Empowered";
@@ -189,7 +191,7 @@ void main()
                 else if(nMetamagic == METAMAGIC_STILL) sName += " / Still";
             }
             if(nDomain > 0) sName += " / Domain";
-            sName += ") " + sTargetName;
+            sName += " on " + sTargetName;
             sIndex = IntToString(nIndex++);
             NuiSetBind(oPC, nToken, "btn_spell_" + sIndex + "_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "btn_spell_" + sIndex + "_image", JsonString(sResRef));

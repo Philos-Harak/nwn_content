@@ -32,6 +32,7 @@ void main()
         vector vTarget = GetTargetingModeSelectedPosition();
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
         object oObject = GetLocalObject(oPC, "AI_TARGET_OBJECT");
+        DeleteLocalString(oPC, AI_TARGET_MODE);
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())
         {

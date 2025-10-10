@@ -207,6 +207,7 @@ void ai_CreateMonster(json jCreature, location lLocation, object oModule)
 {
     //WriteTimestampedLogEntry("0i_module, 181, " + JsonDump(jCreature, 1));
     object oCreature = JsonToObject(jCreature, lLocation, OBJECT_INVALID, TRUE);
+    if(AI_DEBUG) ai_Debug("0i_module", "210", "Creating: " + GetName(oCreature));
     // Lets set the new version as spawned so we skip the initial setup again.
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     /*if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY))
@@ -295,6 +296,7 @@ int ai_ChangeMonster(object oCreature, object oModule)
     {
         SetIsDestroyable(TRUE, FALSE, FALSE, oCreature);
         location lLocation = GetLocation(oCreature);
+        if(AI_DEBUG) ai_Debug("0i_module", "299", "Destroying: " + GetName(oCreature));
         DestroyObject(oCreature);
         AssignCommand(oModule, DelayCommand(1.0, ai_CreateMonster(jCreature, lLocation, oModule)));
         DeleteLocalInt(oModule, AI_MONSTER_CHANGED);
@@ -314,6 +316,7 @@ int ai_ChangeMonster(object oCreature, object oModule)
 // Special event scripts for Infinite Dungeons!
 void ai_SetIDMonsterEventScripts(object oCreature)
 {
+    if(GetIsPC(oCreature)) return;
     //if(AI_DEBUG) ai_Debug("0i_module", "433", "Changing " + GetName(oCreature) + "'s Infinte Dungeons event scripts.");
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
@@ -396,6 +399,7 @@ void ai_SetIDMonsterEventScripts(object oCreature)
 // Special event scripts for Infinite Dungeons with PRC!
 void ai_SetPRCIDMonsterEventScripts(object oCreature)
 {
+    if(GetIsPC(oCreature)) return;
     //if(AI_DEBUG) ai_Debug("0i_module", "433", "Changing " + GetName(oCreature) + "'s Infinte Dungeons event scripts for PRC.");
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
@@ -478,6 +482,7 @@ void ai_SetPRCIDMonsterEventScripts(object oCreature)
 // Special event scripts for PRC associates!
 void ai_SetPRCAssociateEventScripts(object oCreature)
 {
+    if(GetIsPC(oCreature)) return;
     //if(AI_DEBUG) ai_Debug("0i_module", "433", "Changing " + GetName(oCreature) + "'s Infinte Dungeons event scripts for PRC.");
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
@@ -535,6 +540,7 @@ void ai_SetPRCAssociateEventScripts(object oCreature)
 }
 void ai_ChangeEventScriptsForMonster(object oCreature)
 {
+    if(GetIsPC(oCreature)) return;
     //********** On Heartbeat **********
     string sScript = GetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
     if(sScript == "0e_c2_1_hb") SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_c2_default1");
@@ -569,6 +575,7 @@ void ai_ChangeEventScriptsForMonster(object oCreature)
 }
 void ai_ChangeEventScriptsForAssociate(object oCreature)
 {
+    if(GetIsPC(oCreature)) return;
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_ch_ac1");
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_NOTICE, "nw_ch_ac2");
     SetEventScript(oCreature, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "nw_ch_ac3");

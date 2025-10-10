@@ -115,7 +115,7 @@ void ai_Philos_SetStealth(object oMaster, object oCreature, string sAssociateTyp
 // Button action for giving commands to associates.
 void ai_DoCommand(object oPC, object oAssociate, int nCommand);
 // Button action to have associate do an action based on the target via OnPlayer Target event.
-void ai_Action(object oPC, object oAssociate);
+void ai_Action(object oPC, object oAssociate, int bPCAI = FALSE);
 // Toggles between normal ai script and special tactic ai scripts.
 void ai_AIScript(object oPC, object oAssociate, string sAssociate, int nToken);
 // Has the PC select a Trap and then place it on the ground from an associate.
@@ -523,6 +523,24 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                     ai_FireHenchman (GetPCSpeaker(), oCreature);
                     PlayVoiceChat (VOICE_CHAT_GOODBYE, oCreature);
                 }
+                else if(AI_PATROL_AHEAD_RADIAL_OPTION)
+                {
+                    if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:10");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
+                        ai_SendMessages(GetName(oCreature) + " has stopped patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                    }
+                    else
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:22:");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, TRUE);
+                        ai_SendMessages(GetName(oCreature) + " is now patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                        ai_ScoutAhead(oCreature);
+                    }
+                }
             }
         }
     }
@@ -773,7 +791,7 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
     if(sPerception == AI_I_SEE_AN_ENEMY || GetObjectSeen(oLastPerceived, oCreature))
     {
         // We are not in combat and we see the enemy so alert our allies!
-        ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
         ai_StartAssociateCombat(oCreature);
@@ -836,7 +854,7 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
         if(d100() < 34)
         {
             // We are not in combat so alert our allies!
-            ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+            ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         }
         SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
@@ -1907,7 +1925,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         }
     }
 }
-void ai_Action(object oPC, object oAssociate)
+void ai_Action(object oPC, object oAssociate, int bPCAI = FALSE)
 {
     if(oPC == oAssociate)
     {
@@ -1920,7 +1938,7 @@ void ai_Action(object oPC, object oAssociate)
         SetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE, oAssociate);
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
         SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
-        if(!GetLocalInt(GetModule(), AI_USING_PRC)) ai_TurnOn(oPC, oPC, "pc");
+        if(!GetLocalInt(GetModule(), AI_USING_PRC) && bPCAI) ai_TurnOn(oPC, oPC, "pc");
         ai_SendMessages("Select an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -2145,7 +2163,7 @@ void ai_ChangeCameraView(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE", oAssociate);
         AttachCamera(oPC, oAssociate);
-        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate);
+        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate, TRUE);
     }
 }
 void ai_SelectCameraView(object oPC)

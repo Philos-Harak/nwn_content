@@ -410,7 +410,8 @@ void ai_CreateAIMainNUI(object oPC)
         jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
         jGroupRow = CreateLabel(jGroupRow, "meters is the distance a monster can respond to allies.", "lbl_perception_distance", 411.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can prebuff before combat starts.", "chbx_buff_monsters", 450.0, 20.0);
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters buff before combat starts.", "chbx_buff_monsters", 275.0, 20.0, "chbx_buff_monsters_tooltip");
+        jGroupRow = CreateCheckBox(jGroupRow, " Use all buff spells instead!", "chbx_full_buff", 210.0, 20.0, "chbx_full_buff_tooltip");
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = CreateCheckBox(JsonArray(), " Monsters can use summons before combat starts.", "chbx_buff_summons", 450.0, 20.0);
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
@@ -450,7 +451,7 @@ void ai_CreateAIMainNUI(object oPC)
     float fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sName = GetName(oPC);
+    string sName = ai_StripColorCodes(GetName(oPC));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, AI_MAIN_NUI, sName + " PEPS Main Menu",
@@ -537,9 +538,15 @@ void ai_CreateAIMainNUI(object oPC)
         NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
         NuiSetBindWatch(oPC, nToken, "txt_ai_difficulty", TRUE);
         NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
-        NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
+        int bMonsterBuff = GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS);
+        NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(bMonsterBuff));
         NuiSetBindWatch(oPC, nToken, "chbx_buff_monsters_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "chbx_buff_monsters_tooltip", JsonString("  Monsters will cast all longer duration buff spells just before combat starts."));
+        NuiSetBind(oPC, nToken, "chbx_full_buff_check", JsonBool(GetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS)));
+        NuiSetBindWatch(oPC, nToken, "chbx_full_buff_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_full_buff_event", JsonBool(bMonsterBuff));
+        NuiSetBind(oPC, nToken, "chbx_full_buff_tooltip", JsonString("  Monsters will cast all buff spells just before combat starts! VERY DIFFICULTY!"));
         NuiSetBind(oPC, nToken, "chbx_buff_summons_check", JsonBool(GetLocalInt(oModule, AI_RULE_PRESUMMON)));
         NuiSetBindWatch(oPC, nToken, "chbx_buff_summons_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_summons_event", JsonBool(TRUE));
@@ -1027,7 +1034,7 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
     }
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sName = GetName(oAssociate);
+    string sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_COMMAND_NUI, sName + " Command Menu",
@@ -1466,7 +1473,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
         fHeight += 28.0;
     }
     // Row 3 ******************************************************************* 500 / 101
-    bRight = !ai_GetDMAIAccessButton(BTN_AI_FOR_PC);
+    bRight = TRUE;//!ai_GetDMAIAccessButton(BTN_AI_FOR_PC);
     bLeft = !ai_GetDMAIAccessButton(BTN_AI_REDUCE_SPEECH);
     if(bRight || bLeft)
     {
@@ -1759,7 +1766,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     }
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sText, sName = GetName(oAssociate);
+    string sText, sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_NUI, sName + " AI Menu",
@@ -1828,7 +1835,7 @@ void ai_CreateAssociateAINUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_loot_filter", JsonInt(TRUE));
     // Row 3
     // Only activate ai on/off if this is for the pc.
-    if(bIsPC && ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) == "")
+    if(bIsPC && TRUE)//ResManGetAliasFor("prc_ai_fam_percp", RESTYPE_NCS) == "")
     {
         NuiSetBind(oPC, nToken, "chbx_ai_check", JsonBool(bAI));
         NuiSetBindWatch (oPC, nToken, "chbx_ai_check", TRUE);
@@ -3196,7 +3203,7 @@ void ai_CreateWidgetNUI(object oPC, object oAssociate)
     json jLayout;
     int nToken, bBool;
     string sHeal, sText, sRange;
-    string sName = GetName(oAssociate);
+    string sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     if(bVertical)
@@ -3341,7 +3348,7 @@ void ai_CreateLootFilterNUI(object oPC, object oAssociate)
     }
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sText, sName = GetName(oAssociate);
+    string sText, sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_LOOTFILTER_NUI, sName + " Loot Filter",
@@ -3419,7 +3426,7 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     DelayCommand (2.0, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 244 / 73
-    string sName = GetName(oAssociate);
+    string sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
@@ -3586,7 +3593,7 @@ void ai_CreatePluginNUI(object oPC)
     }
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    sName = GetName(oPC);
+    sName = ai_StripColorCodes(GetName(oPC));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, AI_PLUGIN_NUI, sName + " PEPS Plugin Manager",
@@ -3713,7 +3720,7 @@ json ai_CheckItemAbilities(json jQuickListArray, object oCreature, object oItem,
                         if(nCharges) nUses = nCharges;
                         else nUses = nPerDay;
                     }
-                    sSpellIcon = Get2DAString("spells", "iConResRef", nSpell);
+                    sSpellIcon = Get2DAString("spells", "IconResRef", nSpell);
                 }
                 jSpell_Icon = JsonArrayInsert(jSpell_Icon, JsonString(sSpellIcon));
                 jSpell_Text = JsonArrayInsert(jSpell_Text, JsonString(sSpellName));
@@ -3861,7 +3868,7 @@ void ai_CreateQuickWidgetSelectionNUI(object oPC, object oAssociate)
     }
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    string sText, sName = GetName(oAssociate);
+    string sText, sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, sAssociateType + AI_QUICK_WIDGET_NUI, sName + " Quick Widget Menu",
@@ -4423,7 +4430,7 @@ void ai_CreateSpellMemorizationNUI(object oPC, object oAssociate)
         fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
         fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     }
-    string sText, sName = GetName(oAssociate);
+    string sText, sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     // Set the Layout of the window.
@@ -4745,7 +4752,7 @@ void ai_CreateSpellKnownNUI(object oPC, object oAssociate)
         fX = JsonGetFloat(JsonObjectGet(jLocations, "x"));
         fY = JsonGetFloat(JsonObjectGet(jLocations, "y"));
     }
-    string sText, sName = GetName(oAssociate);
+    string sText, sName = ai_StripColorCodes(GetName(oAssociate));
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     // Set the Layout of the window.

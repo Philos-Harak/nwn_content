@@ -282,6 +282,8 @@ void ai_CreateDMOptionsNUI(object oPC)
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 ******************************************************************* 500 / 129
     jRow = CreateButton(JsonArray(), "Plugin Manager", "btn_plugin_manager", 160.0f, 20.0f, -1.0, "btn_plugin_manager_tooltip");
+    //jRow = JsonArrayInsert(jRow, NuiSpacer());
+    //jRow = CreateButtonSelect(jRow, "Effect Icons", "btn_effect_icon", 160.0f, 20.0f, "btn_effect_icon_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Widget Manager", "btn_widget_manager", 160.0f, 20.0f, -1.0, "btn_widget_manager_tooltip");
     // Add row to the column.
@@ -331,7 +333,8 @@ void ai_CreateDMOptionsNUI(object oPC)
         jGroupRow = CreateTextEditBox(JsonArray(), "sPlaceHolder", "txt_perception_distance", 2, FALSE, 35.0f, 20.0f, "txt_perception_distance_tooltip");
         jGroupRow = CreateLabel(jGroupRow, "meters is the distance a monster can respond to allies.", "lbl_perception_distance", 411.0f, 20.0f, NUI_HALIGN_LEFT, 0, 0.0, "txt_perception_distance_tooltip");
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-        jGroupRow = CreateCheckBox(JsonArray(), " Monsters can prebuff before combat starts.", "chbx_buff_monsters", 450.0, 20.0);
+        jGroupRow = CreateCheckBox(JsonArray(), " Monsters buff before combat starts.", "chbx_buff_monsters", 275.0, 20.0, "chbx_buff_monsters_tooltip");
+        jGroupRow = CreateCheckBox(jGroupRow, " Use all buff spells instead!", "chbx_full_buff", 210.0, 20.0, "chbx_full_buff_tooltip");
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
         jGroupRow = CreateCheckBox(JsonArray(), " Monsters can use summons before combat starts.", "chbx_buff_summons", 450.0, 20.0);
         jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
@@ -423,6 +426,10 @@ void ai_CreateDMOptionsNUI(object oPC)
     // Row 3
     NuiSetBind(oPC, nToken, "btn_plugin_manager_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_plugin_manager_tooltip", JsonString("  Manages external executable scripts."));
+    int bEffectIcon = ai_GetMagicMode(oPC, AI_MAGIC_EFFECT_ICON_REPORT);
+    //NuiSetBind(oPC, nToken, "btn_effect_icon", JsonBool (bEffectIcon));
+    //NuiSetBind(oPC, nToken, "btn_effect_icon_event", JsonBool(TRUE));
+    //NuiSetBind(oPC, nToken, "btn_effect_icon_tooltip", JsonString("  When on sends effect icon reports to the chat screen."));
     NuiSetBind(oPC, nToken, "btn_widget_manager_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_widget_manager_tooltip", JsonString("  Manages widgets the players have access to."));
     // Row 3 Label for AI RULES
@@ -448,9 +455,15 @@ void ai_CreateDMOptionsNUI(object oPC)
         NuiSetBind(oPC, nToken, "txt_ai_difficulty_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_ai_difficulty", JsonString(IntToString(GetLocalInt(oModule, AI_RULE_AI_DIFFICULTY))));
         NuiSetBindWatch(oPC, nToken, "txt_ai_difficulty", TRUE);
-        NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS)));
+        int bMonsterBuff = GetLocalInt(oModule, AI_RULE_BUFF_MONSTERS);
+        NuiSetBind(oPC, nToken, "chbx_buff_monsters_check", JsonBool(bMonsterBuff));
         NuiSetBindWatch(oPC, nToken, "chbx_buff_monsters_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_monsters_event", JsonBool(TRUE));
+        NuiSetBind(oPC, nToken, "chbx_buff_monsters_tooltip", JsonString("  Monsters will cast all longer duration buff spells just before combat starts."));
+        NuiSetBind(oPC, nToken, "chbx_full_buff_check", JsonBool(GetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS)));
+        NuiSetBindWatch(oPC, nToken, "chbx_full_buff_check", TRUE);
+        NuiSetBind(oPC, nToken, "chbx_full_buff_event", JsonBool(bMonsterBuff));
+        NuiSetBind(oPC, nToken, "chbx_full_buff_tooltip", JsonString("  Monsters will cast all buff spells just before combat starts! VERY DIFFICULTY!"));
         NuiSetBind(oPC, nToken, "chbx_buff_summons_check", JsonBool(GetLocalInt(oModule, AI_RULE_PRESUMMON)));
         NuiSetBindWatch(oPC, nToken, "chbx_buff_summons_check", TRUE);
         NuiSetBind(oPC, nToken, "chbx_buff_summons_event", JsonBool(TRUE));

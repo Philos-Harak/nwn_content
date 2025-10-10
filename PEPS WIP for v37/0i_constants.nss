@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.27.25 test";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:09.07.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -43,6 +43,8 @@ const float AI_HENCHMAN_BUFF_DELAY = 0.2;
 const int AI_MORAL_CHECKS = FALSE;
 // Allows monsters to prebuff before combat starts.
 const int AI_PREBUFF = TRUE;
+// Allows monsters to buff with all spells before combat starts. VERY DIFFICULT!
+const int AI_FULL_BUFF = FALSE;
 // Allows monsters cast summons spells when prebuffing.
 const int AI_PRESUMMONS = TRUE;
 // Allows monsters to use tactical AI scripts such as ambush, flanker, ranged.
@@ -111,8 +113,11 @@ const int AI_SCOUT_AHEAD_ON = TRUE;
 const int AI_OPEN_INVENTORY = TRUE;
 // Allows players to have associates pickup loot.
 const int AI_PICKUP_LOOT = TRUE;
-// Allows players to remove a henchman.
+// Allows players to remove a henchman through PEPS.
 const int AI_REMOVE_HENCHMAN_ON = FALSE;
+// Allows players to toggle patrolling ahead via the radial menu for remove henchman.
+// Used on my server as a way to toggle patrolling ahead via the radial menu.
+const int AI_PATROL_AHEAD_RADIAL_OPTION = TRUE;
 //*****************************  Health Constants  *****************************
 // % of health for when a creature is considered wounded.
 const int AI_HEALTH_WOUNDED = 50;
@@ -597,6 +602,8 @@ const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
 const string AI_RULE_MORAL_CHECKS = "AI_RULE_MORAL_CHECKS";
 // Allows monsters to prebuff before combat starts.
 const string AI_RULE_BUFF_MONSTERS = "AI_RULE_BUFF_MONSTERS";
+// Allows monsters to prebuff with all defensive spells before combat starts.
+const string AI_RULE_FULL_BUFF_MONSTERS = "AI_RULE_FULL_BUFF_MONSTERS";
 // Allows monsters to use the ambush AI scripts.
 const string AI_RULE_AMBUSH = "AI_RULE_AMBUSH";
 // Enemies may summon familiars and Animal companions and will be randomized.

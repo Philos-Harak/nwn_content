@@ -259,13 +259,12 @@ json GetBuffDatabaseJson (object oPlayer, string sDataField, string sTag)
     if(SqlStep(sql)) return SqlGetJson(sql, 0);
     else return JsonArray();
 }
-void CastBuffSpell (object oPC, object oTarget, int nSpell, int nClass, int nMetamagic, int nDomain, string sList, string sName)
+void CastBuffSpell(object oPC, object oCaster, object oTarget, int nSpell, int nClass, int nMetamagic, int nDomain, string sList, string sName)
 {
-    string sTargetName;
-    if(oPC == oTarget) sTargetName = "myself.";
-    else sTargetName = GetName(oTarget);
-    ai_SendMessages("Quick Buffing: " + sName + " on " + sTargetName, AI_COLOR_GREEN, oPC);
-    AssignCommand(oPC, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, TRUE, nClass));
+    string sCasterName = GetName(oCaster);
+    string sTargetName = GetName(oTarget);
+    ai_SendMessages(sCasterName + " is quick buffing " + sName + " on " + sTargetName, AI_COLOR_GREEN, oPC);
+    AssignCommand(oCaster, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, TRUE, nClass));
 }
 void CastSavedBuffSpells(object oPC)
 {
@@ -329,58 +328,78 @@ void CastSavedBuffSpells(object oPC)
                 nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
                 nMetamagic = JsonGetInt(JsonArrayGet(jSpell, 3));
                 nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-                // We save the target's name then look them up by it.
-                string sTargetName = JsonGetString(JsonArrayGet(jSpell, 5));
-                object oTarget;
-                location lLocation = GetLocation(oPC);
-                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
-                else
-                {
-                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
-                    while(oTarget != OBJECT_INVALID)
-                    {
-                        if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
-                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
-                    }
-                }
                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                if(oTarget == OBJECT_INVALID)
+                location lLocation = GetLocation(oPC);
+                // Saved the Caster's name so we can find them to cast the spell.
+                string sCasterName = JsonGetString(JsonArrayGet(jSpell, 5));
+                object oCaster;
+                if(sCasterName == "" || sCasterName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oCaster = oPC;
+                else
                 {
-                    DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sTargetName + " is not here!", AI_COLOR_RED, oPC));
+                    oCaster = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                    while(oCaster != OBJECT_INVALID)
+                    {
+                        if(sCasterName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oCaster)))) break;
+                        oCaster = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                    }
+                }
+                if(oCaster == OBJECT_INVALID)
+                {
+                    DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sCasterName + " is not here!", AI_COLOR_RED, oPC));
                 }
                 else
                 {
-                    if(nMetamagic > 0)
+                    // Saved the target's name so we can find them to cast the spell on.
+                    string sTargetName = JsonGetString(JsonArrayGet(jSpell, 6));
+                    object oTarget;
+                    if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
+                    else
                     {
-                        if(nMetamagic == METAMAGIC_EMPOWER) sName += " (Empowered)";
-                        else if(nMetamagic == METAMAGIC_EXTEND) sName += " (Extended)";
-                        else if(nMetamagic == METAMAGIC_MAXIMIZE) sName += " (Maximized)";
-                        else if(nMetamagic == METAMAGIC_QUICKEN) sName += " (Quickened)";
-                        else if(nMetamagic == METAMAGIC_SILENT) sName += " (Silent)";
-                        else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
+                        oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                        while(oTarget != OBJECT_INVALID)
+                        {
+                            if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
+                            oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                        }
                     }
-                    nSpellReady = GetSpellReady(oPC, nSpell, nClass, nLevel, nMetamagic, nDomain);
-                    if(nSpellReady == TRUE)
+                    if(oTarget == OBJECT_INVALID)
                     {
-                        DelayCommand(fDelay, CastBuffSpell(oPC, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName));
+                        DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sTargetName + " is not here!", AI_COLOR_RED, oPC));
                     }
-                    else if(nSpellReady == -1)
+                    else
                     {
-                        DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because it is not ready to cast!", AI_COLOR_RED, oPC));
+                        if(nMetamagic > 0)
+                        {
+                            if(nMetamagic == METAMAGIC_EMPOWER) sName += " (Empowered)";
+                            else if(nMetamagic == METAMAGIC_EXTEND) sName += " (Extended)";
+                            else if(nMetamagic == METAMAGIC_MAXIMIZE) sName += " (Maximized)";
+                            else if(nMetamagic == METAMAGIC_QUICKEN) sName += " (Quickened)";
+                            else if(nMetamagic == METAMAGIC_SILENT) sName += " (Silent)";
+                            else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
+                        }
+                        nSpellReady = GetSpellReady(oCaster, nSpell, nClass, nLevel, nMetamagic, nDomain);
+                        if(nSpellReady == TRUE)
+                        {
+                            DelayCommand(fDelay, CastBuffSpell(oPC, oCaster, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName));
+                        }
+                        else if(nSpellReady == -1)
+                        {
+                            DelayCommand(fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because it is not ready to cast!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -2)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because it is not memorized!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -3)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because there are no spell slots of that level left!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -4)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + "cannot quick cast " + sName + " because that spell is not known.", AI_COLOR_RED, oPC));
+                        }
+                        fDelay += 0.1f;
                     }
-                    else if(nSpellReady == -2)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because it is not memorized!", AI_COLOR_RED, oPC));
-                    }
-                    else if(nSpellReady == -3)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because there are no spell slots of that level left!", AI_COLOR_RED, oPC));
-                    }
-                    else if(nSpellReady == -4)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because that spell is not known.", AI_COLOR_RED, oPC));
-                    }
-                    fDelay += 0.1f;
                 }
             }
             else break;
