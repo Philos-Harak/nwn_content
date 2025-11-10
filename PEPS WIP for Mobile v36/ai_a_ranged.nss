@@ -68,17 +68,17 @@ void main()
                     if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
                     if(oTarget == OBJECT_INVALID) oTarget == ai_GetRangedTarget(oCreature);
                     if(oTarget == OBJECT_INVALID && ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
-                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature);
                 }
                 else
                 {
                     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
                     if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_MELEE);
-                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTarget(oCreature, AI_RANGE_MELEE);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRPhysicalTarget(oCreature, AI_RANGE_MELEE);
                 }
                 if(oTarget != OBJECT_INVALID)
                 {
-                    if(ai_TryRapidShotFeat(oCreature, oTarget, nInMelee)) return;
+                    if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                     ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                     return;
                 }
@@ -88,7 +88,30 @@ void main()
                     return;
                 }
             }
-            else if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+            else
+            {
+                if(ai_InCombatEquipBestRangedWeapon(oCreature)) return;
+                oTarget = ai_GetEnemyAttackingMe(oCreature);
+                if(oTarget != OBJECT_INVALID)
+                {
+                    if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
+                    if(ai_TrySneakAttack(oCreature, nInMelee)) return;
+                    if(ai_TryWhirlwindFeat(oCreature)) return;
+                    ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+                    return;
+                }
+                else
+                {
+                    oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+                    if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
+                    if(oTarget != OBJECT_INVALID)
+                    {
+                        if(ai_TryMeleeTalents(oCreature, oTarget)) return;
+                        ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+                        return;
+                    }
+                }
+            }
         }
     }
     // ************************** Melee feat attacks *************************
@@ -102,7 +125,12 @@ void main()
             if(ai_TrySneakAttack(oCreature, nInMelee)) return;
             if(ai_TryWhirlwindFeat(oCreature)) return;
             if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
-            if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
+            ai_ActionAttack(oCreature, AI_LAST_ACTION_MELEE_ATK, oTarget);
+            return;
+        }
+        else
+        {
+            oTarget = ai_GetNearestFavoredEnemyTarget(oCreature);
             if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTargetForMeleeCombat(oCreature, nInMelee);
             if(oTarget != OBJECT_INVALID)
             {

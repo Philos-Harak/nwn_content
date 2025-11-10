@@ -32,7 +32,10 @@ int ai_GetIsDungeonMaster(object oCreature);
 // Returns the Player of oAssociate even if oAssociate is the player.
 // If there is no player associated with oAssociate then it returns OBJECT_INVALID.
 object ai_GetPlayerMaster(object oAssociate);
-// Returns the percentage of hit points oCreature has left.
+// Returns the top master of oAssociate, for example a henchmen summons a bat,
+// this will return the henchman's player.
+object ai_GetTopMaster(object oAssociate);
+/// Returns the percentage of hit points oCreature has left.
 int ai_GetPercHPLoss(object oCreature);
 // Returns a rolled result from sDice string.
 // Example: "1d6" will be 1-6 or "3d6" will be 3-18 or 1d6+5 will be 6-11.
@@ -129,6 +132,9 @@ void ai_SetAIRules()
         // Allows monsters to prebuff before combat starts.
         SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, AI_PREBUFF);
         jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(AI_PREBUFF));
+        // Allows monsters to prebuff with all spells before combat starts.
+        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, AI_FULL_BUFF);
+        jRules = JsonObjectSet(jRules, AI_RULE_FULL_BUFF_MONSTERS, JsonInt(AI_FULL_BUFF));
         // Allows monsters cast summons spells when prebuffing.
         SetLocalInt(oModule, AI_RULE_PRESUMMON, AI_PRESUMMONS);
         jRules = JsonObjectSet(jRules, AI_RULE_PRESUMMON, JsonInt(AI_PRESUMMONS));
@@ -215,6 +221,9 @@ void ai_SetAIRules()
         // Allows monsters to prebuff before combat starts.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_BUFF_MONSTERS));
         SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bValue);
+        // Allows monsters to buff with all spells before combat starts.
+        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_FULL_BUFF_MONSTERS));
+        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bValue);
         // Allows monsters cast summons spells when prebuffing.
         bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
         SetLocalInt(oModule, AI_RULE_PRESUMMON, bValue);
@@ -309,11 +318,11 @@ void ai_SetAIRules()
 }
 int ai_GetIsCharacter(object oCreature)
 {
-    return (GetIsPC(oCreature) && !GetIsDM(oCreature) && !GetIsDMPossessed(oCreature));
+    return (GetIsPC(oCreature) && !GetIsDM(oCreature) && !GetIsDMPossessed(oCreature) && !GetIsPlayerDM(oCreature));
 }
 int ai_GetIsDungeonMaster(object oCreature)
 {
-    return (GetIsDM(oCreature) || GetIsDMPossessed(oCreature));
+    return (GetIsDM(oCreature) || GetIsDMPossessed(oCreature) || GetIsPlayerDM(oCreature));
 }
 object ai_GetPlayerMaster(object oAssociate)
 {
@@ -321,6 +330,16 @@ object ai_GetPlayerMaster(object oAssociate)
     object oMaster = GetMaster(oAssociate);
     if(ai_GetIsCharacter(oMaster)) return oMaster;
     return OBJECT_INVALID;
+}
+object ai_GetTopMaster(object oAssociate)
+{
+    object oMaster = GetMaster(oAssociate);
+    while(oMaster != OBJECT_INVALID)
+    {
+        if(GetMaster(oMaster) == OBJECT_INVALID) break;
+        oMaster = GetMaster(oMaster);
+    }
+    return oMaster;
 }
 int ai_GetPercHPLoss(object oCreature)
 {
@@ -792,7 +811,7 @@ float ai_GetAssociateDbFloat(object oPlayer, string sAssociatetype, string sData
 }
 void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, json jData, string sTable = AI_TABLE)
 {
-    //SendMessageToPC(oPlayer, "0i_main, 629, Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
+    //SendMessageToPC(oPlayer, "0i_main, 777, Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
     string sQuery = "UPDATE " + sTable + " SET " + sDataField +
                     " = @data WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
@@ -802,7 +821,7 @@ void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
 }
 json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, string sTable = AI_TABLE)
 {
-    //SendMessageToPC(oPlayer, "0i_main, 638, Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
+    //SendMessageToPC(oPlayer, "0i_main, 787, Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
     string sQuery = "SELECT " + sDataField + " FROM " + sTable + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString (sql, "@name", sAssociateType);
@@ -867,10 +886,10 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
     json jSpells = JsonArray();
-    jSpells = JsonArrayInsert(jSpells, JsonInt(1));
-    jSpells = JsonArrayInsert(jSpells, JsonInt(0));
     jAIData = JsonArrayInsert(jAIData, jSpells);         // 10 - Castable spells.
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(0.1)); // 11 - Delay for casting buff spells.
+    SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, 0.1);
 }
 void ai_SetupLootFilters(object oPlayer, object oAssociate, string sAssociateType)
 {
@@ -981,6 +1000,8 @@ void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType
         SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jValue);
     }
     jAIData = JsonArrayInsert(jAIData, jValue);
+    fValue = GetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
     // ********** LootFilters **********
     json jLootFilters = JsonArray();
@@ -1082,6 +1103,14 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
             ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
             SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jSpellsWidget);
         }
+        json jSpellDelay = JsonArrayGet(jAIData, 11);
+        if(JsonGetType(jSpellDelay) == JSON_TYPE_NULL)
+        {
+            jAIData = JsonArrayInsert(jAIData, JsonFloat(0.1));
+            ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+            SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, 0.1);
+        }
+        else SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, JsonGetFloat(jSpellDelay));
     }
     // ********** LootFilters **********
     json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");
@@ -1142,7 +1171,7 @@ void ai_SetupDMData(object oPlayer, string sName)
 void ai_CheckDMData(object oPlayer)
 {
     //ai_Debug("0i_main", "898", "Checking data for DM: " + GetName(oPlayer));
-    string sName = ai_RemoveIllegalCharacters(GetName(oPlayer));
+    string sName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPlayer)));
     // ********** Buttons **********
     json jButtons = ai_GetCampaignDbJson("buttons", sName, AI_DM_TABLE);
     // if there is no saved AImodes then set the defaults.
@@ -1285,7 +1314,7 @@ json ai_UpdatePluginsForPC(object oPC)
 json ai_UpdatePluginsForDM(object oPC)
 {
     int nJsonType, nCounter, nIndex, bWidget, bAllow;
-    string sName, sIcon, sDbName = ai_RemoveIllegalCharacters(GetName(oPC));
+    string sName, sIcon, sDbName = ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)));
     json jServerPlugins = ai_GetCampaignDbJson("plugins");
     ai_CheckDMDataAndInitialize(oPC);
     json jDMPlugin, jDMPlugins = ai_GetCampaignDbJson("plugins", sDbName, AI_DM_TABLE);
@@ -1325,7 +1354,7 @@ void ai_StartupPlugins(object oPC)
     int bUpdatePlugins;
     string sScript;
     json jPlugins;
-    if(GetIsDM(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
+    if(ai_GetIsDungeonMaster(oPC)) jPlugins = ai_UpdatePluginsForDM(oPC);
     else jPlugins = ai_UpdatePluginsForPC(oPC);
     // We delete this so each mod can be added that legally loads.
     DeleteLocalJson(GetModule(), AI_MONSTER_MOD_JSON);

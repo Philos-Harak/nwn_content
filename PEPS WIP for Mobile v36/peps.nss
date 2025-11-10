@@ -14,7 +14,7 @@
 void main()
 {
     object oPC = GetFirstPC();
-    ai_SetupPlayerTarget(oPC);
+    ai_SetupPlayerTarget();
     ai_SetupModuleGUIEvents(oPC);
     ai_SetAIRules();
     ai_StartupPlugins(oPC);

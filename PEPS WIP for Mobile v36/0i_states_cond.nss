@@ -94,6 +94,7 @@ void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 void ai_SetLastAction(object oCreature, int nAction = AI_LAST_ACTION_NONE)
 {
     SetLocalInt(oCreature, sLastActionVarname, nAction);
+    SetLocalInt(oCreature, sLastActionTimeVarname, ai_GetCurrentTimeStamp());
 }
 int ai_CompareLastAction(object oCreature, int nAction)
 {
@@ -150,7 +151,7 @@ int ai_IsInCombatRound(object oCreature, int nCombatRound = AI_COMBAT_ROUND_IN_S
     // New combat round calculator. If 6 seconds has passed then we are on a new round!
     int nTime = ai_GetCurrentTimeStamp();
     int nCombatRoundTime = nTime - nCombatRoundStart;
-    if(AI_DEBUG) ai_Debug("0i_states_cond", "153", " ai_GetCurrentTimeStamp: " + IntToString(nTime) +
+    if(AI_DEBUG) ai_Debug("0i_states_cond", "153", " nTime + (nTime - Round Start): " + IntToString(nTime) +
              "(" + IntToString(nTime - nCombatRoundStart) + ")");
     if(nCombatRoundTime < nCombatRound) return TRUE;
     ai_EndCombatRound(oCreature);
@@ -200,9 +201,11 @@ int ai_Disabled(object oCreature)
     effect eEffect = GetFirstEffect(oCreature);
     while(GetIsEffectValid(eEffect))
     {
-        switch(GetEffectType(eEffect))
+        switch(GetEffectType(eEffect, TRUE))
         {
+            WriteTimestampedLogEntry("Effect Type: " + IntToString(GetEffectType(eEffect, TRUE)));
             case EFFECT_TYPE_DOMINATED :
+            case EFFECT_TYPE_CUTSCENE_DOMINATED :
             {
                 if(!GetCommandable(oCreature)) SetCommandable(TRUE, oCreature);
                 return FALSE;
@@ -213,6 +216,7 @@ int ai_Disabled(object oCreature)
             case EFFECT_TYPE_CONFUSED :
             case EFFECT_TYPE_FRIGHTENED :
             case EFFECT_TYPE_PARALYZE :
+            case EFFECT_TYPE_CUTSCENE_PARALYZE :
             case EFFECT_TYPE_TURNED :
             case EFFECT_TYPE_CHARMED :
             case EFFECT_TYPE_PETRIFY :

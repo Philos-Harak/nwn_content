@@ -18,8 +18,8 @@ void ResetHenchmanWindows(object oPC, int nToken, object oHenchman)
 }
 void ai_RemovePlayerFreeze(object oPC)
 {
-    DelayCommand(0.5, DeleteLocalInt(oPC, "AI_FREEZE_PLAYER"));
-    DelayCommand(0.5, ai_RemoveTaggedEffects(oPC, "Freeze_Player"));
+    DelayCommand(0.25, DeleteLocalInt(oPC, "AI_FREEZE_PLAYER"));
+    DelayCommand(0.25, ai_RemoveTaggedEffects(oPC, "Freeze_Player"));
 }
 void main()
 {
@@ -32,11 +32,12 @@ void main()
     string sTargetMode = GetLocalString(oPC, AI_TARGET_MODE);
     if(oPC == OBJECT_SELF && sTargetMode != "")
     {
-        // Get the targeting mode data
+        // Get the targeting mode data.
         object oTarget = GetTargetingModeSelectedObject();
         vector vTarget = GetTargetingModeSelectedPosition();
         location lLocation = Location(GetArea(oPC), vTarget, GetFacing(oPC));
         object oObject = GetLocalObject(oPC, "AI_TARGET_OBJECT");
+        DeleteLocalString(oPC, AI_TARGET_MODE);
         // If the user manually exited targeting mode without selecting a target, return
         if(!GetIsObjectValid(oTarget) && vTarget == Vector())
         {
@@ -80,7 +81,7 @@ void main()
         string sElem   = NuiGetEventElement();
         int    nIndex  = NuiGetEventArrayIndex();
         string sWndId  = NuiGetWindowId (oPC, nToken);
-        if(!GetLocalInt(oPC, "AI_FREEZE_PLAYER") && GetLocalInt(oPC, AI_FREEZE_OPTION))
+        if(!GetLocalInt(oPC, "AI_FREEZE_PLAYER") && !GetLocalInt(oPC, AI_UNFREEZE_OPTION))
         {
             SetLocalInt(oPC, "AI_FREEZE_PLAYER", TRUE);
             effect eImmobilize = EffectCutsceneImmobilize();
@@ -219,7 +220,7 @@ void main()
                 }
             }
             //**************************************************************************
-            // Spell Buffing.
+            // Henchmen buttons
             else if (sWndId == "widget_henchman")
             {
                 if (sEvent == "click")
@@ -329,7 +330,10 @@ void main()
                         }
                     }
                     int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nPosition));
-                    if(nPackage == 0) nPackage = GetPackageBySelection2DA(IntToString(nClass), 0);
+                    if(nPackage == 0)
+                    {
+                        nPackage = GetPackageBySelection2DA(IntToString(nClass), 0);
+                    }
                     else if(nPackage == -1)
                     {
                         ai_SendMessages("There is not a valid package for this class!", AI_COLOR_RED, oPC);
@@ -344,6 +348,7 @@ void main()
                     if(JsonGetType(jLvlStatList) == JSON_TYPE_NULL)
                     {
                         RemoveHenchman(oPC, oHenchman);
+                        ChangeToStandardFaction(oHenchman, STANDARD_FACTION_DEFENDER);
                         // Make sure to get a clean faction version of the henchman here.
                         jHenchman = ObjectToJson(oHenchman, TRUE);
                         jHenchman = CreateLevelStatList(jHenchman, oHenchman, oPC);

@@ -155,7 +155,7 @@ void ai_CheckPCStart(object oPC = OBJECT_INVALID, int bForce = FALSE)
         ai_SetAIRules();
         ai_CheckAssociateData(oPC, oPC, "pc");
         ai_StartupPlugins(oPC);
-        ai_SetupPlayerTarget(oPC);
+        ai_SetupPlayerTarget();
         ai_SetupModuleGUIEvents(oPC);
         ai_CreateWidgetNUI(oPC, oPC);
         ai_SetNormalAppearance(oPC);

@@ -17,13 +17,6 @@
 const string AI_FREEZE_PLAYER = "AI_FREEZE_PLAYER";
 
 #include "0i_player_target"
-void ai_EnterAssociateTargetMode(object oPC, object oAssociate)
-{
-    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
-    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
-    SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
-    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-}
 void main()
 {
     object oPC = GetLastPlayerToSelectTarget();
@@ -50,11 +43,7 @@ void main()
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
                 ai_SendMessages("You have exited selecting an action for the party.", AI_COLOR_YELLOW, oPC);
-                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
-                {
-                    if(GetLocalInt(oPC, sGhostModeVarname)) ai_OriginalRemoveAllActionMode(oPC);
-                }
-                else ai_RemoveAllActionMode(oPC);
+                ai_RemoveAllActionMode(oPC);
             }
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
@@ -128,21 +117,10 @@ void main()
                 return;
             }
             // This action makes an associates move to vTarget.
-            if(sTargetMode == "ASSOCIATE_ACTION_ALL")
-            {
-                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
-                {
-                    ai_OriginalActionAllAssociates(oPC, oTarget, lLocation);
-                }
-                else ai_ActionAllAssociates(oPC, oTarget, lLocation);
-            }
+            if(sTargetMode == "ASSOCIATE_ACTION_ALL") ai_ActionAllAssociates(oPC, oTarget, lLocation);
             else if(sTargetMode == "ASSOCIATE_ACTION")
             {
-                if(ResManGetAliasFor("ai_a_default", RESTYPE_NCS) == "")
-                {
-                    AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
-                }
-                else AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
+                AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
             }
             else if(sTargetMode == "ASSOCIATE_FOLLOW_TARGET") ai_SelectFollowTarget(oPC, oAssociate, oTarget);
             else if(sTargetMode == "ASSOCIATE_GET_TRAP") ai_SelectTrap(oPC, oAssociate, oTarget);

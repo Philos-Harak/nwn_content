@@ -32,6 +32,7 @@ void main()
             {
                 ai_ClearCreatureActions();
                 object oTarget = GetLocalObject(oCreature, "AI_ALLY_TARGET_" + IntToString(nTarget));
+                if(AI_DEBUG) ai_Debug("0c_henchmenspell", "36", " nTarget: " + IntToString(nTarget) + " oTarget: " + GetName(oTarget));
                 if(oTarget != OBJECT_INVALID && ai_CheckAndCastSpell(oCreature, nSpell, 0, 0.0f, oTarget, oPC))
                 {
                     DeleteLocalInt(oCreature, "0_SPELL_TO_CAST");

@@ -84,7 +84,7 @@ void main()
             // Set Targeting variables.
             SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
             SetLocalString(oPC, AI_TARGET_MODE, "TEST_DAMAGE_TARGET");
-            EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+            EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
         }
         else if(sTargetMode == "TEST_JUMP")
         {
@@ -213,7 +213,7 @@ void main()
                 // Set Targeting variables.
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_DAMAGE_TARGET");
-                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_HEAL, MOUSECURSOR_NOHEAL);
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
             }
             else if(sElem == "btn_jump")
             {

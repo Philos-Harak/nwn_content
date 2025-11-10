@@ -8,11 +8,9 @@
 #include "0i_menus"
 // Setup an AI OnPlayerTarget Event script while allowing any module onplayer
 // target event script to still work.
-void ai_SetupPlayerTarget(object oCreature);
+void ai_SetupPlayerTarget();
 // Selects a target for oAssocite to follow.
 void ai_AllSelectTarget(object oPC, object oAssociate, object oTarget);
-// Removes the Cutscene ghosts and variables from all associates. For original AI scripts.
-void ai_OriginalRemoveAllActionMode(object oPC);
 // Removes the Cutscene ghosts and Command mode from all associates.
 void ai_RemoveAllActionMode(object oPC);
 // Once a trap has been selected from the associates inventory move to placing the trap.
@@ -30,7 +28,14 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate);
 // Sets oAssociates action mode for nFeat from the quick widget menu
 int ai_SetActionMode(object oAssociate, int nFeat);
 
-void ai_SetupPlayerTarget(object oCreature)
+void ai_EnterAssociateTargetMode(object oPC, object oAssociate)
+{
+    SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
+    SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
+    SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
+    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+}
+void ai_SetupPlayerTarget()
 {
     object oModule = GetModule();
     string sModuleTargetEvent = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET);
@@ -40,129 +45,7 @@ void ai_SetupPlayerTarget(object oCreature)
     }
     SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET, "0e_player_target");
 }
-void ai_OriginalActionAssociate(object oPC, object oTarget, location lLocation)
-{
-    object oAssociate = OBJECT_SELF;
-    if(!GetLocalInt(oAssociate, sGhostModeVarname) && GetLocalInt(oPC, sGhostModeVarname))
-    {
-        effect eGhost = EffectCutsceneGhost();
-        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eGhost, oAssociate);
-        SetLocalInt(oAssociate, sGhostModeVarname, TRUE);
-    }
-    int nObjectType = GetObjectType(oTarget);
-    ai_ClearCreatureActions(TRUE);
-    if(oTarget == GetArea(oPC))
-    {
-        ActionMoveToLocation(lLocation, TRUE);
-        if(GetLocalObject(oPC, AI_FOLLOW_TARGET) == oAssociate)
-        {
-            float fFollowDistance = 3.0;
-            AssignCommand(oPC, ai_ClearCreatureActions());
-            AssignCommand(oPC, ActionForceFollowObject(oAssociate, fFollowDistance));
-        }
-    }
-    else if(nObjectType == OBJECT_TYPE_CREATURE)
-    {
-        if(oTarget != GetLocalObject(oPC, AI_TARGET_ASSOCIATE))
-        {
-            if(GetMaster(oTarget) == oPC)
-            {
-                SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
-                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oTarget);
-                ai_SendMessages(GetName(oTarget) + " is now in Action Mode.", AI_COLOR_YELLOW, oPC);
-            }
-            else ActionMoveToObject(oTarget, TRUE);
-        }
-    }
-    else if(nObjectType == OBJECT_TYPE_DOOR)
-    {
-        if(GetIsTrapped(oTarget) && GetAssociateState(NW_ASC_DISARM_TRAPS, oAssociate))
-        {
-            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
-            if(GetTrapDetectedBy(oTarget, oAssociate))
-            {
-                bkAttemptToDisarmTrap(oTarget);
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                return;
-            }
-        }
-        if(GetLocked(oTarget)) bkAttemptToOpenLock(oTarget);
-        if(GetIsOpen(oTarget))
-        {
-            ActionCloseDoor(oTarget);
-        }
-        else ActionOpenDoor(oTarget);
-    }
-    else if(nObjectType == OBJECT_TYPE_ITEM)
-    {
-        ActionPickUpItem(oTarget);
-    }
-    else if(nObjectType == OBJECT_TYPE_PLACEABLE)
-    {
-        ActionMoveToObject(oTarget, TRUE);
-        if(GetHasInventory(oTarget))
-        {
-            if(GetIsTrapped(oTarget) && GetAssociateState(NW_ASC_RETRY_OPEN_LOCKS, oAssociate))
-            {
-                if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
-                if(GetTrapDetectedBy(oTarget, oAssociate))
-                {
-                    bkAttemptToDisarmTrap(oTarget);
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                    return;
-                }
-                if(GetLocked(oTarget))
-                {
-                    if(GetAssociateState(NW_ASC_RETRY_OPEN_LOCKS, oAssociate))
-                    {
-                        bkAttemptToOpenLock(oTarget);
-                    }
-                    else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
-                    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                    return;
-                }
-                DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
-            }
-            else if(GetLocked(oTarget))
-            {
-                if(GetAssociateState(NW_ASC_RETRY_OPEN_LOCKS, oAssociate))
-                {
-                    bkAttemptToOpenLock(oTarget);
-                }
-                else AssignCommand(oAssociate, ai_HaveCreatureSpeak(oAssociate, 0, "This " + GetName(oTarget) + " is locked!"));
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-                return;
-            }
-            DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
-        }
-        DoPlaceableObjectAction(oTarget, PLACEABLE_ACTION_USE);
-    }
-    else if(nObjectType == OBJECT_TYPE_TRIGGER)
-    {
-        if(GetIsTrapped(oTarget) && GetAssociateState(NW_ASC_RETRY_OPEN_LOCKS, oAssociate))
-        {
-            if(GetTrapDetectedBy(oTarget, oPC)) SetTrapDetectedBy(oTarget, oAssociate);
-            if(GetTrapDetectedBy(oTarget, oAssociate)) bkAttemptToDisarmTrap(oTarget);
-        }
-    }
-    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
-}
-void ai_OriginalActionAllAssociates(object oPC, object oTarget, location lLocation)
-{
-    object oAssociate;
-    int nIndex;
-    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
-    {
-       oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-       if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
-    }
-    for(nIndex = 2; nIndex < 6; nIndex++)
-    {
-        oAssociate = GetAssociate(nIndex, oPC);
-        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_OriginalActionAssociate(oPC, oTarget, lLocation));
-    }
-}
-void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
+void ai_ActionAssociate(object oPC, object oTarget, location lLocation, int bActionAll = FALSE)
 {
     object oAssociate = OBJECT_SELF;
     if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) &&
@@ -258,7 +141,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
                 {
                     if(ai_ReactToTrap(oAssociate, oTarget, TRUE))
                     {
-                        EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+                        ai_EnterAssociateTargetMode(oPC, oAssociate);
                         return;
                     }
 
@@ -291,7 +174,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             if(GetTrapDetectedBy(oTarget, oAssociate)) ai_ReactToTrap(oAssociate, oTarget, TRUE);
         }
     }
-    EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
+    if(!bActionAll) ai_EnterAssociateTargetMode(oPC, oAssociate);
 }
 void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
 {
@@ -341,34 +224,6 @@ void ai_SelectFollowTarget(object oPC, object oAssociate, object oTarget)
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + GetName(oTarget) + " [" + sRange + " meters]");
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
-}
-void ai_OriginalRemoveAllActionMode(object oPC)
-{
-    if(!ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST)) return;
-    object oAssociate;
-    int nIndex;
-    for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
-    {
-       oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-       if(oAssociate != OBJECT_INVALID &&
-          !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
-          GetLocalInt(oAssociate, sGhostModeVarname))
-       {
-            ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
-            DeleteLocalInt(oAssociate, sGhostModeVarname);
-       }
-    }
-    for(nIndex = 2; nIndex < 6; nIndex++)
-    {
-        oAssociate = GetAssociate(nIndex, oPC);
-        if(oAssociate != OBJECT_INVALID &&
-           !ai_GetAIMode(oAssociate, AI_MODE_GHOST) &&
-           GetLocalInt(oAssociate, sGhostModeVarname))
-        {
-            ai_RemoveASpecificEffect(oAssociate, EFFECT_TYPE_CUTSCENEGHOST);
-            DeleteLocalInt(oAssociate, sGhostModeVarname);
-        }
-    }
 }
 void ai_RemoveAllActionMode(object oPC)
 {
@@ -451,8 +306,7 @@ void ai_AddToGroup(object oDM, object oTarget, string sTargetMode)
         NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " [Run]"));
         NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_tooltip", JsonString(sText + " [Run]"));
         NuiSetBind(oDM, NuiFindWindow(oDM, "dm" + AI_COMMAND_NUI), "btn_cmd_group" + sGroup + "_label", JsonString(sText));
-        jGroup = JsonArray();
-        jGroup = JsonArrayInsert(jGroup, JsonInt(1));
+        jGroup = JsonArrayInsert(JsonArray(), JsonInt(1));
     }
     string sUUID = GetObjectUUID(oTarget);
     int nIndex = 1;
@@ -642,17 +496,18 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     {
         object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jSpell, 5)));
         int nBaseItemType = GetBaseItemType(oItem);
+        int nIprpSubType = JsonGetInt(JsonArrayGet(jSpell, 4));
+        itemproperty ipProperty = GetFirstItemProperty(oItem);
+        while(GetIsItemPropertyValid(ipProperty))
+        {
+            if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
+            ipProperty = GetNextItemProperty(oItem);
+        }
         if(Get2DAString("spells", "Range", nSpell) == "P" || // Self
            nBaseItemType == BASE_ITEM_ENCHANTED_POTION ||
-           nBaseItemType == BASE_ITEM_POTIONS)
+           nBaseItemType == BASE_ITEM_POTIONS ||
+           nIprpSubType == IP_CONST_CASTSPELL_UNIQUE_POWER_SELF_ONLY)
         {
-            int nIprpSubType = JsonGetInt(JsonArrayGet(jSpell, 4));
-            itemproperty ipProperty = GetFirstItemProperty(oItem);
-            while(GetIsItemPropertyValid(ipProperty))
-            {
-                if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
-                ipProperty = GetNextItemProperty(oItem);
-            }
             if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
             AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oAssociate));
             DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
@@ -764,6 +619,7 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate)
     {
         NuiDestroy(oPC, nUIToken);
         ai_CreateWidgetNUI(oPC, oAssociate);
+        /* Not sure why I did this?
         if(oPC != oAssociate)
         {
             nUIToken = NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI);
@@ -772,7 +628,7 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate)
                 NuiDestroy(oPC, nUIToken);
                 ai_CreateWidgetNUI(oPC, oPC);
             }
-        }
+        } */
     }
 }
 int ai_SetActionMode(object oAssociate, int nFeat)

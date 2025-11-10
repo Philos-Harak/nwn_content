@@ -123,18 +123,6 @@ void main()
     {
         if(sEvent == "click")
         {
-            if(sElem == "btn_cmd_action") ai_Action(oPC, oAssociate);
-        }
-        if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && GetLocalInt(oPC, AI_FREEZE_OPTION))
-        {
-            SetLocalInt(oPC, AI_FREEZE_PLAYER, TRUE);
-            DelayCommand(0.5, DeleteLocalInt(oPC, AI_FREEZE_PLAYER));
-            effect eImmobilize = EffectCutsceneImmobilize();
-            eImmobilize = TagEffect(eImmobilize, "Freeze_Player");
-            ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eImmobilize, oPC, 0.5);
-        }
-        if(sEvent == "click")
-        {
             if(sElem == "btn_open_main")
             {
                 if(IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI)) ai_CreateAssociateCommandNUI(oPC, oAssociate);
@@ -149,8 +137,58 @@ void main()
                     IsWindowClosed(oPC, AI_MAIN_NUI);
                     IsWindowClosed(oPC, AI_PLUGIN_NUI);
                 }
-                ai_RemovePlayerFreeze(oPC);
+                if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && !GetLocalInt(oPC, AI_UNFREEZE_OPTION))
+                {
+                    SetLocalInt(oPC, AI_FREEZE_PLAYER, TRUE);
+                    effect eImmobilize = EffectCutsceneImmobilize();
+                    eImmobilize = TagEffect(eImmobilize, "Freeze_Player");
+                    ApplyEffectToObject(DURATION_TYPE_PERMANENT, eImmobilize, oPC);
+                }
+                return;
             }
+        }
+        else if(sEvent == "mousedown")
+        {
+            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
+            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
+            {
+                if(sElem == "btn_open_main")
+                {
+                    AssignCommand(oPC, PlaySound("gui_button"));
+                    if(IsWindowClosed(oPC, sAssociateType + AI_NUI)) ai_CreateAssociateAINUI(oPC, oAssociate);
+                    IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_LOOTFILTER_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_COPY_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_SPELL_MEMORIZE_NUI);
+                    IsWindowClosed(oPC, sAssociateType + AI_SPELL_KNOWN_NUI);
+                    if(ai_GetIsCharacter(oAssociate))
+                    {
+                        IsWindowClosed(oPC, AI_MAIN_NUI);
+                        IsWindowClosed(oPC, AI_PLUGIN_NUI);
+                    }
+                    if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && !GetLocalInt(oPC, AI_UNFREEZE_OPTION))
+                    {
+                        SetLocalInt(oPC, AI_FREEZE_PLAYER, TRUE);
+                        effect eImmobilize = EffectCutsceneImmobilize();
+                        eImmobilize = TagEffect(eImmobilize, "Freeze_Player");
+                        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eImmobilize, oPC);
+                    }
+                    return;
+                }
+            }
+        }
+        if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && !GetLocalInt(oPC, AI_UNFREEZE_OPTION))
+        {
+            SetLocalInt(oPC, AI_FREEZE_PLAYER, TRUE);
+            DelayCommand(0.25, DeleteLocalInt(oPC, AI_FREEZE_PLAYER));
+            effect eImmobilize = EffectCutsceneImmobilize();
+            eImmobilize = TagEffect(eImmobilize, "Freeze_Player");
+            ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eImmobilize, oPC, 0.25);
+        }
+        if(sEvent == "click")
+        {
+            if(sElem == "btn_cmd_action") ai_Action(oPC, oAssociate);
             else if(sElem == "btn_ai")
             {
                 if(GetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT) == "xx_pc_1_hb")
@@ -303,6 +341,9 @@ void main()
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
@@ -318,6 +359,9 @@ void main()
                 else if(sElem == "btn_heal_out") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
             }
         }
         else if(sEvent == "mousedown")
@@ -361,7 +405,7 @@ void main()
         }
         return;
     }
-    if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && GetLocalInt(oPC, AI_FREEZE_OPTION))
+    if(!GetLocalInt(oPC, AI_FREEZE_PLAYER) && !GetLocalInt(oPC, AI_UNFREEZE_OPTION))
     {
         SetLocalInt(oPC, AI_FREEZE_PLAYER, TRUE);
         effect eImmobilize = EffectCutsceneImmobilize();
@@ -536,15 +580,15 @@ void main()
             }
             if(sElem == "btn_inc_hp_up")
             {
-                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) + 1;
-                if(nXPScale > 100) nXPScale = 0;
-                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nXPScale)));
+                int nIncHp = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) + 1;
+                if(nIncHp > 500) nIncHp = 0;
+                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nIncHp)));
             }
             if(sElem == "btn_inc_hp_down")
             {
-                int nXPScale = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) - 1;
-                if(nXPScale < 0) nXPScale = 100;
-                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nXPScale)));
+                int nIncHp = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, "txt_inc_hp"))) - 1;
+                if(nIncHp < 0) nIncHp = 500;
+                NuiSetBind(oPC, nToken, "txt_inc_hp", JsonString(IntToString(nIncHp)));
             }
         }
         else if(sEvent == "watch")
@@ -597,7 +641,7 @@ void main()
                 {
                     int nNumber = StringToInt(sText);
                     if(nNumber < 0) nNumber = 0;
-                    else if(nNumber > 100) nNumber = 100;
+                    else if(nNumber > 500) nNumber = 500;
                     SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, nNumber);
                     jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
                 }
@@ -633,6 +677,11 @@ void main()
                 {
                     SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bCheck);
                     jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
+                }
+                else if(sElem == "chbx_full_buff_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bCheck);
+                    jRules = JsonObjectSet(jRules, AI_RULE_FULL_BUFF_MONSTERS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_buff_summons_check")
                 {
@@ -796,14 +845,14 @@ void main()
             }
             else if(sElem == "btn_freeze_player")
             {
-                if(GetLocalInt(oPC, AI_FREEZE_OPTION))
+                if(!GetLocalInt(oPC, AI_UNFREEZE_OPTION))
                 {
-                    DeleteLocalInt(oPC, AI_FREEZE_OPTION);
+                    SetLocalInt(oPC, AI_UNFREEZE_OPTION, TRUE);
                     ai_RemovePlayerFreeze(oPC);
                 }
                 else
                 {
-                    SetLocalInt(oPC, AI_FREEZE_OPTION, TRUE);
+                    DeleteLocalInt(oPC, AI_UNFREEZE_OPTION);
                 }
             }
             else if(sElem == "btn_toggle_assoc_widget")
@@ -910,16 +959,22 @@ void main()
                 DelayCommand(0.0, NuiDestroy(oPC, nToken));
                 ai_CreateSpellKnownNUI(oPC, oAssociate);
             }
+            else if(sElem == "btn_buff_short_up") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+            else if(sElem == "btn_buff_short_down") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
             else if(sElem == "btn_buff_short")
             {
                 ai_Buff_Button(oPC, oAssociate, 2, sAssociateType);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
+            else if(sElem == "btn_buff_long_up") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+            else if(sElem == "btn_buff_long_down") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
             else if(sElem == "btn_buff_long")
             {
                 ai_Buff_Button(oPC, oAssociate, 3, sAssociateType);
                 DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));
             }
+            else if(sElem == "btn_buff_all_up") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+            else if(sElem == "btn_buff_all_down") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
             else if(sElem == "btn_buff_all")
             {
                 ai_Buff_Button(oPC, oAssociate, 1, sAssociateType);
@@ -990,6 +1045,9 @@ void main()
                 if(sElem == "btn_cmd_follow" &&
                    oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
                 else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType, nToken);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType, nToken);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
@@ -997,6 +1055,9 @@ void main()
                 if(sElem == "btn_cmd_follow" &&
                 oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
                 else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType, nToken);
             }
         }
     }

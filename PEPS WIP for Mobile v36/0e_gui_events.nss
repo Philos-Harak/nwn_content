@@ -53,7 +53,7 @@ void main()
                     IsWindowClosed(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
                     IsWindowClosed(oPC, sAssociateType + AI_SPELL_MEMORIZE_NUI);
                     IsWindowClosed(oPC, sAssociateType + AI_SPELL_KNOWN_NUI);
-                    DeleteLocalInt(oPC, "AI_FREEZE_PLAYER");
+                    SetLocalInt(oPC, "AI_UNFREEZE_PLAYER", TRUE);
                     ai_RemoveTaggedEffects(oPC, "Freeze_Player");
                 }
             }

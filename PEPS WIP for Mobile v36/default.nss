@@ -24,7 +24,7 @@ void main()
             ai_StartupPlugins(oCreature);
             ai_CheckDMData(oCreature);
             ai_CreateDMWidgetNUI(oCreature);
-            ai_SetupPlayerTarget(oCreature);
+            ai_SetupPlayerTarget();
         }
     }
 }

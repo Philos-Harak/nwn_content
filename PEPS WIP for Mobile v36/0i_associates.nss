@@ -52,6 +52,8 @@ void ai_OnRested(object oCreature);
 
 // Increments/Decrements the following distance of associates.
 void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
+// Increments/Decrements the Delay in casting buff spells of associates.
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off automatically equiping weapons for oAssociate.
@@ -925,6 +927,26 @@ void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string 
         NuiSetBind(oPC, nToken, "btn_cmd_follow_label", JsonString("Follow Mode [" + sRange + "]"));
         NuiSetBind(oPC, nToken, "btn_follow_target_label", JsonString("Follow Target [" + sRange + "]"));
     }
+}
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0)
+{
+    float fAdjustment = GetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING) + fIncrement;
+    if(fAdjustment > 6.0) fAdjustment = 6.0;
+    else if(fAdjustment < 0.1) fAdjustment = 0.1;
+    SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, fAdjustment);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    jAIData = JsonArraySet(jAIData, 11, JsonFloat(fAdjustment));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    string sDelay = FloatToString(fAdjustment, 0, 1);
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_long_tooltip", "  Buff the party with long duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_short_tooltip", "  Buff the party with short duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_all_tooltip", "  Buff the party with all spells. Cast speed [" + sDelay + "]");
+    NuiSetBind(oPC, nToken, "btn_buff_short_label", JsonString("  Buff the party with all spells. Cast speed [" + sDelay + "]"));
+    NuiSetBind(oPC, nToken, "btn_buff_long_label", JsonString("  Buff the party with all spells. Cast speed [" + sDelay + "]"));
+    NuiSetBind(oPC, nToken, "btn_buff_all_label", JsonString("  Buff the party with all spells. Cast speed [" + sDelay + "]"));
 }
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType)
 {

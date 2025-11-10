@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.26.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:11.10.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -35,14 +35,14 @@ const int AI_MONSTER_HEAL_OUT_COMBAT_CHANCE = 70;
 const int AI_HENCHMAN_WIDGET = TRUE;
 // Change the Custom token number if it conflicts with your server.
 const int AI_BASE_CUSTOM_TOKEN = 1000;
-// Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_BUFF_DELAY = 0.2;
 
 //*******************  These can be changed within the game  *******************
 // Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
 const int AI_MORAL_CHECKS = FALSE;
 // Allows monsters to prebuff before combat starts.
 const int AI_PREBUFF = TRUE;
+// Allows monsters to buff with all spells before combat starts. VERY DIFFICULT!
+const int AI_FULL_BUFF = FALSE;
 // Allows monsters cast summons spells when prebuffing.
 const int AI_PRESUMMONS = TRUE;
 // Allows monsters to use tactical AI scripts such as ambush, flanker, ranged.
@@ -238,6 +238,8 @@ const string AI_IS_INVISIBLE = "AI_IS_INVISIBLE";
 // Constants used in combat to keep track of a creatures last action.
 // 0+ is the last spell cast from the line number in Spells.2da.
 const string sLastActionVarname = "AI_LAST_ACTION";
+// Constants used in combat to keep track of a creatures last action time.
+const string sLastActionTimeVarname = "AI_LAST_ACTION_TIME";
 const int AI_LAST_ACTION_CAST_SPELL = -1;
 const int AI_LAST_ACTION_NONE = -2;
 const int AI_LAST_ACTION_MELEE_ATK = -3;
@@ -525,6 +527,8 @@ const string AI_ASSOCIATE_PERCEPTION = "AI_PERCEPTION_RANGE";
 const string AI_ASSOC_PERCEPTION_DISTANCE = "AI_ASSOC_PERCEPTION_DISTANCE";
 // Variable that holds the open doors range of the henchman.
 const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";
+// Variable that holds the delay for casting buff spells.
+const string AI_DELAY_BUFF_CASTING = "AI_DELAY_BUFF_CASTING";
 // Variable that holds the Spell widgets json data.
 const string AI_SPELLS_WIDGET = "AI_SPELLS_WIDGET";
 // The number of Buff Groups
@@ -595,6 +599,8 @@ const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
 const string AI_RULE_MORAL_CHECKS = "AI_RULE_MORAL_CHECKS";
 // Allows monsters to prebuff before combat starts.
 const string AI_RULE_BUFF_MONSTERS = "AI_RULE_BUFF_MONSTERS";
+// Allows monsters to prebuff with all defensive spells before combat starts.
+const string AI_RULE_FULL_BUFF_MONSTERS = "AI_RULE_FULL_BUFF_MONSTERS";
 // Allows monsters to use the ambush AI scripts.
 const string AI_RULE_AMBUSH = "AI_RULE_AMBUSH";
 // Enemies may summon familiars and Animal companions and will be randomized.

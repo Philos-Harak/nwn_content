@@ -133,7 +133,7 @@ void main()
             {
                 oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_WARRIOR, AI_RANGE_MELEE, AI_ENEMY, bAlwaysAtk);
                 // If we didn't get a target then get any target within range.
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE, AI_ENEMY, bAlwaysAtk);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_MELEE, AI_ENEMY);
             }
             // If not then lets go find someone to attack!
             else
@@ -141,7 +141,7 @@ void main()
                 // Get the nearest enemy.
                 oTarget = ai_GetNearestClassTarget(oCreature, AI_CLASS_TYPE_WARRIOR, AI_RANGE_PERCEPTION, AI_ENEMY, bAlwaysAtk);
                 // If we didn't get a target then get any target within range.
-                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_PERCEPTION, AI_ENEMY, bAlwaysAtk);
+                if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestTarget(oCreature, AI_RANGE_PERCEPTION, AI_ENEMY);
             }
         }
     }

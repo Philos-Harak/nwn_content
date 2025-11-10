@@ -196,7 +196,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
                 {
                     SetLocalInt(oCreature, AI_POLYMORPHED, TRUE);
                     ai_ClearTalents(oCreature);
-                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, TRUE);
+                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, FALSE, FALSE);
                 }
             }
         }
@@ -249,7 +249,7 @@ void ai_DoMonsterCombatRound(object oMonster)
                 {
                     SetLocalInt(oMonster, AI_POLYMORPHED, TRUE);
                     ai_ClearTalents(oMonster);
-                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, TRUE);
+                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, FALSE, FALSE);
                 }
             }
         }
@@ -410,6 +410,17 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
         }
     }
     float fPerceptionDistance, fDistance;
+    // Check to see if the creature is invisible because we cannot hurt them with our weapon.
+    // If so we need to stay away from them! Maybe add weapon swapping code later?
+    if(AI_DEBUG) ai_Debug("0i_actions", "415", GetName(oCreature) + "IsWeaponEffective? " +
+             IntToString(GetIsWeaponEffective(oInvisible)) + " oInvisible: " + GetName(oInvisible));
+    if(!GetIsWeaponEffective(oInvisible))
+    {
+        ai_HaveCreatureSpeak(oCreature, 20, ":21:47:7:");
+        fDistance = GetDistanceBetween(oCreature, oInvisible);
+        if(fDistance < AI_RANGE_LONG) ActionMoveAwayFromObject(oInvisible, TRUE, AI_RANGE_LONG);
+        return TRUE;
+    }
     if(bMonster)
     {
         GetDistanceBetween(oCreature, oInvisible);

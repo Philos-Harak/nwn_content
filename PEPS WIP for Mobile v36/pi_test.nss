@@ -58,7 +58,7 @@ void main()
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
     int nToken = SetWindow(oPC, jLayout, "pi_test_nui", sName + " PEPS Testing Menu",
-                             -1.0, -1.0, 636.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_test");
+                             -1.0, 0.0, 636.0f, fHeight + 12.0f, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_test");
     // Set all binds, events, and watches.
     // Row 1
     NuiSetBind(oPC, nToken, "btn_level_event", JsonBool(TRUE));
