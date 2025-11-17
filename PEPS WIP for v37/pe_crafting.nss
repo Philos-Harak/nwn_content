@@ -8,6 +8,11 @@
 #include "nw_inc_gff"
 #include "0i_main"
 #include "0i_items"
+// Banned list of BaseItemTypes use rows from baseitemtype.2da.
+// Place each one between a : . Example ":21:28:" will not change belts and clubs.
+// Best used for visual effect items like helms.
+const string CRAFT_BANNED_BASEITEMTYPES = ":23:";
+//const string CRAFT_BANNED_BASEITEMTYPES = "::";
 // Maximum model number for all items except weapons.
 const int CRAFT_MAX_MODEL_NUMBER = 999;
 
@@ -100,6 +105,8 @@ void CraftItemInfoEvents(object oPC, int nToken);
 json CreateItemCombo(object oPC, json jRow, string sComboBind);
 json CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind);
 void CreateCreatureCraftingGUIPanel(object oPC, object oTarget);
+// See above for constant that can have base item types added to the list.
+int IfOnBannedBaseItemTypeList(object oPC, object oItem);
 
 int GetColorIDChange(object oItem, int nType, int nIndex, int nChange)
 {
@@ -1238,8 +1245,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 //         " nModelSelected: " + IntToString(nModelSelected));
             }
             // Change the model.
-            WriteTimestampedLogEntry("pe_crafting, 1241, " + GetName(oItem) + " nModelSelected: " +
-                          IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
+            //WriteTimestampedLogEntry("pe_crafting, 1241, " + GetName(oItem) + " nModelSelected: " +
+            //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
             oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
             DestroyObject (oItem);
             AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
@@ -1272,8 +1279,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 // Note: Right Thigh and Left Thigh are backwards so this fixes that!
                 if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
                 else nModelSelected++;
-                WriteTimestampedLogEntry("pe_crafting, 1275, " + GetName(oItem) + " nModelSelected: " +
-                              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
+                //WriteTimestampedLogEntry("pe_crafting, 1275, " + GetName(oItem) + " nModelSelected: " +
+                //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
                 oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
                 DestroyObject(oNewItem);
                 AssignCommand(oTarget, ActionEquipItem(oItem, INVENTORY_SLOT_CHEST));
@@ -1590,6 +1597,7 @@ void SaveCraftedItem(object oPC, object oTarget, int nToken)
 }
 int CanCraftItem(object oPC, object oItem, int nToken, int bPasteCheck = FALSE)
 {
+    if(IfOnBannedBaseItemTypeList(oPC, oItem)) return FALSE;
     // Plot items cannot be changed.
     if(GetPlotFlag(oItem))
     {
@@ -2859,4 +2867,18 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     // Lets make sure we clean up any cool down variables.
     //DeleteLocalInt(oPC, CRAFT_COOL_DOWN);
 }
-
+int IfOnBannedBaseItemTypeList(object oPC, object oItem)
+{
+    int nIndex, nBaseItemType = GetBaseItemType(oItem);
+    int nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, nIndex));
+    while(nBannedBaseItemType)
+    {
+        if(nBaseItemType == nBannedBaseItemType)
+        {
+            ai_SendMessages(GetName(oItem) + " cannot have it's appearance changed!", AI_COLOR_RED, oPC);
+            return TRUE;
+        }
+        nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, ++nIndex));
+    }
+    return FALSE;
+}

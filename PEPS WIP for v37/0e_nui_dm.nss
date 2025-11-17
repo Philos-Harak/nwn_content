@@ -208,10 +208,10 @@ void main()
             {
                 int nMaxHenchmen = StringToInt(JsonGetString(NuiGetBind(oDM, nToken, sElem)));
                 if(nMaxHenchmen < 1) nMaxHenchmen = 1;
-                if(nMaxHenchmen > 12)
+                if(nMaxHenchmen > AI_MAX_HENCHMAN)
                 {
-                    nMaxHenchmen = 12;
-                    ai_SendMessages("The maximum henchmen for this mod is 12!", AI_COLOR_RED, oDM);
+                    nMaxHenchmen = AI_MAX_HENCHMAN;
+                    ai_SendMessages("The maximum henchmen for this mod is " + IntToString(AI_MAX_HENCHMAN) + "!", AI_COLOR_RED, oDM);
                 }
                 SetMaxHenchmen(nMaxHenchmen);
                 json jRules = ai_GetCampaignDbJson("rules");
@@ -243,7 +243,7 @@ void main()
             {
                 int nNumber = StringToInt(JsonGetString(NuiGetBind(oDM, nToken, sElem)));
                 if(nNumber < 0) nNumber = 0;
-                else if(nNumber > 100) nNumber = 100;
+                else if(nNumber > 500) nNumber = 500;
                 SetLocalInt(GetModule(), AI_INCREASE_MONSTERS_HP, nNumber);
                 json jRules = ai_GetCampaignDbJson("rules");
                 jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));

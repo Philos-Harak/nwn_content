@@ -37,6 +37,14 @@ void main()
         case ACTION_CASTSPELL :
         case ACTION_ITEMCASTSPELL :
         case ACTION_COUNTERSPELL : return;
+        case ACTION_ATTACKOBJECT :
+        {
+            if(!ai_GetIsInCombat(oCreature))
+            {
+                ai_ClearCreatureActions();
+                return;
+            }
+        }
         // Might be doing a special action that is not a defined action.
         case ACTION_INVALID :
         {

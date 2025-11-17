@@ -19,18 +19,18 @@ void main()
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 450 / 73
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
-    jRow = CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 300.0f, 30.0f, -1.0, "btn_combat_music_offtooltip");
+    jRow = CreateButton(jRow, "Remove Combat Music from the Module", "btn_combat_music_off", 300.0f, 20.0f, -1.0, "btn_combat_music_offtooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
-    float fHeight = 83.0;
+    float fHeight = 73.0;
     // Row 2 ******************************************************************* 450 / 73
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
-    jRow = CreateButton(jRow, "Auto Daytime", "btn_night_to_day", 300.0f, 30.0f, -1.0, "btn_night_to_day_tooltip");
+    jRow = CreateButton(jRow, "Auto Daytime", "btn_night_to_day", 300.0f, 20.0f, -1.0, "btn_night_to_day_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
-    fHeight += 38.0;
+    fHeight += 28.0;
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = GetName(oPC);
@@ -64,4 +64,5 @@ int StartingUp(object oPC)
     if(!GetLocalInt(oPC, AI_STARTING_UP)) return FALSE;
     return TRUE;
 }
+
 

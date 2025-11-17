@@ -821,7 +821,7 @@ json CreateLevelStatList(json jHenchman, object oHenchman, object oPC, int nLeve
     {
         jLevelArray = JsonArrayInsert(jLevelArray, jLevel);
     }
-    WriteTimestampedLogEntry("pinc_henchmen, 813, Creating LvlStatList for " + GetName(oHenchman));
+    //WriteTimestampedLogEntry("pinc_henchmen, 813, Creating LvlStatList for " + GetName(oHenchman));
     return GffAddList(jHenchman, "LvlStatList", jLevelArray);
 }
 int GetHasJFeat(int nFeat, json jFeatList)

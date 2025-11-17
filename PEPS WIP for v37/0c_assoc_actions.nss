@@ -179,5 +179,22 @@ void main()
         }
         return;
     }
+    else if(sAction == "GetHenchTokens")
+    {
+        int nCount, nCntr = 1;
+        object oHenchman = GetHenchman(oPC, nCntr);
+        while(oHenchman != OBJECT_INVALID && nCntr <= AI_MAX_HENCHMAN)
+        {
+            if(oHenchman == OBJECT_INVALID) break;
+            if(oHenchman != oAssociate)
+            {
+                SetCustomToken(77101 + nCount, GetName(oHenchman));
+                nCount++;
+            }
+            oHenchman = GetHenchman(oPC, ++nCntr);
+        }
+        ai_SetupAllyTargets(oAssociate, oPC);
+        return;
+    }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }

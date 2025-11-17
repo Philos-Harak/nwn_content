@@ -37,6 +37,9 @@ void PopupWidgetBuffGUIPanel(object oPC);
 void main()
 {
     object oPC = OBJECT_SELF;
+    // Set window to not save until it has been created.
+    SetLocalInt(oPC, AI_NO_NUI_SAVE, TRUE);
+    DelayCommand(0.5f, DeleteLocalInt(oPC, AI_NO_NUI_SAVE));
     // Check to make sure the database is setup before we do anything.
     CheckBuffDataAndInitialize(oPC, "menudata");
     json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
@@ -60,6 +63,7 @@ void main()
     jRow = CreateButtonSelect(jRow, "List 2", "btn_list2", 60.0f, 30.0f);
     jRow = CreateButtonSelect(jRow, "List 3", "btn_list3", 60.0f, 30.0f);
     jRow = CreateButtonSelect(jRow, "List 4", "btn_list4", 60.0f, 30.0f);
+    jRow = CreateTextEditBox(jRow, "", "txt_spell_delay", 3, FALSE, 40.0f, 30.0f, "txt_spell_delay_tooltip");
     // Add the row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Buttons) ********************************************************* 121
@@ -103,7 +107,7 @@ void main()
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Get the window location to restore it from the database.
     float fWidth = IntToFloat(nIndex) * 39;
-    if(fWidth < 470.0) fWidth = 470.0;
+    if(fWidth < 530.0) fWidth = 530.0;
     float fX = JsonGetFloat(JsonArrayGet(jMenuData, 1));
     float fY = JsonGetFloat(JsonArrayGet(jMenuData, 2));
     if(fX == 0.0f && fY == 0.0f)
@@ -115,6 +119,8 @@ void main()
     json jLayout = NuiCol(jCol);
     int nToken = SetWindow(oPC, jLayout, "plbuffwin", "Fast Buffing Spells",
                            fX, fY, fWidth, 164.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_buffing");
+    // Set event watches for window inspector and save window location.
+    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the elements to show events.
     int nSelected = GetEventScript(oPC, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT) == "pc_savebuffs";
     NuiSetBind(oPC, nToken, "btn_save", JsonBool(nSelected));
@@ -138,11 +144,22 @@ void main()
     if(sList == "list4") NuiSetBind (oPC, nToken, "btn_list4", JsonBool (TRUE));
     else NuiSetBind (oPC, nToken, "btn_list4", JsonBool(FALSE));
     NuiSetBind(oPC, nToken, "btn_list4_event", JsonBool(TRUE));
+    NuiSetBindWatch(oPC, nToken, "txt_spell_delay", TRUE);
+    string sText = "  Allows you to adjust the speed that spells are cast in [0.1 seconds to 6.0 seconds]";
+    NuiSetBind(oPC, nToken, "txt_spell_delay_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "txt_spell_delay_tooltip", JsonString(sText));
+    CheckBuffDataAndInitialize(oPC, "Delay");
+    sText = GetBuffDatabaseString(oPC, "spells", "Delay");
+    float fDelay = StringToFloat(sText);
+    if(fDelay < 0.1f) fDelay = 0.1f;
+    else if(fDelay > 6.0f) fDelay = 6.0f;
+    sText = FloatToString(fDelay, 0, 1);
+    NuiSetBind(oPC, nToken, "txt_spell_delay", JsonString(sText));
     int nValue = JsonGetInt(JsonArrayGet(jMenuData, 3));
     NuiSetBind(oPC, nToken, "buff_widget_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(nValue));
     NuiSetBindWatch(oPC, nToken, "buff_widget_check", TRUE);
-    string sText = "  Creates a set of 4 buttons on the screen for quick buffing.";
+    sText = "  Creates a set of 4 buttons on the screen for quick buffing.";
     NuiSetBind(oPC, nToken, "buff_widget_tooltip", JsonString(sText));
     nValue = JsonGetInt(JsonArrayGet(jMenuData, 4));
     NuiSetBind(oPC, nToken, "lock_buff_widget_event", JsonBool(TRUE));
@@ -199,7 +216,6 @@ void main()
         }
         nCntr++;
     }
-    NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
 }
 int StartingUp(object oPC)
 {

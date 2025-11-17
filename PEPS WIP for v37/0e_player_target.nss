@@ -104,6 +104,8 @@ void main()
             if(sTargetMode == "ASSOCIATE_ACTION_ALL")
             {
                 ai_ActionAllAssociates(oPC, oTarget, lLocation);
+                SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION_ALL");
+                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
                 return;
             }
             else if(sTargetMode == "ASSOCIATE_ACTION")

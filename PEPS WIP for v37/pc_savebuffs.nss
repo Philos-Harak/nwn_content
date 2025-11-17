@@ -83,18 +83,16 @@ void main()
     int nClass, nLevel, nMetaMagic;
     if(oTarget != oCaster)
     {
-        SetLocalObject(oCaster, "AI_BUFF_PC", oPC);
         // These functions need the caster to be OBJECT_SELF so lets do a HACK!
-        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_CASTCLASS\", GetLastSpellCastClass());", oCaster);
-        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_SPELLLEVEL\", GetLastSpellLevel());", oCaster);
-        ExecuteScriptChunk("SetLocalInt(GetLocalObject(OBJECT_SELF, \"AI_BUFF_PC\"), \"AI_BUFF_METAMAGIC\", GetMetaMagicFeat());", oCaster);
-        nClass = GetLocalInt(oPC, "AI_BUFF_CASTCLASS");
-        nLevel = GetLocalInt(oPC, "AI_BUFF_SPELLLEVEL");
-        nMetaMagic = GetLocalInt(oPC, "AI_METAMAGIC");
-        DeleteLocalObject(oCaster, "AI_BUFF_PC");
-        DeleteLocalInt(oPC, "AI_BUFF_CASTCLASS");
-        DeleteLocalInt(oPC, "AI_BUFF_SPELLLEVEL");
-        DeleteLocalInt(oPC, "AI_BUFF_METAMAGIC");
+        ExecuteScriptChunk("SetLocalInt(OBJECT_SELF, \"AI_BUFF_CASTCLASS\", GetLastSpellCastClass());", oCaster);
+        ExecuteScriptChunk("SetLocalInt(OBJECT_SELF, \"AI_BUFF_SPELLLEVEL\", GetLastSpellLevel());", oCaster);
+        ExecuteScriptChunk("SetLocalInt(OBJECT_SELF, \"AI_BUFF_METAMAGIC\", GetMetaMagicFeat());", oCaster);
+        nClass = GetLocalInt(oCaster, "AI_BUFF_CASTCLASS");
+        nLevel = GetLocalInt(oCaster, "AI_BUFF_SPELLLEVEL");
+        nMetaMagic = GetLocalInt(oCaster, "AI_METAMAGIC");
+        DeleteLocalInt(oCaster, "AI_BUFF_CASTCLASS");
+        DeleteLocalInt(oCaster, "AI_BUFF_SPELLLEVEL");
+        DeleteLocalInt(oCaster, "AI_BUFF_METAMAGIC");
     }
     else
     {

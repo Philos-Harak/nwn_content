@@ -118,6 +118,12 @@ void main()
                 oKill = GetNextObjectInShape(SHAPE_SPHERE, 6.67, lLocation, FALSE);
             }
         }
+        else if(sTargetMode == "RESURRECT")
+        {
+            effect eRaise = EffectResurrection();
+            if(!GetIsRaiseable(oTarget)) SetIsDestroyable(FALSE, TRUE, TRUE, oTarget);
+            ApplyEffectToObject(DURATION_TYPE_INSTANT, eRaise, oTarget);
+        }
     }
     // Run all non-targeting code here, usually NUI events.
     else
@@ -233,6 +239,15 @@ void main()
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_KILL_AREA");
                 SetEnterTargetingModeData(oPC, SPELL_TARGETING_SHAPE_SPHERE, 6.67, 0.0, 3);
                 EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+            }
+            else if(sElem == "btn_resurrect")
+            {
+                // Set this variable on the player so PEPS can run the targeting script for this plugin.
+                SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
+                // Set Targeting variables.
+                SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
+                SetLocalString(oPC, AI_TARGET_MODE, "RESURRECT");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_HEAL, MOUSECURSOR_NOHEAL);
             }
         }
         else if(sEvent == "watch")

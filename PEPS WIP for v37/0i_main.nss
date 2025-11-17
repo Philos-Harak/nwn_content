@@ -34,6 +34,9 @@ int ai_GetIsDungeonMaster(object oCreature);
 // Returns the Player of oAssociate even if oAssociate is the player.
 // If there is no player associated with oAssociate then it returns OBJECT_INVALID.
 object ai_GetPlayerMaster(object oAssociate);
+// Returns the top master of oAssociate, for example a henchmen summons a bat,
+// this will return the henchman's player.
+object ai_GetTopMaster(object oAssociate);
 // Returns the percentage of hit points oCreature has left.
 int ai_GetPercHPLoss(object oCreature);
 // Returns a rolled result from sDice string.
@@ -333,6 +336,16 @@ object ai_GetPlayerMaster(object oAssociate)
     object oMaster = GetMaster(oAssociate);
     if(ai_GetIsCharacter(oMaster)) return oMaster;
     return OBJECT_INVALID;
+}
+object ai_GetTopMaster(object oAssociate)
+{
+    object oMaster = GetMaster(oAssociate);
+    while(oMaster != OBJECT_INVALID)
+    {
+        if(GetMaster(oMaster) == OBJECT_INVALID) break;
+        oMaster = GetMaster(oMaster);
+    }
+    return oMaster;
 }
 int ai_GetPercHPLoss(object oCreature)
 {
@@ -880,6 +893,8 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
     json jSpells = JsonArray();
     jAIData = JsonArrayInsert(jAIData, jSpells);         // 10 - Castable spells.
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(0.1)); // 11 - Delay for casting buff spells.
+    SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, 0.1);
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
 }
 void ai_SetupLootFilters(object oPlayer, object oAssociate, string sAssociateType)
@@ -991,6 +1006,8 @@ void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType
         SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jValue);
     }
     jAIData = JsonArrayInsert(jAIData, jValue);
+    fValue = GetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING);
+    jAIData = JsonArrayInsert(jAIData, JsonFloat(fValue));
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
     // ********** LootFilters **********
     json jLootFilters = JsonArray();
@@ -1092,6 +1109,14 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
             ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
             SetLocalJson(oPlayer, AI_SPELLS_WIDGET, jSpellsWidget);
         }
+        json jSpellDelay = JsonArrayGet(jAIData, 11);
+        if(JsonGetType(jSpellDelay) == JSON_TYPE_NULL)
+        {
+            jAIData = JsonArrayInsert(jAIData, JsonFloat(0.1));
+            ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+            SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, 0.1);
+        }
+        else SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, JsonGetFloat(jSpellDelay));
     }
     // ********** LootFilters **********
     json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");

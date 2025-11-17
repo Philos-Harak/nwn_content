@@ -49,6 +49,9 @@ void main()
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Kill In Area", "btn_kill_area", 150.0f, 20.0f, -1.0, "btn_kill_area_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
+    jRow = CreateButton(jRow, "Resurrect", "btn_resurrect", 150.0f, 20.0f, -1.0, "btn_ressurrect_tooltip");
+    jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     float fHeight = 129.0;
@@ -85,6 +88,8 @@ void main()
     NuiSetBind(oPC, nToken, "btn_jump_tooltip", JsonString("  Jump to target location."));
     NuiSetBind(oPC, nToken, "btn_kill_area_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_kill_area_tooltip", JsonString("  Kills all creatures in target area."));
+    NuiSetBind(oPC, nToken, "btn_resurrect_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_resurrect_tooltip", JsonString("  Resurrects target creatures."));
 }
 int StartingUp(object oPC)
 {

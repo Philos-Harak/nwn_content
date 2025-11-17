@@ -45,7 +45,7 @@ void ai_SetupPlayerTarget()
     }
     SetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_TARGET, "0e_player_target");
 }
-void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
+void ai_ActionAssociate(object oPC, object oTarget, location lLocation, int bActionAll = FALSE)
 {
     object oAssociate = OBJECT_SELF;
     if(ai_GetAIMode(oPC, AI_MODE_ACTION_GHOST) &&
@@ -174,7 +174,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation)
             if(GetTrapDetectedBy(oTarget, oAssociate)) ai_ReactToTrap(oAssociate, oTarget, TRUE);
         }
     }
-    ai_EnterAssociateTargetMode(oPC, oAssociate);
+    if(!bActionAll) ai_EnterAssociateTargetMode(oPC, oAssociate);
 }
 void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
 {
@@ -183,12 +183,12 @@ void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
     for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-       if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
+       if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation, TRUE));
     }
     for(nIndex = 2; nIndex < 6; nIndex++)
     {
         oAssociate = GetAssociate(nIndex, oPC);
-        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation));
+        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation, TRUE));
     }
 }
 void ai_SelectFollowTarget(object oPC, object oAssociate, object oTarget)
@@ -497,17 +497,18 @@ void ai_SelectWidgetSpellTarget(object oPC, object oAssociate, string sElem)
     {
         object oItem = GetObjectByUUID(JsonGetString(JsonArrayGet(jSpell, 5)));
         int nBaseItemType = GetBaseItemType(oItem);
+        int nIprpSubType = JsonGetInt(JsonArrayGet(jSpell, 4));
+        itemproperty ipProperty = GetFirstItemProperty(oItem);
+        while(GetIsItemPropertyValid(ipProperty))
+        {
+            if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
+            ipProperty = GetNextItemProperty(oItem);
+        }
         if(Get2DAString("spells", "Range", nSpell) == "P" || // Self
            nBaseItemType == BASE_ITEM_ENCHANTED_POTION ||
-           nBaseItemType == BASE_ITEM_POTIONS)
+           nBaseItemType == BASE_ITEM_POTIONS ||
+           nIprpSubType == IP_CONST_CASTSPELL_UNIQUE_POWER_SELF_ONLY)
         {
-            int nIprpSubType = JsonGetInt(JsonArrayGet(jSpell, 4));
-            itemproperty ipProperty = GetFirstItemProperty(oItem);
-            while(GetIsItemPropertyValid(ipProperty))
-            {
-                if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
-                ipProperty = GetNextItemProperty(oItem);
-            }
             if(ai_GetIsInCombat(oAssociate)) AssignCommand(oAssociate, ai_ClearCreatureActions(TRUE));
             AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oAssociate));
             DelayCommand(6.0, ai_UpdateAssociateWidget(oPC, oAssociate));

@@ -52,6 +52,8 @@ void ai_OnRested(object oCreature);
 
 // Increments/Decrements the following distance of associates.
 void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+// Increments/Decrements the delay when casting each auto buff spell.
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore enemy associates for oAssociate.
@@ -940,6 +942,23 @@ void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string 
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " enter follow mode [" + sRange + " meters]");
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
     }
+}
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+{
+    float fAdjustment = GetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING) + fIncrement;
+    if(fAdjustment > 6.0) fAdjustment = 6.0;
+    else if(fAdjustment < 0.1) fAdjustment = 0.1;
+    SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, fAdjustment);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    jAIData = JsonArraySet(jAIData, 11, JsonFloat(fAdjustment));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    string sDelay = FloatToString(fAdjustment, 0, 1);
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_long_tooltip", "  Buff the party with long duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_short_tooltip", "  Buff the party with short duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_all_tooltip", "  Buff the party with all spells. Cast speed [" + sDelay + "]");
 }
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType)
 {
