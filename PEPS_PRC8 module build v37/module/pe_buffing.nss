@@ -45,24 +45,22 @@ void main()
     // Watch to see if the window moves and save.
     if(sElem == "window_geometry" && sEvent == "watch")
     {
-        if(!GetLocalInt (oPC, AI_NO_NUI_SAVE))
+        if(GetLocalInt (oPC, AI_NO_NUI_SAVE)) return;
+        // Get the height, width, x, and y of the window.
+        json jGeom = NuiGetBind(oPC, nToken, "window_geometry");
+        // Save on the player using the sWndId.
+        json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
+        if(sWndId == "plbuffwin")
         {
-            // Get the height, width, x, and y of the window.
-            json jGeom = NuiGetBind(oPC, nToken, "window_geometry");
-            // Save on the player using the sWndId.
-            json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
-            if(sWndId == "plbuffwin")
-            {
-                jMenuData = JsonArraySet(jMenuData, 1, JsonObjectGet(jGeom, "x"));
-                jMenuData = JsonArraySet(jMenuData, 2, JsonObjectGet(jGeom, "y"));
-            }
-            else if(sWndId == "widgetbuffwin")
-            {
-                jMenuData = JsonArraySet(jMenuData, 5, JsonObjectGet(jGeom, "x"));
-                jMenuData = JsonArraySet(jMenuData, 6, JsonObjectGet(jGeom, "y"));
-            }
-            SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
+            jMenuData = JsonArraySet(jMenuData, 1, JsonObjectGet(jGeom, "x"));
+            jMenuData = JsonArraySet(jMenuData, 2, JsonObjectGet(jGeom, "y"));
         }
+        else if(sWndId == "widgetbuffwin")
+        {
+            jMenuData = JsonArraySet(jMenuData, 5, JsonObjectGet(jGeom, "x"));
+            jMenuData = JsonArraySet(jMenuData, 6, JsonObjectGet(jGeom, "y"));
+        }
+        SetBuffDatabaseJson(oPC, "spells", jMenuData, "menudata");
         return;
     }
     //**************************************************************************
@@ -175,6 +173,7 @@ void main()
         }
         else if(sEvent == "watch")
         {
+            if(GetLocalInt (oPC, AI_NO_NUI_SAVE)) return;
             if(sElem == "buff_widget_check")
             {
                 int bBuffWidget = JsonGetInt(NuiGetBind(oPC, nToken, "buff_widget_check"));
@@ -184,7 +183,7 @@ void main()
                 if(bBuffWidget) PopupWidgetBuffGUIPanel(oPC);
                 else NuiDestroy(oPC, NuiFindWindow(oPC, "widgetbuffwin"));
             }
-            if(sElem == "lock_buff_widget_check")
+            else if(sElem == "lock_buff_widget_check")
             {
                 int bBuffLockWidget = JsonGetInt(NuiGetBind(oPC, nToken, "lock_buff_widget_check"));
                 json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
@@ -194,10 +193,19 @@ void main()
                 NuiSetBind(oPC, nToken, "buff_widget_check", JsonBool(TRUE));
                 PopupWidgetBuffGUIPanel(oPC);
             }
-            if(sElem == "chbx_no_monster_check_check")
+            else if(sElem == "chbx_no_monster_check_check")
             {
                 int bNoCheckMonsters = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
                 SetLocalInt(oPC, FB_NO_MONSTER_CHECK, bNoCheckMonsters);
+            }
+            else if(sElem == "txt_spell_delay")
+            {
+                string sDelay = JsonGetString(NuiGetBind(oPC, nToken, "txt_spell_delay"));
+                float fDelay = StringToFloat(sDelay);
+                if(fDelay < 0.1f) fDelay = 0.1f;
+                if(fDelay > 6.0f) fDelay = 6.0f;
+                sDelay = FloatToString(fDelay, 0, 1);
+                SetBuffDatabaseString(oPC, "spells", sDelay, "Delay");
             }
         }
     }
@@ -259,13 +267,12 @@ json GetBuffDatabaseJson (object oPlayer, string sDataField, string sTag)
     if(SqlStep(sql)) return SqlGetJson(sql, 0);
     else return JsonArray();
 }
-void CastBuffSpell (object oPC, object oTarget, int nSpell, int nClass, int nMetamagic, int nDomain, string sList, string sName)
+void CastBuffSpell(object oPC, object oCaster, object oTarget, int nSpell, int nClass, int nMetamagic, int nDomain, string sList, string sName, int bInstantSpell)
 {
-    string sTargetName;
-    if(oPC == oTarget) sTargetName = "myself.";
-    else sTargetName = GetName(oTarget);
-    ai_SendMessages("Quick Buffing: " + sName + " on " + sTargetName, AI_COLOR_GREEN, oPC);
-    AssignCommand(oPC, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, TRUE, nClass));
+    string sCasterName = GetName(oCaster);
+    string sTargetName = GetName(oTarget);
+    ai_SendMessages(sCasterName + " is quick buffing " + sName + " on " + sTargetName, AI_COLOR_GREEN, oPC);
+    AssignCommand(oCaster, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, bInstantSpell, nClass));
 }
 void CastSavedBuffSpells(object oPC)
 {
@@ -314,7 +321,10 @@ void CastSavedBuffSpells(object oPC)
     if(fDistance > 30.0f || fDistance == 0.0)
     {
         string sName;
-        float fDelay = 0.1f;
+        float fDelay;
+        float fDelayIncrement = StringToFloat(GetBuffDatabaseString(oPC, "spells", "Delay"));;
+        int bInstantSpell;
+        if(fDelayIncrement < 3.0f) bInstantSpell = TRUE;
         int nSpell, nClass, nLevel, nMetamagic, nDomain, nSpellReady, nIndex = 0;
         json jMenuData = GetBuffDatabaseJson(oPC, "spells", "menudata");
         string sList = JsonGetString(JsonArrayGet(jMenuData, 0));
@@ -329,58 +339,78 @@ void CastSavedBuffSpells(object oPC)
                 nLevel = JsonGetInt(JsonArrayGet(jSpell, 2));
                 nMetamagic = JsonGetInt(JsonArrayGet(jSpell, 3));
                 nDomain = JsonGetInt(JsonArrayGet(jSpell, 4));
-                // We save the target's name then look them up by it.
-                string sTargetName = JsonGetString(JsonArrayGet(jSpell, 5));
-                object oTarget;
-                location lLocation = GetLocation(oPC);
-                if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
-                else
-                {
-                    oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
-                    while(oTarget != OBJECT_INVALID)
-                    {
-                        if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
-                        oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
-                    }
-                }
                 sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
-                if(oTarget == OBJECT_INVALID)
+                location lLocation = GetLocation(oPC);
+                // Saved the Caster's name so we can find them to cast the spell.
+                string sCasterName = JsonGetString(JsonArrayGet(jSpell, 5));
+                object oCaster;
+                if(sCasterName == "" || sCasterName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oCaster = oPC;
+                else
                 {
-                    DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sTargetName + " is not here!", AI_COLOR_RED, oPC));
+                    oCaster = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                    while(oCaster != OBJECT_INVALID)
+                    {
+                        if(sCasterName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oCaster)))) break;
+                        oCaster = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                    }
+                }
+                if(oCaster == OBJECT_INVALID)
+                {
+                    DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sCasterName + " is not here!", AI_COLOR_RED, oPC));
                 }
                 else
                 {
-                    if(nMetamagic > 0)
+                    // Saved the target's name so we can find them to cast the spell on.
+                    string sTargetName = JsonGetString(JsonArrayGet(jSpell, 6));
+                    object oTarget;
+                    if(sTargetName == "" || sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oPC)))) oTarget = oPC;
+                    else
                     {
-                        if(nMetamagic == METAMAGIC_EMPOWER) sName += " (Empowered)";
-                        else if(nMetamagic == METAMAGIC_EXTEND) sName += " (Extended)";
-                        else if(nMetamagic == METAMAGIC_MAXIMIZE) sName += " (Maximized)";
-                        else if(nMetamagic == METAMAGIC_QUICKEN) sName += " (Quickened)";
-                        else if(nMetamagic == METAMAGIC_SILENT) sName += " (Silent)";
-                        else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
+                        oTarget = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                        while(oTarget != OBJECT_INVALID)
+                        {
+                            if(sTargetName == ai_RemoveIllegalCharacters(ai_StripColorCodes(GetName(oTarget)))) break;
+                            oTarget = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation, TRUE);
+                        }
                     }
-                    nSpellReady = GetSpellReady(oPC, nSpell, nClass, nLevel, nMetamagic, nDomain);
-                    if(nSpellReady == TRUE)
+                    if(oTarget == OBJECT_INVALID)
                     {
-                        DelayCommand(fDelay, CastBuffSpell(oPC, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName));
+                        DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because the " + sTargetName + " is not here!", AI_COLOR_RED, oPC));
                     }
-                    else if(nSpellReady == -1)
+                    else
                     {
-                        DelayCommand(fDelay, ai_SendMessages("Cannot quick cast " + sName + " because it is not ready to cast!", AI_COLOR_RED, oPC));
+                        if(nMetamagic > 0)
+                        {
+                            if(nMetamagic == METAMAGIC_EMPOWER) sName += " (Empowered)";
+                            else if(nMetamagic == METAMAGIC_EXTEND) sName += " (Extended)";
+                            else if(nMetamagic == METAMAGIC_MAXIMIZE) sName += " (Maximized)";
+                            else if(nMetamagic == METAMAGIC_QUICKEN) sName += " (Quickened)";
+                            else if(nMetamagic == METAMAGIC_SILENT) sName += " (Silent)";
+                            else if(nMetamagic == METAMAGIC_STILL) sName += " (Still)";
+                        }
+                        nSpellReady = GetSpellReady(oCaster, nSpell, nClass, nLevel, nMetamagic, nDomain);
+                        if(nSpellReady == TRUE)
+                        {
+                            DelayCommand(fDelay, CastBuffSpell(oPC, oCaster, oTarget, nSpell, nClass, nMetamagic, nDomain, sList, sName, bInstantSpell));
+                        }
+                        else if(nSpellReady == -1)
+                        {
+                            DelayCommand(fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because it is not ready to cast!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -2)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because it is not memorized!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -3)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + " cannot quick cast " + sName + " because there are no spell slots of that level left!", AI_COLOR_RED, oPC));
+                        }
+                        else if(nSpellReady == -4)
+                        {
+                            DelayCommand (fDelay, ai_SendMessages(sCasterName + "cannot quick cast " + sName + " because that spell is not known.", AI_COLOR_RED, oPC));
+                        }
+                        fDelay += fDelayIncrement;
                     }
-                    else if(nSpellReady == -2)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because it is not memorized!", AI_COLOR_RED, oPC));
-                    }
-                    else if(nSpellReady == -3)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because there are no spell slots of that level left!", AI_COLOR_RED, oPC));
-                    }
-                    else if(nSpellReady == -4)
-                    {
-                        DelayCommand (fDelay, ai_SendMessages("Cannot quick cast " + sName + " because that spell is not known.", AI_COLOR_RED, oPC));
-                    }
-                    fDelay += 0.1f;
                 }
             }
             else break;
@@ -519,7 +549,6 @@ void PopupWidgetBuffGUIPanel(object oPC)
     if(bAIBuffWidgetLock) nToken = SetWindow (oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 62.0, FALSE, FALSE, FALSE, TRUE, FALSE, "pe_buffing");
     else nToken = SetWindow (oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 160.0, 95.0, FALSE, FALSE, FALSE, TRUE, TRUE, "pe_buffing");
     // Set event watches for window inspector and save window location.
-    NuiSetBindWatch (oPC, nToken, "collapsed", TRUE);
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events.
     //NuiSetBind (oPC, nToken, "btn_one", JsonBool (TRUE));

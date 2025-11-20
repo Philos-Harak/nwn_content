@@ -3,7 +3,7 @@
 int StartingUp(object oPC);
 json ai_CheckToReplaceSpell(json jSpellList, int nClass, int nLevel, int nSlot)
 {
-    //if(d100() > 49) return jSpellList;
+    if(d100() > 49) return jSpellList;
     string sSpellTableColumn = Get2DAString("classes", "SpellTableColumn", nClass);
     int nRoll = d10() + 1 + nLevel * 10;
     int nSpell = StringToInt(Get2DAString("prc_add_spells", sSpellTableColumn, nRoll));

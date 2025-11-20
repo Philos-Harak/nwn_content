@@ -54,7 +54,7 @@ void main()
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateButton(jRow, "Set NPC's scripts", "btn_npc_scripts", 150.0f, 20.0f, -1.0, "btn_npc_scripts_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButton(jRow, "Set Reputations", "btn_set_reputation", 150.0f, 20.0f, -1.0, "btn_set_reputation_tooltip");
+    jRow = CreateButton(jRow, "Set Commandable", "btn_set_commandable", 150.0f, 20.0f, -1.0, "btn_set_commandable_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Clear Party Rep.", "btn_clear_reputation", 150.0f, 20.0f, -1.0, "btn_clear_reputation_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
@@ -152,8 +152,8 @@ void main()
     // Row 6
     NuiSetBind(oPC, nToken, "btn_npc_scripts_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_npc_scripts_tooltip", JsonString("  Forces NPC to use Philos AI scripts!"));
-    NuiSetBind(oPC, nToken, "btn_set_reputation_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_set_reputation_tooltip", JsonString("  Sets a creatures faction to neutral for all standard factions."));
+    NuiSetBind(oPC, nToken, "btn_set_commandable_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_set_commandable_tooltip", JsonString("  Sets a creatures to commandable."));
     NuiSetBind(oPC, nToken, "btn_clear_reputation_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_clear_reputation_tooltip", JsonString("  Clears the party's reputation with creature's faction."));
     // Row 7

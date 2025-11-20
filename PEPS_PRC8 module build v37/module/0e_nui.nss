@@ -236,10 +236,10 @@ void main()
                 {
                     int nMaxHenchmen = StringToInt(sText);
                     if(nMaxHenchmen < 1) nMaxHenchmen = 1;
-                    if(nMaxHenchmen > 12)
+                    if(nMaxHenchmen > AI_MAX_HENCHMAN)
                     {
-                        nMaxHenchmen = 12;
-                        ai_SendMessages("The maximum henchmen for this mod is 12!", AI_COLOR_RED, oPC);
+                        nMaxHenchmen = AI_MAX_HENCHMAN;
+                        ai_SendMessages("The maximum henchmen for this mod is " + IntToString(AI_MAX_HENCHMAN) + "!", AI_COLOR_RED, oPC);
                     }
                     SetMaxHenchmen(nMaxHenchmen);
                     SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nMaxHenchmen);
@@ -274,7 +274,7 @@ void main()
                 {
                     int nNumber = StringToInt(sText);
                     if(nNumber < 0) nNumber = 0;
-                    else if(nNumber > 100) nNumber = 100;
+                    else if(nNumber > 500) nNumber = 500;
                     SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, nNumber);
                     jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
                 }
@@ -310,6 +310,12 @@ void main()
                 {
                     SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bCheck);
                     jRules = JsonObjectSet(jRules, AI_RULE_BUFF_MONSTERS, JsonInt(bCheck));
+                    NuiSetBind(oPC, nToken, "chbx_full_buff_event", JsonBool(bCheck));
+                }
+                else if(sElem == "chbx_full_buff_check")
+                {
+                    SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bCheck);
+                    jRules = JsonObjectSet(jRules, AI_RULE_FULL_BUFF_MONSTERS, JsonInt(bCheck));
                 }
                 else if(sElem == "chbx_buff_summons_check")
                 {
@@ -652,6 +658,9 @@ void main()
                 if(sElem == "btn_cmd_follow" &&
                    oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
                 else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, 1.0, sAssociateType);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
             }
             else if(nMouseScroll == -1.0) // Scroll down
             {
@@ -659,6 +668,9 @@ void main()
                 if(sElem == "btn_cmd_follow" &&
                 oPC != oAssociate) ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
                 else if(sElem == "btn_follow_target") ai_FollowIncrement(oPC, oAssociate, -1.0, sAssociateType);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
             }
         }
         return;
@@ -955,6 +967,9 @@ void main()
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, 5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, 1.0, sAssociateType);
                 else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, 1, sAssociateType, -1);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, 0.1, sAssociateType);
             }
             if(nMouseScroll == -1.0) // Scroll down
             {
@@ -971,6 +986,9 @@ void main()
                 else if(sElem == "btn_heal_in") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType);
                 else if(sElem == "btn_loot") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType);
                 else if(sElem == "btn_perc_range") ai_PercRangeIncrement(oPC, oAssociate, -1, sAssociateType, -1);
+                else if(sElem == "btn_buff_long") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
+                else if(sElem == "btn_buff_short") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
+                else if(sElem == "btn_buff_all") ai_DelaySpellSpeed(oPC, oAssociate, -0.1, sAssociateType);
             }
         }
         if(sEvent == "mousedown")
@@ -1248,9 +1266,10 @@ void main()
             {
                 json jPlugins = ai_GetAssociateDbJson(oPC, "pc", "plugins");
                 jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_buffing");
-                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_forcerest");
-                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_henchmen");
                 jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_crafting");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_forcerest");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_fast_travel");
+                jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_henchmen");
                 jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_mod_set");
                 jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_debug");
                 jPlugins = ai_Plugin_Add(oPC, jPlugins, "pi_test");

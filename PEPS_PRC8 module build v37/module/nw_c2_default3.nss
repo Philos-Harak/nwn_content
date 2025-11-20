@@ -22,7 +22,7 @@ void main()
                  " Current action: " + IntToString(GetCurrentAction(oCreature)));
     if(GetSpawnInCondition(NW_FLAG_END_COMBAT_ROUND_EVENT))
     {
-        SignalEvent(OBJECT_SELF, EventUserDefined(1003));
+        SignalEvent(OBJECT_SELF, EventUserDefined(EVENT_END_COMBAT_ROUND));
     }
     if(ai_Disabled(oCreature)) return;
     // Action modes get cleared prior to each OnCombatRoundEnd!

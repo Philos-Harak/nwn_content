@@ -57,13 +57,10 @@ void main()
             }
             ai_SendMessages("Your reputation with " + GetName(oTarget) + " has been set to neutral.", AI_COLOR_YELLOW, oPC);
         }
-        else if(sTargetMode == "SET_REPUTATION")
+        else if(sTargetMode == "CLEAR_COMMANDABLE")
         {
-            SetStandardFactionReputation(STANDARD_FACTION_COMMONER, 50, oTarget);
-            SetStandardFactionReputation(STANDARD_FACTION_DEFENDER, 50, oTarget);
-            SetStandardFactionReputation(STANDARD_FACTION_HOSTILE, 50, oTarget);
-            SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 50, oTarget);
-            ai_SendMessages(GetName(oTarget) + " has been set to a neutral reputation.", AI_COLOR_YELLOW, oPC);
+            SetCommandable(TRUE, oTarget);
+            ai_SendMessages(GetName(oTarget) + " has been set to be commandable.", AI_COLOR_YELLOW, oPC);
         }
         else if(sTargetMode == "DEBUG_INFO")
         {
@@ -78,6 +75,9 @@ void main()
             int nObjectType = GetObjectType(oTarget);
             if(nObjectType == OBJECT_TYPE_CREATURE)
             {
+                string sText = "Yes";
+                if(!GetCommandable(oTarget)) sText = "No";
+                ai_SendMessages("Commandable: " + sText, AI_COLOR_WHITE, oPC);
                 json jObject = ObjectToJson(oTarget);
                 string sConversation = JsonGetString(GffGetResRef(jObject, "Conversation"));
                 ai_SendMessages("Conversation: " + sConversation, AI_COLOR_CYAN, oPC);
@@ -509,14 +509,14 @@ void main()
                 ai_SendMessages("Select an npc to change scripts for.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE , MOUSECURSOR_CREATE, MOUSECURSOR_NOCREATE);
             }
-            else if(sElem == "btn_set_reputation")
+            else if(sElem == "btn_set_commandable")
             {
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_debug");
                 // Set Targeting variables.
-                SetLocalString(oPC, AI_TARGET_MODE, "SET_REPUTATION");
+                SetLocalString(oPC, AI_TARGET_MODE, "CLEAR_COMMANDABLE");
                 NuiDestroy(oPC, nToken);
-                ai_SendMessages("Select a creature to set all standard reputations to neutral.", AI_COLOR_YELLOW, oPC);
+                ai_SendMessages("Select a creature to set commandable.", AI_COLOR_YELLOW, oPC);
                 EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
             else if(sElem == "btn_clear_reputation")

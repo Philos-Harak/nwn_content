@@ -94,6 +94,7 @@ void ai_ClearCreatureActions(int bClearCombatState = FALSE)
 void ai_SetLastAction(object oCreature, int nAction = AI_LAST_ACTION_NONE)
 {
     SetLocalInt(oCreature, sLastActionVarname, nAction);
+    SetLocalInt(oCreature, sLastActionTimeVarname, ai_GetCurrentTimeStamp());
 }
 int ai_CompareLastAction(object oCreature, int nAction)
 {
