@@ -207,6 +207,7 @@ void ai_CreateMonster(json jCreature, location lLocation, object oModule)
 {
     //WriteTimestampedLogEntry("0i_module, 181, " + JsonDump(jCreature, 1));
     object oCreature = JsonToObject(jCreature, lLocation, OBJECT_INVALID, TRUE);
+    if(AI_DEBUG) ai_Debug("0i_module", "210", "Creating: " + GetName(oCreature));
     // Lets set the new version as spawned so we skip the initial setup again.
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     /*if(GetLocalInt(oModule, AI_RULE_CORPSES_STAY))
@@ -295,6 +296,7 @@ int ai_ChangeMonster(object oCreature, object oModule)
     {
         SetIsDestroyable(TRUE, FALSE, FALSE, oCreature);
         location lLocation = GetLocation(oCreature);
+        if(AI_DEBUG) ai_Debug("0i_module", "299", "Destroying: " + GetName(oCreature));
         DestroyObject(oCreature);
         AssignCommand(oModule, DelayCommand(1.0, ai_CreateMonster(jCreature, lLocation, oModule)));
         DeleteLocalInt(oModule, AI_MONSTER_CHANGED);

@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:08.31.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:11.16.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -35,14 +35,14 @@ const int AI_MONSTER_HEAL_OUT_COMBAT_CHANCE = 70;
 const int AI_HENCHMAN_WIDGET = TRUE;
 // Change the Custom token number if it conflicts with your server.
 const int AI_BASE_CUSTOM_TOKEN = 1000;
-// Delay between creatures casting Buff spells. Must be minimum of 0.1 seconds.
-const float AI_HENCHMAN_BUFF_DELAY = 0.2;
 
 //*******************  These can be changed within the game  *******************
 // Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
 const int AI_MORAL_CHECKS = FALSE;
 // Allows monsters to prebuff before combat starts.
 const int AI_PREBUFF = TRUE;
+// Allows monsters to buff with all spells before combat starts. VERY DIFFICULT!
+const int AI_FULL_BUFF = FALSE;
 // Allows monsters cast summons spells when prebuffing.
 const int AI_PRESUMMONS = TRUE;
 // Allows monsters to use tactical AI scripts such as ambush, flanker, ranged.
@@ -111,8 +111,13 @@ const int AI_SCOUT_AHEAD_ON = TRUE;
 const int AI_OPEN_INVENTORY = TRUE;
 // Allows players to have associates pickup loot.
 const int AI_PICKUP_LOOT = TRUE;
-// Allows players to remove a henchman.
+// Allows players to take any henchman that is standing around.
+const int AI_ALLOW_TAKING_HENCHMAN = FALSE;
+// Allows players to remove a henchman through PEPS.
 const int AI_REMOVE_HENCHMAN_ON = FALSE;
+// Allows players to toggle patrolling ahead via the radial menu for remove henchman.
+// Used on my server as a way to toggle patrolling ahead via the radial menu.
+const int AI_PATROL_AHEAD_RADIAL_OPTION = FALSE;
 //*****************************  Health Constants  *****************************
 // % of health for when a creature is considered wounded.
 const int AI_HEALTH_WOUNDED = 50;
@@ -162,7 +167,7 @@ const string AI_PLUGIN_SET = "AI_PLUGIN_SET";
 // Monster modification variable to let PEPS know what mods are available.
 const string AI_MONSTER_MOD_JSON = "AI_MONSTER_MOD_JSON";
 // The maximum number of henchman the code works with.
-const int AI_MAX_HENCHMAN = 12;
+const int AI_MAX_HENCHMAN = 30;
 // Delay between Henchman casting Healing spells. Must be minimum of 0.5 seconds.
 const float AI_HENCHMAN_HEALING_DELAY = 6.0;
 // A variable that can be set on creatures to stop mobile animations.
@@ -240,6 +245,8 @@ const string AI_IS_INVISIBLE = "AI_IS_INVISIBLE";
 // Constants used in combat to keep track of a creatures last action.
 // 0+ is the last spell cast from the line number in Spells.2da.
 const string sLastActionVarname = "AI_LAST_ACTION";
+// Constants used in combat to keep track of a creatures last action time.
+const string sLastActionTimeVarname = "AI_LAST_ACTION_TIME";
 const int AI_LAST_ACTION_CAST_SPELL = -1;
 const int AI_LAST_ACTION_NONE = -2;
 const int AI_LAST_ACTION_MELEE_ATK = -3;
@@ -527,6 +534,8 @@ const string AI_ASSOCIATE_PERCEPTION = "AI_PERCEPTION_RANGE";
 const string AI_ASSOC_PERCEPTION_DISTANCE = "AI_ASSOC_PERCEPTION_DISTANCE";
 // Variable that holds the open doors range of the henchman.
 const string AI_OPEN_DOORS_RANGE = "AI_OPEN_DOORS_RANGE";
+// Variable that holds the delay for casting buff spells.
+const string AI_DELAY_BUFF_CASTING = "AI_DELAY_BUFF_CASTING";
 // Variable that holds the Spell widgets json data.
 const string AI_SPELLS_WIDGET = "AI_SPELLS_WIDGET";
 // The number of Buff Groups
@@ -554,6 +563,8 @@ const string AI_PC_LOCKED_TARGET = "AI_PC_LOCKED_TARGET";
 const string AI_TALENT_IMMUNITY = "AI_TALENT_IMMUNITY";
 // Variables keeps track of the maximum level for the talent category.
 const string AI_MAX_TALENT = "AI_MAX_TALENT_";
+// Variables keeps track of the maximum level for the talent level.
+const string AI_MAX_LEVEL = "AI_MAX_LEVEL_";
 // Backward compatability constants.
 const int X2_EVENT_CONCENTRATION_BROKEN = 12400;
 // Variable set on the module if the module is using PRC.
@@ -597,6 +608,8 @@ const string AI_RULE_DEBUG_CREATURE = "AI_RULE_DEBUG_CREATURE";
 const string AI_RULE_MORAL_CHECKS = "AI_RULE_MORAL_CHECKS";
 // Allows monsters to prebuff before combat starts.
 const string AI_RULE_BUFF_MONSTERS = "AI_RULE_BUFF_MONSTERS";
+// Allows monsters to prebuff with all defensive spells before combat starts.
+const string AI_RULE_FULL_BUFF_MONSTERS = "AI_RULE_FULL_BUFF_MONSTERS";
 // Allows monsters to use the ambush AI scripts.
 const string AI_RULE_AMBUSH = "AI_RULE_AMBUSH";
 // Enemies may summon familiars and Animal companions and will be randomized.

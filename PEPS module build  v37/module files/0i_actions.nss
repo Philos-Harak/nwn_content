@@ -196,7 +196,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
                 {
                     SetLocalInt(oCreature, AI_POLYMORPHED, TRUE);
                     ai_ClearTalents(oCreature);
-                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, TRUE);
+                    ai_SetCreatureSpecialAbilityTalents(oCreature, FALSE, FALSE, FALSE);
                 }
             }
         }
@@ -219,6 +219,7 @@ void ai_DoAssociateCombatRound(object oCreature, object oTarget = OBJECT_INVALID
 void ai_StartAssociateCombat(object oAssociate, object oTarget = OBJECT_INVALID)
 {
     if(AI_DEBUG) ai_Debug("0i_actions", "217", "---------- " + GetName(oAssociate) + " is starting combat! ----------");
+    //ai_SetCreatureTalentsByLevel(oAssociate, FALSE);
     ai_SetCreatureTalents(oAssociate, FALSE);
     ai_CheckXPPartyScale(oAssociate);
     ai_DoAssociateCombatRound(oAssociate, oTarget);
@@ -249,7 +250,7 @@ void ai_DoMonsterCombatRound(object oMonster)
                 {
                     SetLocalInt(oMonster, AI_POLYMORPHED, TRUE);
                     ai_ClearTalents(oMonster);
-                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, TRUE);
+                    ai_SetCreatureSpecialAbilityTalents(oMonster, TRUE, FALSE, FALSE);
                 }
             }
         }
@@ -410,9 +411,20 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
         }
     }
     float fPerceptionDistance, fDistance;
+    // Check to see if the creature is invisible because we cannot hurt them with our weapon.
+    // If so we need to stay away from them! Maybe add weapon swapping code later?
+    if(AI_DEBUG) ai_Debug("0i_actions", "415", GetName(oCreature) + "IsWeaponEffective? " +
+             IntToString(GetIsWeaponEffective(oInvisible)) + " oInvisible: " + GetName(oInvisible));
+    /*if(!GetIsWeaponEffective(oInvisible))
+    {
+        ai_HaveCreatureSpeak(oCreature, 20, ":21:47:7:");
+        fDistance = GetDistanceBetween(oCreature, oInvisible);
+        if(fDistance < AI_RANGE_LONG) ActionMoveAwayFromObject(oInvisible, TRUE, AI_RANGE_LONG);
+        return TRUE;
+    } */
     if(bMonster)
     {
-        GetDistanceBetween(oCreature, oInvisible);
+        fDistance = GetDistanceBetween(oCreature, oInvisible);
         fPerceptionDistance = GetLocalFloat(GetModule(), AI_RULE_PERCEPTION_DISTANCE);
     }
     else
@@ -420,7 +432,7 @@ int ai_SearchForHiddenCreature(object oCreature, int bMonster, object oInvisible
         // We want to use the distance between the PC and target not us.
         object oMaster = GetMaster();
         if(oMaster != OBJECT_INVALID) fDistance = GetDistanceBetween(oMaster, oInvisible);
-        else GetDistanceBetween(oCreature, oInvisible);
+        else fDistance = GetDistanceBetween(oCreature, oInvisible);
         fPerceptionDistance = GetLocalFloat(oCreature, AI_ASSOC_PERCEPTION_DISTANCE);
         if(fPerceptionDistance == 0.0) fPerceptionDistance = 20.0;
     }
@@ -533,6 +545,9 @@ int ai_MoralCheck(object oCreature)
         nRaceType == RACIAL_TYPE_UNDEAD ||
         nRaceType == RACIAL_TYPE_CONSTRUCT ||
         ai_GetIsCharacter(oCreature)) return FALSE;
+    int nAssociateType = GetAssociateType(oCreature);
+    //if(nAssociateType == ASSOCIATE_TYPE_FAMILIAR || nAssociateType == ASSOCIATE_TYPE_ANIMALCOMPANION ||
+    //   nAssociateType == ASSOCIATE_TYPE_SUMMONED) return FALSE;
     // Moral DC is AI_WOUNDED_MORAL_DC - The number of allies.
     // or AI_BLOODY_MORAL_DC - number of allies.
     int nDC;

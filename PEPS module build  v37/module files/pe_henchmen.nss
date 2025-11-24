@@ -90,6 +90,41 @@ void main()
             jData = JsonObjectSet(jData, sWndId, jGeometry);
             SetHenchmanDbJson(oPC, "henchman", jData, "0");
         }
+        else if(sWndId == "henchman_options_nui")
+        {
+            //if(sEvent == "click")
+            //{
+            //}
+            //else
+            if(sEvent == "watch")
+            {
+                if(sElem == "txt_max_party")
+                {
+                    int nMax = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                    if(nMax < 1) nMax = 1;
+                    else if(nMax > 10) nMax = 10;
+                    json jData = GetHenchmanDbJson(oPC, "classes", "0");
+                    jData = JsonObjectSet(jData, "Max_Party_Size", JsonInt(nMax));
+                    SetHenchmanDbJson(oPC, "classes", jData, "0");
+                }
+                else if(sElem == "chbx_create_hench_check")
+                {
+                    int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                    json jData = GetHenchmanDbJson(oPC, "classes", "0");
+                    jData = JsonObjectSet(jData, "Create_Henchman", JsonInt(bCheck));
+                    SetHenchmanDbJson(oPC, "classes", jData, "0");
+                }
+                else if(sElem == "txt_level_limit")
+                {
+                    int nMax = StringToInt(JsonGetString(NuiGetBind(oPC, nToken, sElem)));
+                    if(nMax < -5) nMax = -5;
+                    else if(nMax > 5) nMax = 5;
+                    json jData = GetHenchmanDbJson(oPC, "classes", "0");
+                    jData = JsonObjectSet(jData, "Level_Limit", JsonInt(nMax));
+                    SetHenchmanDbJson(oPC, "classes", jData, "0");
+                }
+            }
+        }
         else if(sWndId == "henchman_nui")
         {
             //**********************************************************************
@@ -183,6 +218,7 @@ void main()
                 {
                     SaveWholeParty(oPC, nToken, sParty);
                 }
+                else if(sElem == "btn_options") CreateHenchmanOptionsGUIPanel(oPC);
             }
             /*else if(sEvent == "watch")
             {
@@ -589,3 +625,4 @@ void PopupWidgetHenchmanGUIPanel(object oPC)
     NuiSetBind (oPC, nToken, "btn_four", JsonBool (TRUE));
     NuiSetBind (oPC, nToken, "btn_four_event", JsonBool (TRUE));
 }
+

@@ -17,10 +17,21 @@ void main()
     // Scout ahead is done int 0e_ch_1_hb (heartbeat script).
     if(sAction == "Scout")
     {
-        ai_ClearCreatureActions();
-        ai_HaveCreatureSpeak(oAssociate, 4, ":29:35:46:");
-        ai_SetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD, TRUE);
-        ai_ScoutAhead(oAssociate);
+        if(ai_GetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD))
+        {
+            ai_ClearCreatureActions();
+            ai_HaveCreatureSpeak(oAssociate, 6, ":29:35:46:10");
+            ai_SetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD, FALSE);
+            ai_SendMessages(GetName(oAssociate) + " has stopped patrolling ahead.", AI_COLOR_YELLOW, oPC);
+        }
+        else
+        {
+            ai_ClearCreatureActions();
+            ai_HaveCreatureSpeak(oAssociate, 6, ":29:35:46:22:");
+            ai_SetAIMode(oAssociate, AI_MODE_SCOUT_AHEAD, TRUE);
+            ai_SendMessages(GetName(oAssociate) + " is now patrolling ahead.", AI_COLOR_YELLOW, oPC);
+            ai_ScoutAhead(oAssociate);
+        }
     }
     else if(sAction == "BasicTactics")
     {
@@ -166,6 +177,23 @@ void main()
             if(GetIsItemPropertyValid(ipItemProp)) ActionGiveItem(oItem, oPC);
             oItem = GetNextItemInInventory(oAssociate);
         }
+        return;
+    }
+    else if(sAction == "GetHenchTokens")
+    {
+        int nCount, nCntr = 1;
+        object oHenchman = GetHenchman(oPC, nCntr);
+        while(oHenchman != OBJECT_INVALID && nCntr <= AI_MAX_HENCHMAN)
+        {
+            if(oHenchman == OBJECT_INVALID) break;
+            if(oHenchman != oAssociate)
+            {
+                SetCustomToken(77101 + nCount, GetName(oHenchman));
+                nCount++;
+            }
+            oHenchman = GetHenchman(oPC, ++nCntr);
+        }
+        ai_SetupAllyTargets(oAssociate, oPC);
         return;
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);

@@ -18,28 +18,36 @@ void main()
     SetLocalInt (oPC, "AI_NO_NUI_SAVE", TRUE);
     DelayCommand (0.5f, DeleteLocalInt (oPC, "AI_NO_NUI_SAVE"));
     // Row 1 (Buttons) ********************************************************* 775 / 73
-    json jRow = CreateButtonSelect(JsonArray(), "Party 1", "btn_party1", 90.0f, 20.0f);
+    json jRow = CreateButtonSelect(JsonArray(), "Party 1", "btn_party1", 150.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 2", "btn_party2", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 2", "btn_party2", 125.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 3", "btn_party3", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 3", "btn_party3", 125.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 4", "btn_party4", 90.0f, 20.0f);
-    jRow = CreateButtonSelect(jRow, "Party 5", "btn_party5", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 4", "btn_party4", 125.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 5", "btn_party5", 125.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 6", "btn_party6", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 6", "btn_party6", 125.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 7", "btn_party7", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 7", "btn_party7", 125.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 8", "btn_party8", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 8", "btn_party8", 125.0f, 20.0f);
     // Add the row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Options)********************************************************** 775 / 101
     jRow = CreateButton(JsonArray(), "Clear Party", "btn_clear_party", 120.0f, 20.0f, -1.0, "btn_clear_party_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Party Join", "btn_join_party", 120.0f, 20.0f, -1.0, "btn_join_party_tooltip");
-    jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Create NPC Henchman", "btn_npc_henchman", 200.0f, 20.0f, "btn_npc_henchman_tooltip");
+    // Get the window location to restore it from the database.
+    int bDungeonMaster = ai_GetIsDungeonMaster(oPC);
+    CheckHenchmanDataAndInitialize(oPC, "0");
+    json jData = GetHenchmanDbJson(oPC, "classes", "0");
+    if(JsonGetType(jData) == JSON_TYPE_NULL) jData = SetHenchmanOptions(oPC);
+    if(JsonGetInt(JsonObjectGet(jData, "Create_Henchman")) || bDungeonMaster)
+    {
+        jRow = JsonArrayInsert(jRow, NuiSpacer());
+        jRow = CreateButtonSelect(jRow, "Create NPC Henchman", "btn_npc_henchman", 200.0f, 20.0f, "btn_npc_henchman_tooltip");
+    }
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Save Party", "btn_save_party", 120.0f, 20.0f, -1.0, "btn_save_party_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
@@ -47,30 +55,77 @@ void main()
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 (Names and List titles) ******************************************* 775 / 124
-    jRow = CreateLabel(JsonArray(), "", "lbl_save_char", 150.0, 15.0, 0, 0);
-    jRow = CreateLabel(jRow, "", "lbl_save_list", 200.0, 15.0, 0, 0);
-    jRow = CreateLabel(jRow, "In game party", "lbl_game_list", 200.0, 15.0, 0, 0);
-    jRow = CreateLabel(jRow, "", "lbl_game_char", 150.0, 15.0, 0, 0);
+    jRow = CreateLabel(JsonArray(), "", "lbl_save_char", 175.0, 20.0, 0, 0);
+    int bServer = ai_GetIsServer();
+    if((bServer && bDungeonMaster) || !bServer)
+    {
+        jRow = CreateLabel(jRow, "", "lbl_save_list", 130.0, 20.0, 0, 0);
+        jRow = CreateButton(jRow, "Options", "btn_options", 100.0, 20.0);
+        jRow = CreateLabel(jRow, "In game party", "lbl_game_list", 150.0, 20.0, 0, 0);
+    }
+    else
+    {
+        jRow = CreateLabel(jRow, "", "lbl_save_list", 180.0, 20.0, 0, 0);
+        jRow = CreateLabel(jRow, "In game party", "lbl_game_list", 180.0, 20.0, 0, 0);
+    }
+    jRow = CreateLabel(jRow, "", "lbl_game_char", 150.0, 20.0, 0, 0);
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 (List Characters) ************************************************* 775 / 488 (364)
     // Saved Characters for Party #
     // ***** Adding character saved group next to the button list **************
     json jGroupRow = JsonArrayInsert(JsonArray(), NuiSpacer());
-    jGroupRow = CreateImage(jGroupRow, "", "img_saved_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 200.0, 0.0);
-    jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
+    jGroupRow = CreateImage(jGroupRow, "", "img_saved_portrait", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 128.0, 20.0, 0.0);
     json jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
-    jGroupRow = CreateLabel(JsonArray(), "", "lbl_saved_stats", 150.0, 15.0, 0, 0, 0.0);
+    jGroupRow = CreateLabel(JsonArray(), "Strength", "lbl_str", 128.0, 70.0, 1, 0, 0.0);
+    jGroupRow = CreateTextBox(jGroupRow, "txt_char_stats", 256.0, 70.0, FALSE, NUI_SCROLLBARS_NONE);
+    jGroupCol = JsonArrayInsert(JsonArray(), NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "Strength", "lbl_str", 128.0, 70.0, 1, 0, 0.0);
+    jGroupRow = CreateLabel(jGroupRow, "Strength", "lbl_str", 100.0, 16.0, 1, 0, 0.0);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_str", "img_str", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_str_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_str_modifier", 20.0, 16.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = CreateLabel(JsonArray(), "", "lbl_saved_classes", 150.0, 15.0, 0, 0, 0.0);
+    jGroupRow = CreateLabel(JsonArray(), "Dexterity", "lbl_dex", 200.0, 16.0, 1);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_dex", "img_str", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_dex_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_dex_modifier", 20.0, 16.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = CreateButton(JsonArray(), "", "btn_saved_join", 75.0, 20.0);
-    jGroupRow = CreateButton(jGroupRow, "Remove", "btn_saved_remove", 75.0, 20.0);
+    jGroupRow = CreateLabel(JsonArray(), "Constitution", "lbl_con", 200.0, 16.0, 1);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_con", "img_con", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_con_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_con_modifier", 20.0, 16.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-    //jGroupRow = JsonArray();
-    //CreateButton(jGroupRow, "Edit", "btn_saved_edit", 150.0, 20.0);
+    jGroupRow = CreateLabel(JsonArray(), "Intelligence", "lbl_int", 200.0, 16.0, 1);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_int", "img_int", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_int_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_int_modifier", 20.0, 16.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "Wisdom", "lbl_wis", 200.0, 16.0, 1);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_wis", "img_wis", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_wis_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_wis_modifier", 20.0, 16.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateLabel(JsonArray(), "Charisma", "lbl_cha", 200.0, 16.0, 1);
+    jGroupRow = CreateImage(jGroupRow, "gui_chrsht_cha", "img_cha", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 16.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_cha_ability", 20.0, 16.0);
+    jGroupRow = CreateLabel(jGroupRow, "", "lbl_cha_modifier", 20.0, 16.0);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jGroupRow = CreateTextBox(JsonArray(), "txt_experience", 256.0, 59.0, FALSE, NUI_SCROLLBARS_NONE);
+    jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jRecordRow = JsonArrayInsert(jRecordRow, NuiGroup(NuiCol(jGroupCol), FALSE, NUI_SCROLLBARS_NONE));
+    json jRecordCol = JsonArrayInsert(JsonArray(), NuiRow(jRecordRow));
+    //jGroupRow = CreateImage(JsonArray(), "gui_shield", "img_shield", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 35.0, 35.0);
+    //jGroupRow = CreateLabel(jGroupRow, "", "lbl_armor_class", 93.0, 15.0, 0, 0, 0.0);
     //jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-    jRow = JsonArrayInsert(JsonArray(), NuiGroup(NuiCol(jGroupCol)));
+    //jGroupRow = CreateLabel(JsonArray(), "", "lbl_hitpoints", 35.0, 15.0, 0, 0, 0.0);
+    //jGroupRow = CreateLabel(jGroupRow, "", "lbl_hitpoints", 93.0, 15.0, 0, 0, 0.0);
+    //jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    // Buttons at the bottom of the character record.
+    //jGroupRow = CreateButton(JsonArray(), "", "btn_saved_join", 75.0, 20.0, -1.0, "btn_saved_join_tooltip");
+    //jGroupRow = CreateButton(jGroupRow, "Remove", "btn_saved_remove", 75.0, 20.0, -1.0, "btn_saved_remove_tooltip");
+    //jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
+    jRow = JsonArrayInsert(JsonArray(), NuiGroup(NuiCol(jRecordCol), FALSE, NUI_SCROLLBARS_NONE));
     // Create the button template for the List.
     json jButton = NuiId(NuiButton(NuiBind ("btns_saved_char")), "btn_saved_char");
     json jList = JsonArrayInsert(JsonArray (), NuiListTemplateCell(jButton, 170.0, TRUE));
@@ -91,8 +146,8 @@ void main()
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = CreateLabel(JsonArray(), "", "lbl_cur_classes", 150.0, 15.0, 0, 0, 0.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
-    jGroupRow = CreateButton(JsonArray(), "", "btn_cur_save", 75.0, 20.0);
-    jGroupRow = CreateButton(jGroupRow, "Remove", "btn_cur_remove", 75.0, 20.0);
+    jGroupRow = CreateButton(JsonArray(), "", "btn_cur_save", 75.0, 20.0, -1.0, "btn_cur_save_tooltip");
+    jGroupRow = CreateButton(jGroupRow, "Remove", "btn_cur_remove", 75.0, 20.0, -1.0, "btn_cur_remove_tooltip");
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     jGroupRow = CreateButton(JsonArray(), "Edit", "btn_cur_edit", 150.0, 20.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
@@ -101,9 +156,7 @@ void main()
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
-    // Get the window location to restore it from the database.
-    CheckHenchmanDataAndInitialize(oPC, "0");
-    json jData = GetHenchmanDbJson(oPC, "henchman", "0");
+    jData = GetHenchmanDbJson(oPC, "henchman", "0");
     json jGeometry = JsonObjectGet(jData, "henchman_nui");
     float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
     float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
@@ -115,8 +168,8 @@ void main()
     string sName = GetName(oPC);
     if(GetStringRight(sName, 1) == "s") sName = sName + "'";
     else sName = sName + "'s";
-    int nToken = SetWindow (oPC, jLayout, "henchman_nui", sName + " party",
-                            fX, fY, 775.0, 488.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
+    int nToken = SetWindow (oPC, jLayout, "henchman_nui", sName + " adventuring group",
+                            fX, fY, 1000.0/*775.0*/, 493.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
     // Lets set MaxHenchman here.
     if(GetMaxHenchmen() < 6) SetMaxHenchmen(6);
     // Setup watch for saving location.
@@ -140,17 +193,21 @@ void main()
         else NuiSetBind(oPC, nToken, "btn_party" + sIndex, JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_party" + sIndex + "_event", JsonBool (TRUE));
     }
-    NuiSetBind(oPC, nToken, "btn_npc_henchman_event", JsonBool(TRUE));
-    string sText = "  Select a creature to copy and have them join you.";
-    NuiSetBind(oPC, nToken, "btn_npc_henchman_tooltip", JsonString(sText));
+        if(!ai_GetIsServer())
+    {
+        NuiSetBind(oPC, nToken, "btn_npc_henchman_event", JsonBool(TRUE));
+        string sText = "  Select a creature to copy and have them join your party.";
+        NuiSetBind(oPC, nToken, "btn_npc_henchman_tooltip", JsonString(sText));
+    }
     // ********** Saved Henchman in party # *********
     nIndex = 0;
-    int nSlot, nMaxHenchman = AI_MAX_HENCHMAN + 1;
+    jData = GetHenchmanDbJson(oPC, "classes", "0");
+    int nSlot, nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size")) + 1;
     json jButtons = JsonArray();
     string sFirstHenchman, sButtonText;
     json jNPCs, jNPC;
     // Add saved party members from sParty to the button list.
-    while(nIndex < nMaxHenchman)
+    while(nIndex < nMaxPartySize)
     {
         sIndex = IntToString(nIndex);
         sButtonText = GetHenchmanDbString(oPC, "henchname", sParty + sIndex);
@@ -164,7 +221,8 @@ void main()
     // Add the buttons to the list.
     NuiSetBind(oPC, nToken, "btns_saved_char", jButtons);
     // Set up button lables for henchman.
-    NuiSetBind(oPC, nToken, "lbl_save_list_label", JsonString("Party Save " + sParty));
+    NuiSetBind(oPC, nToken, "lbl_save_list_label", JsonString("Party " + sParty));
+    if((bServer && bDungeonMaster) || !bServer) NuiSetBind(oPC, nToken, "btn_options_event", JsonBool(TRUE));
     AddSavedCharacterInfo(oPC, nToken, sParty);
     // ********** Current Party *********
     NuiSetBind(oPC, nToken, "btn_current_party", JsonBool(TRUE));

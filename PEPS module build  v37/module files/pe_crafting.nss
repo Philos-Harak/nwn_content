@@ -8,6 +8,11 @@
 #include "nw_inc_gff"
 #include "0i_main"
 #include "0i_items"
+// Banned list of BaseItemTypes use rows from baseitemtype.2da.
+// Place each one between a : . Example ":21:28:" will not change belts and clubs.
+// Best used for visual effect items like helms.
+const string CRAFT_BANNED_BASEITEMTYPES = ":23:";
+//const string CRAFT_BANNED_BASEITEMTYPES = "::";
 // Maximum model number for all items except weapons.
 const int CRAFT_MAX_MODEL_NUMBER = 999;
 
@@ -20,7 +25,7 @@ struct stWeaponAppearance
 };
 // Maximum model number for weapons. Note this will be the 100s and 10s places.
 // The color number uses the ones place. Thus 25 is actually 250.
-const int    ALLOW_CRAFT_NAMES = FALSE;
+const int    ALLOW_CRAFT_NAMES = TRUE;
 const int    CRAFT_MAX_WEAPON_MODEL_NUMBER = 99;
 const string CRAFT_JSON = "CRAFT_JSON";
 const string CRAFT_ORIGINAL_ITEM = "CRAFT_ORIGINAL_ITEM";
@@ -100,6 +105,8 @@ void CraftItemInfoEvents(object oPC, int nToken);
 json CreateItemCombo(object oPC, json jRow, string sComboBind);
 json CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind);
 void CreateCreatureCraftingGUIPanel(object oPC, object oTarget);
+// See above for constant that can have base item types added to the list.
+int IfOnBannedBaseItemTypeList(object oPC, object oItem);
 
 int GetColorIDChange(object oItem, int nType, int nIndex, int nChange)
 {
@@ -131,7 +138,7 @@ void main()
             int nObjectType = GetObjectType(oTarget);
             if(nObjectType == OBJECT_TYPE_CREATURE)
             {
-                if(ai_GetIsCharacter(oTarget) || GetMaster(oTarget) == oPC ||
+                if(oPC == oTarget || GetMaster(oTarget) == oPC ||
                    ai_GetIsDungeonMaster(oPC))
                 {
                     SetLocalObject(oPC, CRAFT_TARGET, oTarget);
@@ -1238,6 +1245,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 //         " nModelSelected: " + IntToString(nModelSelected));
             }
             // Change the model.
+            //WriteTimestampedLogEntry("pe_crafting, 1241, " + GetName(oItem) + " nModelSelected: " +
+            //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
             oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
             DestroyObject (oItem);
             AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
@@ -1270,6 +1279,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 // Note: Right Thigh and Left Thigh are backwards so this fixes that!
                 if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
                 else nModelSelected++;
+                //WriteTimestampedLogEntry("pe_crafting, 1275, " + GetName(oItem) + " nModelSelected: " +
+                //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
                 oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
                 DestroyObject(oNewItem);
                 AssignCommand(oTarget, ActionEquipItem(oItem, INVENTORY_SLOT_CHEST));
@@ -1586,6 +1597,7 @@ void SaveCraftedItem(object oPC, object oTarget, int nToken)
 }
 int CanCraftItem(object oPC, object oItem, int nToken, int bPasteCheck = FALSE)
 {
+    if(IfOnBannedBaseItemTypeList(oPC, oItem)) return FALSE;
     // Plot items cannot be changed.
     if(GetPlotFlag(oItem))
     {
@@ -2466,16 +2478,16 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     jGroupRow = CreateLabel(JsonArray(), "Material to Color", "lbl_material_color", 320.0f, 10.0f);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     // Row 556 (groups)********************************************************* 508 / 529 /352
-    jGroupRow = CreateButtonSelect(JsonArray(), "Cloth 1", "btn_material_0", 98.0, 30.0);
+    jGroupRow = CreateButtonSelect(JsonArray(), "Leather 1", "btn_material_0", 98.0, 30.0);
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
-    jGroupRow = CreateButtonSelect(jGroupRow, "Leather 1", "btn_material_2", 98.0, 30.0);
+    jGroupRow = CreateButtonSelect(jGroupRow, "Cloth 1", "btn_material_2", 98.0, 30.0);
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
     jGroupRow = CreateButtonSelect(jGroupRow, "Metal 1", "btn_material_4", 98.0, 30.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
     // Row 557 (groups)********************************************************* 508 / 567 / 390
-    jGroupRow = CreateButtonSelect(JsonArray(), "Cloth 2", "btn_material_1", 98.0, 30.0);
+    jGroupRow = CreateButtonSelect(JsonArray(), "Leather 2", "btn_material_1", 98.0, 30.0);
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
-    jGroupRow = CreateButtonSelect(jGroupRow, "Leather 2", "btn_material_3", 98.0, 30.0);
+    jGroupRow = CreateButtonSelect(jGroupRow, "Cloth 2", "btn_material_3", 98.0, 30.0);
     jGroupRow = JsonArrayInsert(jGroupRow, NuiSpacer());
     jGroupRow = CreateButtonSelect(jGroupRow, "Metal 2", "btn_material_5", 98.0, 30.0);
     jGroupCol = JsonArrayInsert(jGroupCol, NuiRow(jGroupRow));
@@ -2855,4 +2867,18 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     // Lets make sure we clean up any cool down variables.
     //DeleteLocalInt(oPC, CRAFT_COOL_DOWN);
 }
-
+int IfOnBannedBaseItemTypeList(object oPC, object oItem)
+{
+    int nIndex, nBaseItemType = GetBaseItemType(oItem);
+    int nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, nIndex));
+    while(nBannedBaseItemType)
+    {
+        if(nBaseItemType == nBannedBaseItemType)
+        {
+            ai_SendMessages(GetName(oItem) + " cannot have it's appearance changed!", AI_COLOR_RED, oPC);
+            return TRUE;
+        }
+        nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, ++nIndex));
+    }
+    return FALSE;
+}

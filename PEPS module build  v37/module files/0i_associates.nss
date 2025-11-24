@@ -52,6 +52,8 @@ void ai_OnRested(object oCreature);
 
 // Increments/Decrements the following distance of associates.
 void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType);
+// Increments/Decrements the delay when casting each auto buff spell.
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore enemy associates for oAssociate.
@@ -523,6 +525,24 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                     ai_FireHenchman (GetPCSpeaker(), oCreature);
                     PlayVoiceChat (VOICE_CHAT_GOODBYE, oCreature);
                 }
+                else if(AI_PATROL_AHEAD_RADIAL_OPTION)
+                {
+                    if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:10");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
+                        ai_SendMessages(GetName(oCreature) + " has stopped patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                    }
+                    else
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:22:");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, TRUE);
+                        ai_SendMessages(GetName(oCreature) + " is now patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                        ai_ScoutAhead(oCreature);
+                    }
+                }
             }
         }
     }
@@ -773,7 +793,7 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
     if(sPerception == AI_I_SEE_AN_ENEMY || GetObjectSeen(oLastPerceived, oCreature))
     {
         // We are not in combat and we see the enemy so alert our allies!
-        ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
         ai_StartAssociateCombat(oCreature);
@@ -836,7 +856,7 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
         if(d100() < 34)
         {
             // We are not in combat so alert our allies!
-            ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+            ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         }
         SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
@@ -922,6 +942,23 @@ void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string 
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cmd_follow_tooltip", sName + " enter follow mode [" + sRange + " meters]");
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI, "btn_follow_target_tooltip", "  " + GetName(oAssociate) + " following " + sTarget + " [" + sRange + " meters]");
     }
+}
+void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType)
+{
+    float fAdjustment = GetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING) + fIncrement;
+    if(fAdjustment > 6.0) fAdjustment = 6.0;
+    else if(fAdjustment < 0.1) fAdjustment = 0.1;
+    SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, fAdjustment);
+    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+    jAIData = JsonArraySet(jAIData, 11, JsonFloat(fAdjustment));
+    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+    string sDelay = FloatToString(fAdjustment, 0, 1);
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_long_tooltip", "  Buff the party with long duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_short_tooltip", "  Buff the party with short duration spells. Cast speed [" + sDelay + "]");
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_COMMAND_NUI, sAssociateType + AI_WIDGET_NUI,
+       "btn_buff_all_tooltip", "  Buff the party with all spells. Cast speed [" + sDelay + "]");
 }
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType)
 {

@@ -59,6 +59,8 @@ void main()
         string sAssociateType = ai_GetAssociateType(oMaster, oCreature);
         ai_CheckAssociateData(oMaster, oCreature, sAssociateType);
         ai_CheckPCStart(oMaster);
+        // When a henchman dies and is brought back the plot flag can be set to TRUE!
+        SetPlotFlag(oCreature, FALSE);
         if(AI_HENCHMAN_WIDGET)
         {
             // This keeps widgets from disappearing and reappearing.

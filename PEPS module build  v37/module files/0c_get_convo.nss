@@ -9,8 +9,10 @@
  Allows use of ai_conversation for henchman in other modules.
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_actions"
+#include "nw_inc_gff"
 void BeginOriginalHenchmanConversation(string sDialog, object oPC)
 {
+    if(AI_DEBUG) ai_Debug("0c_get_convo", "14", "sDialog: (" + sDialog + ")");
     BeginConversation(sDialog, oPC);
 }
 void main()

@@ -35,6 +35,7 @@ void main()
         }
     }
     // Send the user-defined event signal if specified here so it doesn't get skipped.
+    //SendMessageToPC(GetFirstPC(), "HB_EVENT: " + IntToString(GetSpawnInCondition(NW_FLAG_HEARTBEAT_EVENT)));
     if(GetSpawnInCondition(NW_FLAG_HEARTBEAT_EVENT))
     {
         SignalEvent(oCreature, EventUserDefined(EVENT_HEARTBEAT));
@@ -76,17 +77,9 @@ void main()
             ai_ClearBuffTargets(oCreature, "AI_ALLY_TARGET_");
         }
     }
-    if(!IsInConversation (oCreature))
-    {
-        if(GetWalkCondition(NW_WALK_FLAG_CONSTANT)) WalkWayPoints();
-        if(GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS)) PlayMobileAmbientAnimations_NonAvian();
-        else if(GetSpawnInCondition(NW_FLAG_AMBIENT_ANIMATIONS_AVIAN)) PlayMobileAmbientAnimations_Avian();
-        else if(GetSpawnInCondition(NW_FLAG_IMMOBILE_AMBIENT_ANIMATIONS)) PlayImmobileAmbientAnimations();
-        else if(GetLocalInt(GetModule(), AI_RULE_WANDER) && GetStandardFactionReputation(STANDARD_FACTION_HOSTILE, oCreature) > 89)
-        {
-            ai_AmbientAnimations();
-        }
-    }
     if(ai_TryHealing(oCreature, oCreature)) return;
+    // This is where PEPS passes control to either the Bioware Waypoint system and
+    // AmbientAnimation scripts. A Persistent World can write there own scripts in 0e_animations.
+    ExecuteScript("0e_animations", oCreature);
 }
 
