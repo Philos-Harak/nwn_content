@@ -5,8 +5,6 @@
 
 Database Info:
 Slot 0 - henchname = the save slot 1 - 8.
-       - classes = all options data in json.
-       - henchman = all menu data in json.
 Slots 1 - 8 define the selections:
             henchname = Saved character selected.
             image = Current character selected.
@@ -14,20 +12,10 @@ Slots 1 - 8 define the selections:
 #include "0i_nui"
 #include "nw_inc_gff"
 
-//******************************************************************************
-// Constant values that can be changed to adjust the Henchman menu functionality.
-//******************************************************************************
-// If you want to restrict the types of creatures that are henchman in your mod
-// Then you need to turn this to TRUE and save a variable on each henchman.
-// Save an INT of ASSOCIATE_TYPE_HENCHMAN or (1) to "0_PCAssociate" on any
-// henchman you would like them to be able to save in the henchman plug in.
-const int RESTRICT_HENCHMAN_TYPES = FALSE;
-
-// Constant values that should NOT be changed.
 const string HENCHMAN_DATABASE = "philos_henchman_db";
 const string HENCHMAN_TABLE = "HENCHMAN_TABLE";
 const string HENCHMAN_TO_EDIT = "HENCHMAN_TO_EDIT";
-//******************************************************************************
+
 // Creates the table and initializes if it needs to.
 void CheckHenchmanDataAndInitialize(object oPC, string sSlot);
 // Removes a henchan from the current slot.
@@ -50,8 +38,6 @@ void SetHenchmanDbObject(object oPC, object oHenchman, string sSlot);
 // sSlot is the slot to define this object in the database for this Slot## (# Party button and #1-6).
 // lLocationToSpawn will spawn the object at that location.
 object GetHenchmanDbObject(object oPC, location lLocationToSpawn, string sSlot);
-// Setup the options for the henchman plugin if they are not already set.
-json SetHenchmanOptions(object oPC);
 // Returns TRUE if the henchman with sName can join.
 int GetJoinButtonActive(object oPC, string sName);
 // Returns a two letter alignment string.
@@ -65,7 +51,7 @@ void RemoveYourHenchman(object oPC, int nToken, string sParty);
 // Removes all henchman from the party.
 void RemoveWholeParty(object oPC, int nToken, string sParty);
 // Saves a henchman in your party to the saved party #.
-int SaveYourHenchman(object oPC, int nToken, string sParty);
+void SaveYourHenchman(object oPC, int nToken, string sParty);
 // Saves the whole party to the saved party #.
 void SaveWholeParty(object oPC, int nToken, string sParty);
 // Saves the players current party to party #.
@@ -91,12 +77,13 @@ void CreateHenchmanDataTable ()
 {
     sqlquery sql = SqlPrepareQueryCampaign(HENCHMAN_DATABASE,
         "CREATE TABLE IF NOT EXISTS " + HENCHMAN_TABLE + " (" +
-        "player        TEXT, " +
+        "name        TEXT, " +
         "slot          TEXT, " +
-        "henchname     TEXT, " +
-        "saveselect    INT, " +
-        "partyselect   TEXT, " +
-        "henchdata     TEXT, " +
+        "henchname          TEXT, " +
+        "image         TEXT, " +
+        "stats         TEXT, " +
+        "classes       TEXT, " +
+        "henchman      TEXT, " +
         "PRIMARY KEY(slot));");
     SqlStep (sql);
 }
@@ -113,15 +100,16 @@ void CheckHenchmanDataAndInitialize(object oPC, string sSlot)
     SqlBindString(sql, "@slot", sSlot);
     if(!SqlStep(sql))
     {
-        sQuery = "INSERT INTO " + HENCHMAN_TABLE + "(name, slot, henchname, saveselect, partyselect, " +
-        "henchdata) VALUES (@name, @slot, @henchname, @saveselect, @partyselect, @henchdata);";
+        sQuery = "INSERT INTO " + HENCHMAN_TABLE + "(name, slot, henchname, image, stats, classes " +
+        ", henchman) VALUES (@name, @slot, @henchname, @image, @stats, @classes, @henchman);";
         sql = SqlPrepareQueryCampaign(HENCHMAN_DATABASE, sQuery);
         SqlBindString(sql, "@name", sPCName);
         SqlBindString(sql, "@slot", sSlot);
         SqlBindString(sql, "@henchname", "");
-        SqlBindInt(sql, "@saveselect", 0);
-        SqlBindInt(sql, "@partyselect", 0);
-        SqlBindJson(sql, "@henchdata", JsonObject());
+        SqlBindString(sql, "@image", "");
+        SqlBindString(sql, "@stats", "");
+        SqlBindString(sql, "@classes", "");
+        SqlBindJson(sql, "@henchman", JsonObject());
         SqlStep(sql);
     }
 }
@@ -134,28 +122,6 @@ void RemoveHenchmanDb(object oPC, string sSlot)
     SqlBindString(sql, "@name", sPCName);
     SqlBindString(sql, "@slot", sSlot);
     SqlStep(sql);
-}
-void SetHenchmanDbInt(object oPC, string sDataField, int nData, string sSlot)
-{
-    string sPCName = ai_RemoveIllegalCharacters(GetPCPlayerName(oPC));
-    string sQuery = "UPDATE " + HENCHMAN_TABLE + " SET " + sDataField + " = @data WHERE " +
-                    "name = @name AND slot = @slot;";
-    sqlquery sql = SqlPrepareQueryCampaign(HENCHMAN_DATABASE, sQuery);
-    SqlBindInt(sql, "@data", nData);
-    SqlBindString(sql, "@name", sPCName);
-    SqlBindString(sql, "@slot", sSlot);
-    SqlStep(sql);
-}
-int GetHenchmanDbInt(object oPC, string sDataField, string sSlot)
-{
-    string sPCName = ai_RemoveIllegalCharacters(GetPCPlayerName(oPC));
-    string sQuery = "SELECT " + sDataField + " FROM " + HENCHMAN_TABLE + " WHERE " +
-                    "name = @name AND slot = @slot;";
-    sqlquery sql = SqlPrepareQueryCampaign(HENCHMAN_DATABASE, sQuery);
-    SqlBindString(sql, "@name", sPCName);
-    SqlBindString(sql, "@slot", sSlot);
-    if(SqlStep (sql)) return SqlGetInt(sql, 0);
-    else return 0;
 }
 void SetHenchmanDbString(object oPC, string sDataField, string sData, string sSlot)
 {
@@ -229,16 +195,6 @@ object GetHenchmanDbObject(object oPC, location lLocationToSpawn, string sSlot)
     }
     return OBJECT_INVALID;
 }
-json SetHenchmanOptions(object oPC)
-{
-    json jData = JsonObject();
-    if(ai_GetIsServer()) jData = JsonObjectSet(jData, "Create_Henchman", JsonInt(FALSE));
-    else jData = JsonObjectSet(jData, "Create_Henchman", JsonInt(TRUE));
-    jData = JsonObjectSet(jData, "Max_Party_Size", JsonInt(6));
-    jData = JsonObjectSet(jData, "Level_Limit", JsonInt(-2));
-    SetHenchmanDbJson(oPC, "classes", jData, "0");
-    return jData;
-}
 int GetJoinButtonActive(object oPC, string sName)
 {
     if(sName == GetName(oPC)) return FALSE;
@@ -292,16 +248,11 @@ void AddSavedCharacterInfo(object oPC, int nToken, string sParty)
         NuiSetBind(oPC, nToken, "lbl_save_char_label", JsonString(sName));
         NuiSetBind(oPC, nToken, "img_saved_portrait_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "img_saved_portrait_image", JsonString(sImage + "l"));
-        NuiSetBind(oPC, nToken, "img_shield_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "lbl_saved_stats_label", JsonString(sStats));
         NuiSetBind(oPC, nToken, "lbl_saved_classes_label", JsonString(sClasses));
         NuiSetBind(oPC, nToken, "btn_saved_join_label", JsonString("Join"));
         NuiSetBind(oPC, nToken, "btn_saved_join_event", JsonBool(TRUE));
-        sText = "  Load " + sName + " into your party.";
-        NuiSetBind(oPC, nToken, "btn_saved_join_tooltip", JsonString(sText));
         NuiSetBind(oPC, nToken, "btn_saved_remove_event", JsonBool(TRUE));
-        sText = "  Permanently remove " + sName + " from party " + sParty + "'s list!";
-        NuiSetBind(oPC, nToken, "btn_saved_remove_tooltip", JsonString(sText));
         //NuiSetBind(oPC, nToken, "btn_saved_edit_event", JsonBool(TRUE));
     }
     else
@@ -331,7 +282,6 @@ void AddCurrentCharacterInfo(object oPC, int nToken, string sParty)
     }
     int nHenchman = StringToInt(sHenchman);
     int nIndex = 0;
-    string sText;
     object oCharacter;
     while(nIndex < AI_MAX_HENCHMAN)
     {
@@ -348,14 +298,15 @@ void AddCurrentCharacterInfo(object oPC, int nToken, string sParty)
     }
     // Adjust the party buttons.
     int bParty = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, 1) != OBJECT_INVALID;
+    //NuiSetBind(oPC, nToken, "btn_save_party", JsonBool (bParty));
     NuiSetBind(oPC, nToken, "btn_save_party_event", JsonBool (bParty));
-
+    //NuiSetBind(oPC, nToken, "btn_remove_party", JsonBool (bParty));
     NuiSetBind(oPC, nToken, "btn_remove_party_event", JsonBool (bParty));
     if(bParty)
     {
-        sText = "  Saves all henchman from your current party to party " + sParty + ".";
+        string sText = "  Saves all henchman from your current party to party " + sParty + ".";
         NuiSetBind(oPC, nToken, "btn_save_party_tooltip", JsonString(sText));
-        sText = "  Removes all henchman from your current party and destroys them!";
+        sText = "  Removes all henchman from your current party!";
         NuiSetBind(oPC, nToken, "btn_remove_party_tooltip", JsonString(sText));
     }
     // Setup the henchman window.
@@ -382,12 +333,8 @@ void AddCurrentCharacterInfo(object oPC, int nToken, string sParty)
     NuiSetBind(oPC, nToken, "lbl_cur_classes_label", JsonString(sClasses));
     NuiSetBind(oPC, nToken, "btn_cur_save_label", JsonString("Save"));
     NuiSetBind(oPC, nToken, "btn_cur_save_event", JsonBool(TRUE));
-    sText = "  Save " + sName + " to party " + sParty + ".";
-    NuiSetBind(oPC, nToken, "btn_cur_save_tooltip", JsonString(sText));
     NuiSetBind(oPC, nToken, "btn_cur_edit_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_cur_remove_event", JsonBool(TRUE));
-    sText = "  Remove " + sName + " from your current party and destroy them!";
-    NuiSetBind(oPC, nToken, "btn_cur_remove_tooltip", JsonString(sText));
 }
 object GetSelectedHenchman(object oPC, string sParty)
 {
@@ -453,9 +400,9 @@ void RemoveWholeParty(object oPC, int nToken, string sParty)
     NuiDestroy(oPC, nToken);
     ExecuteScript("pi_henchmen", oPC);
 }
-int SaveYourHenchman(object oPC, int nToken, string sParty)
+void SaveYourHenchman(object oPC, int nToken, string sParty)
 {
-    int bPC, nIndex, nClass, nPosition, nNumOfHenchman;
+    int bPC, nIndex, nClass, nPosition, nMaxHenchman = AI_MAX_HENCHMAN + 1;
     string sName, sIndex, sSlot, sStats, sClasses;
     object oHenchman = GetSelectedHenchman(oPC, sParty);
     if(oHenchman == oPC)
@@ -464,10 +411,8 @@ int SaveYourHenchman(object oPC, int nToken, string sParty)
         oHenchman = CopyObject(oPC, GetLocation(oPC), OBJECT_INVALID, "hench_" + IntToString(Random(100)), TRUE);
         SetHenchmanScripts(oHenchman);
     }
-    json jData = GetHenchmanDbJson(oPC, "classes", "0");
-    int nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size"));
     string sHenchmanName = GetName(oHenchman);
-    while(nIndex < nMaxPartySize)
+    while(nIndex < nMaxHenchman)
     {
         sIndex = IntToString(nIndex);
         sName = GetHenchmanDbString(oPC, "henchname", sParty + sIndex);
@@ -519,41 +464,23 @@ int SaveYourHenchman(object oPC, int nToken, string sParty)
             SetHenchmanDbJson(oPC, "henchman", jHenchman, sSlot);
             if(sName == "") ai_SendMessages(sHenchmanName + " has been saved to the party " + sParty + ".", AI_COLOR_GREEN, oPC);
             else ai_SendMessages(sHenchmanName + " has replaced a copy of themselves in the party " + sParty + ".", AI_COLOR_GREEN, oPC);
-            return TRUE;
+            break;
         }
         nIndex++;
-        if(GetLocalInt(oHenchman, "0_PCAssociate") == ASSOCIATE_TYPE_HENCHMAN ||
-           !RESTRICT_HENCHMAN_TYPES)
-        {
-            if(++nNumOfHenchman == nMaxPartySize)
-            {
-                ai_SendMessages("This party is full!", AI_COLOR_RED, oPC);
-                return FALSE;
-            }
-        }
     }
-    return TRUE;
+    if(nIndex == nMaxHenchman) ai_SendMessages("This party is full!", AI_COLOR_RED, oPC);
 }
 void SaveWholeParty(object oPC, int nToken, string sParty)
 {
-    json jData = GetHenchmanDbJson(oPC, "classes", "0");
-    int nSaved, nIndex = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size"));
+    int nIndex = AI_MAX_HENCHMAN;
     object oHenchman;
     while(nIndex > 0)
     {
         oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
-        if(oHenchman != OBJECT_INVALID &&
-          (GetLocalInt(oHenchman, "0_PCAssociate") == ASSOCIATE_TYPE_HENCHMAN || !RESTRICT_HENCHMAN_TYPES))
+        if(oHenchman != OBJECT_INVALID)
         {
             SetHenchmanDbString(oPC, "image", IntToString(nIndex), sParty);
-            nSaved = SaveYourHenchman(oPC, nToken, sParty);
-            if(!nSaved)
-            {
-                SetHenchmanDbString(oPC, "henchname", "0", sParty);
-                NuiDestroy(oPC, nToken);
-                ExecuteScript("pi_henchmen", oPC);
-                return;
-            }
+            SaveYourHenchman(oPC, nToken, sParty);
         }
         nIndex--;
     }
@@ -564,9 +491,7 @@ void SaveWholeParty(object oPC, int nToken, string sParty)
 }
 void SavedPartyJoin(object oPC, int nToken, string sParty)
 {
-    int bFound, nIndex, nNumOfHenchman, nDBHenchman = 0;
-    json jData = GetHenchmanDbJson(oPC, "classes", "0");
-    int nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size"));
+    int bFound, nIndex, nDBHenchman = 0;
     json jHenchman;
     object oHenchman, oLoadedHenchman;
     string sDBHenchman = IntToString(nDBHenchman);
@@ -583,19 +508,7 @@ void SavedPartyJoin(object oPC, int nToken, string sParty)
                 bFound = TRUE;
                 break;
             }
-            if(GetLocalInt(oHenchman, "0_PCAssociate") == ASSOCIATE_TYPE_HENCHMAN ||
-               !RESTRICT_HENCHMAN_TYPES)
-            {
-                ++nNumOfHenchman;
-            }
             oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++nIndex);
-        }
-        if(nNumOfHenchman >= nMaxPartySize)
-        {
-            ai_SendMessages("Your party is at the maximum number of henchman!", AI_COLOR_RED, oPC);
-            NuiDestroy(oPC, nToken);
-            ExecuteScript("pi_henchman", oPC);
-            break;
         }
         if(!bFound)
         {
@@ -613,9 +526,7 @@ void SavedPartyJoin(object oPC, int nToken, string sParty)
 }
 void SavedCharacterJoin(object oPC, int nToken, string sParty)
 {
-    int nIndex, bFound, nNumOfHenchman;
-    json jData = GetHenchmanDbJson(oPC, "classes", "0");
-    int nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size"));
+    int nIndex, bFound;
     object oHenchman, oLoadedHenchman;
     string sHenchman = GetHenchmanDbString(oPC, "henchname", sParty);
     string sName = GetHenchmanDbString(oPC, "henchname", sParty + sHenchman);
@@ -628,20 +539,9 @@ void SavedCharacterJoin(object oPC, int nToken, string sParty)
             bFound = TRUE;
             break;
         }
-        if(GetLocalInt(oHenchman, "0_PCAssociate") == ASSOCIATE_TYPE_HENCHMAN ||
-           !RESTRICT_HENCHMAN_TYPES)
-        {
-            ++nNumOfHenchman;
-        }
         oHenchman = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++nIndex);
     }
-    if(nNumOfHenchman >= nMaxPartySize)
-    {
-        ai_SendMessages("Your party is at the maximum number of henchman!", AI_COLOR_RED, oPC);
-        NuiDestroy(oPC, nToken);
-        ExecuteScript("pi_henchman", oPC);
-    }
-    else if(!bFound)
+    if(!bFound)
     {
         ai_SendMessages(sName + " has joined your party!", AI_COLOR_GREEN, oPC);
         oLoadedHenchman = GetHenchmanDbObject(oPC, GetLocation(oPC), sParty + sHenchman);
@@ -1650,12 +1550,13 @@ void CreateCharacterDescriptionNUI(object oPC, string sName, string sIcon, strin
     // Row 1 ******************************************************************* 500 / 469
     json jRow = CreateImage(JsonArray(), "", "char_icon", NUI_ASPECT_FIT, NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE, 40.0, 40.0);
     jRow = CreateTextBox(jRow, "char_text", 380.0, 400.0);
+    // Add row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 ******************************************************************* 500 / 522
     jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateButton(jRow, "OK", "btn_ok", 150.0f, 45.0f);
+    // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
-    // Row 3 ******************************************************************* 500 / 522
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     int nToken = SetWindow(oPC, jLayout, "char_description_nui", sName,
@@ -1669,40 +1570,4 @@ void CreateCharacterDescriptionNUI(object oPC, string sName, string sIcon, strin
     NuiSetBind(oPC, nToken, "char_text", JsonString(sDescription));
     // Row 2
     NuiSetBind(oPC, nToken, "btn_ok_event", JsonBool(TRUE));
-}
-void CreateHenchmanOptionsGUIPanel(object oPC)
-{
-    // Row 1 *******************************************************************
-    json jRow = CreateCheckBox(JsonArray(), "Allow players to Create NPC Henchman", "chbx_create_hench", 340.0, 20.0);
-    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
-    // Row 2 *******************************************************************
-    jRow = CreateLabel(JsonArray(), "Maximum party size(1-10):", "lbl_max_per_party", 170.0, 20.0);
-    jRow = CreateTextEditBox(jRow, "", "txt_max_party", 2, FALSE, 40.0, 20.0);
-    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
-    // Row 3 *******************************************************************
-    jRow = CreateLabel(JsonArray(), "Levels allowed from the players level (-5 to +5)", "lbl_level_limit", 320.0, 20.0);
-    jRow = CreateTextEditBox(jRow, "", "txt_level_limit", 2, FALSE, 40.0, 20.0);
-    jCol = JsonArrayInsert(jCol, NuiRow(jRow));
-    // Set the Layout of the window.
-    json jLayout = NuiCol(jCol);
-    int nToken = SetWindow(oPC, jLayout, "henchman_options_nui", "Henchman Options",
-                             -1.0, -1.0, 400.0f, 537.0, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_henchmen");
-    json jData = JsonArrayInsert(JsonArray(), JsonString(ObjectToString(oPC)));
-    NuiSetUserData(oPC, nToken, jData);
-    jData = GetHenchmanDbJson(oPC, "classes", "0");
-    // Row 1
-    NuiSetBind(oPC, nToken, "chbx_create_hench_event", JsonBool(TRUE));
-    NuiSetBindWatch(oPC, nToken, "chbx_create_hench_check", TRUE);
-    int bCreateHench = JsonGetInt(JsonObjectGet(jData, "Create_Henchman"));
-    NuiSetBind(oPC, nToken, "chbx_create_hench_check", JsonBool(bCreateHench));
-    // Row 2
-    NuiSetBind(oPC, nToken, "txt_max_party_event", JsonBool(TRUE));
-    int nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size"));
-    NuiSetBind(oPC, nToken, "txt_max_party", JsonString(IntToString(nMaxPartySize)));
-    NuiSetBindWatch(oPC, nToken, "txt_max_party", TRUE);
-    // Row 3
-    NuiSetBind(oPC, nToken, "txt_level_limit_event", JsonBool(TRUE));
-    int nLevelLimit = JsonGetInt(JsonObjectGet(jData, "Level_Limit"));
-    NuiSetBind(oPC, nToken, "txt_level_limit", JsonString(IntToString(nLevelLimit)));
-    NuiSetBindWatch(oPC, nToken, "txt_level_limit", TRUE);
 }
