@@ -4,18 +4,20 @@ Philos Player Enhancment Systems (PEPS)
 
 Folders descriptions:
 
-PEPS module build v37: This is the nss files to put within a module and compile.
+PEPS module build: This is the files needed to add to a module for builders. 
 
 PEPS PDF files: These are the manuals for using PEPS in pdf format.
 
-PEPS WIP for Mobile v36: This is my work in progress full module that I use to build and work on the files for the mobile version 36.
+PEPS WIP for Mobile: This is my work in progress (full module) that I use to build and work on the files for the mobile version.
 
-PEPS WIP for v37: This is my work in progress full module that I use to build and work on the files for version 37.
+PEPS WIP for PC: This is my work in progress (full module) that I use to build and work on the files for PC version.
 
-PEPS WIP override files: These files must be placed in the override folder to work with any of the WIP folders.
+PEPS WIP override files: These files must be placed in the override folder or a hak to work with any of the WIP folders.
 
-I will be putting the compiled zips with all the files in folders for easy install in the Release section from now on.
+PEPS_PRC8 module build: This is the files needed to add to a module that uses PRC8 for builders.
 
-PEPS AI v36 Release is the mobile installable version.
+***** Releases *****
 
-PEPS AI v37 Release is the pc installable version.
+PEPS AI Mobile Release is the mobile installable version.
+
+PEPS AI PC Release is the pc installable version.
