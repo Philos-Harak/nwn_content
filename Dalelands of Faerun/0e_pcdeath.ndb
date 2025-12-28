@@ -1,0 +1,3726 @@
+NDB V1.0
+0000041 0000007 0001528 0000169 0000431
+n00 0i_constants
+n01 0i_main
+n02 nwnx_creature
+n03 nwnx_weapon
+n04 x0_i0_campaign
+n05 x0_i0_enemy
+n06 nwnx
+n07 nwnx_rename
+n08 0i_color
+n09 0i_messages
+n10 0i_items
+n11 0i_datetime
+n12 nwnx_sql
+n13 0i_dbcalls
+n14 x2_inc_itemprop
+n15 NW_I0_SPELLS
+n16 x0_i0_match
+n17 x2_inc_switches
+n18 x0_i0_partywide
+n19 x0_i0_transport
+n20 x0_i0_common
+n21 nw_i0_plot
+n22 x0_i0_behavior
+n23 x0_i0_position
+n24 x0_i0_modes
+n25 x0_i0_voice
+n26 x0_i0_debug
+n27 x0_i0_assoc
+n28 x0_i0_equip
+n29 x0_inc_generic
+n30 x0_i0_talent
+n31 x0_i0_combat
+n32 x0_i0_spawncond
+n33 x0_i0_walkway
+n34 x0_i0_anims
+n35 nw_i0_generic
+n36 x0_i0_henchman
+n37 x0_i0_spells
+n38 x2_I0_SPELLS
+n39 0i_effects
+N40 0e_pcdeath
+s 03 vector
+sf f x
+sf f y
+sf f z
+s 50 stSpell
+sf o oCaster
+sf i iClass
+sf i iSpellID
+sf i iSubType
+sf i iDescriptor
+sf i iCasterLevel
+sf s sArcaneComponent
+sf s sDivineComponent
+sf i iDivineFocus
+sf s sEnhancingComp
+sf i iCompAmount
+sf o oTarget
+sf e2 lTarget
+sf o oAreaTarget
+sf i iAreaShape
+sf f fAreaSize
+sf i iLineOfSight
+sf i iObjectFilter
+sf i iTargetType
+sf f fDelay
+sf i iDurationType
+sf i iDurNumOfDice
+sf i iDurationDie
+sf i iDurDicePerLvl
+sf i iMaxDurNumOfDice
+sf i iDuration
+sf i iDurPerLvl
+sf i iMaxDuration
+sf f fDuration
+sf i iFireAgain
+sf i iSpellResistance
+sf i iSave
+sf i iSaveDC
+sf i iSaveHalf
+sf i iSaveType
+sf i iSaveResult
+sf i iDamageType
+sf i iModNumOfDice
+sf i iModifierDie
+sf i iModDicePerLvl
+sf i iMaxModNumOfDice
+sf i iModifier
+sf i iModPerLvl
+sf i iMaxModifier
+sf i iResult
+sf i iImpact
+sf i iBeam
+sf i iCounter
+sf o oBeamEffector
+sf i iMetaMagic
+s 03 NWNX_Creature_SpecialAbility
+sf i id
+sf i ready
+sf i level
+s 04 NWNX_Creature_MemorisedSpell
+sf i id
+sf i ready
+sf i meta
+sf i domain
+s 03 NWNX_Weapon_DevastatingCriticalEvent_Data
+sf o oWeapon
+sf o oTarget
+sf i nDamage
+s 10 sEnemies
+sf i FIGHTERS
+sf i FIGHTER_LEVELS
+sf i CLERICS
+sf i CLERIC_LEVELS
+sf i MAGES
+sf i MAGE_LEVELS
+sf i MONSTERS
+sf i MONTERS_LEVELS
+sf i TOTAL
+sf i TOTAL_LEVELS
+s 04 sSituation
+sf i ENEMY_NUM
+sf i ALLY_NUM
+sf i ENEMY_CR
+sf i ALLY_CR
+f 00000b26 00000b53 002 v NWNX_CallFunction
+fp s
+fp s
+f 00000c2d 00000c68 003 v NWNX_PushArgumentInt
+fp s
+fp s
+fp i
+f ffffffff ffffffff 003 v NWNX_PushArgumentFloat
+fp s
+fp s
+fp f
+f 00003779 000037b4 003 v NWNX_PushArgumentObject
+fp s
+fp s
+fp o
+f 00000a8c 00000ac7 003 v NWNX_PushArgumentString
+fp s
+fp s
+fp s
+f ffffffff ffffffff 003 v NWNX_PushArgumentEffect
+fp s
+fp s
+fp e0
+f ffffffff ffffffff 003 v NWNX_PushArgumentItemProperty
+fp s
+fp s
+fp e4
+f 00000b53 00000b9f 002 i NWNX_GetReturnValueInt
+fp s
+fp s
+f ffffffff ffffffff 002 f NWNX_GetReturnValueFloat
+fp s
+fp s
+f ffffffff ffffffff 002 o NWNX_GetReturnValueObject
+fp s
+fp s
+f 00000e4e 00000e9a 002 s NWNX_GetReturnValueString
+fp s
+fp s
+f ffffffff ffffffff 002 e0 NWNX_GetReturnValueEffect
+fp s
+fp s
+f ffffffff ffffffff 002 e4 NWNX_GetReturnValueItemProperty
+fp s
+fp s
+f 00000ac7 00000b26 003 s NWNX_INTERNAL_BuildString
+fp s
+fp s
+fp s
+f ffffffff ffffffff 000 s NWNX_Rename
+f ffffffff ffffffff 000 i NWNX_RENAME_PLAYERNAME_DEFAULT
+f ffffffff ffffffff 000 i NWNX_RENAME_PLAYERNAME_OBFUSCATE
+f ffffffff ffffffff 000 i NWNX_RENAME_PLAYERNAME_OVERRIDE
+f ffffffff ffffffff 000 i NWNX_RENAME_PLAYERNAME_ANONYMOUS
+f ffffffff ffffffff 006 v NWNX_Rename_SetPCNameOverride
+fp o
+fp s
+fp s
+fp s
+fp i
+fp o
+f ffffffff ffffffff 002 s NWNX_Rename_GetPCNameOverride
+fp o
+fp o
+f ffffffff ffffffff 003 v NWNX_Rename_ClearPCNameOverride
+fp o
+fp o
+fp i
+f ffffffff ffffffff 000 s COLOR_BLACK
+f ffffffff ffffffff 000 s COLOR_WHITE
+f ffffffff ffffffff 000 s COLOR_YELLOW
+f ffffffff ffffffff 000 s COLOR_RED
+f ffffffff ffffffff 000 s COLOR_GREEN
+f ffffffff ffffffff 000 s COLOR_DARK_BLUE
+f ffffffff ffffffff 000 s COLOR_GREY
+f ffffffff ffffffff 000 s COLOR_BLUE
+f ffffffff ffffffff 000 s COLOR_PURPLE
+f ffffffff ffffffff 000 s COLOR_ORANGE
+f ffffffff ffffffff 000 s COLOR_GOLD
+f ffffffff ffffffff 000 v SetColorTokens
+f 000004f7 000005f7 002 s AddColorToText
+fp s
+fp s
+f ffffffff ffffffff 002 s ColorVillianName
+fp o
+fp s
+f ffffffff ffffffff 000 s TITLE_MESSAGE
+f ffffffff ffffffff 000 s VERSION_MESSAGE
+f ffffffff ffffffff 000 s SERVER_MESSAGE
+f ffffffff ffffffff 000 s NEWS_MESSAGE
+f ffffffff ffffffff 000 i DEBUG_MODE
+f ffffffff ffffffff 000 i GAME_HOURS_IN_REAL_TIME
+f ffffffff ffffffff 000 f MINUTE_DELAY
+f ffffffff ffffffff 000 f SHORT_TIME_DELAYS
+f ffffffff ffffffff 000 f LONG_TIME_DELAYS
+f ffffffff ffffffff 000 f CLOSE_DISTANCES
+f ffffffff ffffffff 000 f SHORT_DISTANCES
+f ffffffff ffffffff 000 i MIN_AREA_LEVEL
+f ffffffff ffffffff 000 i MAX_AREA_LEVEL
+f ffffffff ffffffff 000 i MAX_NUM_OF_PLAYERS
+f ffffffff ffffffff 000 i SPAWN_DEFAULT
+f ffffffff ffffffff 000 s STARTING_YEAR
+f ffffffff ffffffff 000 s TEMP_CHEST
+f ffffffff ffffffff 000 i MAX_REROLLS
+f ffffffff ffffffff 000 i MAX_ABILITIES_1_to_7
+f ffffffff ffffffff 000 i MAX_ABILITIES_8_to_15
+f ffffffff ffffffff 000 i MAX_ABILITIES_16_Up
+f ffffffff ffffffff 000 i MAX_SAVES_1_to_7
+f ffffffff ffffffff 000 i MAX_SAVES_8_to_15
+f ffffffff ffffffff 000 i MAX_SAVES_16_Up
+f ffffffff ffffffff 000 s WP_LIMBO
+f ffffffff ffffffff 000 s WP_DEFAULT_RESPAWN
+f ffffffff ffffffff 000 s WP_CYNOSURE
+f ffffffff ffffffff 000 s WP_START_LOCATION
+f ffffffff ffffffff 000 s WP_CREATURE_SPAWN
+f ffffffff ffffffff 000 s STARTING_CHARACTER_LEVEL
+f ffffffff ffffffff 000 s STARTING_EXPERIENCE_SLIDER
+f ffffffff ffffffff 000 s STARTING_TREASURE_SLIDER
+f ffffffff ffffffff 000 i MAX_PERSISTANT_ITEMS
+f ffffffff ffffffff 000 i SAVE_CHARACTERS_DURATION
+f ffffffff ffffffff 000 s RESTRICT_REST
+f ffffffff ffffffff 000 i HEAL_HP_PER_LEVEL
+f ffffffff ffffffff 000 i REST_WAIT_PER_LEVEL
+f ffffffff ffffffff 000 i REST_LEVELS_TO_DIVIDE_BY
+f ffffffff ffffffff 000 i BLEED_DC
+f ffffffff ffffffff 000 i MAX_HITPOINTS
+f ffffffff ffffffff 000 f XP_PARTY_RADIUS
+f ffffffff ffffffff 000 f BASE_XP
+f ffffffff ffffffff 000 f ADJUSTMENT_XP
+f ffffffff ffffffff 000 f BASE_DISARM_TRAP_XP
+f ffffffff ffffffff 000 f BASE_UNLOCK_XP
+f ffffffff ffffffff 000 i EXTRA_CREATURE_CHANCE
+f ffffffff ffffffff 000 s BASE_MAGIC_ITEM_2DA_FILE
+f ffffffff ffffffff 000 s BASE_MUNDANE_ITEM_2DA_FILE
+f ffffffff ffffffff 000 s PROPERTY_LIST_2DA_FILE
+f ffffffff ffffffff 000 s CRAFTING_2DA_FILE
+f ffffffff ffffffff 000 i ID_MIN_GP_VALUE
+f ffffffff ffffffff 000 i NPC_QUEST_CHANCE
+f ffffffff ffffffff 000 i MAX_QUESTS
+f ffffffff ffffffff 000 i ITEM_QUALITY_MASTER_WORK
+f ffffffff ffffffff 000 i ITEM_QUALITY_EXQUISITE
+f ffffffff ffffffff 000 i ITEM_QUALITY_LEGENDARY
+f ffffffff ffffffff 000 i ITEM_QUALITY_RELIC
+f ffffffff ffffffff 000 i ITEM_QUALITY_ARTIFACT
+f ffffffff ffffffff 000 i BASE_SEARCH_DC
+f ffffffff ffffffff 000 i PASSIVE_SEARCH_PENALTY
+f ffffffff ffffffff 000 i BASE_CHANCE_OF_LOCK
+f ffffffff ffffffff 000 i LOCK_CHANCE_LVL_DIVISOR
+f ffffffff ffffffff 000 i LOCK_BASE_DC
+f ffffffff ffffffff 000 i LOCK_DIE
+f ffffffff ffffffff 000 i BASH_BASE_DC
+f ffffffff ffffffff 000 i BASH_DIE
+f ffffffff ffffffff 000 i BASE_CHANCE_OF_TRAP
+f ffffffff ffffffff 000 i TRAP_CHANCE_LVL_DIVISOR
+f ffffffff ffffffff 000 i TRAP_DISARM_BASE_DC
+f ffffffff ffffffff 000 i TRAP_DISARM_DIE
+f ffffffff ffffffff 000 i TRAP_DETECT_BASE_DC
+f ffffffff ffffffff 000 i TRAP_DETECT_DIE
+f ffffffff ffffffff 000 i MINOR_TRAP_DAMAGE_CHANCE
+f ffffffff ffffffff 000 i AVERAGE_TRAP_DAMAGE_CHANCE
+f ffffffff ffffffff 000 i STRONG_TRAP_DAMAGE_CHANCE
+f ffffffff ffffffff 000 i DEADLY_TRAP_DAMAGE_CHANCE
+f ffffffff ffffffff 000 i TRAP_LVL_DIVISOR
+f ffffffff ffffffff 000 i MINOR_TRAP_NUM_OF_DMG_DIE
+f ffffffff ffffffff 000 i MINOR_TRAP_DAMAGE_DIE
+f ffffffff ffffffff 000 i AVERAGE_TRAP_NUM_OF_DMG_DIE
+f ffffffff ffffffff 000 i AVERAGE_TRAP_DAMAGE_DIE
+f ffffffff ffffffff 000 i STRONG_TRAP_NUM_OF_DMG_DIE
+f ffffffff ffffffff 000 i STRONG_TRAP_DAMAGE_DIE
+f ffffffff ffffffff 000 i DEADLY_TRAP_NUM_OF_DMG_DIE
+f ffffffff ffffffff 000 i DEADLY_TRAP_DAMAGE_DIE
+f ffffffff ffffffff 000 i TRAP_BASE_SAVE
+f ffffffff ffffffff 000 i TRAP_SAVE_DIE
+f ffffffff ffffffff 000 f TRAP_RADIUS
+f ffffffff ffffffff 000 i TRAP_TYPE_GAS
+f ffffffff ffffffff 000 i TRAP_TYPE_TANGLE
+f ffffffff ffffffff 000 i UPKEEP_WAIT_STRING
+f ffffffff ffffffff 000 i UPKEEP_WAIT_PERIOD
+f ffffffff ffffffff 000 s UPKEEP_WAIT_TEXT
+f ffffffff ffffffff 000 i HOUSE_TYPE_COTTAGE
+f ffffffff ffffffff 000 i HOUSE_TYPE_HOUSE
+f ffffffff ffffffff 000 i HOUSE_TYPE_MANSION
+f ffffffff ffffffff 000 i HOUSE_TYPE_TOWER
+f ffffffff ffffffff 000 i HOUSE_TYPE_KEEP
+f ffffffff ffffffff 000 s HOUSE_LOC_SOUTH_WARD
+f ffffffff ffffffff 000 s HOUSE_LOC_SEA_WARD
+f ffffffff ffffffff 000 i COTTAGE_BASE_COST
+f ffffffff ffffffff 000 i HOUSE_BASE_COST
+f ffffffff ffffffff 000 i MANSION_BASE_COST
+f ffffffff ffffffff 000 i TOWER_BASE_COST
+f ffffffff ffffffff 000 i KEEP_BASE_COST
+f ffffffff ffffffff 000 i COTTAGE_COMPONENT_COST
+f ffffffff ffffffff 000 i HOUSE_COMPONENT_COST
+f ffffffff ffffffff 000 i MANSION_COMPONENT_COST
+f ffffffff ffffffff 000 i TOWER_COMPONENT_COST
+f ffffffff ffffffff 000 i KEEP_COMPONENT_COST
+f ffffffff ffffffff 000 i MAX_NUM_OF_HOMES
+f ffffffff ffffffff 000 i MIN_SHOP_ITEMS
+f ffffffff ffffffff 000 i MIN_SHOP_ITEM_PRICE
+f ffffffff ffffffff 000 i CHANCE_BREAK_AMULET
+f ffffffff ffffffff 000 i CHANCE_BREAK_ARMOR
+f ffffffff ffffffff 000 i CHANCE_BREAK_BELT
+f ffffffff ffffffff 000 i CHANCE_BREAK_BOOTS
+f ffffffff ffffffff 000 i CHANCE_BREAK_BRACER
+f ffffffff ffffffff 000 i CHANCE_BREAK_CLOAK
+f ffffffff ffffffff 000 i CHANCE_BREAK_GLOVES
+f ffffffff ffffffff 000 i CHANCE_BREAK_HELMET
+f ffffffff ffffffff 000 i CHANCE_BREAK_ROD
+f ffffffff ffffffff 000 i CHANCE_BREAK_STAFF
+f ffffffff ffffffff 000 i CHANCE_BREAK_WAND
+f ffffffff ffffffff 000 i CHANCE_BREAK_MISC
+f ffffffff ffffffff 000 i CHANCE_BREAK_WEAPON
+f ffffffff ffffffff 000 i CHANCE_BREAK_POTION
+f ffffffff ffffffff 000 i CHANCE_BREAK_SCROLL
+f ffffffff ffffffff 000 i CHANCE_BREAK_RING
+f ffffffff ffffffff 000 i CHANCE_BREAK_GRENADE
+f ffffffff ffffffff 000 i BASE_ITEM_OPEN_FACE_HELMET
+f ffffffff ffffffff 000 i BASE_ITEM_SMALL_CONTAINER
+f ffffffff ffffffff 000 i BASE_ITEM_SMALL_STACKING_ITEM
+f ffffffff ffffffff 000 i BASE_ITEM_HOLY_SYMBOLS
+f ffffffff ffffffff 000 i SKILL_ATHLETICS
+f ffffffff ffffffff 000 i SKILL_KNOWLEDGE
+f ffffffff ffffffff 000 i SKILL_SLEIGHT_OF_HAND
+f ffffffff ffffffff 000 i SKILL_ACROBATICS
+f ffffffff ffffffff 000 i SKILL_CRAFTING
+f ffffffff ffffffff 000 i SKILL_SURVIVAL
+f ffffffff ffffffff 000 i SKILL_DECIPHER_SCRIPT
+f ffffffff ffffffff 000 i SKILL_SPEAK_LANGUAGES
+f ffffffff ffffffff 000 i APPRAISE_COMMON_ITEM_VALUE
+f ffffffff ffffffff 000 i HEAL_STABILIZE_DC
+f ffffffff ffffffff 000 i HEAL_POISON_DC
+f ffffffff ffffffff 000 i HEAL_POISON_DIE
+f ffffffff ffffffff 000 i HEAL_DISEASE_DC
+f ffffffff ffffffff 000 i HEAL_DISEASE_DIE
+f ffffffff ffffffff 000 i CHANCE_TO_STEAL_GOLD
+f ffffffff ffffffff 000 i MAX_GOLD_TO_STEAL
+f ffffffff ffffffff 000 i MIN_GOLD_TO_STEAL
+f ffffffff ffffffff 000 i MAX_WEIGHT_OF_ITEM
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_DWARF
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_ELF
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_OUTSIDER
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_GNOME
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_GOBLINOID
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_HALFLING
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_HUMAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_ORC
+f ffffffff ffffffff 000 i FEAT_RACIAL_TYPE_REPTILIAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_DWARF_DUERGAR
+f ffffffff ffffffff 000 i FEAT_RACIAL_DWARF_GOLD
+f ffffffff ffffffff 000 i FEAT_RACIAL_DWARF_SHIELD
+f ffffffff ffffffff 000 i FEAT_RACIAL_ELF_DROW
+f ffffffff ffffffff 000 i FEAT_RACIAL_ELF_MOON
+f ffffffff ffffffff 000 i FEAT_RACIAL_ELF_STAR
+f ffffffff ffffffff 000 i FEAT_RACIAL_ELF_SUN
+f ffffffff ffffffff 000 i FEAT_RACIAL_ELF_WOOD
+f ffffffff ffffffff 000 i FEAT_RACIAL_GNOME_FOREST
+f ffffffff ffffffff 000 i FEAT_RACIAL_GNOME_ROCK
+f ffffffff ffffffff 000 i FEAT_RACIAL_GNOME_SVIRFNEBLIN
+f ffffffff ffffffff 000 i FEAT_RACIAL_GOBLIN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HALFLING_LIGHTFOOT
+f ffffffff ffffffff 000 i FEAT_RACIAL_HALFLING_STRONGHEART
+f ffffffff ffffffff 000 i FEAT_RACIAL_HALFLING_GHOSTWISE
+f ffffffff ffffffff 000 i FEAT_RACIAL_HALF_ORC
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_DAMARAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_ILLUSKAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_RASHEMI
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_MULAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_TETHYRIAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_HUMAN_CHONDATHAN
+f ffffffff ffffffff 000 i FEAT_RACIAL_KOBOLD
+f ffffffff ffffffff 000 i FEAT_RACIAL_ORC_MOUNTAIN
+f ffffffff ffffffff 000 i FEAT_RACIAL_ORC_GRAY
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_APPRAISE
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_CRAFTING
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_HIDE
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_PERSUASION
+f ffffffff ffffffff 000 i FEAT_SKILL_MASTERY_HIDE
+f ffffffff ffffffff 000 i FEAT_SKILL_MASTERY_MOVESILENT
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_ATHLETICS
+f ffffffff ffffffff 000 i FEAT_DILIGENT
+f ffffffff ffffffff 000 i FEAT_INVESTIGATOR
+f ffffffff ffffffff 000 i FEAT_MAGICAL_APTITUDE
+f ffffffff ffffffff 000 i FEAT_NEGOTIATOR
+f ffffffff ffffffff 000 i FEAT_NIMBLE_FINGERS
+f ffffffff ffffffff 000 i FEAT_SELF_SUFFICIENT
+f ffffffff ffffffff 000 i FEAT_ABERRATIONS_TRAINING
+f ffffffff ffffffff 000 i FEAT_DUERGAR_IMMUNITIES
+f ffffffff ffffffff 000 i FEAT_RACIAL_SPELL_RESISTANCE
+f ffffffff ffffffff 000 i FEAT_DODGE_MASTERY
+f ffffffff ffffffff 000 i FEAT_DEFENSIVE_MASTERY
+f ffffffff ffffffff 000 i FEAT_TELEPATHY
+f ffffffff ffffffff 000 i FEAT_AASIMAR_RESISTANCE
+f ffffffff ffffffff 000 i FEAT_TIEFLING_RESISTANCE
+f ffffffff ffffffff 000 i FEAT_AIR_AFFINITY
+f ffffffff ffffffff 000 i FEAT_EARTH_AFFINITY
+f ffffffff ffffffff 000 i FEAT_FIRE_AFFINITY
+f ffffffff ffffffff 000 i FEAT_WATER_AFFINITY
+f ffffffff ffffffff 000 i FEAT_LIGHTNING_RESISTANCE_10
+f ffffffff ffffffff 000 i FEAT_ACID_RESISTANCE_10
+f ffffffff ffffffff 000 i FEAT_FIRE_RESISTANCE_10
+f ffffffff ffffffff 000 i FEAT_COLD_RESISTANCE_10
+f ffffffff ffffffff 000 i FEAT_DUERGAR_SPELL_ABILITIES
+f ffffffff ffffffff 000 i FEAT_CAST_ENLARGE_PERSON_1_DAY
+f ffffffff ffffffff 000 i FEAT_CAST_INVISIBILITY_1_DAY
+f ffffffff ffffffff 000 i FEAT_SVIRFNEBLIN_SPELL_ABILITIES
+f ffffffff ffffffff 000 i FEAT_CAST_BLIND_DEAF_1_DAY
+f ffffffff ffffffff 000 i FEAT_CAST_BLUR_1_DAY
+f ffffffff ffffffff 000 i FEAT_2_HAND_WEAPON_SPEC
+f ffffffff ffffffff 000 i FEAT_GREATER_2_HAND_WEAPON_SPEC
+f ffffffff ffffffff 000 i FEAT_DEATHLESS_RAGE
+f ffffffff ffffffff 000 i FEAT_GREATER_RAGE
+f ffffffff ffffffff 000 i FEAT_PARTY_RAGE
+f ffffffff ffffffff 000 i FEAT_FEARLESS_RAGE
+f ffffffff ffffffff 000 i FEAT_DOMINATE_ORC_RADIUS
+f ffffffff ffffffff 000 i FEAT_MASTER_CRAFTSMAN
+f ffffffff ffffffff 000 i FEAT_GRAND_CRAFTMANSHIP
+f ffffffff ffffffff 000 i FEAT_TUNE_DEVICES
+f ffffffff ffffffff 000 i FEAT_EXTEND_ENCHANTMENTS
+f ffffffff ffffffff 000 i FEAT_PURGE_MAGIC
+f ffffffff ffffffff 000 i FEAT_POWERFUL_IMBUE
+f ffffffff ffffffff 000 i FEAT_INSIGHTFUL_STRIKE
+f ffffffff ffffffff 000 i FEAT_SKILL_AFFINITY_ACROBATICS
+f ffffffff ffffffff 000 i FEAT_SKILL_MASTERY_ACROBATICS
+f ffffffff ffffffff 000 i FEAT_BLACK_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_BLUE_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_GREEN_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_RED_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_WHITE_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_BRASS_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_BRONZE_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_COPPER_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_GOLD_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_SILVER_DRAGON_BLOOD
+f ffffffff ffffffff 000 i FEAT_DRAGON_IMMUNE_ELEMENT
+f ffffffff ffffffff 000 i FEAT_CRAFT_ARMS_AND_ARMOR
+f ffffffff ffffffff 000 i FEAT_CRAFT_RODS_STAVES
+f ffffffff ffffffff 000 i FEAT_CRAFT_WONDROUS
+f ffffffff ffffffff 000 i FEAT_CRAFT_AMULETS_RINGS
+f ffffffff ffffffff 000 i FEAT_FLY
+f ffffffff ffffffff 000 i CLASS_ARTIFICER
+f ffffffff ffffffff 000 i STOP_SPELL
+f ffffffff ffffffff 000 i DESC_ACID
+f ffffffff ffffffff 000 i DESC_AIR
+f ffffffff ffffffff 000 i DESC_CHAOTIC
+f ffffffff ffffffff 000 i DESC_COLD
+f ffffffff ffffffff 000 i DESC_DARKNESS
+f ffffffff ffffffff 000 i DESC_DEATH
+f ffffffff ffffffff 000 i DESC_EARTH
+f ffffffff ffffffff 000 i DESC_ELECTRICITY
+f ffffffff ffffffff 000 i DESC_EVIL
+f ffffffff ffffffff 000 i DESC_FEAR
+f ffffffff ffffffff 000 i DESC_FIRE
+f ffffffff ffffffff 000 i DESC_FORCE
+f ffffffff ffffffff 000 i DESC_GOOD
+f ffffffff ffffffff 000 i DESC_LANGUAGE
+f ffffffff ffffffff 000 i DESC_LAWFUL
+f ffffffff ffffffff 000 i DESC_LIGHT
+f ffffffff ffffffff 000 i DESC_MIND
+f ffffffff ffffffff 000 i DESC_SONIC
+f ffffffff ffffffff 000 i DESC_WATER
+f ffffffff ffffffff 000 i DURATION_TYPE_CONCENTRATION
+f ffffffff ffffffff 000 i DURATION_TYPE_ROUNDS
+f ffffffff ffffffff 000 i DURATION_TYPE_MINUTES
+f ffffffff ffffffff 000 i DURATION_TYPE_TURNS
+f ffffffff ffffffff 000 i DURATION_TYPE_HOURS
+f ffffffff ffffffff 000 i TARGET_TYPE_ALL
+f ffffffff ffffffff 000 i TARGET_TYPE_ENEMIES
+f ffffffff ffffffff 000 i TARGET_TYPE_ALLIES
+f ffffffff ffffffff 000 i SHAPE_RANGE_TARGET
+f ffffffff ffffffff 000 i SHAPE_TOUCH_TARGET
+f ffffffff ffffffff 000 i SHAPE_PERSONAL
+f ffffffff ffffffff 000 s COMPONENT_POUCH
+f ffffffff ffffffff 000 s CLERIC_HOLY_SYMBOL
+f ffffffff ffffffff 000 s DRUID_HOLY_SYMBOL
+f ffffffff ffffffff 000 i SPELL_BLUR
+f ffffffff ffffffff 000 i SPELL_ENLARGE_PERSON
+f 000008d8 000009ec 004 v SetModuleError
+fp s
+fp s
+fp s
+fp s
+f ffffffff ffffffff 000 s GetModuleError
+f 00000385 000004f7 005 v SendMessages
+fp s
+fp s
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v Debug
+fp s
+fp s
+fp s
+f ffffffff ffffffff 002 v SendServerMessage
+fp o
+fp i
+f ffffffff ffffffff 006 v SendMessageAfterPlayerLoad
+fp s
+fp o
+fp s
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 i ExecuteScriptReturnInt
+fp s
+fp o
+f ffffffff ffffffff 001 s LocationToStringArray
+fp e2
+f ffffffff ffffffff 001 e2 StringArrayToLocation
+fp s
+f ffffffff ffffffff 003 i IfMasterSkillRanks
+fp i
+fp o
+fp i
+f ffffffff ffffffff 003 s StringReplaceText
+fp s
+fp s
+fp s
+f 00002bb5 00002d6a 003 s GetStringArray
+fp s
+fp i
+fp s
+f ffffffff ffffffff 004 s SetStringArray
+fp s
+fp i
+fp s
+fp s
+f ffffffff ffffffff 007 i GetSkillCheck
+fp o
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 005 i GetAbilityCheck
+fp o
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 i RollOn2daTable
+fp s
+fp i
+fp o
+f ffffffff ffffffff 003 i RollOn2daTableWithMinItems
+fp s
+fp i
+fp o
+f ffffffff ffffffff 001 s Get2Digits
+fp i
+f ffffffff ffffffff 002 i d20LuckRoll
+fp o
+fp i
+f ffffffff ffffffff 002 i d100LuckRoll
+fp o
+fp i
+f ffffffff ffffffff 003 i RandomLuckRoll
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 s GetGoldString
+fp i
+f ffffffff ffffffff 000 s NWNX_Creature
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_PC
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_IMMOBILE
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_VERY_SLOW
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_SLOW
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_NORMAL
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_FAST
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_VERY_FAST
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_DEFAULT
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_RATE_DM_FAST
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_TYPE_STATIONARY
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_TYPE_WALK
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_TYPE_RUN
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_TYPE_SIDESTEP
+f ffffffff ffffffff 000 i NWNX_CREATURE_MOVEMENT_TYPE_WALK_BACKWARDS
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_AIR
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_ANIMAL
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_DEATH
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_DESTRUCTION
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_EARTH
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_EVIL
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_FIRE
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_GOOD
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_HEALING
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_KNOWLEDGE
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_MAGIC
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_PLANT
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_PROTECTION
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_STRENGTH
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_SUN
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_TRAVEL
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_TRICKERY
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_WAR
+f ffffffff ffffffff 000 i NWNX_CREATURE_CLERIC_DOMAIN_WATER
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_ATTACK
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_DAMAGE
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_SAVING_THROW
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_ABILITY
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_SKILL
+f ffffffff ffffffff 000 i NWNX_CREATURE_BONUS_TYPE_TOUCH_ATTACK
+f ffffffff ffffffff 002 v NWNX_Creature_AddFeat
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_AddFeatByLevel
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_RemoveFeat
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetKnowsFeat
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetFeatCountByLevel
+fp o
+fp i
+f ffffffff ffffffff 003 i NWNX_Creature_GetFeatByLevel
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetFeatCount
+fp o
+f ffffffff ffffffff 002 i NWNX_Creature_GetFeatByIndex
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetMeetsFeatRequirements
+fp o
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetSpecialAbilityCount
+fp o
+f ffffffff ffffffff 002 t0002 NWNX_Creature_GetSpecialAbility
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_AddSpecialAbility
+fp o
+fp t0002
+f ffffffff ffffffff 002 v NWNX_Creature_RemoveSpecialAbility
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetSpecialAbility
+fp o
+fp i
+fp t0002
+f ffffffff ffffffff 002 i NWNX_Creature_GetClassByLevel
+fp o
+fp i
+f 000036e1 00003779 002 v NWNX_Creature_SetBaseAC
+fp o
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetBaseAC
+fp o
+f ffffffff ffffffff 003 v NWNX_Creature_SetAbilityScore
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetRawAbilityScore
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetRawAbilityScore
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_ModifyRawAbilityScore
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetPrePolymorphAbilityScore
+fp o
+fp i
+f ffffffff ffffffff 003 i NWNX_Creature_GetMemorisedSpellCountByLevel
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 t0003 NWNX_Creature_GetMemorisedSpell
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 005 v NWNX_Creature_SetMemorisedSpell
+fp o
+fp i
+fp i
+fp i
+fp t0003
+f ffffffff ffffffff 003 i NWNX_Creature_GetRemainingSpellSlots
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 v NWNX_Creature_SetRemainingSpellSlots
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 i NWNX_Creature_GetMaxSpellSlots
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 i NWNX_Creature_GetKnownSpellCount
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 i NWNX_Creature_GetKnownSpell
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 004 v NWNX_Creature_AddKnownSpell
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 004 v NWNX_Creature_RemoveKnownSpell
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_ClearMemorisedKnownSpells
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 v NWNX_Creature_ClearMemorisedSpell
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetWizardSpecialization
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetWizardSpecialization
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetMaxHitPointsByLevel
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetMaxHitPointsByLevel
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetMovementRate
+fp o
+fp i
+f ffffffff ffffffff 001 f NWNX_Creature_GetMovementRateFactor
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetMovementRateFactor
+fp o
+fp f
+f ffffffff ffffffff 001 i NWNX_Creature_GetMovementType
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetWalkRateCap
+fp o
+fp f
+f ffffffff ffffffff 002 v NWNX_Creature_SetAlignmentGoodEvil
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetAlignmentLawChaos
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetClericDomain
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetClericDomain
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetSoundset
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetSoundset
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetSkillRank
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetClassByPosition
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetLevelByPosition
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetBaseAttackBonus
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetAttacksPerRound
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetGender
+fp o
+fp i
+f ffffffff ffffffff 001 v NWNX_Creature_RestoreFeats
+fp o
+f ffffffff ffffffff 001 v NWNX_Creature_RestoreSpecialAbilities
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_RestoreSpells
+fp o
+fp i
+f ffffffff ffffffff 001 v NWNX_Creature_RestoreItems
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetSize
+fp o
+fp i
+f ffffffff ffffffff 001 i NWNX_Creature_GetSkillPointsRemaining
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetSkillPointsRemaining
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetRacialType
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetGold
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetCorpseDecayTime
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetBaseSavingThrow
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetBaseSavingThrow
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_LevelUp
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_LevelDown
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetChallengeRating
+fp o
+fp f
+f ffffffff ffffffff 005 i NWNX_Creature_GetAttackBonus
+fp o
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetHighestLevelOfFeat
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetFeatRemainingUses
+fp o
+fp i
+f ffffffff ffffffff 002 i NWNX_Creature_GetFeatTotalUses
+fp o
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetFeatRemainingUses
+fp o
+fp i
+fp i
+f ffffffff ffffffff 010 i NWNX_Creature_GetTotalEffectBonus
+fp o
+fp i
+fp o
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 v NWNX_Creature_SetOriginalName
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 s NWNX_Creature_GetOriginalName
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetSpellResistance
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetAnimalCompanionCreatureType
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetFamiliarCreatureType
+fp o
+fp i
+f ffffffff ffffffff 002 v NWNX_Creature_SetAnimalCompanionName
+fp o
+fp s
+f ffffffff ffffffff 002 v NWNX_Creature_SetFamiliarName
+fp o
+fp s
+f ffffffff ffffffff 001 i NWNX_Creature_GetDisarmable
+fp o
+f ffffffff ffffffff 002 v NWNX_Creature_SetDisarmable
+fp o
+fp i
+f ffffffff ffffffff 000 s NWNX_Weapon
+f ffffffff ffffffff 000 i NWNX_WEAPON_OPT_GRTFOCUS_AB_BONUS
+f ffffffff ffffffff 000 i NWNX_WEAPON_OPT_GRTSPEC_DAM_BONUS
+f ffffffff ffffffff 000 i NWNX_WEAPON_GETDATA_DC
+f ffffffff ffffffff 000 i NWNX_WEAPON_SETDATA_DC_BYPASS
+f ffffffff ffffffff 002 v NWNX_Weapon_SetWeaponFocusFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetWeaponFinesseSize
+fp i
+fp i
+f ffffffff ffffffff 001 i NWNX_Weapon_GetWeaponFinesseSize
+fp i
+f ffffffff ffffffff 001 v NWNX_Weapon_SetWeaponUnarmed
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetWeaponImprovedCriticalFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetWeaponSpecializationFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetEpicWeaponFocusFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetEpicWeaponSpecializationFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetEpicWeaponOverwhelmingCriticalFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetEpicWeaponDevastatingCriticalFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetWeaponOfChoiceFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetGreaterWeaponSpecializationFeat
+fp i
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetGreaterWeaponFocusFeat
+fp i
+fp i
+f ffffffff ffffffff 001 v NWNX_Weapon_SetWeaponIsMonkWeapon
+fp i
+f ffffffff ffffffff 002 v NWNX_Weapon_SetOption
+fp i
+fp i
+f ffffffff ffffffff 001 v NWNX_Weapon_SetDevastatingCriticalEventScript
+fp s
+f ffffffff ffffffff 000 t0004 NWNX_Weapon_GetDevastatingCriticalEventData
+f ffffffff ffffffff 000 v NWNX_Weapon_BypassDevastatingCritical
+f ffffffff ffffffff 001 o GetTargetedOrEquippedWeapon
+fp o
+f ffffffff ffffffff 001 o GetTargetedOrEquippedArmor
+fp o
+f ffffffff ffffffff 003 o GetCreatureHasItem
+fp o
+fp s
+fp i
+f ffffffff ffffffff 001 i GetIsItemStackable
+fp o
+f ffffffff ffffffff 001 s RollBaseItemResRef
+fp s
+f ffffffff ffffffff 000 s GetBaseArmor
+f ffffffff ffffffff 000 s GetBasehield
+f ffffffff ffffffff 000 s GetBaseWeapon
+f ffffffff ffffffff 001 i GetBaseArmorAC
+fp o
+f ffffffff ffffffff 001 i GetIsWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsMeleeWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsSlashingWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsPiercingWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsBludgeoningWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsAmmo
+fp o
+f ffffffff ffffffff 001 i GetIsThrownWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsTwoHandedWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsRangeWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsFinesseWeapon
+fp o
+f ffffffff ffffffff 003 v EquipItems
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v IdDrops
+fp o
+fp i
+f ffffffff ffffffff 003 v IdAllInventory
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 o GiveSimpleMeleeWeapons
+fp o
+f ffffffff ffffffff 001 o GiveMartialMeleeWeapons
+fp o
+f ffffffff ffffffff 001 o GiveExoticMeleeWeapons
+fp o
+f ffffffff ffffffff 001 o GiveSimpleRangedWeapons
+fp o
+f ffffffff ffffffff 001 o GiveMartialRangedWeapons
+fp o
+f ffffffff ffffffff 001 o Gived4MeleeWeapons
+fp o
+f ffffffff ffffffff 001 o Gived6MeleeWeapons
+fp o
+f ffffffff ffffffff 001 o Gived8MeleeWeapons
+fp o
+f ffffffff ffffffff 001 o Gived10MeleeWeapons
+fp o
+f ffffffff ffffffff 001 o Gived12MeleeWeapons
+fp o
+f ffffffff ffffffff 001 o GiveClothing
+fp o
+f ffffffff ffffffff 002 o GiveArmor
+fp o
+fp i
+f ffffffff ffffffff 003 o GiveEquipment
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 v CheckForBrokenItems
+fp o
+f ffffffff ffffffff 002 i GetItemsMaxModels
+fp o
+fp s
+f ffffffff ffffffff 002 o ChangeItemAppearance
+fp o
+fp i
+f ffffffff ffffffff 002 v RemoveTempProperties
+fp o
+fp s
+f ffffffff ffffffff 003 v RemoveItems
+fp o
+fp i
+fp i
+f ffffffff ffffffff 000 v SetWeaponFeats
+f ffffffff ffffffff 004 i EquipItemBaseOnGoldValue
+fp o
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 v DestroyDuplicates
+fp o
+f ffffffff ffffffff 002 o GiveSpecialWeapon
+fp o
+fp i
+f ffffffff ffffffff 001 o GiveShield
+fp o
+f ffffffff ffffffff 002 v DelayedCreateItemOnObject
+fp s
+fp o
+f ffffffff ffffffff 000 s GetArrayCalendarDateTIME
+f ffffffff ffffffff 002 i DifferenceInCalendarDates
+fp s
+fp s
+f ffffffff ffffffff 000 s GetArrayCalendarDateTime
+f ffffffff ffffffff 000 s NWNX_SQL
+f 000009ec 00000a8c 001 i NWNX_SQL_PrepareQuery
+fp s
+f 00000c68 00000ce8 000 i NWNX_SQL_ExecutePreparedQuery
+f ffffffff ffffffff 001 i NWNX_SQL_ExecuteQuery
+fp s
+f 00000ce8 00000d66 000 i NWNX_SQL_ReadyToReadNextRow
+f 00000d66 00000da7 000 v NWNX_SQL_ReadNextRow
+f 00000da7 00000e4e 001 s NWNX_SQL_ReadDataInActiveRow
+fp i
+f 00001166 000011f1 002 v NWNX_SQL_PreparedInt
+fp i
+fp i
+f 00000b9f 00000c2d 002 v NWNX_SQL_PreparedString
+fp i
+fp s
+f ffffffff ffffffff 002 v NWNX_SQL_PreparedFloat
+fp i
+fp f
+f ffffffff ffffffff 002 v NWNX_SQL_PreparedObjectId
+fp i
+fp o
+f ffffffff ffffffff 002 v NWNX_SQL_PreparedObjectFull
+fp i
+fp o
+f ffffffff ffffffff 005 o NWNX_SQL_ReadFullObjectInActiveRow
+fp i
+fp o
+fp f
+fp f
+fp f
+f ffffffff ffffffff 000 i NWNX_SQL_GetAffectedRows
+f ffffffff ffffffff 000 s NWNX_SQL_GetDatabaseType
+f ffffffff ffffffff 000 v NWNX_SQL_DestroyPreparedQuery
+f ffffffff ffffffff 000 s NWNX_SQL_GetLastError
+f ffffffff ffffffff 000 i NWNX_SQL_GetPreparedQueryParamCount
+f ffffffff ffffffff 000 v InitializeDB
+f ffffffff ffffffff 000 v SaveServerCalendar
+f ffffffff ffffffff 000 v SetServerCalendar
+f ffffffff ffffffff 001 i SetPlayerData
+fp o
+f ffffffff ffffffff 001 i SetCharacterData
+fp o
+f ffffffff ffffffff 003 i SetQuestData
+fp o
+fp s
+fp i
+f ffffffff ffffffff 004 v SetFloatData
+fp o
+fp s
+fp s
+fp f
+f ffffffff ffffffff 003 f GetFloatData
+fp o
+fp s
+fp s
+f 00000e9a 00001166 005 v SetIntData
+fp o
+fp s
+fp s
+fp i
+fp s
+f 000005f7 000008d8 004 i GetIntData
+fp o
+fp s
+fp s
+fp s
+f ffffffff ffffffff 004 v SetStringData
+fp o
+fp s
+fp s
+fp s
+f 000029b0 00002bb5 003 s GetStringData
+fp o
+fp s
+fp s
+f ffffffff ffffffff 004 v SetLocationData
+fp o
+fp s
+fp s
+fp e2
+f ffffffff ffffffff 003 s GetLocationData
+fp o
+fp s
+fp s
+f ffffffff ffffffff 002 v SetPersistantContainer
+fp o
+fp o
+f ffffffff ffffffff 002 v GetPersistantContainer
+fp o
+fp o
+f ffffffff ffffffff 001 v SetupPCJournal
+fp o
+f ffffffff ffffffff 002 v SetPersistentAreaSettings
+fp o
+fp o
+f ffffffff ffffffff 001 s GetPersistentAreaSettings
+fp o
+f ffffffff ffffffff 001 v SetPersistentCreatures
+fp o
+f ffffffff ffffffff 001 v GetPersistentCreatures
+fp o
+f ffffffff ffffffff 004 v SetPersistentPlaceable
+fp o
+fp i
+fp i
+fp o
+f ffffffff ffffffff 003 o GetPersistentPlaceable
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v SetTimeStamp
+fp o
+fp s
+f ffffffff ffffffff 000 s X2_IP_WORK_CONTAINER_TAG
+f ffffffff ffffffff 000 s X2_IP_ADDRPOP_2DA
+f ffffffff ffffffff 000 s X2_IP_POISONWEAPON_2DA
+f ffffffff ffffffff 000 s X2_IP_ARMORPARTS_2DA
+f ffffffff ffffffff 000 s X2_IP_ARMORAPPEARANCE_2DA
+f ffffffff ffffffff 000 i XP_IP_ITEMMODCONVERSATION_CTOKENBASE
+f ffffffff ffffffff 000 i X2_IP_ITEMMODCONVERSATION_MODE_TAILOR
+f ffffffff ffffffff 000 i X2_IP_ITEMMODCONVERSATION_MODE_CRAFT
+f ffffffff ffffffff 000 i X2_IP_MAX_ITEM_PROPERTIES
+f ffffffff ffffffff 000 i X2_IP_ARMORTYPE_NEXT
+f ffffffff ffffffff 000 i X2_IP_ARMORTYPE_PREV
+f ffffffff ffffffff 000 i X2_IP_ARMORTYPE_RANDOM
+f ffffffff ffffffff 000 i X2_IP_WEAPONTYPE_NEXT
+f ffffffff ffffffff 000 i X2_IP_WEAPONTYPE_PREV
+f ffffffff ffffffff 000 i X2_IP_WEAPONTYPE_RANDOM
+f ffffffff ffffffff 000 i X2_IP_ADDPROP_POLICY_REPLACE_EXISTING
+f ffffffff ffffffff 000 i X2_IP_ADDPROP_POLICY_KEEP_EXISTING
+f ffffffff ffffffff 000 i X2_IP_ADDPROP_POLICY_IGNORE_EXISTING
+f ffffffff ffffffff 004 v IPRemoveMatchingItemProperties
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 v IPRemoveAllItemProperties
+fp o
+fp i
+f ffffffff ffffffff 001 i IPGetIsItemEquipable
+fp o
+f ffffffff ffffffff 003 o IPDyeArmor
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 o IPGetIPWorkContainer
+fp o
+f ffffffff ffffffff 005 e4 IPGetItemPropertyByID
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 i IPGetIsRangedWeapon
+fp o
+f ffffffff ffffffff 001 i IPGetIsMeleeWeapon
+fp o
+f ffffffff ffffffff 001 i IPGetIsProjectile
+fp o
+f ffffffff ffffffff 001 i IPGetIsBludgeoningWeapon
+fp o
+f ffffffff ffffffff 001 i IPGetIPConstCastSpellFromSpellID
+fp i
+f ffffffff ffffffff 002 i IPGetItemHasItemOnHitPropertySubType
+fp o
+fp i
+f ffffffff ffffffff 001 i IPGetNumberOfAppearances
+fp i
+f ffffffff ffffffff 002 i IPGetNextArmorAppearanceType
+fp o
+fp i
+f ffffffff ffffffff 002 i IPGetPrevArmorAppearanceType
+fp o
+fp i
+f ffffffff ffffffff 002 i IPGetRandomArmorAppearanceType
+fp o
+fp i
+f ffffffff ffffffff 004 o IPGetModifiedArmor
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 006 v IPSafeAddItemProperty
+fp o
+fp e4
+fp f
+fp i
+fp i
+fp i
+f ffffffff ffffffff 004 i IPGetItemHasProperty
+fp o
+fp e4
+fp i
+fp i
+f ffffffff ffffffff 001 i IPGetItemSequencerProperty
+fp o
+f ffffffff ffffffff 001 i IPGetIsIntelligentWeapon
+fp o
+f ffffffff ffffffff 001 i IPGetDamagePowerConstantFromNumber
+fp i
+f ffffffff ffffffff 001 i IPGetDamageBonusConstantFromNumber
+fp i
+f ffffffff ffffffff 003 v IPWildShapeCopyItemProperties
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i IPGetWeaponEnhancementBonus
+fp o
+fp i
+f ffffffff ffffffff 003 v IPSetWeaponEnhancementBonus
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v IPUpgradeWeaponEnhancementBonus
+fp o
+fp i
+f ffffffff ffffffff 002 i IPGetHasItemPropertyOnCharacter
+fp o
+fp i
+f ffffffff ffffffff 001 i IPGetNumberOfItemProperties
+fp o
+f ffffffff ffffffff 001 i IPGetNumberOfArmorAppearances
+fp i
+f ffffffff ffffffff 003 i IPGetArmorAppearanceType
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 o IPCreateProficiencyFeatItemOnCreature
+fp o
+f ffffffff ffffffff 000 o IPGetTargetedOrEquippedMeleeWeapon
+f ffffffff ffffffff 001 o IPGetTargetedOrEquippedArmor
+fp i
+f ffffffff ffffffff 003 v IPCopyItemProperties
+fp o
+fp o
+fp i
+f ffffffff ffffffff 003 i IPGetWeaponAppearanceType
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 o IPGetModifiedWeapon
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 o IPCreateAndModifyArmorRobe
+fp o
+fp i
+f ffffffff ffffffff 002 i IPGetHasItemPropertyByConst
+fp i
+fp o
+f ffffffff ffffffff 001 i IPGetHasUseLimitation
+fp o
+f ffffffff ffffffff 000 i NW_I0_SPELLS_MAX_BREACH
+f ffffffff ffffffff 003 v TrapDoElectricalDamage
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 i MyResistSpell
+fp o
+fp o
+fp f
+f ffffffff ffffffff 006 i MySavingThrow
+fp i
+fp o
+fp i
+fp i
+fp o
+fp f
+f ffffffff ffffffff 002 e0 CreateProtectionFromAlignmentLink
+fp i
+fp i
+f ffffffff ffffffff 000 e0 CreateDoomEffectsLink
+f ffffffff ffffffff 003 v RemoveSpellEffects
+fp i
+fp o
+fp o
+f ffffffff ffffffff 002 v RemoveSpecificEffect
+fp i
+fp o
+f ffffffff ffffffff 002 f GetSpellEffectDelay
+fp e2
+fp o
+f ffffffff ffffffff 002 f GetRandomDelay
+fp f
+fp f
+f ffffffff ffffffff 002 i GetScaledDuration
+fp i
+fp o
+f ffffffff ffffffff 002 e0 GetScaledEffect
+fp e0
+fp o
+f ffffffff ffffffff 003 i RemoveProtections
+fp i
+fp o
+fp i
+f ffffffff ffffffff 001 i GetSpellBreachProtection
+fp i
+f ffffffff ffffffff 001 v AssignAOEDebugString
+fp s
+f ffffffff ffffffff 000 v PlayDragonBattleCry
+f ffffffff ffffffff 001 i AmIAHumanoid
+fp o
+f ffffffff ffffffff 004 v DoSpellBreach
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 006 v spellsCure
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 i GetDragonFearDC
+fp i
+f ffffffff ffffffff 000 i CalcNumberOfAttacks
+f ffffffff ffffffff 000 v RemoveTempHitPoints
+f ffffffff ffffffff 002 v RemoveEffectsFromSpell
+fp o
+fp i
+f ffffffff ffffffff 000 i NW_TALENT_PROTECT
+f ffffffff ffffffff 000 i NW_TALENT_ENHANCE
+f ffffffff ffffffff 003 i GetMatchCompatibility
+fp e3
+fp s
+fp i
+f ffffffff ffffffff 001 i MatchDoIHaveAMindAffectingSpellOnMe
+fp o
+f ffffffff ffffffff 001 i MatchAreaOfEffectSpell
+fp i
+f ffffffff ffffffff 001 i MatchCombatProtections
+fp e3
+f ffffffff ffffffff 001 i MatchSpellProtections
+fp e3
+f ffffffff ffffffff 001 i MatchElementalProtections
+fp e3
+f ffffffff ffffffff 001 i MatchSingleHandedWeapon
+fp o
+f ffffffff ffffffff 001 i MatchDoubleHandedWeapon
+fp o
+f ffffffff ffffffff 001 i MatchMeleeWeapon
+fp o
+f ffffffff ffffffff 001 i MatchShield
+fp o
+f ffffffff ffffffff 001 i MatchCrossbow
+fp o
+f ffffffff ffffffff 001 i MatchNormalBow
+fp o
+f ffffffff ffffffff 001 i MatchMindAffectingSpells
+fp i
+f ffffffff ffffffff 001 i MatchPersonSpells
+fp i
+f ffffffff ffffffff 001 i MatchInflictTouchAttack
+fp i
+f ffffffff ffffffff 001 i MatchNonliving
+fp i
+f ffffffff ffffffff 002 i VerifyDisarm
+fp e3
+fp o
+f ffffffff ffffffff 002 i VerifyCombatMeleeTalent
+fp e3
+fp o
+f ffffffff ffffffff 002 i GetHasEffect
+fp i
+fp o
+f ffffffff ffffffff 000 i GetRemovalSpell
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_UMD_SCROLLS
+f ffffffff ffffffff 000 s MODULE_SWITCH_DISABLE_ITEM_CREATION_FEATS
+f ffffffff ffffffff 000 s MODULE_SWITCH_AOE_HURT_NEUTRAL_NPCS
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_CRAFT_WAND_50_CHARGES
+f ffffffff ffffffff 000 s MODULE_SWITCH_EPIC_SPELLS_HURT_CASTER
+f ffffffff ffffffff 000 s MODULE_SWITCH_SPELL_CORERULES_DMASTERTOUCH
+f ffffffff ffffffff 000 s MODULE_SWITCH_RESTRICT_USE_POISON_TO_FEAT
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_MULTI_HENCH_AOE_DAMAGE
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_NPC_AOE_HURT_ALLIES
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_BEBILITH_RUIN_ARMOR
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_INVISIBLE_GLYPH_OF_WARDING
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_CROSSAREA_WALKWAYPOINTS
+f ffffffff ffffffff 000 s MODULE_SWITCH_DISABLE_SECRET_DOOR_FLASH
+f ffffffff ffffffff 000 s MODULE_SWITCH_ENABLE_TAGBASED_SCRIPTS
+f ffffffff ffffffff 000 s MODULE_SWITCH_USE_XP2_RESTSYSTEM
+f ffffffff ffffffff 000 s MODULE_SWITCH_DISABLE_AI_DISPEL_AOE
+f ffffffff ffffffff 000 s MODULE_SWITCH_NO_RANDOM_MONSTER_LOOT
+f ffffffff ffffffff 000 s MODULE_VAR_OVERRIDE_SPELLSCRIPT
+f ffffffff ffffffff 000 s MODULE_VAR_TAGBASED_SCRIPT_PREFIX
+f ffffffff ffffffff 000 s MODULE_VAR_WANDERING_MONSTER_2DA
+f ffffffff ffffffff 000 s MODULE_VAR_AI_NO_DISPEL_AOE_CHANCE
+f ffffffff ffffffff 000 s MODULE_VAR_AI_STOP_EXPERTISE_ABUSE
+f ffffffff ffffffff 000 s CREATURE_VAR_CUSTOM_AISCRIPT
+f ffffffff ffffffff 000 s CREATURE_VAR_RANDOMIZE_NAME
+f ffffffff ffffffff 000 s CREATURE_VAR_RANDOMIZE_SPELLUSE
+f ffffffff ffffffff 000 s CREATURE_VAR_USE_SPAWN_STEALTH
+f ffffffff ffffffff 000 s CREATURE_VAR_USE_SPAWN_SEARCH
+f ffffffff ffffffff 000 s CREATURE_VAR_USE_SPAWN_AMBIENT
+f ffffffff ffffffff 000 s CREATURE_VAR_USE_SPAWN_AMBIENT_IMMOBILE
+f ffffffff ffffffff 000 s CREATURE_VAR_IMMUNE_TO_DISPEL
+f ffffffff ffffffff 000 s CREATURE_VAR_IS_INCORPOREAL
+f ffffffff ffffffff 000 s CREATURE_VAR_NUMBER_OF_ATTACKS
+f ffffffff ffffffff 000 s CREATURE_AI_MODIFIED_MAGIC_RATE
+f ffffffff ffffffff 000 s CREATURE_AI_MODIFIED_OFFENSE_RATE
+f ffffffff ffffffff 000 s CREATURE_AI_MODIFIED_COMPASSION_RATE
+f ffffffff ffffffff 000 s CREATURE_VAR_PALE_MASTER_SPECIAL_ITEM
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_ACTIVATE
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_EQUIP
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_UNEQUIP
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_ONHITCAST
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_ACQUIRE
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_UNACQUIRE
+f ffffffff ffffffff 000 i X2_ITEM_EVENT_SPELLCAST_AT
+f ffffffff ffffffff 000 i X2_EXECUTE_SCRIPT_CONTINUE
+f ffffffff ffffffff 000 i X2_EXECUTE_SCRIPT_END
+f ffffffff ffffffff 001 v SetUserDefinedItemEventNumber
+fp i
+f ffffffff ffffffff 000 i GetUserDefinedItemEventNumber
+f ffffffff ffffffff 002 v SetModuleSwitch
+fp s
+fp i
+f ffffffff ffffffff 001 i GetModuleSwitchValue
+fp s
+f ffffffff ffffffff 000 s DOOR_FLAG_RESIST_KNOCK
+f ffffffff ffffffff 003 v SetDoorFlag
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetDoorFlag
+fp o
+fp s
+f ffffffff ffffffff 000 s WAYPOINT_VAR_FORCE_SETFACING
+f ffffffff ffffffff 000 s ITEM_FLAG_NO_CRAFT_MODIFICATION
+f ffffffff ffffffff 003 v SetItemFlag
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetItemFlag
+fp o
+fp s
+f ffffffff ffffffff 002 i ExecuteScriptAndReturnInt
+fp s
+fp o
+f ffffffff ffffffff 001 v SetExecutedScriptReturnValue
+fp i
+f ffffffff ffffffff 001 v SetUserDefinedItemEventPrefix
+fp s
+f ffffffff ffffffff 001 v SetModuleOverrideSpellscript
+fp s
+f ffffffff ffffffff 003 v SetCreatureFlag
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetCreatureFlag
+fp o
+fp s
+f ffffffff ffffffff 002 v SetCreatureOverrideAIScript
+fp o
+fp s
+f ffffffff ffffffff 001 v SetCreatureOverrideAIScriptFinished
+fp o
+f ffffffff ffffffff 001 v ClearCreatureOverrideAIScriptTarget
+fp o
+f ffffffff ffffffff 001 o GetCreatureOverrideAIScriptTarget
+fp o
+f ffffffff ffffffff 001 v SetWanderingMonster2DAFile
+fp s
+f ffffffff ffffffff 000 s GetModuleOverrideSpellscript
+f ffffffff ffffffff 000 v SetModuleOverrideSpellScriptFinished
+f ffffffff ffffffff 000 i GetModuleOverrideSpellScriptFinished
+f ffffffff ffffffff 001 s GetUserDefinedItemEventScriptName
+fp o
+f ffffffff ffffffff 000 s GetCampaignDBName
+f ffffffff ffffffff 003 v SetCampaignDBString
+fp o
+fp s
+fp s
+f ffffffff ffffffff 002 s GetCampaignDBString
+fp o
+fp s
+f ffffffff ffffffff 003 v SetCampaignDBInt
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetCampaignDBInt
+fp o
+fp s
+f ffffffff ffffffff 003 v SetCampaignDBFloat
+fp o
+fp s
+fp f
+f ffffffff ffffffff 002 f GetCampaignDBFloat
+fp o
+fp s
+f ffffffff ffffffff 003 v SetCampaignDBVector
+fp o
+fp s
+fp t0000
+f ffffffff ffffffff 002 t0000 GetCampaignDBVector
+fp o
+fp s
+f ffffffff ffffffff 003 v SetCampaignDBLocation
+fp o
+fp s
+fp e2
+f ffffffff ffffffff 002 e2 GetCampaignDBLocation
+fp o
+fp s
+f ffffffff ffffffff 003 i StoreCampaignDBObject
+fp o
+fp s
+fp o
+f ffffffff ffffffff 004 o RetrieveCampaignDBObject
+fp o
+fp s
+fp e2
+fp o
+f ffffffff ffffffff 002 v DeleteCampaignDBVariable
+fp o
+fp s
+f ffffffff ffffffff 001 i GetNumberPartyMembers
+fp o
+f ffffffff ffffffff 003 v SetLocalStringOnAll
+fp o
+fp s
+fp s
+f ffffffff ffffffff 003 v SetLocalIntOnAll
+fp o
+fp s
+fp i
+f ffffffff ffffffff 003 v SetLocalFloatOnAll
+fp o
+fp s
+fp f
+f ffffffff ffffffff 003 v SetLocalLocationOnAll
+fp o
+fp s
+fp e2
+f ffffffff ffffffff 003 v SetLocalObjectOnAll
+fp o
+fp s
+fp o
+f ffffffff ffffffff 003 v SetCampaignDBStringOnAll
+fp o
+fp s
+fp s
+f ffffffff ffffffff 003 v SetCampaignDBIntOnAll
+fp o
+fp s
+fp i
+f ffffffff ffffffff 003 v SetCampaignDBFloatOnAll
+fp o
+fp s
+fp f
+f ffffffff ffffffff 003 v SetCampaignDBVectorOnAll
+fp o
+fp s
+fp t0000
+f ffffffff ffffffff 003 v SetCampaignDBLocationOnAll
+fp o
+fp s
+fp e2
+f ffffffff ffffffff 003 v StoreCampaignDBObjectOnAll
+fp o
+fp s
+fp o
+f ffffffff ffffffff 002 v DeleteCampaignDBVariableOnAll
+fp o
+fp s
+f ffffffff ffffffff 002 v GiveGoldToAllEqually
+fp o
+fp i
+f ffffffff ffffffff 002 v GiveGoldToAll
+fp o
+fp i
+f ffffffff ffffffff 002 v GiveXPToAllEqually
+fp o
+fp i
+f ffffffff ffffffff 002 v GiveXPToAll
+fp o
+fp i
+f ffffffff ffffffff 003 v AdjustReputationWithFaction
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 v ClearPersonalReputationWithFaction
+fp o
+fp o
+f ffffffff ffffffff 002 v ClearAssociateActions
+fp o
+fp i
+f ffffffff ffffffff 002 v ClearNearbyFriendActions
+fp o
+fp i
+f ffffffff ffffffff 001 v SurrenderAllToEnemies
+fp o
+f ffffffff ffffffff 002 i GetIsItemPossessedByParty
+fp o
+fp s
+f ffffffff ffffffff 002 o GetItemPossessedByParty
+fp o
+fp s
+f ffffffff ffffffff 002 v RemoveItemFromParty
+fp o
+fp s
+f ffffffff ffffffff 003 v AdjustAlignmentOnAll
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 v TravelToObject
+fp o
+fp o
+fp i
+fp f
+f ffffffff ffffffff 004 v TravelToLocation
+fp e2
+fp o
+fp i
+fp f
+f ffffffff ffffffff 001 o GetNearestExit
+fp o
+f ffffffff ffffffff 002 o GetBestExit
+fp o
+fp o
+f ffffffff ffffffff 002 v TransportToWaypoint
+fp o
+fp o
+f ffffffff ffffffff 002 v TransportToLocation
+fp o
+fp e2
+f ffffffff ffffffff 002 v TransportAllToWaypoint
+fp o
+fp o
+f ffffffff ffffffff 002 v TransportAllToLocation
+fp o
+fp e2
+f ffffffff ffffffff 003 o GetBestExitByType
+fp o
+fp o
+fp i
+f ffffffff ffffffff 000 i X0_DEBUG_SETTING
+f ffffffff ffffffff 000 i DIFFICULTY_EASY
+f ffffffff ffffffff 000 i DIFFICULTY_MODERATE
+f ffffffff ffffffff 000 i DIFFICULTY_HARD
+f ffffffff ffffffff 000 i DIFFICULTY_IMPOSSIBLE
+f ffffffff ffffffff 000 s sHasMetSuffix
+f ffffffff ffffffff 000 s sHasHiredSuffix
+f ffffffff ffffffff 000 s sDidQuitSuffix
+f ffffffff ffffffff 000 s sFriendSuffix
+f ffffffff ffffffff 000 s sHasInterjectionSuffix
+f ffffffff ffffffff 000 s sInterjectionSetSuffix
+f ffffffff ffffffff 000 s sAdviceSuffix
+f ffffffff ffffffff 000 s sPersuadeAttemptSuffix
+f ffffffff ffffffff 000 s sPersuadeSuccessSuffix
+f ffffffff ffffffff 000 s sThreatenSuffix
+f ffffffff ffffffff 000 s sOneLinerVarname
+f ffffffff ffffffff 000 s sOneShotVarname
+f ffffffff ffffffff 000 s sRouterTag
+f ffffffff ffffffff 000 s sStartLocationVarname
+f ffffffff ffffffff 000 s sRespawnLocationVarname
+f ffffffff ffffffff 000 f CONVERSATION_ATTEMPT_DELAY
+f ffffffff ffffffff 001 v DBG_msg
+fp s
+f ffffffff ffffffff 000 i GetChapter
+f ffffffff ffffffff 000 i EndModule
+f ffffffff ffffffff 001 s GetMyArea
+fp o
+f ffffffff ffffffff 002 i HasItemByTag
+fp o
+fp s
+f ffffffff ffffffff 001 v SetRespawnLocation
+fp o
+f ffffffff ffffffff 002 v SetRespawnLocationSpecific
+fp o
+fp e2
+f ffffffff ffffffff 001 e2 GetRespawnLocation
+fp o
+f ffffffff ffffffff 001 s GetTagNoPrefix
+fp o
+f ffffffff ffffffff 003 v SetBooleanValue
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetBooleanValue
+fp o
+fp s
+f ffffffff ffffffff 003 v SetCampaignBooleanValue
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetCampaignBooleanValue
+fp o
+fp s
+f ffffffff ffffffff 002 v ClearAllDialogue
+fp o
+fp o
+f ffffffff ffffffff 004 v SetHasInterjection
+fp o
+fp i
+fp i
+fp o
+f ffffffff ffffffff 003 v SetInterjection
+fp o
+fp i
+fp o
+f ffffffff ffffffff 002 i GetHasInterjection
+fp o
+fp o
+f ffffffff ffffffff 004 v SetHasAdvice
+fp o
+fp i
+fp i
+fp o
+f ffffffff ffffffff 002 i GetHasAdvice
+fp o
+fp o
+f ffffffff ffffffff 003 v SetOneLiner
+fp i
+fp i
+fp o
+f ffffffff ffffffff 001 i GetOneLiner
+fp o
+f ffffffff ffffffff 003 i GetPersuadeAttempt
+fp o
+fp i
+fp o
+f ffffffff ffffffff 003 v SetPersuadeAttempt
+fp o
+fp i
+fp o
+f ffffffff ffffffff 003 i GetDidPersuade
+fp o
+fp i
+fp o
+f ffffffff ffffffff 003 v SetDidPersuade
+fp o
+fp i
+fp o
+f ffffffff ffffffff 002 v SetThreaten
+fp o
+fp o
+f ffffffff ffffffff 002 i GetThreaten
+fp o
+fp o
+f ffffffff ffffffff 003 v SetFriendly
+fp o
+fp i
+fp o
+f ffffffff ffffffff 002 i GetFriendly
+fp o
+fp o
+f ffffffff ffffffff 000 o GetEventRouter
+f ffffffff ffffffff 000 s GetEventRouterTag
+f ffffffff ffffffff 000 o CreateEventRouter
+f ffffffff ffffffff 003 i ThreatenCheck
+fp i
+fp o
+fp o
+f ffffffff ffffffff 003 i FriendCheck
+fp i
+fp o
+fp o
+f ffffffff ffffffff 003 i MeanCheck
+fp i
+fp o
+fp o
+f ffffffff ffffffff 003 v PersistentConversationAttempt
+fp o
+fp s
+fp i
+f ffffffff ffffffff 002 i GetInterjectionSet
+fp o
+fp o
+f ffffffff ffffffff 000 i DC_EASY
+f ffffffff ffffffff 000 i DC_MEDIUM
+f ffffffff ffffffff 000 i DC_HARD
+f ffffffff ffffffff 000 i DC_SUPERIOR
+f ffffffff ffffffff 000 i DC_MASTER
+f ffffffff ffffffff 000 i DC_LEGENDARY
+f ffffffff ffffffff 000 i DC_EPIC
+f ffffffff ffffffff 000 i G_CLASSCHANCE
+f ffffffff ffffffff 000 i XP_VERY_LOW
+f ffffffff ffffffff 000 i XP_LOW
+f ffffffff ffffffff 000 i XP_MEDIUM_LOW
+f ffffffff ffffffff 000 i XP_MEDIUM
+f ffffffff ffffffff 000 i XP_MEDIUM_HIGH
+f ffffffff ffffffff 000 i XP_HIGH
+f ffffffff ffffffff 000 i XP_VERY_HIGH
+f ffffffff ffffffff 000 i XP_EPIC
+f ffffffff ffffffff 002 i plotCanRemoveXP
+fp o
+fp i
+f ffffffff ffffffff 001 i GetCanCastHealingSpells
+fp o
+f ffffffff ffffffff 000 i DoOnce
+f ffffffff ffffffff 001 v DebugSpeak
+fp s
+f ffffffff ffffffff 000 o GetMyMaster
+f ffffffff ffffffff 000 i IsRecall
+f ffffffff ffffffff 001 v DimensionHop
+fp o
+f ffffffff ffffffff 000 i CanSeePlayer
+f ffffffff ffffffff 002 v EscapeArea
+fp i
+fp s
+f ffffffff ffffffff 002 i HasItem
+fp o
+fp s
+f ffffffff ffffffff 003 v TakeGold
+fp i
+fp o
+fp i
+f ffffffff ffffffff 000 o GetNearestPC
+f ffffffff ffffffff 001 v SetIsEnemy
+fp o
+f ffffffff ffffffff 003 i AutoDC
+fp i
+fp i
+fp o
+f ffffffff ffffffff 002 v AutoAlignG
+fp i
+fp o
+f ffffffff ffffffff 002 v AutoAlignE
+fp i
+fp o
+f ffffffff ffffffff 004 v DoGiveXP
+fp s
+fp i
+fp o
+fp i
+f ffffffff ffffffff 005 v RewardXP
+fp s
+fp i
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v RewardGP
+fp i
+fp o
+fp i
+f ffffffff ffffffff 000 i CheckCharismaMiddle
+f ffffffff ffffffff 000 i CheckCharismaNormal
+f ffffffff ffffffff 000 i CheckCharismaLow
+f ffffffff ffffffff 000 i CheckCharismaHigh
+f ffffffff ffffffff 000 i CheckIntelligenceLow
+f ffffffff ffffffff 000 i CheckIntelligenceNormal
+f ffffffff ffffffff 000 i CheckIntelligenceHigh
+f ffffffff ffffffff 000 i CheckWisdomHigh
+f ffffffff ffffffff 001 i GetWisdom
+fp o
+f ffffffff ffffffff 001 i GetIntelligence
+fp o
+f ffffffff ffffffff 001 i GetCharisma
+fp o
+f ffffffff ffffffff 002 i GetNumItems
+fp o
+fp s
+f ffffffff ffffffff 003 v GiveNumItems
+fp o
+fp s
+fp i
+f ffffffff ffffffff 003 v TakeNumItems
+fp o
+fp s
+fp i
+f ffffffff ffffffff 001 v PlayCharacterTheme
+fp i
+f ffffffff ffffffff 000 v PlayOldTheme
+f ffffffff ffffffff 002 i GetPLocalInt
+fp o
+fp s
+f ffffffff ffffffff 003 v SetPLocalInt
+fp o
+fp s
+fp i
+f ffffffff ffffffff 001 v RemoveEffects
+fp o
+f ffffffff ffffffff 004 v gplotAppraiseOpenStore
+fp o
+fp o
+fp i
+fp i
+f ffffffff ffffffff 004 v gplotAppraiseFavOpenStore
+fp o
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 i CheckDCStr
+fp i
+fp i
+fp o
+f ffffffff ffffffff 001 i GetIsPlayerCharacter
+fp o
+f ffffffff ffffffff 004 v Reward_2daXP
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 v PlaySpeakSoundByStrRef
+fp i
+f ffffffff ffffffff 001 i GetNPCEasyMark
+fp o
+f ffffffff ffffffff 001 f GetReactionAdjustment
+fp o
+f ffffffff ffffffff 003 v AdjustFactionReputation
+fp o
+fp o
+fp i
+f ffffffff ffffffff 001 v EscapeViaTeleport
+fp o
+f ffffffff ffffffff 002 i HasGold
+fp i
+fp o
+f ffffffff ffffffff 000 i NW_FLAG_BEHAVIOR_SPECIAL
+f ffffffff ffffffff 000 i NW_FLAG_BEHAVIOR_CARNIVORE
+f ffffffff ffffffff 000 i NW_FLAG_BEHAVIOR_OMNIVORE
+f ffffffff ffffffff 000 i NW_FLAG_BEHAVIOR_HERBIVORE
+f ffffffff ffffffff 002 v SetBehaviorState
+fp i
+fp i
+f ffffffff ffffffff 001 i GetBehaviorState
+fp i
+f ffffffff ffffffff 000 f DISTANCE_TINY
+f ffffffff ffffffff 000 f DISTANCE_SHORT
+f ffffffff ffffffff 000 f DISTANCE_MEDIUM
+f ffffffff ffffffff 000 f DISTANCE_LARGE
+f ffffffff ffffffff 000 f DISTANCE_HUGE
+f ffffffff ffffffff 001 s LocationToString
+fp e2
+f ffffffff ffffffff 001 s VectorToString
+fp t0000
+f ffffffff ffffffff 002 v MoveToNewLocation
+fp e2
+fp o
+f ffffffff ffffffff 002 f GetChangeInX
+fp f
+fp f
+f ffffffff ffffffff 002 f GetChangeInY
+fp f
+fp f
+f ffffffff ffffffff 003 t0000 GetChangedPosition
+fp t0000
+fp f
+fp f
+f ffffffff ffffffff 002 f GetAngleBetweenLocations
+fp e2
+fp e2
+f ffffffff ffffffff 001 f GetOppositeDirection
+fp f
+f ffffffff ffffffff 001 f GetRightDirection
+fp f
+f ffffffff ffffffff 001 f GetHalfRightDirection
+fp f
+f ffffffff ffffffff 001 f GetFarRightDirection
+fp f
+f ffffffff ffffffff 002 f GetCustomRightDirection
+fp f
+fp f
+f ffffffff ffffffff 001 f GetLeftDirection
+fp f
+f ffffffff ffffffff 001 f GetHalfLeftDirection
+fp f
+f ffffffff ffffffff 001 f GetFarLeftDirection
+fp f
+f ffffffff ffffffff 002 f GetCustomLeftDirection
+fp f
+fp f
+f ffffffff ffffffff 002 v TurnToFaceObject
+fp o
+fp o
+f ffffffff ffffffff 001 e2 GetFlankingRightLocation
+fp o
+f ffffffff ffffffff 001 e2 GetFlankingLeftLocation
+fp o
+f ffffffff ffffffff 001 e2 GetOppositeLocation
+fp o
+f ffffffff ffffffff 001 e2 GetAheadLocation
+fp o
+f ffffffff ffffffff 001 e2 GetBehindLocation
+fp o
+f ffffffff ffffffff 001 e2 GetForwardFlankingRightLocation
+fp o
+f ffffffff ffffffff 001 e2 GetForwardFlankingLeftLocation
+fp o
+f ffffffff ffffffff 001 e2 GetAheadRightLocation
+fp o
+f ffffffff ffffffff 001 e2 GetAheadLeftLocation
+fp o
+f ffffffff ffffffff 001 e2 GetStepLeftLocation
+fp o
+f ffffffff ffffffff 001 e2 GetStepRightLocation
+fp o
+f ffffffff ffffffff 003 e2 GetRandomLocation
+fp o
+fp o
+fp f
+f ffffffff ffffffff 001 v SpeakLocation
+fp e2
+f ffffffff ffffffff 001 v PrintLocation
+fp e2
+f ffffffff ffffffff 001 f GetNormalizedDirection
+fp f
+f ffffffff ffffffff 004 e2 GenerateNewLocation
+fp o
+fp f
+fp f
+fp f
+f ffffffff ffffffff 004 e2 GenerateNewLocationFromLocation
+fp e2
+fp f
+fp f
+fp f
+f ffffffff ffffffff 001 e2 GetCenterPointOfArea
+fp o
+f ffffffff ffffffff 000 s sModeVarname
+f ffffffff ffffffff 000 i NW_MODE_STEALTH
+f ffffffff ffffffff 000 i NW_MODE_DETECT
+f ffffffff ffffffff 002 i GetModeActive
+fp i
+fp o
+f ffffffff ffffffff 003 v SetModeActive
+fp i
+fp i
+fp o
+f ffffffff ffffffff 000 v UseStealthMode
+f ffffffff ffffffff 000 v UseDetectMode
+f ffffffff ffffffff 000 i VOICE_CANDO
+f ffffffff ffffffff 000 i VOICE_CANNOTDO
+f ffffffff ffffffff 000 i VOICE_PICKLOCK
+f ffffffff ffffffff 000 i VOICE_TASKDONE
+f ffffffff ffffffff 000 i VOICE_STOP
+f ffffffff ffffffff 000 i VOICE_CUSS
+f ffffffff ffffffff 000 i VOICE_HEAL
+f ffffffff ffffffff 000 i VOICE_HELLO
+f ffffffff ffffffff 000 i VOICE_BYE
+f ffffffff ffffffff 000 i VOICE_YES
+f ffffffff ffffffff 000 i VOICE_NO
+f ffffffff ffffffff 000 i VOICE_LAUGH
+f ffffffff ffffffff 000 i VOICE_POISON
+f ffffffff ffffffff 000 i VOICE_THREAT
+f ffffffff ffffffff 000 i VOICE_BADIDEA
+f ffffffff ffffffff 000 i VOICE_FLEE
+f ffffffff ffffffff 000 i VOICE_DEATH
+f ffffffff ffffffff 000 i VOICE_LOOKHERE
+f ffffffff ffffffff 001 v VoiceCanDo
+fp i
+f ffffffff ffffffff 001 v VoiceCannotDo
+fp i
+f ffffffff ffffffff 001 v VoicePicklock
+fp i
+f ffffffff ffffffff 001 v VoiceTaskComplete
+fp i
+f ffffffff ffffffff 001 v VoiceStop
+fp i
+f ffffffff ffffffff 001 v VoiceCuss
+fp i
+f ffffffff ffffffff 001 v VoiceHealMe
+fp i
+f ffffffff ffffffff 001 v VoiceYes
+fp i
+f ffffffff ffffffff 001 v VoiceNo
+fp i
+f ffffffff ffffffff 001 v VoiceLaugh
+fp i
+f ffffffff ffffffff 001 v VoiceHello
+fp i
+f ffffffff ffffffff 001 v VoiceGoodbye
+fp i
+f ffffffff ffffffff 001 v VoicePoisoned
+fp i
+f ffffffff ffffffff 001 v VoiceThreaten
+fp i
+f ffffffff ffffffff 001 v VoiceBadIdea
+fp i
+f ffffffff ffffffff 001 v VoiceFlee
+fp i
+f ffffffff ffffffff 001 v VoiceNearDeath
+fp i
+f ffffffff ffffffff 001 v VoiceLookHere
+fp i
+f ffffffff ffffffff 002 i VoiceTest
+fp i
+fp i
+f ffffffff ffffffff 001 v newdebug
+fp s
+f ffffffff ffffffff 001 v DubugPrintTalentID
+fp e3
+f ffffffff ffffffff 001 v DebugPrintTalentID
+fp e3
+f ffffffff ffffffff 001 v MyPrintString
+fp s
+f ffffffff ffffffff 000 i CLEAR_DEBUG
+f ffffffff ffffffff 000 s sAssociateMasterConditionVarname
+f ffffffff ffffffff 000 i NW_ASC_DISTANCE_2_METERS
+f ffffffff ffffffff 000 i NW_ASC_DISTANCE_4_METERS
+f ffffffff ffffffff 000 i NW_ASC_DISTANCE_6_METERS
+f ffffffff ffffffff 000 i NW_ASC_HEAL_AT_75
+f ffffffff ffffffff 000 i NW_ASC_HEAL_AT_50
+f ffffffff ffffffff 000 i NW_ASC_HEAL_AT_25
+f ffffffff ffffffff 000 i NW_ASC_AGGRESSIVE_BUFF
+f ffffffff ffffffff 000 i NW_ASC_AGGRESSIVE_SEARCH
+f ffffffff ffffffff 000 i NW_ASC_AGGRESSIVE_STEALTH
+f ffffffff ffffffff 000 i NW_ASC_RETRY_OPEN_LOCKS
+f ffffffff ffffffff 000 i NW_ASC_OVERKIll_CASTING
+f ffffffff ffffffff 000 i NW_ASC_POWER_CASTING
+f ffffffff ffffffff 000 i NW_ASC_SCALED_CASTING
+f ffffffff ffffffff 000 i NW_ASC_USE_CUSTOM_DIALOGUE
+f ffffffff ffffffff 000 i NW_ASC_DISARM_TRAPS
+f ffffffff ffffffff 000 i NW_ASC_USE_RANGED_WEAPON
+f ffffffff ffffffff 000 i NW_ASC_MODE_DYING
+f ffffffff ffffffff 000 i NW_ASC_MODE_DEFEND_MASTER
+f ffffffff ffffffff 000 i NW_ASC_MODE_STAND_GROUND
+f ffffffff ffffffff 000 i NW_ASC_MASTER_GONE
+f ffffffff ffffffff 000 i NW_ASC_MASTER_REVOKED
+f ffffffff ffffffff 000 i NW_ASC_IS_BUSY
+f ffffffff ffffffff 000 i NW_ASC_HAVE_MASTER
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_BKATTEMPTTODISARMTRAP_ThrowSelfOnTrap
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ASSOC_RESETHENCHMENSTATE
+f ffffffff ffffffff 000 i CLEAR_NW_C2_DEFAULT4_29
+f ffffffff ffffffff 000 i CLEAR_NW_C2_DEFAULTB_GUSTWIND
+f ffffffff ffffffff 000 i CLEAR_NW_CH_AC1_49
+f ffffffff ffffffff 000 i CLEAR_NW_CH_AC1_81
+f ffffffff ffffffff 000 i CLEAR_NW_CH_AC4_28
+f ffffffff ffffffff 000 i CLEAR_NW_I0_GENERIC_658
+f ffffffff ffffffff 000 i CLEAR_NW_I0_GENERIC_834
+f ffffffff ffffffff 000 i CLEAR_NW_I0_GENERIC_ExitAOESpellArea
+f ffffffff ffffffff 000 i CLEAR_NW_I0_GENERIC_DetermineSpecialBehavior1
+f ffffffff ffffffff 000 i CLEAR_NW_I0_GENERIC_DetermineSpecialBehavior2
+f ffffffff ffffffff 000 i CLEAR_X0_CH_HEN_CONV_26
+f ffffffff ffffffff 000 i CLEAR_X0_CH_HEN_USRDEF_91
+f ffffffff ffffffff 000 i CLEAR_X0_CH_HEN_USRDEF_92
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_PlayMobile
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_PlayRandomMobile
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_PlayRandomCloseRange1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_PlayRandomCloseRange2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionPlayRandomMobile1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionPlayRandomMobile2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionPlayRandomUncivilized
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionGetUpFromChair
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionGoToStop
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionRest1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionRest2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_GoHome
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionLeaveHome
+f ffffffff ffffffff 000 i CLEAR_X0_I0_ANIMS_AnimActionChallengeIntruder
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsRanged1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsRanged2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsRanged3
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsAmbusher
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsCowardly1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_COMBAT_SpecialTacticsCowardly2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_EQUIP_EquipAppropriateWeapons1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_EQUIP_EquipAppropriateWeapons2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_EQUIP_EquipMelee1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_EQUIP_EquipMelee2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_EQUIP_EquipMelee3
+f ffffffff ffffffff 000 i CLEAR_X0_I0_HENCHMAN_Fire
+f ffffffff ffffffff 000 i CLEAR_X0_I0_HENCHMAN_LevelUp
+f ffffffff ffffffff 000 i CLEAR_X0_I0_HENCHMAN_PreRespawn
+f ffffffff ffffffff 000 i CLEAR_X0_INC_GENERIC_TalentFilter
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_RangedAttackers
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_RangedEnemies
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_TalentFlee
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_UseTurning
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_SummonAllies
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_MeleeAttack1
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_MeleeAttack2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_TalentFlee2
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_AdvancedBuff
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_SeeInvisible
+f ffffffff ffffffff 000 i CLEAR_X0_I0_TALENT_BardSong
+f ffffffff ffffffff 000 i CLEAR_X0_I0_WALKWAY_WalkWayPoints
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_HCR
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_AttemptToDisarmTrap
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_AttemptToOpenLock1
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_AttemptToOpenLock2
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_AttemptToOpenLock3
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_RespondToShout1
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_RespondToShout2
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_RespondToShout3
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_RespondToShout4
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_CombatAttemptHeal1
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_CombatAttemptHeal2
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_Combat
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_CombatAttemptHeal
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_CombatFollowMaster1
+f ffffffff ffffffff 000 i CLEAR_X0_INC_HENAI_CombatFollowMaster2
+f ffffffff ffffffff 001 i GetPercentageHPLoss
+fp o
+f ffffffff ffffffff 003 v SetAssociateState
+fp i
+fp i
+fp o
+f ffffffff ffffffff 002 i GetAssociateState
+fp i
+fp o
+f ffffffff ffffffff 000 v ResetHenchmenState
+f ffffffff ffffffff 001 i AssociateCheck
+fp o
+f ffffffff ffffffff 000 i GetAssociateHealMaster
+f ffffffff ffffffff 000 f GetFollowDistance
+f ffffffff ffffffff 000 v SetAssociateStartLocation
+f ffffffff ffffffff 000 e2 GetAssociateStartLocation
+f ffffffff ffffffff 002 v ClearActions
+fp i
+fp i
+f ffffffff ffffffff 000 f MELEE_DISTANCE
+f ffffffff ffffffff 002 o GetNearestEnemy
+fp o
+fp i
+f ffffffff ffffffff 004 o GetNearestPerceivedEnemy
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 o GetNearestSeenEnemy
+fp o
+fp i
+f ffffffff ffffffff 002 o GetNearestSeenOrHeardEnemy
+fp o
+fp i
+f ffffffff ffffffff 002 o GetNearestSeenFriend
+fp o
+fp i
+f ffffffff ffffffff 002 t0006 CountEnemiesAndAllies
+fp f
+fp o
+f ffffffff ffffffff 000 t0005 DetermineEnemies
+f ffffffff ffffffff 001 s GetMostDangerousClass
+fp t0005
+f ffffffff ffffffff 001 i GetIsMeleeAttacker
+fp o
+f ffffffff ffffffff 001 i GetIsRangedAttacker
+fp o
+f ffffffff ffffffff 001 i GetIsWieldingRanged
+fp o
+f ffffffff ffffffff 000 i GetNumberOfMeleeAttackers
+f ffffffff ffffffff 000 i GetNumberOfRangedAttackers
+f ffffffff ffffffff 001 i GetRacialTypeCount
+fp i
+f ffffffff ffffffff 002 i CheckFriendlyFireOnTarget
+fp o
+fp f
+f ffffffff ffffffff 002 i CheckEnemyGroupingOnTarget
+fp o
+fp f
+f ffffffff ffffffff 000 o FindSingleRangedTarget
+f ffffffff ffffffff 001 i WiseToDualWield
+fp o
+f ffffffff ffffffff 001 v EquipAppropriateWeapons
+fp o
+f ffffffff ffffffff 001 i IsOutOfAmmo
+fp i
+f ffffffff ffffffff 002 v bkEquipMelee
+fp o
+fp i
+f ffffffff ffffffff 003 v bkEquipRanged
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v bkEquipAppropriateWeapons
+fp o
+fp i
+fp i
+f ffffffff ffffffff 001 v WrapperActionAttack
+fp o
+f ffffffff ffffffff 000 v StoreLastRanged
+f ffffffff ffffffff 001 i GetIsWeaponLarge
+fp o
+f ffffffff ffffffff 000 i NO_SMART
+f ffffffff ffffffff 001 v bkSetupBehavior
+fp i
+f ffffffff ffffffff 002 i GetCombatDifficulty
+fp o
+fp i
+f ffffffff ffffffff 000 o bkAcquireTarget
+f ffffffff ffffffff 000 o ChooseNewTarget
+f ffffffff ffffffff 000 i GetCRMax
+f ffffffff ffffffff 002 i bkEvaluationSanityCheck
+fp o
+fp f
+f ffffffff ffffffff 003 i bkTalentFilter
+fp e3
+fp o
+fp i
+f ffffffff ffffffff 001 v SetLastGenericSpellCast
+fp i
+f ffffffff ffffffff 000 i GetLastGenericSpellCast
+f ffffffff ffffffff 001 i CompareLastSpellCast
+fp i
+f ffffffff ffffffff 001 i GetIsFighting
+fp o
+f ffffffff ffffffff 000 i TALENT_ANY
+f ffffffff ffffffff 000 i COND_CURSE
+f ffffffff ffffffff 000 i COND_POISON
+f ffffffff ffffffff 000 i COND_DISEASE
+f ffffffff ffffffff 000 i COND_ABILITY
+f ffffffff ffffffff 000 i COND_DRAINED
+f ffffffff ffffffff 000 i COND_BLINDDEAF
+f ffffffff ffffffff 000 f WHIRL_DISTANCE
+f ffffffff ffffffff 001 i TryKiDamage
+fp o
+f ffffffff ffffffff 003 i TrySpell
+fp i
+fp o
+fp o
+f ffffffff ffffffff 004 i TrySpellForEffect
+fp i
+fp i
+fp o
+fp o
+f ffffffff ffffffff 003 i TryTalent
+fp e3
+fp o
+fp o
+f ffffffff ffffffff 000 i TalentUseProtectionOnSelf
+f ffffffff ffffffff 001 i TalentUseProtectionOthers
+fp o
+f ffffffff ffffffff 000 i TalentEnhanceOthers
+f ffffffff ffffffff 000 i TalentUseEnhancementOnSelf
+f ffffffff ffffffff 002 i genericDoHarmfulRangedAttack
+fp e3
+fp o
+f ffffffff ffffffff 002 i genericAttemptHarmfulRanged
+fp e3
+fp o
+f ffffffff ffffffff 001 i TalentMeleeAttacked
+fp o
+f ffffffff ffffffff 001 i TalentRangedAttackers
+fp o
+f ffffffff ffffffff 001 i TalentRangedEnemies
+fp o
+f ffffffff ffffffff 000 i TalentSummonAllies
+f ffffffff ffffffff 001 i TalentHealingSelf
+fp i
+f ffffffff ffffffff 002 i TalentHeal
+fp i
+fp o
+f ffffffff ffffffff 001 i TalentMeleeAttack
+fp o
+f ffffffff ffffffff 000 i TalentSneakAttack
+f ffffffff ffffffff 001 i TalentFlee
+fp o
+f ffffffff ffffffff 000 i TalentUseTurning
+f ffffffff ffffffff 000 i TalentPersistentAbilities
+f ffffffff ffffffff 002 i TalentAdvancedBuff
+fp f
+fp i
+f ffffffff ffffffff 000 i TalentBuffSelf
+f ffffffff ffffffff 000 i TalentSeeInvisible
+f ffffffff ffffffff 002 i GetHasNegativeCondition
+fp i
+fp i
+f ffffffff ffffffff 001 i GetCurrentNegativeConditions
+fp o
+f ffffffff ffffffff 000 i TalentCureCondition
+f ffffffff ffffffff 001 i TalentDragonCombat
+fp o
+f ffffffff ffffffff 000 i TalentBardSong
+f ffffffff ffffffff 000 i TalentAdvancedProtectSelf
+f ffffffff ffffffff 000 i TalentSelfProtectionMantleOrGlobe
+f ffffffff ffffffff 001 i TalentSpellAttack
+fp o
+f ffffffff ffffffff 000 e3 StartProtectionLoop
+f ffffffff ffffffff 004 e3 GetCreatureTalent
+fp i
+fp i
+fp i
+fp o
+f ffffffff ffffffff 001 i WhirlwindGetNumberOfMeleeAttackers
+fp f
+f ffffffff ffffffff 001 i GetOKToWhirl
+fp o
+f ffffffff ffffffff 000 s sCombatCondVarname
+f ffffffff ffffffff 000 i X0_COMBAT_FLAG_RANGED
+f ffffffff ffffffff 000 i X0_COMBAT_FLAG_DEFENSIVE
+f ffffffff ffffffff 000 i X0_COMBAT_FLAG_COWARDLY
+f ffffffff ffffffff 000 i X0_COMBAT_FLAG_AMBUSHER
+f ffffffff ffffffff 002 i GetCombatCondition
+fp i
+fp o
+f ffffffff ffffffff 003 v SetCombatCondition
+fp i
+fp i
+fp o
+f ffffffff ffffffff 001 i SpecialTactics
+fp o
+f ffffffff ffffffff 001 i SpecialTacticsRanged
+fp o
+f ffffffff ffffffff 001 i SpecialTacticsAmbusher
+fp o
+f ffffffff ffffffff 001 i SpecialTacticsCowardly
+fp o
+f ffffffff ffffffff 001 i SpecialTacticsDefensive
+fp o
+f ffffffff ffffffff 000 s sSpawnCondVarname
+f ffffffff ffffffff 000 i NW_FLAG_SPECIAL_CONVERSATION
+f ffffffff ffffffff 000 i NW_FLAG_SHOUT_ATTACK_MY_TARGET
+f ffffffff ffffffff 000 i NW_FLAG_STEALTH
+f ffffffff ffffffff 000 i NW_FLAG_SEARCH
+f ffffffff ffffffff 000 i NW_FLAG_SET_WARNINGS
+f ffffffff ffffffff 000 i NW_FLAG_ESCAPE_RETURN
+f ffffffff ffffffff 000 i NW_FLAG_ESCAPE_LEAVE
+f ffffffff ffffffff 000 i NW_FLAG_TELEPORT_RETURN
+f ffffffff ffffffff 000 i NW_FLAG_TELEPORT_LEAVE
+f ffffffff ffffffff 000 i NW_FLAG_PERCIEVE_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_ATTACK_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_DAMAGED_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_SPELL_CAST_AT_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_DISTURBED_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_END_COMBAT_ROUND_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_ON_DIALOGUE_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_RESTED_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_DEATH_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_SPECIAL_COMBAT_CONVERSATION
+f ffffffff ffffffff 000 i NW_FLAG_AMBIENT_ANIMATIONS
+f ffffffff ffffffff 000 i NW_FLAG_HEARTBEAT_EVENT
+f ffffffff ffffffff 000 i NW_FLAG_IMMOBILE_AMBIENT_ANIMATIONS
+f ffffffff ffffffff 000 i NW_FLAG_DAY_NIGHT_POSTING
+f ffffffff ffffffff 000 i NW_FLAG_AMBIENT_ANIMATIONS_AVIAN
+f ffffffff ffffffff 000 i NW_FLAG_APPEAR_SPAWN_IN_ANIMATION
+f ffffffff ffffffff 000 i NW_FLAG_SLEEPING_AT_NIGHT
+f ffffffff ffffffff 000 i NW_FLAG_FAST_BUFF_ENEMY
+f ffffffff ffffffff 002 v SetSpawnInCondition
+fp i
+fp i
+f ffffffff ffffffff 001 i GetSpawnInCondition
+fp i
+f ffffffff ffffffff 001 v SetSpawnInLocals
+fp i
+f ffffffff ffffffff 000 v SetListeningPatterns
+f ffffffff ffffffff 000 s sWalkwayVarname
+f ffffffff ffffffff 000 i NW_WALK_FLAG_INITIALIZED
+f ffffffff ffffffff 000 i NW_WALK_FLAG_CONSTANT
+f ffffffff ffffffff 000 i NW_WALK_FLAG_IS_DAY
+f ffffffff ffffffff 000 i NW_WALK_FLAG_BACKWARDS
+f ffffffff ffffffff 002 i GetWalkCondition
+fp i
+fp o
+f ffffffff ffffffff 003 v SetWalkCondition
+fp i
+fp i
+fp o
+f ffffffff ffffffff 001 s GetWaypointSuffix
+fp i
+f ffffffff ffffffff 000 v LookUpWalkWayPoints
+f ffffffff ffffffff 001 o GetNextWalkWayPoint
+fp o
+f ffffffff ffffffff 001 i GetNearestWalkWayPoint
+fp o
+f ffffffff ffffffff 002 v WalkWayPoints
+fp i
+fp f
+f ffffffff ffffffff 001 i CheckWayPoints
+fp o
+f ffffffff ffffffff 001 i GetIsPostOrWalking
+fp o
+f ffffffff ffffffff 000 f ANIM_LOOPING_LENGTH
+f ffffffff ffffffff 000 f ANIM_LOOPING_SPEED
+f ffffffff ffffffff 000 s sAnimCondVarname
+f ffffffff ffffffff 000 i AI_INITIALIZED
+f ffffffff ffffffff 000 i AI_IS_IMMOBILE
+f ffffffff ffffffff 000 i AI_IS_MOBILE_CLOSE_RANGE
+f ffffffff ffffffff 000 i AI_ANIMAL
+f ffffffff ffffffff 000 i AI_HAS_TORCH
+f ffffffff ffffffff 000 i AI_IS_ACTIVE
+f ffffffff ffffffff 000 i AI_IS_INTERACTING
+f ffffffff ffffffff 000 i AI_IS_TALKING
+f ffffffff ffffffff 000 i AI_IS_INSIDE
+f ffffffff ffffffff 000 i AI_CITY
+f ffffffff ffffffff 000 i AI_TAVERN
+f ffffffff ffffffff 000 i AI_CHURCH
+f ffffffff ffffffff 002 i GetAICondition
+fp i
+fp o
+f ffffffff ffffffff 003 v SetAICondition
+fp i
+fp i
+fp o
+f ffffffff ffffffff 000 v CheckCreatureAI
+f ffffffff ffffffff 000 v AIInitialization
+f ffffffff ffffffff 000 i CheckCurrentAction
+f ffffffff ffffffff 000 v RunAIImmobile
+f ffffffff ffffffff 000 v RunAIMobile
+f ffffffff ffffffff 001 i GetIsBusyWithAnimation
+fp o
+f ffffffff ffffffff 001 v GetLocationAI
+fp o
+f ffffffff ffffffff 001 o GetRandomFriend
+fp f
+f ffffffff ffffffff 002 o GetRandomObjectByTag
+fp s
+fp f
+f ffffffff ffffffff 002 o GetRandomObjectByType
+fp i
+fp f
+f ffffffff ffffffff 001 o GetRandomWaypoint
+fp f
+f ffffffff ffffffff 001 v SetCurrentFriend
+fp o
+f ffffffff ffffffff 000 o GetCurrentFriend
+f ffffffff ffffffff 001 v SetCurrentInteractionTarget
+fp o
+f ffffffff ffffffff 000 o GetCurrentInteractionTarget
+f ffffffff ffffffff 000 v CheckCurrentModes
+f ffffffff ffffffff 001 v AIActionStartInteracting
+fp o
+f ffffffff ffffffff 000 v AIActionStopInteracting
+f ffffffff ffffffff 002 v AIActionStartTalking
+fp o
+fp i
+f ffffffff ffffffff 002 v AIActionStopTalking
+fp o
+fp i
+f ffffffff ffffffff 001 v AIActionPlayRandomGreeting
+fp i
+f ffffffff ffffffff 001 v AIActionPlayRandomGoodbye
+fp i
+f ffffffff ffffffff 002 v AIActionRandomMoveAway
+fp o
+fp f
+f ffffffff ffffffff 000 v AIActionShakeHead
+f ffffffff ffffffff 000 v AIActionLookAround
+f ffffffff ffffffff 000 v AIActionTurnAround
+f ffffffff ffffffff 001 v AIActionPlayRandomInteractAnimation
+fp o
+f ffffffff ffffffff 001 v AIActionPlayRandomTalkAnimation
+fp i
+f ffffffff ffffffff 000 i AIActionTorch
+f ffffffff ffffffff 000 i AIActionCloseDoors
+f ffffffff ffffffff 001 i AIActionSitInChair
+fp f
+f ffffffff ffffffff 000 i AIActionGetUpFromChair
+f ffffffff ffffffff 000 i AIActionGoInside
+f ffffffff ffffffff 000 i AIActionGoOutside
+f ffffffff ffffffff 001 i AIActionGoToWaypoint
+fp f
+f ffffffff ffffffff 001 i AIActionFindFriend
+fp f
+f ffffffff ffffffff 001 i AIActionFindPlaceable
+fp f
+f ffffffff ffffffff 000 i AIActionReturn
+f ffffffff ffffffff 000 i AIActionGoHome
+f ffffffff ffffffff 000 i AIActionLeaveHome
+f ffffffff ffffffff 001 v AIActionGoThroughDoor
+fp o
+f ffffffff ffffffff 000 i NW_GENERIC_FLEE_EXIT_FLEE
+f ffffffff ffffffff 000 i NW_GENERIC_FLEE_EXIT_RETURN
+f ffffffff ffffffff 000 i NW_GENERIC_FLEE_TELEPORT_FLEE
+f ffffffff ffffffff 000 i NW_GENERIC_FLEE_TELEPORT_RETURN
+f ffffffff ffffffff 000 i NW_GENERIC_SHOUT_I_WAS_ATTACKED
+f ffffffff ffffffff 000 i NW_GENERIC_SHOUT_I_AM_DEAD
+f ffffffff ffffffff 000 i NW_GENERIC_SHOUT_BACK_UP_NEEDED
+f ffffffff ffffffff 000 i NW_GENERIC_SHOUT_BLOCKER
+f ffffffff ffffffff 000 i chooseTactics_MEMORY_OFFENSE_MELEE
+f ffffffff ffffffff 000 i chooseTactics_MEMORY_DEFENSE_OTHERS
+f ffffffff ffffffff 000 i chooseTactics_MEMORY_DEFENSE_SELF
+f ffffffff ffffffff 000 i chooseTactics_MEMORY_OFFENSE_SPELL
+f ffffffff ffffffff 001 i chooseTactics
+fp o
+f ffffffff ffffffff 001 i GetCharacterLevel
+fp o
+f ffffffff ffffffff 000 v RemoveAmbientSleep
+f ffffffff ffffffff 001 o GetLockedObject
+fp o
+f ffffffff ffffffff 001 i BashDoorCheck
+fp o
+f ffffffff ffffffff 000 i DetermineClassToUse
+f ffffffff ffffffff 002 v DetermineCombatRound
+fp o
+fp i
+f ffffffff ffffffff 003 v RespondToShout
+fp o
+fp i
+fp o
+f ffffffff ffffffff 001 v SetNPCWarningStatus
+fp i
+f ffffffff ffffffff 000 i GetNPCWarningStatus
+f ffffffff ffffffff 000 v SetSummonHelpIfAttacked
+f ffffffff ffffffff 002 v CreateSignPostNPC
+fp s
+fp e2
+f ffffffff ffffffff 000 v ActivateFleeToExit
+f ffffffff ffffffff 000 i GetFleeToExit
+f ffffffff ffffffff 001 v CheckIsUnlocked
+fp o
+f ffffffff ffffffff 000 v PlayMobileAmbientAnimations
+f ffffffff ffffffff 001 v DetermineSpecialBehavior
+fp o
+f ffffffff ffffffff 001 i InvisibleTrue
+fp o
+f ffffffff ffffffff 002 i AdjustBehaviorVariable
+fp i
+fp s
+f ffffffff ffffffff 001 i InvisibleBecome
+fp o
+f ffffffff ffffffff 002 i GetShouldNotCastSpellsBecauseofArmor
+fp o
+fp i
+f ffffffff ffffffff 000 i __InCombatRound
+f ffffffff ffffffff 001 v __TurnCombatRoundOn
+fp i
+f ffffffff ffffffff 001 v ExitAOESpellArea
+fp o
+f ffffffff ffffffff 000 i X0_NUMBER_HENCHMEN
+f ffffffff ffffffff 000 i X2_NUMBER_HENCHMEN
+f ffffffff ffffffff 000 s sDeekin
+f ffffffff ffffffff 000 s sDorna
+f ffffffff ffffffff 000 s sXandos
+f ffffffff ffffffff 000 s sHenchmanDeathVarname
+f ffffffff ffffffff 000 s sIsHiredVarname
+f ffffffff ffffffff 000 s sLastMasterVarname
+f ffffffff ffffffff 000 s sHenchmanKilledSuffix
+f ffffffff ffffffff 000 s sHenchmanResurrectedSuffix
+f ffffffff ffffffff 000 s sHenchmanDyingVarname
+f ffffffff ffffffff 000 s sStoredHenchmanVarname
+f ffffffff ffffffff 000 f DELAY_BETWEEN_RESPAWN_CHECKS
+f ffffffff ffffffff 000 f HENCHMEN_DIE_ANIM_DURATION
+f ffffffff ffffffff 000 f MAX_RESPAWN_WAIT
+f ffffffff ffffffff 000 s sGoHomeScript
+f ffffffff ffffffff 002 v CopyHenchmanLocals
+fp o
+fp o
+f ffffffff ffffffff 002 v SetHasMet
+fp o
+fp o
+f ffffffff ffffffff 002 i GetHasMet
+fp o
+fp o
+f ffffffff ffffffff 003 v HireHenchman
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 v FireHenchman
+fp o
+fp o
+f ffffffff ffffffff 002 v QuitHenchman
+fp o
+fp o
+f ffffffff ffffffff 001 i GetIsHired
+fp o
+f ffffffff ffffffff 002 v SetLastMaster
+fp o
+fp o
+f ffffffff ffffffff 001 o GetLastMaster
+fp o
+f ffffffff ffffffff 003 v SetPlayerHasHired
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i GetPlayerHasHired
+fp o
+fp o
+f ffffffff ffffffff 003 v SetPlayerHasHiredInCampaign
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i GetPlayerHasHiredInCampaign
+fp o
+fp o
+f ffffffff ffffffff 002 i GetWorkingForPlayer
+fp o
+fp o
+f ffffffff ffffffff 003 v SetDidQuit
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i GetDidQuit
+fp o
+fp o
+f ffffffff ffffffff 002 i GetCanLevelUp
+fp o
+fp o
+f ffffffff ffffffff 002 o DoLevelUp
+fp o
+fp o
+f ffffffff ffffffff 002 v StoreHenchmanItems
+fp o
+fp o
+f ffffffff ffffffff 002 v RetrieveHenchmanItems
+fp o
+fp o
+f ffffffff ffffffff 002 v SetHenchmanDying
+fp o
+fp i
+f ffffffff ffffffff 002 v SetDidDie
+fp i
+fp o
+f ffffffff ffffffff 001 i GetDidDie
+fp o
+f ffffffff ffffffff 003 v SetKilled
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i GetKilled
+fp o
+fp o
+f ffffffff ffffffff 003 v SetResurrected
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 i GetResurrected
+fp o
+fp o
+f ffffffff ffffffff 001 v RespawnHenchman
+fp o
+f ffffffff ffffffff 001 v KeepDead
+fp o
+f ffffffff ffffffff 001 v StopKeepingDead
+fp o
+f ffffffff ffffffff 002 v RaiseForRespawn
+fp o
+fp o
+f ffffffff ffffffff 001 i GetHasMaxWaitPassed
+fp i
+f ffffffff ffffffff 003 v RespawnCheck
+fp o
+fp i
+fp o
+f ffffffff ffffffff 003 v DoRespawnCheck
+fp o
+fp i
+fp o
+f ffffffff ffffffff 002 v DoRespawn
+fp o
+fp o
+f ffffffff ffffffff 001 v PreRespawnSetup
+fp o
+f ffffffff ffffffff 001 v PostRespawnCleanup
+fp o
+f ffffffff ffffffff 001 i GetIsHenchmanDying
+fp o
+f ffffffff ffffffff 001 v LevelUpXP1Henchman
+fp o
+f ffffffff ffffffff 001 v StoreCampaignHenchman
+fp o
+f ffffffff ffffffff 001 v RetrieveCampaignHenchman
+fp o
+f ffffffff ffffffff 006 v LevelHenchmanUpTo
+fp o
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 i GetIsFollower
+fp o
+f ffffffff ffffffff 002 v SetIsFollower
+fp o
+fp i
+f ffffffff ffffffff 002 v RemoveAllFollowers
+fp o
+fp i
+f ffffffff ffffffff 002 v WrapCommandable
+fp i
+fp o
+f ffffffff ffffffff 001 v brentDebug
+fp s
+f ffffffff ffffffff 002 i X2_GetNumberOfHenchmen
+fp o
+fp i
+f ffffffff ffffffff 001 v X2_FireFirstHenchman
+fp o
+f ffffffff ffffffff 001 v PartialRes
+fp o
+f ffffffff ffffffff 003 i AdjustXP2Levels
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 v LevelUpAribeth
+fp o
+f ffffffff ffffffff 003 v SetNumberOfRandom
+fp s
+fp o
+fp i
+f ffffffff ffffffff 004 s GetDialogFile
+fp o
+fp s
+fp s
+fp o
+f ffffffff ffffffff 002 s GetDialogFileToUse
+fp o
+fp o
+f ffffffff ffffffff 000 i SPELL_TARGET_ALLALLIES
+f ffffffff ffffffff 000 i SPELL_TARGET_STANDARDHOSTILE
+f ffffffff ffffffff 000 i SPELL_TARGET_SELECTIVEHOSTILE
+f ffffffff ffffffff 000 i SAVING_THROW_NONE
+f ffffffff ffffffff 001 i GZGetHighestSpellcastingClassLevel
+fp o
+f ffffffff ffffffff 006 v spellsDispelMagic
+fp o
+fp i
+fp e0
+fp e0
+fp i
+fp i
+f ffffffff ffffffff 001 i spellsIsMindless
+fp o
+f ffffffff ffffffff 001 i spellsIsFlying
+fp o
+f ffffffff ffffffff 001 i spellsIsImmuneToPetrification
+fp o
+f ffffffff ffffffff 022 v spellsGenericAreaOfEffect
+fp o
+fp e2
+fp i
+fp f
+fp i
+fp e0
+fp e0
+fp e0
+fp i
+fp f
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 003 i spellsIsTarget
+fp o
+fp i
+fp o
+f ffffffff ffffffff 002 i ArcaneArcherDamageDoneByBow
+fp i
+fp o
+f ffffffff ffffffff 000 i ArcaneArcherCalculateBonus
+f ffffffff ffffffff 001 i GetSizeModifier
+fp o
+f ffffffff ffffffff 001 i GetCasterAbilityModifier
+fp o
+f ffffffff ffffffff 004 i MaximizeOrEmpower
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 i CanCreatureBeDestroyed
+fp o
+f ffffffff ffffffff 001 v spellsStinkingCloud
+fp o
+f ffffffff ffffffff 001 v DoCaltropEffect
+fp o
+f ffffffff ffffffff 001 v DoTrapSpike
+fp i
+f ffffffff ffffffff 008 v DoMissileStorm
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 001 v DoDirgeEffect
+fp o
+f ffffffff ffffffff 006 v spellsInflictTouchAttack
+fp i
+fp i
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 v DoMagicFang
+fp i
+fp i
+f ffffffff ffffffff 001 v DoSpikeGrowthEffect
+fp o
+f ffffffff ffffffff 001 v DoCamoflage
+fp o
+f ffffffff ffffffff 008 v DoGrenade
+fp i
+fp i
+fp i
+fp i
+fp i
+fp f
+fp i
+fp i
+f ffffffff ffffffff 005 v DoPetrification
+fp i
+fp o
+fp o
+fp i
+fp i
+f ffffffff ffffffff 003 v spellApplyMindBlank
+fp o
+fp i
+fp f
+f ffffffff ffffffff 003 v spellsDispelAoE
+fp o
+fp o
+fp i
+f ffffffff ffffffff 004 v doAura
+fp i
+fp i
+fp i
+fp i
+f ffffffff ffffffff 005 v RemoveSpellEffects2
+fp i
+fp o
+fp o
+fp i
+fp i
+f ffffffff ffffffff 002 v RemoveAnySpellEffects
+fp i
+fp o
+f ffffffff ffffffff 001 i GZCanNotUseGazeAttackCheck
+fp o
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_FLEE
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_IGNORE
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_GUST
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_DISPEL_L
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_DISPEL_N
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_DISPEL_G
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_DISPEL_M
+f ffffffff ffffffff 000 i X2_SPELL_AOEBEHAVIOR_DISPEL_C
+f ffffffff ffffffff 000 e0 CreateBadTideEffectsLink
+f ffffffff ffffffff 000 e0 CreateGoodTideEffectsLink
+f ffffffff ffffffff 001 i GetSlashingWeapon
+fp o
+f ffffffff ffffffff 001 i GetMeleeWeapon
+fp o
+f ffffffff ffffffff 001 i GetIsMagicalItem
+fp o
+f ffffffff ffffffff 001 i GetIsMagicStatBonus
+fp o
+f ffffffff ffffffff 001 i GetEpicSpellSaveDC
+fp o
+f ffffffff ffffffff 001 v CheckAndApplyEpicRageFeats
+fp i
+f ffffffff ffffffff 001 v CheckAndApplyThunderingRage
+fp i
+f ffffffff ffffffff 001 v CheckAndApplyTerrifyingRage
+fp i
+f ffffffff ffffffff 003 v DoMindBlast
+fp i
+fp i
+fp f
+f ffffffff ffffffff 001 i GetIsRangedWeapon
+fp o
+f ffffffff ffffffff 003 i DoCubeParalyze
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 v EngulfAndDamage
+fp o
+fp o
+f ffffffff ffffffff 001 i GetBestAOEBehavior
+fp i
+f ffffffff ffffffff 003 v GZRemoveSpellEffects
+fp i
+fp o
+fp i
+f ffffffff ffffffff 003 i GZGetDelayedSpellEffectsExpired
+fp i
+fp o
+fp o
+f ffffffff ffffffff 002 v FlyEffect
+fp o
+fp e2
+f ffffffff ffffffff 002 v CheckWeather
+fp o
+fp o
+f ffffffff ffffffff 003 v DelayCreateObject
+fp i
+fp s
+fp e2
+f ffffffff ffffffff 002 v ReturnToPrimeEffect
+fp o
+fp o
+f ffffffff ffffffff 002 f PortalEffect
+fp o
+fp o
+f 00003990 00003a5d 001 f DeathEffect
+fp o
+f ffffffff ffffffff 001 f RodOfRecallEffect
+fp o
+f ffffffff ffffffff 002 f ClosePortalEffect
+fp o
+fp o
+f 0000359d 00003651 002 v RemoveASpecificEffect
+fp o
+fp i
+f ffffffff ffffffff 002 v RemoveTagEffect
+fp o
+fp s
+f 00003651 000036e1 001 v CheckSpellEffects
+fp o
+f 000011f1 0000160a 004 v RemoveCreatureEffects
+fp o
+fp i
+fp i
+fp i
+f ffffffff ffffffff 002 v CharacterBleeding
+fp i
+fp o
+f 000021d0 0000224e 002 v DoOpenFaceHelmetVisuals
+fp o
+fp o
+f ffffffff ffffffff 003 v CheckDemonicAppearance
+fp o
+fp o
+fp i
+f 00002d6a 0000359d 002 v ApplyGlowingEyes
+fp i
+fp o
+f ffffffff ffffffff 003 v CheckEquipWeaponFeats
+fp o
+fp o
+fp i
+f ffffffff ffffffff 002 v Burning
+fp t0001
+fp o
+f ffffffff ffffffff 001 v CheckForArmorBonus
+fp o
+f 000037b4 00003967 002 v ChangeSize
+fp o
+fp f
+f 0000160a 00001cea 001 i GetIsEffectTypeBad
+fp e0
+f 00001cea 000021d0 001 i GetIsEffectTypeGood
+fp e0
+f 00002943 000029b0 002 v ApplyVisEffectWithNewCreator
+fp o
+fp i
+f 0000224e 00002943 002 i GetOpenFaceVisualID
+fp o
+fp o
+f ffffffff ffffffff 003 v CheckEquipShieldFeats
+fp o
+fp o
+fp i
+f 00003967 00003990 002 v VisualTransform
+fp o
+fp f
+f 000001ab 00000385 000 v main
+f 0000000d 00000015 000 v #loader
+f 00000015 000001ab 000 v #globals
+v 00000017 ffffffff 00000000 i WINGMAX
+v 0000002d ffffffff 00000004 i TAILMAX
+v 00000043 ffffffff 00000008 i HFHEADMAX
+v 00000059 ffffffff 0000000c i HMHEADMAX
+v 0000006f ffffffff 00000010 i AFHEADMAX
+v 00000085 ffffffff 00000014 i AMHEADMAX
+v 0000009b ffffffff 00000018 i EFHEADMAX
+v 000000b1 ffffffff 0000001c i EMHEADMAX
+v 000000c7 ffffffff 00000020 i GFHEADMAX
+v 000000dd ffffffff 00000024 i GMHEADMAX
+v 000000f3 ffffffff 00000028 i DFHEADMAX
+v 00000109 ffffffff 0000002c i DMHEADMAX
+v 0000011f ffffffff 00000030 i OFHEADMAX
+v 00000135 ffffffff 00000034 i OMHEADMAX
+v 0000014b ffffffff 00000038 s X0_DATABASE_DEFAULT
+v 00000175 ffffffff 0000003c s X0_DATABASE_XP1
+v 000001ad 0000037d 00000000 o oPC
+v 000001c2 0000037d 00000004 o oArea
+v 00000385 000004ef 00000000 i iLog
+v 00000385 000004ef 00000004 i iToDMs
+v 00000385 000004ef 00000008 o oPC
+v 00000385 000004ef 0000000c s sTextColor
+v 00000385 000004ef 00000010 s sMessage
+v 00000387 000004e9 00000014 s sLogPCName
+v 00000434 00000447 00000018 o oModule
+v 000004a6 000004dd 00000018 o oPC
+v 000004f7 000005f5 00000000 s #retval
+v 000004f7 000005ef 00000004 s sRGB
+v 000004f7 000005ef 00000008 s sText
+v 000004f9 000005e9 0000000c s sColorCodes
+v 000005f7 000008d6 00000000 i #retval
+v 000005f7 000008d0 00000004 s sParam1
+v 000005f7 000008d0 00000008 s sDataName
+v 000005f7 000008d0 0000000c s sTable
+v 000005f7 000008d0 00000010 o oObject
+v 000005f9 000008ca 00000014 s sName
+v 000008d8 000009e4 00000000 s sError
+v 000008d8 000009e4 00000004 s sLineNumber
+v 000008d8 000009e4 00000008 s sScriptName
+v 000008d8 000009e4 0000000c s sErrorType
+v 000008da 000009de 00000010 o oModule
+v 0000098e 000009c5 00000014 o oPC
+v 000009ec 00000a8a 00000000 i #retval
+v 000009ec 00000a84 00000004 s query
+v 000009ee 00000a7e 00000008 s sFunc
+v 00000a8c 00000abf 00000000 s value
+v 00000a8c 00000abf 00000004 s functionName
+v 00000a8c 00000abf 00000008 s pluginName
+v 00000ac7 00000b24 00000000 s #retval
+v 00000ac7 00000b1e 00000004 s operation
+v 00000ac7 00000b1e 00000008 s functionName
+v 00000ac7 00000b1e 0000000c s pluginName
+v 00000b26 00000b4b 00000000 s functionName
+v 00000b26 00000b4b 00000004 s pluginName
+v 00000b53 00000b9d 00000000 i #retval
+v 00000b53 00000b97 00000004 s functionName
+v 00000b53 00000b97 00000008 s pluginName
+v 00000b9f 00000c25 00000000 s value
+v 00000b9f 00000c25 00000004 i position
+v 00000ba1 00000c1f 00000008 s sFunc
+v 00000c2d 00000c60 00000000 i value
+v 00000c2d 00000c60 00000004 s functionName
+v 00000c2d 00000c60 00000008 s pluginName
+v 00000c68 00000ce6 00000000 i #retval
+v 00000c6a 00000ce0 00000004 s sFunc
+v 00000ce8 00000d64 00000000 i #retval
+v 00000cea 00000d5e 00000004 s sFunc
+v 00000d68 00000d9f 00000000 s sFunc
+v 00000da7 00000e4c 00000000 s #retval
+v 00000da7 00000e46 00000004 i column
+v 00000da9 00000e40 00000008 s sFunc
+v 00000e4e 00000e98 00000000 s #retval
+v 00000e4e 00000e92 00000004 s functionName
+v 00000e4e 00000e92 00000008 s pluginName
+v 00000e9a 0000115e 00000000 s sParam1
+v 00000e9a 0000115e 00000004 i iData
+v 00000e9a 0000115e 00000008 s sDataName
+v 00000e9a 0000115e 0000000c s sTable
+v 00000e9a 0000115e 00000010 o oObject
+v 00000e9c 00001158 00000014 s sName
+v 00000ffa 000010a9 00000018 s query
+v 000010b9 00001144 00000018 s query
+v 00001166 000011e9 00000000 i value
+v 00001166 000011e9 00000004 i position
+v 00001168 000011e3 00000008 s sFunc
+v 000011f1 00001602 00000000 i iEffectSubTypeKeep
+v 000011f1 00001602 00000004 i iEffectTypeKeep
+v 000011f1 00001602 00000008 i iEffectGroup
+v 000011f1 00001602 0000000c o oCreature
+v 000011f9 000015fc 00000010 s sAppearanceArray
+v 000011fb 000015fc 00000014 s sEffectTag
+v 000011fd 000015fc 00000018 e0 eEffect
+v 0000121a 000015fc 0000001c i iEye
+v 0000121c 000015fc 00000020 i iEffectType
+v 0000121e 000015fc 00000024 i iEffectSubType
+v 00001220 000015fc 00000028 i iRemoveEffect
+v 00001334 00001480 0000002c i #switcheval
+v 000014e5 000015fc 0000002c o oItem
+v 00001508 000015fc 00000030 i iBaseItemType
+v 0000160a 00001ce8 00000000 i #retval
+v 0000160a 00001ce2 00000004 e0 eEffect
+v 0000164d 00001cdc 00000008 i iEffectType
+v 00001cea 000021ce 00000000 i #retval
+v 00001cea 000021c8 00000004 e0 eEffect
+v 00001d2d 000021c2 00000008 i iEffectType
+v 000021d0 00002246 00000000 o oHelm
+v 000021d0 00002246 00000004 o oPC
+v 000021d2 00002240 00000008 i iVisual
+v 0000224e 00002941 00000000 i #retval
+v 0000224e 0000293b 00000004 o oPC
+v 0000224e 0000293b 00000008 o oItem
+v 00002250 00002935 0000000c i iVFX
+v 00002252 00002935 00000010 i iGender
+v 0000226f 00002935 00000014 i iRace
+v 0000228c 00002935 00000018 i iItemApp
+v 000022b5 00002935 0000001c i iNewVfx
+v 000025ed 00002765 00000020 i #switcheval
+v 0000278f 00002907 00000020 i #switcheval
+v 00002943 000029a8 00000000 i iVisual
+v 00002943 000029a8 00000004 o oPC
+v 00002945 000029a2 00000008 e0 eFam
+v 000029b0 00002bb3 00000000 s #retval
+v 000029b0 00002bad 00000004 s sDataName
+v 000029b0 00002bad 00000008 s sTable
+v 000029b0 00002bad 0000000c o oObject
+v 000029b2 00002ba7 00000010 s sName
+v 00002bb5 00002d68 00000000 s #retval
+v 00002bb5 00002d62 00000004 s sSeperator
+v 00002bb5 00002d62 00000008 i iIndex
+v 00002bb5 00002d62 0000000c s sArray
+v 00002bb7 00002d5c 00000010 i iCount
+v 00002bcd 00002d5c 00000014 i iMark
+v 00002be3 00002d5c 00000018 i iStringLength
+v 00002c00 00002d5c 0000001c s sChar
+v 00002d6a 00003595 00000000 o oCreature
+v 00002d6a 00003595 00000004 i iFX
+v 00002d6c 0000358f 00000008 i iGender
+v 00002d89 0000358f 0000000c i iRace
+v 00002dac 00003032 00000010 i #switcheval
+v 00003040 00003589 00000010 i #switcheval
+v 00003122 00003187 00000014 e0 eEyes
+v 000031a3 00003208 00000014 e0 eEyes
+v 00003224 000032e4 00000014 e0 eEyes1
+v 0000327f 000032e4 00000018 e0 eEyes2
+v 00003300 00003365 00000014 e0 eEyes
+v 00003381 000033e6 00000014 e0 eEyes
+v 00003402 00003467 00000014 e0 eEyes
+v 00003483 000034e8 00000014 e0 eEyes
+v 00003504 00003569 00000014 e0 eEyes
+v 0000359d 00003649 00000000 i iEffect
+v 0000359d 00003649 00000004 o oCreature
+v 0000359f 00003643 00000008 e0 eEffect
+v 00003651 000036d9 00000000 o oCreature
+v 000036e1 00003771 00000000 i ac
+v 000036e1 00003771 00000004 o creature
+v 000036e3 0000376b 00000008 s sFunc
+v 00003779 000037ac 00000000 o value
+v 00003779 000037ac 00000004 s functionName
+v 00003779 000037ac 00000008 s pluginName
+v 000037b4 0000395f 00000000 f fSizeTo
+v 000037b4 0000395f 00000004 o oTarget
+v 000037b6 00003959 00000008 f fCounter
+v 000037b8 00003959 0000000c f fChange
+v 000037ba 00003959 00000010 f fSizeFrom
+v 00003967 00003988 00000000 f fSize
+v 00003967 00003988 00000004 o oTarget
+v 00003990 00003a5b 00000000 f #retval
+v 00003990 00003a55 00000004 o oPC
+v 00003992 00003a4f 00000008 e0 eVFX
+l00 0000169 00000015 0000002b
+l00 0000170 0000002b 00000041
+l00 0000172 00000041 00000057
+l00 0000173 00000057 0000006d
+l00 0000174 0000006d 00000083
+l00 0000175 00000083 00000099
+l00 0000176 00000099 000000af
+l00 0000177 000000af 000000c5
+l00 0000178 000000c5 000000db
+l00 0000179 000000db 000000f1
+l00 0000180 000000f1 00000107
+l00 0000181 00000107 0000011d
+l00 0000182 0000011d 00000133
+l00 0000183 00000133 00000149
+l01 0000014 00000149 00000149
+l01 0000015 00000149 00000149
+l01 0000016 00000149 00000149
+l01 0000017 00000149 00000149
+l01 0000018 00000149 00000149
+l01 0000020 00000149 00000149
+l01 0000021 00000149 00000149
+l01 0000022 00000149 00000149
+l01 0000023 00000149 00000149
+l01 0000025 00000149 00000149
+l01 0000027 00000149 00000149
+l01 0000029 00000149 00000149
+l01 0000030 00000149 00000149
+l01 0000031 00000149 00000149
+l01 0000032 00000149 00000149
+l01 0000034 00000149 00000149
+l01 0000036 00000149 00000149
+l01 0000037 00000149 00000149
+l01 0000038 00000149 00000149
+l01 0000039 00000149 00000149
+l01 0000040 00000149 00000149
+l01 0000041 00000149 00000149
+l01 0000042 00000149 00000149
+l01 0000043 00000149 00000149
+l01 0000044 00000149 00000149
+l01 0000045 00000149 00000149
+l01 0000046 00000149 00000149
+l01 0000047 00000149 00000149
+l01 0000048 00000149 00000149
+l01 0000049 00000149 00000149
+l01 0000050 00000149 00000149
+l01 0000051 00000149 00000149
+l01 0000052 00000149 00000149
+l01 0000053 00000149 00000149
+l01 0000054 00000149 00000149
+l01 0000055 00000149 00000149
+l01 0000056 00000149 00000149
+l01 0000059 00000149 00000149
+l01 0000060 00000149 00000149
+l01 0000061 00000149 00000149
+l01 0000062 00000149 00000149
+l01 0000063 00000149 00000149
+l01 0000064 00000149 00000149
+l01 0000065 00000149 00000149
+l01 0000066 00000149 00000149
+l01 0000067 00000149 00000149
+l01 0000068 00000149 00000149
+l01 0000069 00000149 00000149
+l01 0000070 00000149 00000149
+l01 0000071 00000149 00000149
+l02 0000080 00000149 00000149
+l02 0000081 00000149 00000149
+l02 0000082 00000149 00000149
+l02 0000089 00000149 00000149
+l02 0000090 00000149 00000149
+l02 0000091 00000149 00000149
+l02 0000092 00000149 00000149
+l03 0000027 00000149 00000149
+l03 0000028 00000149 00000149
+l03 0000029 00000149 00000149
+l04 0000051 00000149 00000173
+l04 0000053 00000173 00000199
+l05 0000031 00000199 00000199
+l05 0000032 00000199 00000199
+l05 0000033 00000199 00000199
+l05 0000034 00000199 00000199
+l05 0000035 00000199 00000199
+l05 0000036 00000199 00000199
+l05 0000037 00000199 00000199
+l05 0000038 00000199 00000199
+l05 0000039 00000199 00000199
+l05 0000040 00000199 00000199
+l05 0000047 00000199 00000199
+l05 0000048 00000199 00000199
+l05 0000049 00000199 00000199
+l05 0000050 00000199 00000199
+l40 0000014 000001ab 000001c0
+l40 0000015 000001c0 000001dd
+l40 0000016 000001dd 00000255
+l40 0000018 00000255 000002b3
+l40 0000019 000002b3 00000317
+l40 0000021 00000317 00000337
+l40 0000023 00000337 0000034d
+l40 0000025 0000034d 0000037d
+l40 0000026 00000383 00000385
+l09 0000109 00000385 00000399
+l09 0000110 00000399 000003a6
+l09 0000112 000003ac 000003d1
+l09 0000114 000003d1 00000401
+l09 0000117 00000407 0000040f
+l09 0000119 00000415 00000432
+l09 0000120 00000432 00000447
+l09 0000123 00000453 0000045b
+l09 0000126 00000498 0000049e
+l09 0000128 000004a4 000004b9
+l09 0000129 000004b9 000004dd
+l09 0000131 000004ef 000004f7
+l08 0000089 000004f7 00000515
+l08 0000090 00000515 000005e9
+l08 0000096 000005ef 000005f7
+l13 0000548 000005f7 000005f9
+l13 0000550 000005f9 00000673
+l13 0000551 000006a0 000006a2
+l13 0000553 000006dd 000006df
+l13 0000555 000006df 00000730
+l13 0000556 00000730 00000750
+l13 0000558 00000750 00000763
+l13 0000560 00000769 000007c5
+l13 0000561 000007c5 000007d9
+l13 0000562 000007d9 000007ed
+l13 0000564 000007f3 000007f5
+l13 0000566 000007f5 00000841
+l13 0000567 00000841 00000855
+l13 0000569 00000855 00000863
+l13 0000570 00000863 0000086b
+l13 0000572 00000871 00000877
+l13 0000573 00000877 000008a4
+l13 0000575 000008aa 000008ca
+l13 0000576 000008d0 000008d8
+l09 0000081 000008d8 000008ed
+l09 0000082 000008ed 00000944
+l09 0000083 00000944 00000964
+l09 0000084 00000964 00000980
+l09 0000087 00000980 00000986
+l09 0000089 0000098c 000009a1
+l09 0000090 000009a1 000009c5
+l09 0000092 000009d1 000009de
+l09 0000093 000009e4 000009ec
+l12 0000103 000009ec 00000a0c
+l12 0000105 00000a0c 00000a2e
+l12 0000106 00000a2e 00000a48
+l12 0000107 00000a48 00000a7e
+l12 0000108 00000a84 00000a8c
+l06 0000070 00000a8c 00000abf
+l06 0000071 00000abf 00000ac7
+l06 0000044 00000ac7 00000b1e
+l06 0000045 00000b1e 00000b26
+l06 0000050 00000b26 00000b4b
+l06 0000051 00000b4b 00000b53
+l06 0000085 00000b53 00000b97
+l06 0000086 00000b97 00000b9f
+l12 0000166 00000b9f 00000bc1
+l12 0000168 00000bc1 00000be3
+l12 0000169 00000be3 00000c05
+l12 0000170 00000c05 00000c1f
+l12 0000172 00000c25 00000c2d
+l06 0000055 00000c2d 00000c60
+l06 0000056 00000c60 00000c68
+l12 0000112 00000c68 00000c90
+l12 0000114 00000c90 00000caa
+l12 0000115 00000caa 00000ce0
+l12 0000116 00000ce6 00000ce8
+l12 0000133 00000ce8 00000d0e
+l12 0000135 00000d0e 00000d28
+l12 0000136 00000d28 00000d5e
+l12 0000137 00000d64 00000d66
+l12 0000141 00000d66 00000d85
+l12 0000143 00000d85 00000d9f
+l12 0000144 00000da5 00000da7
+l12 0000148 00000da7 00000dce
+l12 0000150 00000dce 00000df0
+l12 0000151 00000df0 00000e0a
+l12 0000152 00000e0a 00000e40
+l12 0000153 00000e46 00000e4e
+l06 0000100 00000e4e 00000e92
+l06 0000101 00000e92 00000e9a
+l13 0000512 00000e9a 00000e9c
+l13 0000514 00000e9c 00000f16
+l13 0000515 00000f43 00000f45
+l13 0000517 00000f80 00000f82
+l13 0000519 00000f82 00000fd3
+l13 0000520 00000fd3 00000fdf
+l13 0000522 00000fdf 00000ff2
+l13 0000524 00000ff8 00001057
+l13 0000525 00001057 0000106d
+l13 0000526 0000106d 00001081
+l13 0000527 00001081 00001095
+l13 0000528 00001095 000010a9
+l13 0000530 000010b5 000010b7
+l13 0000532 000010b7 00001106
+l13 0000533 00001106 0000111c
+l13 0000534 0000111c 00001130
+l13 0000535 00001130 00001144
+l13 0000537 0000114a 00001158
+l13 0000538 0000115e 00001166
+l12 0000158 00001166 00001185
+l12 0000160 00001185 000011a7
+l12 0000161 000011a7 000011c9
+l12 0000162 000011c9 000011e3
+l12 0000163 000011e9 000011f1
+l39 0000432 000011f1 000011f7
+l39 0000433 000011f7 000011fb
+l39 0000434 000011fb 00001218
+l39 0000435 00001218 00001234
+l39 0000437 00001234 00001247
+l39 0000440 00001247 00001262
+l39 0000441 00001262 000012c0
+l39 0000444 000012c6 000012e1
+l39 0000446 000012e1 000012fc
+l39 0000449 000012fc 0000130e
+l39 0000452 00001314 00001326
+l39 0000454 0000132c 0000137c
+l39 0000457 0000137c 0000137c
+l39 0000459 0000137c 00001391
+l39 0000460 00001391 000013ac
+l39 0000461 000013ac 000013c0
+l39 0000464 000013c0 000013c0
+l39 0000466 000013c0 000013d0
+l39 0000468 000013d6 000013eb
+l39 0000469 000013eb 00001406
+l39 0000470 00001406 0000141a
+l39 0000474 00001420 00001420
+l39 0000476 00001420 00001430
+l39 0000478 00001436 0000144b
+l39 0000479 0000144b 00001466
+l39 0000480 00001466 0000147a
+l39 0000489 00001498 000014a2
+l39 0000491 000014c9 000014dd
+l39 0000494 000014e3 00001506
+l39 0000495 00001506 00001523
+l39 0000496 00001523 00001533
+l39 0000498 00001555 0000158e
+l39 0000499 0000158e 000015bc
+l39 0000500 000015bc 000015cc
+l39 0000502 000015ee 000015fc
+l39 0000503 00001602 0000160a
+l39 0000333 0000160a 0000161f
+l39 0000334 0000164b 00001668
+l39 0000336 00001668 00001cdc
+l39 0000373 00001ce2 00001cea
+l39 0000379 00001cea 00001cff
+l39 0000380 00001d2b 00001d48
+l39 0000382 00001d48 000021c2
+l39 0000408 000021c8 000021d0
+l39 0000683 000021d0 000021f8
+l39 0000684 000021f8 0000222d
+l39 0000685 0000222d 00002240
+l39 0000686 00002246 0000224e
+l39 0000625 0000224e 00002250
+l39 0000626 00002250 0000226d
+l39 0000627 0000226d 0000228a
+l39 0000628 0000228a 000022b3
+l39 0000629 000022b3 000022d3
+l39 0000632 000022d3 00002303
+l39 0000634 00002323 00002325
+l39 0000636 00002375 00002377
+l39 0000638 000023c7 000023c9
+l39 0000640 00002419 0000241b
+l39 0000642 0000246b 0000246d
+l39 0000644 000024bd 000024bf
+l39 0000646 000024ef 000024f1
+l39 0000648 0000257d 0000257f
+l39 0000649 000025cf 000025df
+l39 0000651 000025e5 0000268d
+l39 0000653 0000268d 0000268d
+l39 0000654 000026b1 000026b1
+l39 0000655 000026d5 000026d5
+l39 0000656 000026f9 000026f9
+l39 0000657 0000271d 0000271d
+l39 0000658 00002741 00002741
+l39 0000659 00002741 00002741
+l39 0000662 00002771 00002781
+l39 0000664 00002787 0000282f
+l39 0000666 0000282f 0000282f
+l39 0000667 00002853 00002853
+l39 0000668 00002877 00002877
+l39 0000669 0000289b 0000289b
+l39 0000670 000028bf 000028bf
+l39 0000671 000028e3 000028e3
+l39 0000672 000028e3 000028e3
+l39 0000675 00002913 00002935
+l39 0000676 0000293b 00002943
+l39 0000618 00002943 00002966
+l39 0000619 00002966 00002981
+l39 0000620 00002981 000029a2
+l39 0000621 000029a8 000029b0
+l13 0000609 000029b0 000029b2
+l13 0000611 000029b2 000029fb
+l13 0000612 00002a28 00002a2a
+l13 0000614 00002a65 00002a67
+l13 0000616 00002a67 00002abb
+l13 0000617 00002abb 00002ad9
+l13 0000619 00002ad9 00002b25
+l13 0000620 00002b25 00002b39
+l13 0000621 00002b39 00002b47
+l13 0000622 00002b47 00002b4f
+l13 0000624 00002b55 00002b5b
+l13 0000625 00002b5b 00002b83
+l13 0000627 00002b89 00002ba7
+l13 0000628 00002bad 00002bb5
+l01 0000277 00002bb5 00002bfe
+l01 0000278 00002bfe 00002c00
+l01 0000280 00002c00 00002c18
+l01 0000282 00002c18 00002c41
+l01 0000284 00002c41 00002c53
+l01 0000287 00002c59 00002c69
+l01 0000290 00002c6f 00002c7f
+l01 0000292 00002c9f 00002ca1
+l01 0000294 00002cc5 00002cc7
+l01 0000298 00002cc7 00002cfc
+l01 0000299 00002cfc 00002d1e
+l01 0000302 00002d24 00002d38
+l01 0000305 00002d3e 00002d5c
+l01 0000306 00002d62 00002d6a
+l39 0000896 00002d6a 00002d87
+l39 0000897 00002d87 00002da4
+l39 0000898 00002da4 00002f96
+l39 0000901 00002f96 00002f96
+l39 0000902 00002f96 00002f96
+l39 0000903 00002f96 00002f96
+l39 0000904 00002f96 00002f96
+l39 0000906 00002fb0 00002fb0
+l39 0000907 00002fb0 00002fb0
+l39 0000908 00002fb0 00002fb0
+l39 0000909 00002fb0 00002fb0
+l39 0000910 00002fb0 00002fb0
+l39 0000911 00002fb0 00002fb0
+l39 0000913 00002fca 00002fca
+l39 0000914 00002fca 00002fca
+l39 0000915 00002fca 00002fca
+l39 0000916 00002fca 00002fca
+l39 0000918 00002fe4 00002fe4
+l39 0000919 00002fe4 00002fe4
+l39 0000920 00002fe4 00002fe4
+l39 0000921 00002fe4 00002fe4
+l39 0000922 00002fe4 00002fe4
+l39 0000924 00002ffe 00002ffe
+l39 0000925 00002ffe 00002ffe
+l39 0000926 00002ffe 00002ffe
+l39 0000928 00003018 00003018
+l39 0000931 00003038 0000310c
+l39 0000934 0000310c 0000310c
+l39 0000936 0000310c 00003120
+l39 0000937 00003120 0000315a
+l39 0000938 0000315a 0000317b
+l39 0000939 0000317b 00003187
+l39 0000942 0000318d 0000318d
+l39 0000944 0000318d 000031a1
+l39 0000945 000031a1 000031db
+l39 0000946 000031db 000031fc
+l39 0000947 000031fc 00003208
+l39 0000950 0000320e 0000320e
+l39 0000952 0000320e 00003222
+l39 0000953 00003222 0000325c
+l39 0000954 0000325c 0000327d
+l39 0000955 0000327d 000032b7
+l39 0000956 000032b7 000032d8
+l39 0000957 000032d8 000032e4
+l39 0000960 000032ea 000032ea
+l39 0000962 000032ea 000032fe
+l39 0000963 000032fe 00003338
+l39 0000964 00003338 00003359
+l39 0000965 00003359 00003365
+l39 0000968 0000336b 0000336b
+l39 0000970 0000336b 0000337f
+l39 0000971 0000337f 000033b9
+l39 0000972 000033b9 000033da
+l39 0000973 000033da 000033e6
+l39 0000976 000033ec 000033ec
+l39 0000978 000033ec 00003400
+l39 0000979 00003400 0000343a
+l39 0000980 0000343a 0000345b
+l39 0000981 0000345b 00003467
+l39 0000984 0000346d 0000346d
+l39 0000986 0000346d 00003481
+l39 0000987 00003481 000034bb
+l39 0000988 000034bb 000034dc
+l39 0000989 000034dc 000034e8
+l39 0000992 000034ee 000034ee
+l39 0000994 000034ee 00003502
+l39 0000995 00003502 0000353c
+l39 0000996 0000353c 0000355d
+l39 0000997 0000355d 00003569
+l39 0000999 0000356f 0000356f
+l39 0001001 0000356f 00003583
+l39 0001002 00003583 00003589
+l39 0001005 00003595 0000359d
+l39 0000301 0000359d 000035ba
+l39 0000303 000035ba 000035cd
+l39 0000305 000035cd 000035e4
+l39 0000308 000035ea 000035ff
+l39 0000309 000035ff 0000361a
+l39 0000311 00003620 00003622
+l39 0000313 00003649 00003651
+l39 0000415 00003651 00003666
+l39 0000418 0000366c 0000368a
+l39 0000420 0000368a 0000369e
+l39 0000422 000036a4 000036b9
+l39 0000423 000036d9 000036e1
+l02 0000797 000036e1 000036fe
+l02 0000799 000036fe 00003725
+l02 0000800 00003725 0000374c
+l02 0000802 0000374c 0000376b
+l02 0000803 00003771 00003779
+l06 0000065 00003779 000037ac
+l06 0000066 000037ac 000037b4
+l39 0001204 000037b4 000037b8
+l39 0001205 000037b8 000037db
+l39 0001207 000037db 000037ed
+l39 0001211 000037f3 0000382b
+l39 0001213 0000382b 00003849
+l39 0001215 00003849 0000387e
+l39 0001217 0000387e 0000389c
+l39 0001221 000038a8 000038aa
+l39 0001225 000038aa 000038e2
+l39 0001227 000038e2 00003900
+l39 0001229 00003900 00003935
+l39 0001231 00003935 00003953
+l39 0001234 0000395f 00003967
+l39 0001177 00003967 00003988
+l39 0001178 00003988 00003990
+l39 0000263 00003990 000039b1
+l39 0000264 000039b1 000039d2
+l39 0000265 000039d2 000039f1
+l39 0000266 000039f1 00003a2f
+l39 0000267 00003a2f 00003a4f
+l39 0000268 00003a55 00003a5d

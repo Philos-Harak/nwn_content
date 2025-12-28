@@ -1,0 +1,16 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script:0c_if_dm_tans
+ Programmer:Philos
+////////////////////////////////////////////////////////////////////////////////
+ Text Appears When script that checks for dm transition tag = "dm_portal"
+ and setup the conversation text.
+*///////////////////////////////////////////////////////////////////////////////
+int StartingConditional()
+{
+    if (GetStringLeft (GetTag (OBJECT_SELF), 5) == "Tran_")
+    {
+        SetCustomToken (800, GetName (OBJECT_SELF));
+        return TRUE;
+    }
+    return FALSE;
+}

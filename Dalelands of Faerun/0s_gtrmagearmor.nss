@@ -1,0 +1,96 @@
+/*////////////////////////////////////////////////
+ Script: 0s_gtrmagearmor
+ Programmer: Preston Watamaniuk
+//////////////////////////////////////////////////
+Conjuration (Creation) [Force]
+Level:  Bard 3, Sor/Wiz 3
+Components: V, S, F
+Casting Time:   1 standard action
+Range:  Touch
+Target: Creature touched
+Duration:   1 hour/level (D)
+Saving Throw:   Will negates (harmless)
+Spell Resistance:   No
+An invisible but tangible field of force surrounds the subject of a mage armor
+spell, this provides an armor bonus to AC of +3 + 1 per 2 caster levels, to a
+maximum of +8 at 10th caster level. Unlike mundane armor, mage armor entails no
+armor check penalty, arcane spell failure chance, or speed reduction.
+
+Arcane Focus: A tiny platinum shield worth at least 25 gp.
+/*////////////////////////////////////////////////
+#include "nwnx_creature"
+#include "nwnx_effect"
+#include "0i_spells"
+
+void main()
+{
+    // ***********************************************************
+    // *************** Set Spell Structure ***********************
+    // ***********************************************************
+    // Setup the spell in the structured variables, then pass through the SetSpell function.
+    Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.iSubSchool = SUBSCHOOL_CREATION;
+    Spell.iDescriptor = DESC_FORCE;
+    Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.iAreaShape = SHAPE_TOUCH_TARGET;
+    Spell.iTargetType = TARGET_TYPE_ALLIES;
+    Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
+    Spell.iDurationType = DURATION_TYPE_HOURS;
+    Spell.iDuration = 1;
+    Spell.iDurPerLvl = 1;
+    Spell.iModifier = 1;
+    Spell.iModPerLvl = 2;
+    Spell.iMaxModifier = 5;
+    Spell.iImpact = VFX_IMP_AC_BONUS;
+    // Setup the spell.
+    Spell = SetSpell (Spell);
+    // Check to see if we should still fire off the spell.
+    if (Spell.iSpellID == STOP_SPELL) return;
+    // Set duration as an item enchantment for special feats.
+    Spell = GetDuration (Spell, TRUE);
+    // Get the result for the effect, sets Spell.iResult.
+    Spell = GetModifier (Spell);
+    // Spells is 1 / 2 levels + 3 to armor bonus.
+    Spell.iResult = Spell.iResult + 3;
+    // *******************************************************************
+    // ********************** Spell effects ******************************
+    // *******************************************************************
+    int nArmorBonus;
+    //Create visual effects.
+    effect eImpact = EffectVisualEffect (Spell.iImpact);
+    effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
+    // Used to anchor the spell to the creature so we can test for it.
+    effect eEffect = EffectSpellImmunity (SPELL_HORSE_MOUNT);
+    eEffect = RemoveEffectIcon (eEffect);
+    // Setup armor bonus i.e. Spell.iResult.
+    // Setup an expire script to remove spells non-effects effects.
+    effect eScript = EffectRunScript ("", "0s_magearmor_r", "", 0.0, IntToString (Spell.iResult));
+    // Create the AC increase effect.
+    effect eIconEffect = EffectIcon (35/*AC_INCREASE*/);
+    // Link the effects
+    effect eLink = EffectLinkEffects (eDuration, eEffect);
+    eLink = EffectLinkEffects (eLink, eScript);
+    eLink = EffectLinkEffects (eLink, eIconEffect);
+    //Get the spells target(s).
+    Spell = GetSpellTarget (Spell);
+    while(GetIsObjectValid(Spell.oAreaTarget))
+    {
+        //Fire cast spell at event for the specified target
+        SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
+        // Remove any previously cast spell on this target.
+        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (962/*SPELL_GREATER_MAGE_ARMOR*/, Spell.oCaster, Spell.oAreaTarget);
+        // Set the armor bonus on the character incase they equip or unequip items.
+        nArmorBonus = GetLocalInt (Spell.oAreaTarget, "0_Armor_Bonus");
+        SetLocalInt (Spell.oAreaTarget, "0_Armor_Bonus", Spell.iResult + nArmorBonus);
+        // Apply effects
+        DelayCommand (Spell.fDelay, CheckForArmorBonus (Spell.oAreaTarget));
+        DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+        DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+        DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDuration, Spell.oAreaTarget, Spell.fDuration));
+        //Get the spells target(s).
+        Spell = GetSpellTarget (Spell);
+    }
+    CleanUpSpell (Spell);
+}
+

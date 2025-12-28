@@ -1,0 +1,15 @@
+/*////////////////////////////////////////////////////////////////////////////////////////////////////
+ Script Name: 0e_dm_spawn_a
+ Programmer: Philos
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+ Event script that runs when a DM gives an item (after).
+*/////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "nwnx_events"
+#include "0i_items"
+void main()
+{
+    object oObject = StringToObject (NWNX_Events_GetEventData ("ITEM"));
+    // Tag the items as created by the dm. Used to track items given out.
+    if (!GetIsItemStackable (oObject)) SetLocalString (oObject, "0_Creator", StripColorCodes (GetName (OBJECT_SELF, TRUE)));
+}
+

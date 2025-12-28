@@ -1,0 +1,18 @@
+/*/////////////////////////////////////////////////////////////////////////////////////////////////////
+ Script Name: 0e_clearinventor
+ Programmer: Philos
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+ Destroys the objects inventory on an event.
+ One use is on close of a container.
+*/////////////////////////////////////////////////////////////////////////////////////////////////////
+void main ()
+{
+   object oItem = GetFirstItemInInventory ();
+   while (GetIsObjectValid (oItem))
+   {
+      DestroyObject (oItem);
+      oItem = GetNextItemInInventory ();
+   }
+   // Set this placeable as unchecked so it can roll more items.
+   SetLocalInt (OBJECT_SELF, "0_Used", FALSE);
+}

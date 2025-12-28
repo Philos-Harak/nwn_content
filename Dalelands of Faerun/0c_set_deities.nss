@@ -1,0 +1,14 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script: 0c_set_deities
+ Programmer: Philos
+////////////////////////////////////////////////////////////////////////////////
+ Text Appears When script that sets the deity text.
+*///////////////////////////////////////////////////////////////////////////////
+int StartingConditional()
+{
+    object oPC = GetPCSpeaker ();
+    string sDeity = GetDeity (oPC);
+    if (sDeity != "") SetCustomToken (1150, "Current Deity: " + sDeity);
+    else SetCustomToken (1150, "");
+    return TRUE;
+}

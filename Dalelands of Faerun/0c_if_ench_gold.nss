@@ -1,0 +1,13 @@
+/*//////////////////////////////////////////////////////////////////////////////
+ Script: 0c_if_ench_gold
+ Programmer: Philos
+////////////////////////////////////////////////////////////////////////////////
+ Text Appears When script that checks to see if the caster has enough gold.
+/*///////////////////////////////////////////////////////////////////////////////
+#include "0i_master"
+int StartingConditional()
+{
+    if (GetIsDungeonMaster (OBJECT_SELF)) return TRUE;
+    if (GetLocalInt (OBJECT_SELF, "0_GoldCost") <= GetGold (OBJECT_SELF)) return TRUE;
+    return FALSE;
+}

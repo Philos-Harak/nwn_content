@@ -1,0 +1,17 @@
+/*////////////////////////////////////////////////////////////////////////////////////////////////////
+ Script Name: 0e_pin_adda
+ Programmer: Philos
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+ Event script that runs after a map pin is added.
+*/////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "0i_chat"
+#include "0i_character"
+#include "nwnx_events"
+
+void main()
+{
+    string sMessage = NWNX_Events_GetEventData ("PIN_NOTE");
+    string sInput = GetLocalString (OBJECT_SELF, "0_Input");
+    CheckPlayerInput (OBJECT_SELF, sInput, sMessage);
+    DMChatPars (0, OBJECT_SELF, OBJECT_INVALID, sMessage);
+}

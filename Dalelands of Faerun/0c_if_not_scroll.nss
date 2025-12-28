@@ -1,0 +1,27 @@
+////////////////////////////////////////////////////////////////////////////////
+// Name: 0c_if_not_scroll
+/*//////////////////////////////////////////////////////////////////////////////
+ Conversation script that checks to see if the item being crafted is not a scroll.
+
+*/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Made By: Philos
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "0i_crafting"
+
+int StartingConditional()
+{
+    string sTag;
+    object oItem;
+    // Check the the item type.
+    oItem = GetLocalObject (OBJECT_SELF, "0_Item_to_enchant");
+    sTag = GetTag (oItem);
+    // See if it is a blank scroll.
+    if (sTag == "0_blank_scroll")
+    {
+        // If so then enchant the scroll.
+        EnchantBox (OBJECT_SELF, 1);
+        return FALSE;
+    }
+    return TRUE;
+}

@@ -1,0 +1,18 @@
+/*/////////////////////////////////////////////////////////////////////////////////////////////////////
+ Script Name: ae_099_099_01
+ Programmer: Philos
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+ Event script that runs on_exit for area 099_099_01 (Unholy cavern).
+ - Removes a heartbeat script to cast evil spells upon players!
+*/////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "nwnx_area"
+#include "0i_s_message"
+void main()
+{
+    int nPlayers = NWNX_Area_GetNumberOfPlayersInArea (OBJECT_SELF);
+    if (nPlayers == 0)
+    {
+        SetEventScript (OBJECT_SELF, EVENT_SCRIPT_AREA_ON_HEARTBEAT, "");
+    }
+}
+
