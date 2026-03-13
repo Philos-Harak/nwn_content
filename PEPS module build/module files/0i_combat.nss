@@ -640,80 +640,83 @@ object ai_SetCombatState(object oCreature)
                 fDistance = GetDistanceBetween(oObject, oCreature);
                 if(fDistance <= fMaxRange)
                 {
-                    // ********** Get the Total levels of the Enemy **********
-                    nPower = ai_GetCharacterLevels(oObject);
-                    if(nPower < 1) nPower = 1;
-                    if(nEnemyHighestPower < nPower) nEnemyHighestPower = nPower;
-                    nEnemyPower += nPower;
-                    // ********** Check if the Enemy is disabled **********
-                    bThreat = TRUE;
-                    nDisabled = ai_Disabled(oObject);
-                    if(nDisabled)
+                    if(GetResRef(oCreature) != "prc_2da_cache")
                     {
-                        if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
-                        // Decide if they are still a threat: 1 - dead, 2 - Bleeding.
-                        if(nDisabled == 1 || nDisabled == 2 ||
-                           //nDisabled == EFFECT_TYPE_CONFUSED ||
-                           //nDisabled == EFFECT_TYPE_FRIGHTENED ||
-                           //nDisabled == EFFECT_TYPE_PARALYZE ||
-                           nDisabled == EFFECT_TYPE_CHARMED ||
-                           nDisabled == EFFECT_TYPE_PETRIFY)
+                        // ********** Get the Total levels of the Enemy **********
+                        nPower = ai_GetCharacterLevels(oObject);
+                        if(nPower < 1) nPower = 1;
+                        if(nEnemyHighestPower < nPower) nEnemyHighestPower = nPower;
+                        nEnemyPower += nPower;
+                        // ********** Check if the Enemy is disabled **********
+                        bThreat = TRUE;
+                        nDisabled = ai_Disabled(oObject);
+                        if(nDisabled)
                         {
-                            bThreat = FALSE;
-                            if(AI_DEBUG) ai_Debug("0i_combat", "527", "Enemy: " + GetName(oObject) + sDebugText);
+                            if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
+                            // Decide if they are still a threat: 1 - dead, 2 - Bleeding.
+                            if(nDisabled == 1 || nDisabled == 2 ||
+                               //nDisabled == EFFECT_TYPE_CONFUSED ||
+                               //nDisabled == EFFECT_TYPE_FRIGHTENED ||
+                               //nDisabled == EFFECT_TYPE_PARALYZE ||
+                               nDisabled == EFFECT_TYPE_CHARMED ||
+                               nDisabled == EFFECT_TYPE_PETRIFY)
+                            {
+                                bThreat = FALSE;
+                                if(AI_DEBUG) ai_Debug("0i_combat", "527", "Enemy: " + GetName(oObject) + sDebugText);
+                            }
                         }
-                    }
-                    // If they are using the coward ai then treat them as frightened.
-                    // we place it here as an else so we don't overwrite another disabled effect.
-                    else if(GetLocalString(oObject, AI_COMBAT_SCRIPT) == "ai_coward")
-                    {
-                        nDisabled = EFFECT_TYPE_FRIGHTENED;
-                        // !!!! For /DEBUG CODE !!!!
-                        if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
-                    }
-                    if(bThreat)
-                    {
-                        sCnt = IntToString(++nEnemyNum);
-                        // ********** Set if the Enemy is disabled **********
-                        SetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt, nDisabled);
-                        // ********** Set the Enemy Object **********
-                        SetLocalObject(oCreature, AI_ENEMY + sCnt, oObject);
-                        // ********** Set the Enemy Combat Rating **********
-                        SetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt, ai_GetMyCombatRating(oObject));
-                        // ********** Set the Enemy Health Percentage **********
-                        nHealth = ai_GetPercHPLoss(oObject);
-                        SetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt, nHealth);
-                        // ********** Set the number of enemies near the enemy **********
-                        nInMelee = 0;
-                        nNth = 1;
-                        oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, nNth);
-                        while(oMelee != OBJECT_INVALID && !GetIsDead(oMelee) &&
-                              GetDistanceBetween(oMelee, oObject) < AI_RANGE_MELEE)
+                        // If they are using the coward ai then treat them as frightened.
+                        // we place it here as an else so we don't overwrite another disabled effect.
+                        else if(GetLocalString(oObject, AI_COMBAT_SCRIPT) == "ai_coward")
                         {
-                            // We add an enemy to the group.
-                            if(GetIsEnemy(oMelee, oCreature)) nInMelee++;
-                            oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, ++nNth);
+                            nDisabled = EFFECT_TYPE_FRIGHTENED;
+                            // !!!! For /DEBUG CODE !!!!
+                            if(AI_DEBUG) sDebugText += "**** DISABLED(" + IntToString(nDisabled) + ") ****";
                         }
-                        SetLocalInt(oCreature, AI_ENEMY_MELEE + sCnt, nInMelee);
-                        // ********** Set the Enemies distance **********
-                        fDistance = GetDistanceBetween(oObject, oCreature);
-                        SetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt, fDistance);
-                        // ********** Set if the Enemy is perceived **********
-                        if(GetObjectSeen(oObject, oCreature) ||
-                          (GetObjectHeard(oObject, oCreature) && fDistance <= AI_RANGE_MELEE &&
-                          ai_GetIsHidden(oObject)))
+                        if(bThreat)
                         {
-                            SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
-                            if(AI_DEBUG) sDebugText += "**** PERCEIVED Seen: " +
-                                         IntToString(GetObjectSeen(oObject, oCreature)) +
-                                         " Heard: " + IntToString(GetObjectHeard(oObject, oCreature)) + " ****";
-                        }
-                        else SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, FALSE);
-                        // ********** Set the Nearest Enemy seen **********
-                        if(fDistance < fNearest)
-                        {
-                            fNearest = fDistance;
-                            oNearestEnemy = oObject;
+                            sCnt = IntToString(++nEnemyNum);
+                            // ********** Set if the Enemy is disabled **********
+                            SetLocalInt(oCreature, AI_ENEMY_DISABLED + sCnt, nDisabled);
+                            // ********** Set the Enemy Object **********
+                            SetLocalObject(oCreature, AI_ENEMY + sCnt, oObject);
+                            // ********** Set the Enemy Combat Rating **********
+                            SetLocalInt(oCreature, AI_ENEMY_COMBAT + sCnt, ai_GetMyCombatRating(oObject));
+                            // ********** Set the Enemy Health Percentage **********
+                            nHealth = ai_GetPercHPLoss(oObject);
+                            SetLocalInt(oCreature, AI_ENEMY_HEALTH + sCnt, nHealth);
+                            // ********** Set the number of enemies near the enemy **********
+                            nInMelee = 0;
+                            nNth = 1;
+                            oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, nNth);
+                            while(oMelee != OBJECT_INVALID && !GetIsDead(oMelee) &&
+                                  GetDistanceBetween(oMelee, oObject) < AI_RANGE_MELEE)
+                            {
+                                // We add an enemy to the group.
+                                if(GetIsEnemy(oMelee, oCreature)) nInMelee++;
+                                oMelee = GetNearestObject(OBJECT_TYPE_CREATURE, oObject, ++nNth);
+                            }
+                            SetLocalInt(oCreature, AI_ENEMY_MELEE + sCnt, nInMelee);
+                            // ********** Set the Enemies distance **********
+                            fDistance = GetDistanceBetween(oObject, oCreature);
+                            SetLocalFloat(oCreature, AI_ENEMY_RANGE + sCnt, fDistance);
+                            // ********** Set if the Enemy is perceived **********
+                            if(GetObjectSeen(oObject, oCreature) ||
+                              (GetObjectHeard(oObject, oCreature) && fDistance <= AI_RANGE_MELEE &&
+                              ai_GetIsHidden(oObject)))
+                            {
+                                SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, TRUE);
+                                if(AI_DEBUG) sDebugText += "**** PERCEIVED Seen: " +
+                                             IntToString(GetObjectSeen(oObject, oCreature)) +
+                                             " Heard: " + IntToString(GetObjectHeard(oObject, oCreature)) + " ****";
+                            }
+                            else SetLocalInt(oCreature, AI_ENEMY_PERCEIVED + sCnt, FALSE);
+                            // ********** Set the Nearest Enemy seen **********
+                            if(fDistance < fNearest)
+                            {
+                                fNearest = fDistance;
+                                oNearestEnemy = oObject;
+                            }
                         }
                     }
                 }
@@ -4015,6 +4018,8 @@ int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, i
         if(AI_DEBUG) ai_Debug("0i_combat", "3417", "I am being attacked so stand my ground!");
         return FALSE;
     }
+    // These are intelligent actions and thus should only be done by intelligent creatures.
+    if(GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) < 8) return FALSE;
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     float fDistance = GetDistanceBetween(oCreature, oNearestEnemy);
     if(AI_DEBUG) ai_Debug("0i_combat", "3422", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance " + FloatToString(fDistance, 0, 2));
@@ -4188,7 +4193,7 @@ int ai_CanIAwesomeBlow(object oCreature, object oTarget)
        int nAttackBonus = GetBaseAttackBonus(oCreature) - 4;
     //:: Calculate average hit chance.
        int nHitChance = 10 + nAttackBonus - nTargetAC;
-    //:: If hit chance <= 50%, don’t bother
+    //:: If hit chance <= 50%, donï¿½t bother
     if (nHitChance <= 5) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_combat", "3674", "ai_CanIAwesomeBlow: Attack check PASSED!");
     if(AI_DEBUG) ai_Debug("0i_combat", "3676", "ai_CanIAwesomeBlow: Can use Awesome Blow on oTarget.");
@@ -4307,7 +4312,7 @@ int ai_CanIGrapple(object oCreature, object oTarget)
     int nTargetBAB = GetBaseAttackBonus(oTarget);
     int nTargetGrapple = nTargetBAB + nTargetStrMod + nTargetSizeMod;
     int nWinChance = 10 + nGrappleScore - nTargetGrapple;
-    //:: If chance to win grapple check < 60%, don’t bother
+    //:: If chance to win grapple check < 60%, donï¿½t bother
     if (nWinChance < 6) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_combat", "3743", "Can use Grapple on oTarget."); return TRUE;
 }

@@ -203,7 +203,6 @@ int ai_Disabled(object oCreature)
     {
         switch(GetEffectType(eEffect, TRUE))
         {
-            WriteTimestampedLogEntry("Effect Type: " + IntToString(GetEffectType(eEffect, TRUE)));
             case EFFECT_TYPE_DOMINATED :
             case EFFECT_TYPE_CUTSCENE_DOMINATED :
             {

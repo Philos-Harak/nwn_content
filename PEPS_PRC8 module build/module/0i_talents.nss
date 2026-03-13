@@ -1668,7 +1668,7 @@ int ai_TryTailSlap(object oCreature)
         if(GetIsEnemy(oTarget, oCreature) && !GetIsDead(oTarget)) break;
         oTarget = GetNextObjectInShape(SHAPE_SPHERE, fSize, lTail);
     }
-    if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " tail ");\
+    if(oTarget != OBJECT_INVALID) ai_DragonMeleeAttack(oCreature, oTarget, sDmgDice, " tail ");
     return TRUE;
 }
 void ai_CrushEffect(object oCreature, object oBaseTarget, int nHitDice)
@@ -3269,47 +3269,44 @@ int ai_UseCreatureTalent(object oCreature, string sCategory, int nInMelee, int n
                 if(AI_DEBUG) ai_Debug("0i_talents", "2432", "nSlotIndex: " + IntToString(nSlotIndex) +
                          " jTalent Type: " + IntToString(JsonGetInt(JsonArrayGet(jTalent, 0))));
                 nType = JsonGetInt(JsonArrayGet(jTalent, 0));
-                if(bUseMagic)
+                if(nType == AI_TALENT_TYPE_SPELL && bUseMagic)
                 {
-                    if(nType == AI_TALENT_TYPE_SPELL)
+                    // Check to make sure they still have this spell.
+                    nClass = JsonGetInt(JsonArrayGet(jTalent, 2));
+                    if(AI_DEBUG) ai_Debug("0i_talents", "3290", GetName(oCreature) + " Memorizes Spells? " +
+                       Get2DAString("classes", "MemorizesSpells", nClass));
+                    if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
                     {
-                        // Check to make sure they still have this spell.
-                        nClass = JsonGetInt(JsonArrayGet(jTalent, 2));
-                        if(AI_DEBUG) ai_Debug("0i_talents", "3290", GetName(oCreature) + " Memorizes Spells? " +
-                           Get2DAString("classes", "MemorizesSpells", nClass));
-                        if(Get2DAString("classes", "MemorizesSpells", nClass) == "1")
+                        if(AI_DEBUG) ai_Debug("0i_talents", "3294", " Spell Memorized? " +
+                           IntToString(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlotIndex)));
+                        if(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlotIndex) < 1)
                         {
-                            if(AI_DEBUG) ai_Debug("0i_talents", "3294", " Spell Memorized? " +
-                               IntToString(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlotIndex)));
-                            if(GetMemorizedSpellReady(oCreature, nClass, nLevel, nSlotIndex) < 1)
-                            {
-                                ai_RemoveTalent(oCreature, jCategory, jLevel, sCategory, nLevel, nSlotIndex);
-                                if(nMaxSlotIndex == 1) ai_UpdateMaxTalentLevel(oCreature, jCategory, sCategory, nMaxTalentLevel, nLevel);
-                            }
-                            else if(ai_UseCreatureSpellTalent(oCreature, jLevel, jTalent, sCategory, nInMelee, oTarget)) return TRUE;
-                        }
-                        else if(!GetSpellUsesLeft(oCreature, nClass, JsonGetInt(JsonArrayGet(jTalent, 1))))
-                        {
-                            ai_RemoveTalentLevel(oCreature, jCategory, jLevel, sCategory, nLevel);
+                            ai_RemoveTalent(oCreature, jCategory, jLevel, sCategory, nLevel, nSlotIndex);
                             if(nMaxSlotIndex == 1) ai_UpdateMaxTalentLevel(oCreature, jCategory, sCategory, nMaxTalentLevel, nLevel);
-                            nTalentUsed = FALSE;
                         }
                         else if(ai_UseCreatureSpellTalent(oCreature, jLevel, jTalent, sCategory, nInMelee, oTarget)) return TRUE;
                     }
-                    else if(nType == AI_TALENT_TYPE_SP_ABILITY)
+                    else if(!GetSpellUsesLeft(oCreature, nClass, JsonGetInt(JsonArrayGet(jTalent, 1))))
                     {
-                        // Special ability spells do not need to concentrate?!
-                        if(ai_CheckSpecialTalentsandUse(oCreature, jTalent, sCategory, nInMelee, oTarget))
-                        {
-                            // When the ability is used that slot is now not readied.
-                            // Multiple uses of the same spell are stored in different slots.
-                            ai_RemoveTalent(oCreature, jCategory, jLevel, sCategory, nLevel, nSlotIndex);
-                            if(nMaxSlotIndex == 1) ai_UpdateMaxTalentLevel(oCreature, jCategory, sCategory, nMaxTalentLevel, nLevel);
-                            return TRUE;
-                        }
+                        ai_RemoveTalentLevel(oCreature, jCategory, jLevel, sCategory, nLevel);
+                        if(nMaxSlotIndex == 1) ai_UpdateMaxTalentLevel(oCreature, jCategory, sCategory, nMaxTalentLevel, nLevel);
+                        nTalentUsed = FALSE;
+                    }
+                    else if(ai_UseCreatureSpellTalent(oCreature, jLevel, jTalent, sCategory, nInMelee, oTarget)) return TRUE;
+                }
+                else if(nType == AI_TALENT_TYPE_SP_ABILITY && bUseMagic)
+                {
+                    // Special ability spells do not need to concentrate?!
+                    if(ai_CheckSpecialTalentsandUse(oCreature, jTalent, sCategory, nInMelee, oTarget))
+                    {
+                        // When the ability is used that slot is now not readied.
+                        // Multiple uses of the same spell are stored in different slots.
+                        ai_RemoveTalent(oCreature, jCategory, jLevel, sCategory, nLevel, nSlotIndex);
+                        if(nMaxSlotIndex == 1) ai_UpdateMaxTalentLevel(oCreature, jCategory, sCategory, nMaxTalentLevel, nLevel);
+                        return TRUE;
                     }
                 }
-                else if(bUseMagicItems && nType == AI_TALENT_TYPE_ITEM)
+                else if(nType == AI_TALENT_TYPE_ITEM && bUseMagicItems)
                 {
                     // Items do not need to concentrate.
                     if(ai_UseCreatureItemTalent(oCreature, jLevel, jTalent, sCategory, nInMelee, oTarget))

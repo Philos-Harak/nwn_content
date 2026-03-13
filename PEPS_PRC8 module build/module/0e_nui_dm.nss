@@ -40,7 +40,7 @@ void main()
             ai_SendMessages(GetName(oDM) + " is now a Player! Loading player widget.", AI_COLOR_YELLOW, oDM);
             ai_CreateWidgetNUI(oDM, oDM);
         }
-        DelayCommand(0.0, NuiDestroy(oDM, nToken));
+        NuiDestroy(oDM, nToken);
         return;
     }
     //**************************************************************************
@@ -115,13 +115,13 @@ void main()
                     ai_SendMessages(GetName(oDM) + " AI widget locked.", AI_COLOR_YELLOW, oDM);
                     ai_SetDMWidgetButton(oDM, BTN_DM_WIDGET_LOCK, TRUE);
                 }
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
             else if(sElem == "btn_main_menu")
             {
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMOptionsNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMOptionsNUI(oDM);
             }
             else if(sElem == "btn_camera") ai_SelectCameraView(oDM);
             else if(sElem == "btn_inventory") ai_SelectOpenInventory(oDM);
@@ -148,8 +148,8 @@ void main()
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetCampaignDbJson("plugins", jPlugins, sName, AI_DM_TABLE);
             }
-            DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-            DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+            NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+            ai_CreateDMWidgetNUI(oDM);
         }
         else if(sEvent == "mousescroll")
         {
@@ -193,13 +193,13 @@ void main()
         {
             if(sElem == "btn_plugin_manager")
             {
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
             }
             if(sElem == "btn_widget_manager")
             {
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMWidgetManagerNUI(oDM);
             }
         }
         if(sEvent == "watch")
@@ -419,10 +419,10 @@ void main()
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, "pi_debug");
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, "pi_test");
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
             if(sElem == "btn_check_plugins")
             {
@@ -435,10 +435,10 @@ void main()
                     jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
             if(sElem == "btn_clear_plugins")
             {
@@ -451,10 +451,10 @@ void main()
                     jPlugin = JsonArrayGet(jPlugins, ++nIndex);
                 }
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
             else if(sElem == "btn_add_plugin")
             {
@@ -462,18 +462,18 @@ void main()
                 if(JsonGetType(JsonArrayGet(jPlugins, 0)) == JSON_TYPE_NULL) jPlugins = JsonArray();
                 jPlugins = ai_Plugin_Add(oDM, jPlugins, sScript);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
             }
             else if(GetStringLeft(sElem, 18) == "btn_remove_plugin_")
             {
                 int nIndex = StringToInt(GetStringRight(sElem, 1));
                 jPlugins = JsonArrayDel(jPlugins, nIndex);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMPluginManagerNUI(oDM));
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMPluginManagerNUI(oDM);
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
             else if(GetStringLeft(sElem, 11) == "btn_plugin_") ai_Plugin_Execute(oDM, sElem, 2);
         }
@@ -487,8 +487,8 @@ void main()
                 jPlugin = JsonArraySet(jPlugin, 1, JsonBool(bCheck));
                 jPlugins = JsonArraySet(jPlugins, nIndex, jPlugin);
                 ai_SetCampaignDbJson("plugins", jPlugins);
-                DelayCommand(0.0, NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI)));
-                DelayCommand(0.1, ai_CreateDMWidgetNUI(oDM));
+                NuiDestroy(oDM, NuiFindWindow(oDM, "dm" + AI_WIDGET_NUI));
+                ai_CreateDMWidgetNUI(oDM);
             }
         }
     }
@@ -506,8 +506,8 @@ void main()
                 jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(0));
                 jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(0));
                 ai_SetCampaignDbJson("rules", jRules);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMWidgetManagerNUI(oDM);
                 return;
             }
             else if(sElem == "btn_check_buttons")
@@ -519,8 +519,8 @@ void main()
                 jRules = JsonObjectSet(jRules, sDMWidgetAccessVarname, JsonInt(7340028));
                 jRules = JsonObjectSet(jRules, sDMAIAccessVarname, JsonInt(203423743));
                 ai_SetCampaignDbJson("rules", jRules);
-                DelayCommand(0.0, NuiDestroy(oDM, nToken));
-                DelayCommand(0.1, ai_CreateDMWidgetManagerNUI(oDM));
+                NuiDestroy(oDM, nToken);
+                ai_CreateDMWidgetManagerNUI(oDM);
                 return;
             }
             SetLocalInt(oDM, "CHBX_SKIP", TRUE);

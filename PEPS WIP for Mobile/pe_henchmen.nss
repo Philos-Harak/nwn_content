@@ -184,39 +184,6 @@ void main()
                     SaveWholeParty(oPC, nToken, sParty);
                 }
             }
-            /*else if(sEvent == "watch")
-            {
-                if(sElem == "henchman_widget_check")
-                {
-                    int bWidget = JsonGetInt(NuiGetBind(oPC, nToken, "henchman_widget_check"));
-                    SetLocalInt(oPC, "AI_WIDGET_HENCHMAN", bWidget);
-                    if(bWidget) PopupWidgetHenchmanGUIPanel(oPC);
-                    else DelayCommand(0.0, NuiDestroy(oPC, NuiFindWindow(oPC, "widgethenchmanwin")));
-                }
-                if(sElem == "lock_henchman_widget_check")
-                {
-                    int bBuffLockWidget = JsonGetInt(NuiGetBind(oPC, nToken, "lock_henchman_widget_check"));
-                    SetLocalInt(oPC, "AI_WIDGET_HENCHMAN_LOCK", bBuffLockWidget);
-                    SetLocalInt(oPC, "AI_WIDGET_HENCHMAN", TRUE);
-                    NuiSetBind(oPC, nToken, "henchman_widget_check", JsonBool(TRUE));
-                    PopupWidgetHenchmanGUIPanel(oPC);
-                }
-            }
-            //**************************************************************************
-            // Henchmen buttons
-            else if (sWndId == "widget_henchman")
-            {
-                if (sEvent == "click")
-                {
-                    string sParty;
-                    if (sElem == "btn_one") sParty = "1";
-                    if (sElem == "btn_two") sParty = "2";
-                    if (sElem == "btn_three") sParty = "3";
-                    if (sElem == "btn_four") sParty = "4";
-                    SetHenchmanDbString (oPC, "henchname", sParty, "0");
-                    PopupWidgetHenchmanGUIPanel(oPC);
-                }
-            } */
         }
         else if(sWndId == "henchman_edit_nui")
         {
@@ -253,6 +220,7 @@ void main()
                     int nSelection = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_class_selected"));
                     int nClass = GetClassBySelection2DA(nSelection);
                     SetLocalInt(oHenchman, "CLASS_SELECTED_" + IntToString(nPosition), nClass);
+                    SetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nPosition), nClass);
                     NuiDestroy(oPC, nToken);
                     CreateCharacterEditGUIPanel(oPC, oHenchman);
                 }
@@ -311,10 +279,7 @@ void main()
                         }
                     }
                     int nPackage = GetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nPosition));
-                    if(nPackage == 0)
-                    {
-                        nPackage = GetPackageBySelection2DA(IntToString(nClass), 0);
-                    }
+                    if(nPackage == 0) nPackage = GetPackageBySelection2DA(IntToString(nClass), 0);
                     else if(nPackage == -1)
                     {
                         ai_SendMessages("There is not a valid package for this class!", AI_COLOR_RED, oPC);
@@ -374,7 +339,7 @@ void main()
                 }
                 else if(sElem == "btn_reset")
                 {
-                    oHenchman = ResetCharacter(oPC, oHenchman);
+                    oHenchman = ResetCharacter(oPC, oHenchman, nToken);
                     SetLocalObject(oPC, HENCHMAN_TO_EDIT, oHenchman);
                     ai_SendMessages(GetName(oHenchman) + " has been reset to level 1!", AI_COLOR_GREEN, oPC);
                     // We need to move party button list index to the last one since
@@ -419,7 +384,6 @@ void main()
                             else sResRef = "po_hu_m_99_";
                             SetPortraitResRef(oHenchman, sResRef);
                         }
-
                     }
                     int nHenchToken = NuiFindWindow(oPC, "henchman_nui");
                     if(nHenchToken)
@@ -431,7 +395,7 @@ void main()
                 if (nChange != 0)
                 {
                     int nPRace, nPGender;
-                    //WriteTimestampedLogEntry("pe_henchmen, 438, nID: " + IntToString(nID));
+                    int nMax2DARow = Get2DARowCount("portraits") - 1;
                     // 5000 is the highest we can check without TMI!
                     if(nID > 5000) nID = 1;
                     if(nID < 0) nID = 5000;
@@ -462,10 +426,10 @@ void main()
                         sPGender = Get2DAString("portraits", "Sex", nID);
                         if(sPGender != "") nPGender = StringToInt(sPGender);
                         else nPGender = -1;
-                        WriteTimestampedLogEntry("pe_henchmen, 470, nGender: " + IntToString(nGender) +
-                                                 " sPGender: " + sPGender +
-                                                 " nRace: " + IntToString(nRace) + " sPRace: " + sPRace +
-                                                 " nID: " + IntToString(nID));
+                        //WriteTimestampedLogEntry("pe_henchmen, 429, nGender: " + IntToString(nGender) +
+                        //                         " nPGender: " + IntToString(nPGender) +  " sPGender: " + sPGender +
+                        //                         " nRace: " + IntToString(nRace) + " nPRace: " + IntToString(nPRace) +
+                        //                         " sPRace: " + sPRace + " nID: " + IntToString(nID));
                         sResRef = "po_" + Get2DAString("portraits", "BaseResRef", nID) + "l";
                         if(ResManGetAliasFor(sResRef, RESTYPE_TGA) == "" &&
                            ResManGetAliasFor(sResRef, RESTYPE_DDS) == "") nPRace = 99;

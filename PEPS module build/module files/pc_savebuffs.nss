@@ -101,8 +101,10 @@ void main()
         nMetaMagic = GetMetaMagicFeat();
     }
     int nSpell = GetLastSpell();
+    if(Get2DAString("spells", "FeatID", nSpell) != "") nClass = -1;
     int nDomain = GetHasDomainSpell(oCaster, nClass, nLevel, nSpell);
     string sName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
+    // Check if this is a feat spell.
     if(nDomain) sName += " [Domain]";
     if(nMetaMagic > 0 && StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))
     {

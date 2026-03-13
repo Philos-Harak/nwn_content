@@ -711,7 +711,7 @@ void main()
                 string sColorPallet;
                 if(nSelected < 4)
                 {
-                    sColorPallet = "gui_pal_tattoo";
+                    sColorPallet = "cloth_pallet";
                     NuiSetBind(oPC, nToken, "armor_block_1", JsonBool(FALSE));
                     NuiSetBind(oPC, nToken, "armor_block_2", JsonBool(FALSE));
                 }
@@ -720,7 +720,7 @@ void main()
                     sColorPallet = "armor_pallet";
                     if(ResManGetAliasFor(sColorPallet, RESTYPE_TGA) == "")
                     {
-                        sColorPallet = "gui_pal_tattoo";
+                        sColorPallet = "cloth_pallet";
                         NuiSetBind(oPC, nToken, "armor_block_1", JsonBool(TRUE));
                     }
                 }
@@ -1809,7 +1809,7 @@ void SetModelNumberText(object oPC, object oTarget, int nToken)
     {
         // Need to disable the color widgets.
         // Row 511
-        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString("gui_pal_tattoo"));
+        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString("cloth_pallet"));
         NuiSetBind(oPC, nToken, "color_pallet_image_event", JsonBool(FALSE));
         // Row 512 - Label Part to Color
         // Row 5l3
@@ -1837,7 +1837,7 @@ void SetModelNumberText(object oPC, object oTarget, int nToken)
     {
         // Row 511
         string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
-        if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        if(sColorPallet == "") sColorPallet = "cloth_pallet";
         NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
         NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
@@ -1881,7 +1881,7 @@ void SetModelNumberText(object oPC, object oTarget, int nToken)
         {
             // Row 511
             string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
-            if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+            if(sColorPallet == "") sColorPallet = "cloth_pallet";
             NuiSetBind(oPC, nToken, "color_pallet_image", JsonString(sColorPallet));
             NuiSetBind(oPC, nToken, "color_pallet_event", JsonBool(TRUE));
             NuiSetBind(oPC, nToken, "color_pallet_tooltip", JsonString("  Select a color or use the mouse wheel"));
@@ -2691,7 +2691,7 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     {
         // Need to disable the color widgets.
         // Row 511
-        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString("gui_pal_tattoo"));
+        NuiSetBind(oPC, nToken, "color_pallet_image", JsonString("cloth_pallet"));
         NuiSetBind(oPC, nToken, "color_pallet_image_event", JsonBool(FALSE));
         // Row 512 - Label Part to Color
         // Row 5l3
@@ -2719,7 +2719,7 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     {
         // Row 511
         string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
-        if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        if(sColorPallet == "") sColorPallet = "cloth_pallet";
         int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
         int nModelSelected = GetArmorModelSelected(oPC);
         // Row 511
@@ -2836,7 +2836,7 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     {
         // Row 511
         string sColorPallet = GetLocalString(oPC, CRAFT_COLOR_PALLET);
-        if(sColorPallet == "") sColorPallet = "gui_pal_tattoo";
+        if(sColorPallet == "") sColorPallet = "cloth_pallet";
         int nMaterialSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MATERIAL_SELECTION));
         int nModelSelected = JsonGetInt(JsonObjectGet(jCraft, CRAFT_MODEL_SELECTION));
         int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected);

@@ -46,6 +46,7 @@ void main()
     object oLastPerceived = GetLastPerceived();
     if(AI_DEBUG) ai_Debug("nw_c2_default2", "45", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
                  " Enemy? " + IntToString(GetIsEnemy(oLastPerceived, oCreature)));
+    if(GetResRef(oLastPerceived) == "prc_2da_cache") return;
     if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived)) return;
     int bSeen = GetLastPerceptionSeen();

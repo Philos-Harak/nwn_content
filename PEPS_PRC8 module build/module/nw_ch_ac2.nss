@@ -45,6 +45,7 @@ void main()
     }
     if(AI_DEBUG) ai_Debug("nw_ch_ac2", "46", "Dead? " + IntToString(GetIsDead(oLastPerceived)) +
                  " Enemy? " + IntToString(GetIsEnemy(oLastPerceived, oCreature)));
+    if(GetResRef(oLastPerceived) == "prc_2da_cache") return;
     if(ai_Disabled(oCreature)) return;
     if(GetIsDead(oLastPerceived) || !GetIsEnemy(oLastPerceived, oCreature)) return;
     // All code below assumes the perceived creature is an enemy and is alive!

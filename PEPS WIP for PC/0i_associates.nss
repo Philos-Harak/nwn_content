@@ -56,6 +56,8 @@ void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string 
 void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
+// Turns on/off automatically equiping weapons for oAssociate.
+void ai_EquipWeapons(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore enemy associates for oAssociate.
 void ai_Ignore_Associates(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore floor traps for oAssociate.
@@ -504,7 +506,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             // Menu used by a player to open a henchmans inventory to give, move, or take.
             case ASSOCIATE_COMMAND_INVENTORY:
             {
-                if(AI_OPEN_INVENTORY)
+                if(AI_OPEN_INVENTORY && !GetLocalInt(oCreature, AI_LIMIT_HENCHMAN_MENUS))
                 {
                     ai_HaveCreatureSpeak(oCreature, 4, ":29:46:35:");
                     OpenInventory(oCreature, oCommander);

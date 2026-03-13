@@ -272,7 +272,13 @@ void CastBuffSpell(object oPC, object oCaster, object oTarget, int nSpell, int n
     string sCasterName = GetName(oCaster);
     string sTargetName = GetName(oTarget);
     ai_SendMessages(sCasterName + " is quick buffing " + sName + " on " + sTargetName, AI_COLOR_GREEN, oPC);
-    AssignCommand(oCaster, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, bInstantSpell, nClass));
+    // Check to see if it is a feat spell.
+    if(nClass == -1) 
+    {
+        int nFeat = StringToInt(Get2DAString("spells", "FeatID", nSpell));
+        AssignCommand(oCaster, ActionUseFeat(nFeat, oTarget));
+    }
+    else AssignCommand(oCaster, ActionCastSpellAtObject(nSpell, oTarget, nMetamagic, FALSE, nDomain, 0, bInstantSpell, nClass));
 }
 void CastSavedBuffSpells(object oPC)
 {
@@ -422,6 +428,17 @@ void CastSavedBuffSpells(object oPC)
 }
 int GetSpellReady(object oCaster, int nSpell, int nClass, int nLevel, int nMetamagic, int nDomain)
 {
+    // Check for feat spells.
+    if(nClass == -1)
+    {
+        int nFeatSpell = StringToInt(Get2DAString("spells", "FeatID", nSpell));
+        if(nFeatSpell != 0)
+        {
+            int nFeatUses = GetHasFeat(nFeatSpell, oCaster);
+            if(nFeatUses) return TRUE;
+            else return -1;
+        }
+    }
     int nIndex, nMaxIndex, nMSpell, nMmSpell, nDSpell, nSubRadSpell, nSubSpell;
     string sSubRadSpell;
     if(StringToInt(Get2DAString("classes", "MemorizesSpells", nClass)))

@@ -4,6 +4,7 @@ Key:
 X Coded for but needs testing.
 * Coded, tested, and found to be working.
 ------------------------------------- BUGS -------------------------------------
+X AI sometimes gets stuck with his actions during combat. For example, he
 ------------------------------------ ISSUES ------------------------------------
 @ Taking off a spell item during combat will make the character attempt to use it but not be able too.
     see if we can remove the talent if the item is not usable due to being unequiped.
@@ -44,4 +45,7 @@ S Attempt to resurrect a player that is dead! :)
 @ Moral checks spamming!!! Fix!
 *** Henchman ideas/fixes ***
 @ Add option to auto level up x levels from player.
-
+*/
+void main()
+{
+}

@@ -9,11 +9,12 @@
  buttons (jsonarray) - 0-widgetbuttons (int), 1-aibuttons (int)
  aidata (jsonarray)  - 0-difficulty (int), 1-healoutcombat (int), 2-healincombat (int),
                        3-lootrange (float), 4-lockrange (float), 5-traprange (float),
-                       6-Follow range (float).
+                       6-Follow range (float), 7-?, 8-?, 9-?, 10-jSpells.
+ jspells(jsonarray)  - 0-Class, 1-Level, 2-widget spells(json).
  lootfilters (jsonarray) - 0-maxweight (int), 1-lootfilters (int),
       Item filters in min gold json array; 2-plot, 3-armor, 4-belts, 5-boots,
           6-cloaks, 7-gems, 8-gloves, 9-headgear, 10-jewelry, 11-misc, 12-potions,
-          13-scrolls, 14-shields, 15-wands, 16-weapons, 17-arrow, 18-bolt, 19-bullet.
+          13-scrolls, 14-shields, 15-wands, 16-weapons, 17-arrow, 18-bolt, 19-bullet, 20 HealersKit, 21 ThievesTools.
  plugins (jsonarray) - 0+ (string). * Only used in the "pc" data.
  location (jsonobject) - geometry (json), used in widgets for pc and associates.
 *///////////////////////////////////////////////////////////////////////////////
@@ -82,7 +83,7 @@ json ai_GetCampaignDbJson(string sDataField, string sName = "PEPS_DATA", string 
 void ai_CheckAssociateDataAndInitialize(object oPlayer, string sAssociateType);
 // Returns the associatetype int string format for oAssociate.
 // They are pc, familar, companion, summons, henchman is the henchmans tag
-string ai_GetAssociateType(object oPlayer, object oAssociate);
+string ai_GetAssociateType(object oPlayer, object oAssociate, int nAssociateType = ASSOCIATE_TYPE_NONE);
 // Sets nData to sDataField for sAssociateType that is on oPlayer.
 // sDataField can be modes, magicmodes, lootmodes, widgetbuttons, aibuttons, magic,
 //                   healoutcombat, healincombat, mingold*.
@@ -119,6 +120,23 @@ json ai_UpdatePluginsForPC(object oPC);
 json ai_UpdatePluginsForDM (object oPC);
 // Runs all plugins that are loaded into the database.
 void ai_StartupPlugins(object oPC);
+// Sets nspell to the end of oAssociates widget spell list. 
+// Must be called after the oAssociate is in oPlayers party!
+// nSpell is the spell id.
+// nClass is the class id associated with the spell.
+// nLevel is the level of the spell.
+// nMetaMagic is the metamagic applied to the spell if none use METAMAGIC_ANY (255).
+// nDomain is the domain spell associated with the spell if none use 0.
+void ai_SetSpelltoAssociateWidget(object oPlayer, object oAssociate, int nSpell, int nClass, int nLevel, int nMetamagic = METAMAGIC_ANY, int nDomain = 0);
+// Sets nFeat to the end of oAssociates widget spell list.
+// Must be called after the oAssociate is in oPlayers party!
+// nFeat is the feat id.
+// nSpell is the spell id associated with the feat (If it has a spell attached to it).
+// nClass is the class id associated with the feat (If not class is attached just set to the first class).
+void ai_SetFeattoAssociateWidget(object oPlayer, object oAssociate, int nFeat, int nSpell, int nClass);
+// Sets oItem's spell to the end of oAssociates widget spell list.
+// Must be called after the oAssociate is in oPlayers party!
+void ai_SetItemtoAssociateWidget(object oPlayer, object oAssociate, object oItem);
 void ai_SetAIRules()
 {
     object oModule = GetModule();
@@ -183,7 +201,9 @@ void ai_SetAIRules()
         SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, AI_MONSTER_PERCEPTION);
         jRules = JsonObjectSet(jRules, AI_RULE_MON_PERC_DISTANCE, JsonInt(AI_MONSTER_PERCEPTION));
         // Variable name set to hold the maximum number of henchman the player wants.
-        int nMaxHenchmen = GetMaxHenchmen();
+        int nMaxHenchmen;
+        if(AI_MAX_NUMBER_OF_MODULE_HENCHMAN) nMaxHenchmen = AI_MAX_NUMBER_OF_MODULE_HENCHMAN;
+        else nMaxHenchmen = GetMaxHenchmen();
         SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nMaxHenchmen);
         jRules = JsonObjectSet(jRules, AI_RULE_MAX_HENCHMAN, JsonInt(nMaxHenchmen));
         // Monster AI's distance they can wander away from their spawn point.
@@ -218,81 +238,89 @@ void ai_SetAIRules()
         string sValue = JsonGetString(JsonObjectGet(jRules, AI_RULE_DEBUG_CREATURE));
         SetLocalString(oModule, AI_RULE_DEBUG_CREATURE, sValue);
         // Moral checks on or off.
-        int bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS));
-        SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, bValue);
+        int nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MORAL_CHECKS));
+        SetLocalInt(oModule, AI_RULE_MORAL_CHECKS, nValue);
         // Allows monsters to prebuff before combat starts.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_BUFF_MONSTERS));
-        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_BUFF_MONSTERS));
+        SetLocalInt(oModule, AI_RULE_BUFF_MONSTERS, nValue);
         // Allows monsters to buff with all spells before combat starts.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_FULL_BUFF_MONSTERS));
-        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_FULL_BUFF_MONSTERS));
+        SetLocalInt(oModule, AI_RULE_FULL_BUFF_MONSTERS, nValue);
         // Allows monsters cast summons spells when prebuffing.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
-        SetLocalInt(oModule, AI_RULE_PRESUMMON, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PRESUMMON));
+        SetLocalInt(oModule, AI_RULE_PRESUMMON, nValue);
         // Allows monsters to use ambush AI scripts.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AMBUSH));
-        SetLocalInt(oModule, AI_RULE_AMBUSH, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AMBUSH));
+        SetLocalInt(oModule, AI_RULE_AMBUSH, nValue);
         // Enemies may summon familiars and Animal companions and will be randomized.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_SUMMON_COMPANIONS));
-        SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_SUMMON_COMPANIONS));
+        SetLocalInt(oModule, AI_RULE_SUMMON_COMPANIONS, nValue);
         // Allow the AI to move during combat base on the situation and action taking.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ADVANCED_MOVEMENT));
-        SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ADVANCED_MOVEMENT));
+        SetLocalInt(oModule, AI_RULE_ADVANCED_MOVEMENT, nValue);
         // Follow Item Level Restrictions for monsters/associates.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ILR));
-        SetLocalInt(oModule, AI_RULE_ILR, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ILR));
+        SetLocalInt(oModule, AI_RULE_ILR, nValue);
         // Allow the AI to use Use Magic Device.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ALLOW_UMD));
-        SetLocalInt(oModule, AI_RULE_ALLOW_UMD, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_ALLOW_UMD));
+        SetLocalInt(oModule, AI_RULE_ALLOW_UMD, nValue);
         // Allow the AI to use healing kits.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_HEALERSKITS));
-        SetLocalInt(oModule, AI_RULE_HEALERSKITS, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_HEALERSKITS));
+        SetLocalInt(oModule, AI_RULE_HEALERSKITS, nValue);
         // Associates are permanent and don't get removed when the owner dies.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PERM_ASSOC));
-        SetLocalInt(oModule, AI_RULE_PERM_ASSOC, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PERM_ASSOC));
+        SetLocalInt(oModule, AI_RULE_PERM_ASSOC, nValue);
         // Monster AI's chance to attack the weakest target instead of the nearest.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AI_DIFFICULTY));
-        SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_AI_DIFFICULTY));
+        SetLocalInt(oModule, AI_RULE_AI_DIFFICULTY, nValue);
         // Monster AI's perception distance from player.
         float fValue = JsonGetFloat(JsonObjectGet(jRules, AI_RULE_PERCEPTION_DISTANCE));
         SetLocalFloat(oModule, AI_RULE_PERCEPTION_DISTANCE, fValue);
         // Enemy corpses remain on the floor instead of dissappearing.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_CORPSES_STAY));
-        SetLocalInt(oModule, AI_RULE_CORPSES_STAY, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_CORPSES_STAY));
+        SetLocalInt(oModule, AI_RULE_CORPSES_STAY, nValue);
         // Monsters will wander around when not in combat.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_WANDER));
-        SetLocalInt(oModule, AI_RULE_WANDER, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_WANDER));
+        SetLocalInt(oModule, AI_RULE_WANDER, nValue);
         // Increase the number of encounter creatures.
         fValue = JsonGetFloat(JsonObjectGet(jRules, AI_INCREASE_ENC_MONSTERS));
         SetLocalFloat(oModule, AI_INCREASE_ENC_MONSTERS, fValue);
         // Increase all monsters hitpoints by this percentage.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_MONSTERS_HP));
-        SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_INCREASE_MONSTERS_HP));
+        SetLocalInt(oModule, AI_INCREASE_MONSTERS_HP, nValue);
         // Monster's perception distance.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MON_PERC_DISTANCE));
-        if(bValue < 8 || bValue > 11) bValue = 11;
-        SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MON_PERC_DISTANCE));
+        if(nValue < 8 || nValue > 11) nValue = 11;
+        SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, nValue);
         // Variable name set to hold the maximum number of henchman the player wants.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MAX_HENCHMAN));
-        if(bValue == 0) bValue = GetMaxHenchmen();
-        else SetMaxHenchmen(bValue);
-        SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MAX_HENCHMAN));
+        if(nValue == 0) 
+        {
+            if(AI_MAX_NUMBER_OF_MODULE_HENCHMAN) 
+            {
+                nValue = AI_MAX_NUMBER_OF_MODULE_HENCHMAN;
+                SetMaxHenchmen(nValue);
+            }
+            else nValue = GetMaxHenchmen();
+        }
+        else SetMaxHenchmen(nValue);
+        SetLocalInt(oModule, AI_RULE_MAX_HENCHMAN, nValue);
         // Monster AI's wander distance from their spawn point.
         fValue = JsonGetFloat(JsonObjectGet(jRules, AI_RULE_WANDER_DISTANCE));
         SetLocalFloat(oModule, AI_RULE_WANDER_DISTANCE, fValue);
         // Monsters will open doors while wandering around and not in combat.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_OPEN_DOORS));
-        SetLocalInt(oModule, AI_RULE_OPEN_DOORS, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_OPEN_DOORS));
+        SetLocalInt(oModule, AI_RULE_OPEN_DOORS, nValue);
         // If the modules default XP has not been set then we do it here.
         int nDefaultXP = GetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE);
         if(nDefaultXP == 0)
         {
-            bValue = GetModuleXPScale();
-            if(bValue != 0) SetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE, bValue);
+            nValue = GetModuleXPScale();
+            if(nValue != 0) SetLocalInt(oModule, AI_RULE_DEFAULT_XP_SCALE, nValue);
         }
         // Variable name set to allow the game to regulate experience based on party size.
-        bValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PARTY_SCALE));
-        if(bValue)
+        nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_PARTY_SCALE));
+        if(nValue)
         {
             int nBasePartyXP = GetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP);
             if(nBasePartyXP == 0)
@@ -301,7 +329,7 @@ void ai_SetAIRules()
                 SetLocalInt(oModule, AI_BASE_PARTY_SCALE_XP, nDefaultXP);
             }
         }
-        SetLocalInt(oModule, AI_RULE_PARTY_SCALE, bValue);
+        SetLocalInt(oModule, AI_RULE_PARTY_SCALE, nValue);
         json jRSpells = JsonObjectGet(jRules, AI_RULE_RESTRICTED_SPELLS);
         if(JsonGetType(jRSpells) == JSON_TYPE_NULL)
         {
@@ -311,11 +339,11 @@ void ai_SetAIRules()
         }
         SetLocalJson(oModule, AI_RULE_RESTRICTED_SPELLS, jRSpells);
         // Variable name set to allow access to widget buttons for the players.
-        bValue = JsonGetInt(JsonObjectGet(jRules, sDMWidgetAccessVarname));
-        SetLocalInt(oModule, sDMWidgetAccessVarname, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, sDMWidgetAccessVarname));
+        SetLocalInt(oModule, sDMWidgetAccessVarname, nValue);
         // Variable name set to allow access to widget buttons for the players.
-        bValue = JsonGetInt(JsonObjectGet(jRules, sDMAIAccessVarname));
-        SetLocalInt(oModule, sDMAIAccessVarname, bValue);
+        nValue = JsonGetInt(JsonObjectGet(jRules, sDMAIAccessVarname));
+        SetLocalInt(oModule, sDMAIAccessVarname, nValue);
    }
 }
 int ai_GetIsServer()
@@ -723,7 +751,7 @@ void ai_CheckAssociateDataAndInitialize(object oPlayer, string sAssociateType)
     //else SendMessageToPC(oPlayer, "0i_main, 701, sAssociateType: " + sAssociateType +
     //                    " returns: " + SqlGetString(sql, 0));
 }
-string ai_GetAssociateType(object oPlayer, object oAssociate)
+string ai_GetAssociateType(object oPlayer, object oAssociate, int nAssociateType = ASSOCIATE_TYPE_NONE)
 {
     if(GetIsPC(oAssociate)) return "pc";
     int nIndex = 1;
@@ -817,7 +845,7 @@ float ai_GetAssociateDbFloat(object oPlayer, string sAssociatetype, string sData
 }
 void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, json jData, string sTable = AI_TABLE)
 {
-    //SendMessageToPC(oPlayer, "0i_main, 777, Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
+    //WriteTimestampedLogEntry("0i_main, 846, Set DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField + " jData: " + JsonDump(jData));
     string sQuery = "UPDATE " + sTable + " SET " + sDataField +
                     " = @data WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
@@ -827,7 +855,7 @@ void ai_SetAssociateDbJson(object oPlayer, string sAssociateType, string sDataFi
 }
 json ai_GetAssociateDbJson(object oPlayer, string sAssociateType, string sDataField, string sTable = AI_TABLE)
 {
-    //SendMessageToPC(oPlayer, "0i_main, 787, Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
+    //WriteTimestampedLogEntry("0i_main, 856, Get DbJson - sAssociateType: " + sAssociateType + " sDataField: " + sDataField);
     string sQuery = "SELECT " + sDataField + " FROM " + sTable + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oPlayer, sQuery);
     SqlBindString (sql, "@name", sAssociateType);
@@ -892,7 +920,10 @@ void ai_SetupAIData(object oPlayer, object oAssociate, string sAssociateType)
     jAIData = JsonArrayInsert(jAIData, JsonFloat(20.0)); // 9 - Open Doors check range.
     SetLocalFloat(oAssociate, AI_OPEN_DOORS_RANGE, 20.0);
     json jSpells = JsonArray();
-    jAIData = JsonArrayInsert(jAIData, jSpells);         // 10 - Castable spells.
+    jSpells = JsonArrayInsert(jSpells, JsonInt(0));     // class selected for spell widget.
+    jSpells = JsonArrayInsert(jSpells, JsonInt(10));    // spell level slot selected.
+    jSpells = JsonArrayInsert(jSpells, JsonArray());    // spell widget list.
+    jAIData = JsonArrayInsert(jAIData, jSpells);        // 10 - Castable spells.
     jAIData = JsonArrayInsert(jAIData, JsonFloat(0.1)); // 11 - Delay for casting buff spells.
     SetLocalFloat(oAssociate, AI_DELAY_BUFF_CASTING, 0.1);
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData, AI_TABLE);
@@ -908,7 +939,7 @@ void ai_SetupLootFilters(object oPlayer, object oAssociate, string sAssociateTyp
     SetLocalInt(oAssociate, sLootFilterVarname, AI_LOOT_ALL_ON);
     // Minimum gold value to pickup.
     int nIndex;
-    for(nIndex = 2; nIndex < 20; nIndex++)
+    for(nIndex = 2; nIndex < 22; nIndex++)
     {
         jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(0));
     }
@@ -937,9 +968,10 @@ void ai_SetupLocations(object oPlayer, object oAssociate, string sAssociateType)
     jLocations = JsonObjectSet(jLocations, sAssociateType + AI_WIDGET_NUI, jNUI);
     ai_SetAssociateDbJson(oPlayer, sAssociateType, "locations", jLocations, AI_TABLE);
 }
-void ai_SetupAssociateData(object oPlayer, object oAssociate, string sAssociateType)
+void ai_SetupAssociateData(object oPlayer, object oAssociate)
 {
     //ai_Debug("0i_main", "744", GetName(oAssociate) + " is initializing associate data.");
+    string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate, ASSOCIATE_TYPE_HENCHMAN);
     ai_CheckAssociateDataAndInitialize(oPlayer, sAssociateType);
     // Default behavior for associates at start.
     ai_SetupModes(oPlayer, oAssociate, sAssociateType);
@@ -1016,7 +1048,7 @@ void ai_RestoreDatabase(object oPlayer, object oAssociate, string sAssociateType
     nValue = GetLocalInt(oAssociate, sLootFilterVarname);
     jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(nValue));
     int nIndex;
-    for(nIndex = 2; nIndex < 20; nIndex++)
+    for(nIndex = 2; nIndex < 22; nIndex++)
     {
        nValue = GetLocalInt(oAssociate, AI_MIN_GOLD_ + IntToString(nIndex));
        jLootFilters = JsonArrayInsert(jLootFilters, JsonInt(nValue));
@@ -1129,7 +1161,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
         SetLocalInt(oAssociate, AI_MAX_LOOT_WEIGHT, JsonGetInt(JsonArrayGet(jLootFilters, 0)));
         SetLocalInt(oAssociate, sLootFilterVarname, JsonGetInt(JsonArrayGet(jLootFilters, 1)));
         int nIndex;
-        for(nIndex = 2; nIndex < 20; nIndex++)
+        for(nIndex = 2; nIndex < 22; nIndex++)
         {
             SetLocalInt(oAssociate, AI_MIN_GOLD_ + IntToString(nIndex), JsonGetInt(JsonArrayGet(jLootFilters, nIndex)));
         }
@@ -1381,4 +1413,172 @@ void ai_StartupPlugins(object oPC)
     }
     if(bUpdatePlugins) ai_SetAssociateDbJson(oPC, "pc", "plugins", jPlugins);
     DeleteLocalInt(oPC, AI_STARTING_UP);
+}
+void ai_SetSpelltoAssociateWidget(object oPlayer, object oAssociate, int nSpell, int nClass, int nLevel, int nMetamagic = METAMAGIC_ANY, int nDomain = 0)
+{
+    string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    {
+        jSpells = JsonArray();
+        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass)); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonArray());
+    }
+    json jWidget = JsonArrayGet(jSpells, 2);
+    int nWidgetLength = JsonGetLength(jWidget);
+    if(nWidgetLength < 20)
+    {
+        json jSpell = JsonArray();
+        jSpell = JsonArrayInsert(jSpell, JsonInt(nSpell));
+        jSpell = JsonArrayInsert(jSpell, JsonInt(nClass));
+        jSpell = JsonArrayInsert(jSpell, JsonInt(nLevel));
+        jSpell = JsonArrayInsert(jSpell, JsonInt(nMetamagic));
+        jSpell = JsonArrayInsert(jSpell, JsonInt(nDomain));
+        jSpell = JsonArrayInsert(jSpell, JsonInt(0)); // Feat
+        jWidget = JsonArrayInsert(jWidget, jSpell);
+        jSpells = JsonArraySet(jSpells, 2, jWidget);
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+    }    
+}
+void ai_SetFeattoAssociateWidget(object oPlayer, object oAssociate, int nFeat, int nSpell, int nClass)
+{
+    string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    {
+        jSpells = JsonArray();
+        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass)); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonArray());
+    }
+    json jWidget = JsonArrayGet(jSpells, 2);
+    int nWidgetLength = JsonGetLength(jWidget);
+    if(nWidgetLength < 20)
+    {
+        json jFeat = JsonArray();   
+        jFeat = JsonArrayInsert(jFeat, JsonInt(nSpell));
+        jFeat = JsonArrayInsert(jFeat, JsonInt(nClass));
+        jFeat = JsonArrayInsert(jFeat, JsonInt(0)); // Level
+        jFeat = JsonArrayInsert(jFeat, JsonInt(0)); // MetaMagic
+        jFeat = JsonArrayInsert(jFeat, JsonInt(0)); // Domain
+        jFeat = JsonArrayInsert(jFeat, JsonInt(nFeat));
+        jWidget = JsonArrayInsert(jWidget, jFeat);
+        jSpells = JsonArraySet(jSpells, 2, jWidget);
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+    }
+}
+void ai_SetItemtoAssociateWidget(object oPlayer, object oAssociate, object oItem)
+{
+    string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
+    json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
+    json jSpells = JsonArrayGet(jAIData, 10);
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    {
+        jSpells = JsonArray();
+        jSpells = JsonArrayInsert(jSpells, JsonInt(GetClassByPosition(1, oAssociate))); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonArray());
+    }
+    json jWidget = JsonArrayGet(jSpells, 2);
+    int nWidgetLength = JsonGetLength(jWidget);
+    if(nWidgetLength < 20)
+    {
+        int nPerDay, nCharges, nUses, bSaveTalent, nBaseItemType;
+        int nIprpSubType, nSpell, nLevel, nIPType, nIndex;
+        json jItem;
+        itemproperty ipProp = GetFirstItemProperty(oItem);
+        // Lets skip this if there are no properties.
+        if(!GetIsItemPropertyValid(ipProp)) return;
+        // Check for cast spell property and add them to the talent list.
+        while(GetIsItemPropertyValid(ipProp))
+        {
+            nIPType = GetItemPropertyType(ipProp);
+            if(nIPType == ITEM_PROPERTY_CAST_SPELL)
+            {
+                bSaveTalent = TRUE;
+                // Get how they use the item (charges or uses per day).
+                nUses = GetItemPropertyCostTableValue(ipProp);
+                if(nUses > 1 && nUses < 7)
+                {
+                    nCharges = GetItemCharges(oItem);
+                    if((nUses == IP_CONST_CASTSPELL_NUMUSES_1_CHARGE_PER_USE && nCharges < 1) ||
+                    (nUses == IP_CONST_CASTSPELL_NUMUSES_2_CHARGES_PER_USE && nCharges < 2) ||
+                    (nUses == IP_CONST_CASTSPELL_NUMUSES_3_CHARGES_PER_USE && nCharges < 3) ||
+                    (nUses == IP_CONST_CASTSPELL_NUMUSES_4_CHARGES_PER_USE && nCharges < 4) ||
+                    (nUses == IP_CONST_CASTSPELL_NUMUSES_5_CHARGES_PER_USE && nCharges < 5)) bSaveTalent = FALSE;
+                }
+                else if(nUses > 7 && nUses < 13)
+                {
+                    nPerDay = GetItemPropertyUsesPerDayRemaining(oItem, ipProp);
+                    if(AI_DEBUG) ai_Debug("0i_talents", "1676", "Item uses: " + IntToString(nPerDay));
+                    if(nPerDay == 0) bSaveTalent = FALSE;
+                }
+                if(bSaveTalent)
+                {
+                    // SubType is the ip spell index for iprp_spells.2da
+                    nIprpSubType = GetItemPropertySubType(ipProp);
+                    nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
+                    nBaseItemType = GetBaseItemType(oItem);
+                    if(nBaseItemType == BASE_ITEM_ENCHANTED_SCROLL ||
+                    nBaseItemType == BASE_ITEM_SCROLL ||
+                    nBaseItemType == BASE_ITEM_SPELLSCROLL)
+                    {
+                        nUses = GetNumStackedItems(oItem);
+                    }
+                    else
+                    {
+                        if(nBaseItemType == BASE_ITEM_ENCHANTED_POTION ||
+                        nBaseItemType == BASE_ITEM_POTIONS)
+                        {
+                            nUses = GetNumStackedItems(oItem);
+                        }
+                        else if(nBaseItemType == BASE_ITEM_ENCHANTED_WAND ||
+                        nBaseItemType == BASE_ITEM_MAGICWAND ||
+                        nBaseItemType == FEAT_CRAFT_WAND)
+                        {
+                            nUses = nCharges;
+                        }
+                        else
+                        {
+                            if(nCharges) nUses = nCharges;
+                            else nUses = nPerDay;
+                        }
+                    }
+                    json jItem = JsonArray();
+                    jItem = JsonArrayInsert(jItem, JsonInt(nSpell));
+                    jItem = JsonArrayInsert(jItem, JsonInt(-1)); // Class is set to -1 for items
+                    jItem = JsonArrayInsert(jItem, JsonInt(nUses));
+                    jItem = JsonArrayInsert(jItem, JsonInt(nBaseItemType));
+                    jItem = JsonArrayInsert(jItem, JsonInt(nIprpSubType));
+                    jItem = JsonArrayInsert(jItem, JsonString(GetObjectUUID(oItem)));
+                    jWidget = JsonArrayInsert(jWidget, jItem);
+                }
+            }
+            else if(nIPType == ITEM_PROPERTY_HEALERS_KIT)
+            {
+                // Must also have ranks in healing kits.
+                if(GetSkillRank(SKILL_HEAL, oAssociate) > 0)
+                {
+                    json jItem = JsonArray();
+                    jItem = JsonArrayInsert(jItem, JsonInt(nSpell));
+                    jItem = JsonArrayInsert(jItem, JsonInt(-1)); // Class is set to -1 for items
+                    jItem = JsonArrayInsert(jItem, JsonInt(nUses));
+                    jItem = JsonArrayInsert(jItem, JsonInt(nBaseItemType));
+                    jItem = JsonArrayInsert(jItem, JsonInt(nIprpSubType));
+                    jItem = JsonArrayInsert(jItem, JsonString(GetObjectUUID(oItem)));
+                    jWidget = JsonArrayInsert(jWidget, jItem);
+                }
+            }
+            nIndex++;
+            ipProp = GetNextItemProperty(oItem);
+        }
+        jSpells = JsonArraySet(jSpells, 2, jWidget);
+        jAIData = JsonArraySet(jAIData, 10, jSpells);
+        ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+    }
 }

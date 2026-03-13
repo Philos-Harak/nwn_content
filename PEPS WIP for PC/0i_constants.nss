@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:11.29.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:1.22.25";
 // The following constants are designed to be changed to allow the AI to work
 // differently based on what a developer wants.
 // If you change these constants make sure the database has been removed
@@ -19,6 +19,10 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:11
 const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
 const int AI_SERVER = FALSE;
+// Disables all GUI Events from being set in the module.
+const int AI_DISABLE_GUI_EVENTS = FALSE;
+// Allows Henchman to have a widget if using the henchman AI.
+const int AI_HENCHMAN_WIDGET = TRUE;
 // The number of classes allowed for a creature to take in the server/module.
 const int AI_MAX_CLASSES_PER_CHARACTER = 8;
 // Taunts cool down time before the AI attemps another Taunt.
@@ -31,11 +35,11 @@ const int AI_ASF_WILL_USE = 15;
 const int AI_MONSTER_HEAL_IN_COMBAT_CHANCE = 70;
 // Monsters chance to heal when out of combat per heart beat.
 const int AI_MONSTER_HEAL_OUT_COMBAT_CHANCE = 70;
-// Allows Henchman to have a widget if using the henchman AI.
-const int AI_HENCHMAN_WIDGET = TRUE;
-// Change the Custom token number if it conflicts with your server.
+// Do not change!
 const int AI_BASE_CUSTOM_TOKEN = 1000;
-
+// Forces the AI scripts to set the MaxHenchman to this number.
+// If set to 0 it will use the modules default value.
+const int AI_MAX_NUMBER_OF_MODULE_HENCHMAN = 0;
 //*******************  These can be changed within the game  *******************
 // Moral checks on or off. If wounded they will make Will saves, if they fail the flee.
 const int AI_MORAL_CHECKS = FALSE;
@@ -73,7 +77,7 @@ const int AI_CORPSE_REMAIN = FALSE;
 const int AI_WANDER = FALSE;
 // Variable distance monsters can wander away from their spawn point.
 const float AI_WANDER_DISTANCE = 0.0;
-// Variable that allows monsters to open doors when wandering around out of combat.
+// Variable that allows monsters to open doors when wandering around and in combat.
 const int AI_OPEN_DOORS = FALSE;
 // Monster's actual perception distance.
 // 8 Short(10 sight/listen) 9 Medium(20 sight/listen) 10 Long(35 sight/20 listen)
@@ -81,7 +85,17 @@ const int AI_OPEN_DOORS = FALSE;
 const int AI_MONSTER_PERCEPTION = 11;
 // Should the AI auto adjust the XP scale to remove party size penalty?
 const int AI_PARTY_SCALE = FALSE;
-
+//************************** HENCHMAN LIMTED CONSTANTS *************************
+// To limit a henchman from using the AI or Comand menus you need to set the 
+// following constant to TRUE on the henchman you don't want to use them. 
+// Once limited clicking on the widget's picture will lock/unlock the widget.
+// Set this variable name to TRUE on a henchman to lock the widget from the menus.
+// SetLocalInt(oHenchman, "AI_LIMIT_HENCHMAN_MENUS", TRUE);
+const string AI_LIMIT_HENCHMAN_MENUS = "AI_LIMIT_HENCHMAN_MENUS";
+// To set the henchman's widget to specific buttons you need to set the following
+// variable to the bitwise value of the buttons you want to allow.
+// This will default them to these buttons.
+const int AI_HENCHMAN_WIDGET_BUTTONS = 0;
 //****************************  DM Based Constants  ****************************
 // The constant the server wants set to allow players to use specific widgets buttons.
 // 0 Allows all buttons. See ASSOCIATE_WIDGET_BUTTONS below for values needed to be
@@ -118,6 +132,7 @@ const int AI_REMOVE_HENCHMAN_ON = FALSE;
 // Allows players to toggle patrolling ahead via the radial menu for remove henchman.
 // Used on my server as a way to toggle patrolling ahead via the radial menu.
 const int AI_PATROL_AHEAD_RADIAL_OPTION = FALSE;
+// Constants below here should not be changed unless you know what you are doing.
 //*****************************  Health Constants  *****************************
 // % of health for when a creature is considered wounded.
 const int AI_HEALTH_WOUNDED = 50;
@@ -499,9 +514,11 @@ const int AI_LOOT_MISC              = 0x00004000;
 const int AI_LOOT_ARROWS            = 0x00008000;
 const int AI_LOOT_BOLTS             = 0x00010000;
 const int AI_LOOT_BULLETS           = 0x00020000;
+const int AI_LOOT_HEALING_KITS      = 0x00040000;
+const int AI_LOOT_THIEVES_TOOLS     = 0x00080000;
 const int AI_LOOT_GIVE_TO_PC        = 0x80000000;
 // Default value for all loot filters to be on.
-const int AI_LOOT_ALL_ON = 262143;
+const int AI_LOOT_ALL_ON = 1048575;
 // Variable to keep track of who is in ghost mode.
 const string sGhostModeVarname = "AI_GHOST_MODE_ON";
 // Variables for gold piece value to pickup items.
@@ -656,37 +673,3 @@ const string AI_RULE_DEFAULT_XP_SCALE = "AI_RULE_DEFAULT_XP_SCALE";
 const string AI_RULE_PARTY_SCALE = "AI_RULE_PARTY_SCALE";
 // Variable name set to restrict the AI's use of Darkness.
 const string AI_RULE_RESTRICTED_SPELLS = "AI_RULE_RESTRICTED_SPELLS";
-/*/ Special behavior constants from x0_i0_behavior
-const int NW_FLAG_BEHAVIOR_SPECIAL       = 0x00000001;
-//Will always attack regardless of faction
-const int NW_FLAG_BEHAVIOR_CARNIVORE     = 0x00000002;
-//Will only attack if approached
-const int NW_FLAG_BEHAVIOR_OMNIVORE      = 0x00000004;
-//Will never attack.  Will alway flee.
-const int NW_FLAG_BEHAVIOR_HERBIVORE     = 0x00000008;
-// This is the name of the local variable that holds the spawn-in conditions
-const string sSpawnCondVarname = "NW_GENERIC_MASTER";
-// The available spawn-in conditions from x0_i0_spawncond
-const int NW_FLAG_ESCAPE_RETURN               = 0x00000020; //Failed
-const int NW_FLAG_ESCAPE_LEAVE                = 0x00000040;
-const int NW_FLAG_TELEPORT_RETURN             = 0x00000080; //Failed
-const int NW_FLAG_TELEPORT_LEAVE              = 0x00000100;
-const int NW_FLAG_END_COMBAT_ROUND_EVENT      = 0x00004000;
-const int NW_FLAG_ON_DIALOGUE_EVENT           = 0x00008000;
-const int NW_FLAG_AMBIENT_ANIMATIONS          = 0x00080000;
-const int NW_FLAG_HEARTBEAT_EVENT             = 0x00100000;
-const int NW_FLAG_IMMOBILE_AMBIENT_ANIMATIONS = 0x00200000;
-const int NW_FLAG_DAY_NIGHT_POSTING           = 0x00400000;
-const int NW_FLAG_AMBIENT_ANIMATIONS_AVIAN    = 0x00800000;
-const string sWalkwayVarname = "NW_WALK_CONDITION";
-// If set, the creature's waypoints have been initialized.
-const int NW_WALK_FLAG_INITIALIZED                 = 0x00000001;
-// If set, the creature will walk its waypoints constantly,
-// moving on in each OnHeartbeat event. Otherwise,
-// it will walk to the next only when triggered by an
-// OnPerception event.
-const int NW_WALK_FLAG_CONSTANT                    = 0x00000002;
-// Set when the creature is walking day waypoints.
-const int NW_WALK_FLAG_IS_DAY                      = 0x00000004;
-// Set when the creature is walking back
-const int NW_WALK_FLAG_BACKWARDS                   = 0x00000008;

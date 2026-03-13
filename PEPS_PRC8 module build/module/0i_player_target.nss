@@ -618,16 +618,16 @@ void ai_UpdateAssociateWidget(object oPC, object oAssociate)
     int nUIToken = NuiFindWindow(oPC, ai_GetAssociateType(oPC, oAssociate) + AI_WIDGET_NUI);
     if(nUIToken)
     {
-        DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
-        DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oAssociate));
+        NuiDestroy(oPC, nUIToken);
+        ai_CreateWidgetNUI(oPC, oAssociate);
         /* Not sure why I did this?
         if(oPC != oAssociate)
         {
             nUIToken = NuiFindWindow(oPC, "pc" + AI_WIDGET_NUI);
             if(nUIToken)
             {
-                DelayCommand(0.0, NuiDestroy(oPC, nUIToken));
-                DelayCommand(0.1, ai_CreateWidgetNUI(oPC, oPC));
+                NuiDestroy(oPC, nUIToken);
+                ai_CreateWidgetNUI(oPC, oPC);
             }
         } */
     }

@@ -99,8 +99,6 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature);
 // Remove nEffectType of Type specified on oCreature;
 // nEffectType uses the constants EFFECT_TYPE_*
 void ai_RemoveASpecificEffect(object oCreature, int nEffectType);
-// Remove sTag effects specified on oCreature;
-void ai_RemoveTaggedEffects(object oCreature, string sTag);
 // Returns TRUE if oCreature has nEffectType.
 // nEffectType uses the constants EFFECT_TYPE_*
 int ai_GetHasEffectType(object oCreature, int nEffectType);
@@ -152,9 +150,13 @@ void ai_SetupAllyTargets(object oCaster, object oPC);
 void ai_SetupAllyHealingTargets(object oCaster, object oPC);
 // Clears the casters buff targets.
 void ai_ClearBuffTargets(object oCaster, string sVariable);
-// Cycles through a casters spells casting all buffs via actions.
+// Cycles through a casters spells casting all summons via actions for memorized spellcasters.
+void ai_ActionCastMemorizedSummons(struct stSpell stSpell, float fDelay, int bInstantSpell);
+// Cycles through a casters spells casting all summons via actions for known spellcasters.
+void ai_ActionCastKnownSummons(struct stSpell stSpell, float fDelay, int bInstantSpell);
+// Cycles through a casters spells casting all buffs via actions for memorized spellcasters.
 void ai_ActionCastMemorizedBuff(struct stSpell stSpell, float fDelay, int bInstantSpell);
-// Cycles through a casters spells casting all buffs via actions.
+// Cycles through a casters spells casting all buffs via actions for known spellcasters.
 void ai_ActionCastKnownBuff(struct stSpell stSpell, float fDelay, int bInstantSpell);
 // Checks oCaster for buffing spells and casts them based on nTarget;
 // These are cast as actions and will happen at the speed based on the delay set
@@ -182,7 +184,7 @@ int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass
 // Returns TRUE if oCreature has an effect that will break their concentration.
 int ai_ConcentrationCondition(object oCreature);
 // Check to see if a spell's concentration has been broken, works for summons as well.
-void ai_SpellConcentrationCheck(object oCaster);
+void ai_SpellConcentrationCheck(object oCaster = OBJECT_SELF);
 // Returns TRUE if oCreature can safely cast nSpell defensively or has a good
 // chance of casting while in melee.
 int ai_CastInMelee(object oCreature, int nSpell, int nInMelee);
@@ -496,7 +498,7 @@ void ai_SetCreatureItemImmunities(object oCreature)
 }
 int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
 {
-    // This checks for creatures not using the AI system (usually players)
+    // This checks for creatures not using the AI system (usually players).
     // Creatures using the AI system will always have a value in sIPReducedVarname!
     // Updates thier immunity values every minute. Should be good as we only update
     // equiped items. Spell effects are checked on the creature and are not saved.
@@ -552,7 +554,7 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         // Negative damage does not work on undead!
         else if(sIType == "Negative" && GetRacialType(oCreature) == RACIAL_TYPE_UNDEAD)
         {
-            if(AI_DEBUG) ai_Debug("0i_spell", "325", "Undead are immune to Negative energy!");
+            if(AI_DEBUG) ai_Debug("0i_spell", "538", "Undead are immune to Negative energy!");
             return TRUE;
         }
         else if(sIType == "Poison" && ai_GetHasEffectType(oCreature, EFFECT_TYPE_POISON)) return TRUE;
@@ -563,17 +565,17 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
         {
             if(ai_GetHasEffectType(oCreature, EFFECT_TYPE_DAMAGE_RESISTANCE))
             {
-                if(AI_DEBUG) ai_Debug("0i_spell", "334", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
+                if(AI_DEBUG) ai_Debug("0i_spell", "547", GetName(oCreature) + " has damage resistance to my " + sIType + " spell!");
                 return TRUE;
             }
             // Check for resistances and immunities. Treat resistance as immune.
             int nIPResist = GetLocalInt(oCreature, sIPResistVarname);
-            if(AI_DEBUG) ai_Debug("0i_spell", "372", "nIPResist:" + IntToString(nIPResist));
+            if(AI_DEBUG) ai_Debug("0i_spell", "552", "nIPResist:" + IntToString(nIPResist));
             int nIPImmune = GetLocalInt(oCreature, sIPImmuneVarname) | nIPResist;
-            if(AI_DEBUG) ai_Debug("0i_spell", "374", "nIPImmune:" + IntToString(nIPImmune));
+            if(AI_DEBUG) ai_Debug("0i_spell", "554", "nIPImmune:" + IntToString(nIPImmune));
             int bImmune;
-            if(nIPImmune > 0)
-            {
+            if(nIPImmune > 0)            {
+
                 if(sIType == "Acid" && (nIPImmune & DAMAGE_TYPE_ACID)) bImmune = TRUE;
                 else if(sIType == "Cold" && (nIPImmune & DAMAGE_TYPE_COLD)) bImmune = TRUE;
                 else if(sIType == "Fire" && (nIPImmune & DAMAGE_TYPE_FIRE)) bImmune = TRUE;
@@ -616,12 +618,12 @@ int ai_CreatureImmuneToEffect(object oCaster, object oCreature, int nSpell)
     {
         if(nSpell == JsonGetInt(jSpell))
         {
-            if(AI_DEBUG) ai_Debug("0i_spells", "407", GetName(oCreature) + " is immune to the spell via an Item!");
+            if(AI_DEBUG) ai_Debug("0i_spells", "581", GetName(oCreature) + " is immune to the spell via an Item!");
             return TRUE;
         }
         jSpell = JsonArrayGet(jSpellImmunity, ++nIndex);
     }
-    if(AI_DEBUG) ai_Debug("0i_spell", "347", GetName(oCreature) + " is not immune to the spell.");
+    if(AI_DEBUG) ai_Debug("0i_spell", "586", GetName(oCreature) + " is not immune to the spell.");
     return FALSE;
 }
 float ai_GetSpellRange(int nSpell)
@@ -638,7 +640,7 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
     int nSpellID, nLastSpellID, bSpell, nDispelChance;
     // Cycle through the targets effects.
     effect eEffect = GetFirstEffect(oCreature);
-    if(AI_DEBUG) ai_Debug("0i_spells", "423", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", GetEffectSpellId(eEffect)))) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "485", "nSpell: " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", GetEffectSpellId(eEffect)))) +
                      " oCreature: " + GetName(oCreature));
     while(GetIsEffectValid(eEffect))
     {
@@ -651,7 +653,7 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
             // We check if the spell is Hostile(-1) or Helpful(+1).
             if(Get2DAString("ai_spells", "HostileSetting", nSpellID) == "1") nDispelChance--;
             else nDispelChance++;
-            if(AI_DEBUG) ai_Debug("0i_spells", "435", "HostileSetting: " + Get2DAString("ai_spells", "HostileSetting", nSpellID) +
+            if(AI_DEBUG) ai_Debug("0i_spells", "497", "HostileSetting: " + Get2DAString("ai_spells", "HostileSetting", nSpellID) +
                                    " nDispelChance: " + IntToString(nDispelChance));
         }
         nLastSpellID = nSpellID;
@@ -659,7 +661,7 @@ int ai_CreatureHasDispelableEffect(object oCaster, object oCreature)
     }
     // if the target has more Helpful spells than harmful spells effecting them
     // then use dispel!
-    if(AI_DEBUG) ai_Debug("0i_spells", "381", "nDispelChance: " + IntToString(nDispelChance));
+    if(AI_DEBUG) ai_Debug("0i_spells", "505", "nDispelChance: " + IntToString(nDispelChance));
     return (nDispelChance > 0);
 }
 void ai_RemoveASpecificEffect(object oCreature, int nEffectType)
@@ -669,21 +671,6 @@ void ai_RemoveASpecificEffect(object oCreature, int nEffectType)
    while(GetIsEffectValid(eEffect))
    {
       if(GetEffectType(eEffect) == nEffectType)
-      {
-         //Remove effect.
-         RemoveEffect(oCreature, eEffect);
-         eEffect = GetFirstEffect(oCreature);
-      }
-      else  eEffect = GetNextEffect(oCreature);
-   }
-}
-void ai_RemoveTaggedEffects(object oCreature, string sTag)
-{
-   effect eEffect = GetFirstEffect(oCreature);
-   //Search for the effect.
-   while(GetIsEffectValid(eEffect))
-   {
-      if(GetEffectTag(eEffect) == sTag)
       {
          //Remove effect.
          RemoveEffect(oCreature, eEffect);
@@ -1242,8 +1229,9 @@ object ai_GetBuffTarget(object oCaster, int nSpell)
     if(sGroup == "") sGroup = IntToString(nSpell);
     string sBuffGroup = "AI_USED_SPELL_GROUP_" + sGroup;
     string sBuffTarget = Get2DAString("ai_spells", "Buff_Target", nSpell);
-    if(AI_DEBUG) ai_Debug("0i_spells", "769", "BuffTarget: " + sBuffTarget);
-    if(sBuffTarget == "0")
+    if(AI_DEBUG) ai_Debug("0i_spells", "1230", "BuffTarget: " + sBuffTarget);
+    if(sBuffTarget == "") return OBJECT_INVALID;
+    else if(sBuffTarget == "0")
     {
         if(ai_SpellGroupNotCast(oCaster, sBuffGroup) &&
            !GetHasSpellEffect(nSpell, oCaster) &&
@@ -1287,7 +1275,7 @@ object ai_GetBuffTarget(object oCaster, int nSpell)
         SetLocalInt(oTarget, sBuffGroup, TRUE);
         DelayCommand(6.0, DeleteLocalInt(oTarget, sBuffGroup));
     }
-    if(AI_DEBUG) ai_Debug("0i_spells", "939", GetName(oCaster) + " is targeting " + GetName(oTarget) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "1276", GetName(oCaster) + " is targeting " + GetName(oTarget) +
              " with " + GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell))) + " spell" +
              " sBuffGroup: " + sBuffGroup + ".");
     return oTarget;
@@ -1420,7 +1408,7 @@ void ai_SetupAllyTargets(object oCaster, object oPC)
     nCntr = 1;
     while(nCntr <= nMaxHenchman)
     {
-        if(AI_DEBUG) ai_Debug("0i_spells", "1166", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
+        if(AI_DEBUG) ai_Debug("0i_spells", "1404", "AI_ALLY_TARGET_" + IntToString(nCntr) + ": " +
                  GetName(GetLocalObject(oCaster, "AI_ALLY_TARGET_" + IntToString(nCntr))));
         nCntr++;
     }
@@ -1490,7 +1478,7 @@ void ai_ClearBuffTargets(object oCaster, string sVariable)
 }
 void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, int bEquiped = FALSE)
 {
-    if(AI_DEBUG) ai_Debug("0i_spells", "1150", "Checking Item properties on " + GetName(oItem));
+    if(AI_DEBUG) ai_Debug("0i_spells", "1474", "Checking Item properties on " + GetName(oItem));
     // We have established that we can use the item if it is equiped.
     if(!bEquiped && !ai_CheckIfCanUseItem(oCreature, oItem)) return;
     int nPerDay, nCharges, nUses, nSpellBuffDuration;
@@ -1502,25 +1490,25 @@ void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, 
     // Check for cast spell property and add them to the talent list.
     while(GetIsItemPropertyValid(ipProp))
     {
-        if(AI_DEBUG) ai_Debug("0i_spells", "1163", "ItempropertyType(15): " + IntToString(GetItemPropertyType(ipProp)));
+        if(AI_DEBUG) ai_Debug("0i_spells", "1486", "ItempropertyType(15): " + IntToString(GetItemPropertyType(ipProp)));
         nIPType = GetItemPropertyType(ipProp);
         if(nIPType == ITEM_PROPERTY_CAST_SPELL)
         {
             // Get how they use the item (charges or uses per day).
             nUses = GetItemPropertyCostTableValue(ipProp);
             // We only check uses per day.
-            if(AI_DEBUG) ai_Debug("0i_spells", "1172", "Item uses: " + IntToString(nPerDay));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1493", "Item uses: " + IntToString(nPerDay));
             if(nUses > 7 && nUses < 13)
             {
                 nPerDay = GetItemPropertyUsesPerDayRemaining(oItem, ipProp);
-                if(AI_DEBUG) ai_Debug("0i_spells", "1176", "Item uses per day: " + IntToString(nPerDay));
+                if(AI_DEBUG) ai_Debug("0i_spells", "1497", "Item uses per day: " + IntToString(nPerDay));
                 if(nPerDay > 0)
                 {
                     // SubType is the ip spell index for iprp_spells.2da
                     nIprpSubType = GetItemPropertySubType(ipProp);
                     nSpell = StringToInt(Get2DAString("iprp_spells", "SpellIndex", nIprpSubType));
                     nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                    if(AI_DEBUG) ai_Debug("0i_spells", "1183", "nSpell: " + IntToString(nSpell) +
+                    if(AI_DEBUG) ai_Debug("0i_spells", "1504", "nSpell: " + IntToString(nSpell) +
                              " nBuffType: " + IntToString(nBuffType) +
                              " nSpellBuffDuration: " + IntToString(nSpellBuffDuration));
                     if(nBuffType == nSpellBuffDuration || nBuffType == 1)
@@ -1528,7 +1516,7 @@ void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, 
                         oTarget = ai_GetBuffTarget(oCreature, nSpell);
                         if(oTarget != OBJECT_INVALID)
                         {
-                            if(AI_DEBUG) ai_Debug("0i_spells", "1190", GetName(oCreature) + " is using" +
+                            if(AI_DEBUG) ai_Debug("0i_spells", "1512", GetName(oCreature) + " is using" +
                                      GetName(oItem) + " to cast " + IntToString(nSpell) +
                                      " on " + GetName(oTarget));
                             ActionUseItemOnObject(oItem, ipProp, oTarget);
@@ -1542,7 +1530,7 @@ void ai_CheckForPerDayProperties(object oCreature, object oItem, int nBuffType, 
 }
 void ai_CheckForPerDayItems(object oCreature, object oPC, int nBuffType)
 {
-    if(AI_DEBUG) ai_Debug("0i_spells", "1198", GetName(oCreature) + ": Checking items for per day buffs.");
+    if(AI_DEBUG) ai_Debug("0i_spells", "1526", GetName(oCreature) + ": Checking items for per day buffs.");
     if(!ai_GetMagicMode(oCreature, AI_MAGIC_NO_MAGIC_ITEMS))
     {
         int bEquiped;
@@ -1589,20 +1577,18 @@ void ai_CheckForBuffSpells(struct stSpell stSpell, float fDelay, int bInstantSpe
 {
     ai_SetupAllyTargets(stSpell.oCaster, stSpell.oPC);
     stSpell.nPosition = 1;
-    stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-    stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-    stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-    stSpell.nSlot = 0;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-        if(AI_DEBUG) ai_Debug("0i_spells", "1208", "nClass: " + IntToString(stSpell.nClass));
+        if(AI_DEBUG) ai_Debug("0i_spells", "1576", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        if(AI_DEBUG) ai_Debug("0i_spells", "1210", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        if(AI_DEBUG) ai_Debug("0i_spells", "1578", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-            if(AI_DEBUG) ai_Debug("0i_spells", "1214", "Memorizes Spells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+            if(stSpell.nLevel > 9) stSpell.nLevel = 9;
+            if(AI_DEBUG) ai_Debug("0i_spells", "1583", "Memorizes Spells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+            stSpell.nSlot = 0;
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
                 stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1622,45 +1608,39 @@ void ai_CheckForBuffSpells(struct stSpell stSpell, float fDelay, int bInstantSpe
 }
 void ai_ActionCastMemorizedSummons(struct stSpell stSpell, float fDelay, int bInstantSpell)
 {
-    if(AI_DEBUG) ai_Debug("0i_spells", "1122", "Start of ActionCastMemorizedSummons!");
+    if(AI_DEBUG) ai_Debug("0i_spells", "1606", "Start of ActionCastMemorizedSummons!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        //ai_Debug("0i_spells", "1128", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1612", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            //ai_Debug("0i_spells", "1131", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1615", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
-                //ai_Debug("0i_spells", "1134", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                //ai_Debug("0i_spells", "1618", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
                 //         " nSlots: " + IntToString(stSpell.nSlot));
                 while(stSpell.nSlot < stSpell.nMaxSlots)
                 {
-                    //ai_Debug("0i_spells", "1238", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
+                    //ai_Debug("0i_spells", "1622", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
                     if(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot))
                     {
                         nSpell = GetMemorizedSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
-                        //ai_Debug("0i_spells", "1142", "nSpell: " + IntToString(nSpell));
+                        //ai_Debug("0i_spells", "1626", "nSpell: " + IntToString(nSpell));
                         if(Get2DAString("ai_spells", "Category", nSpell) == "S")
                         {
                             SetLocalInt(stSpell.oCaster, "AI_USED_SPELL_GROUP_-2", TRUE);
                             ai_CastMemorizedSpell(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot, stSpell.oCaster, bInstantSpell, stSpell.oPC);
-                            stSpell.nPosition = 1;
-                            stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-                            stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-                            stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-                            stSpell.nSlot = 0;
-                            DelayCommand(2.0, ai_SetupAllyTargets(stSpell.oCaster, stSpell.oPC));
-                            DelayCommand(2.0 + 0.5, AssignCommand(stSpell.oCaster, ai_ActionCastMemorizedBuff(stSpell, fDelay, bInstantSpell)));
+                            DelayCommand(2.0, ai_CheckForBuffSpells(stSpell, fDelay, bInstantSpell));
                             return;
                         }
                     }
                     stSpell.nSlot++;
                 }
                 stSpell.nLevel--;
-                //ai_Debug("0i_spells", "1153", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1638", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1670,11 +1650,12 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell, float fDelay, int bIn
         }
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-        //ai_Debug("0i_spells", "1164", "nClass: " + IntToString(stSpell.nClass));
+        //ai_Debug("0i_spells", "1648", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
+            if(stSpell.nLevel > 9) stSpell.nLevel = 9;
             stSpell.nSlot = 0;
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
@@ -1683,7 +1664,7 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell, float fDelay, int bIn
             else
             {
                 stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-                AssignCommand(stSpell.oCaster, ai_ActionCastKnownBuff(stSpell, fDelay, bInstantSpell));
+                AssignCommand(stSpell.oCaster, ai_ActionCastKnownSummons(stSpell, fDelay, bInstantSpell));
                 return;
             }
         }
@@ -1692,40 +1673,34 @@ void ai_ActionCastMemorizedSummons(struct stSpell stSpell, float fDelay, int bIn
 }
 void ai_ActionCastKnownSummons(struct stSpell stSpell, float fDelay, int bInstantSpell)
 {
-    //ai_Debug("0i_spells", "1184", "Start of ActionCastKnownSummons!");
+    ai_Debug("0i_spells", "1672", "Start of ActionCastKnownSummons for " + GetName(stSpell.oCaster) + "!");
     int nSpell;
     string sBuffGroup, sBuffTarget;
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        //ai_Debug("0i_spells", "1190", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        ai_Debug("0i_spells", "1678", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            //ai_Debug("0i_spells", "1193", "nLevel: " + IntToString(stSpell.nLevel));
+            ai_Debug("0i_spells", "1681", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
                 if(stSpell.nMaxSlots)
                 {
-                    //ai_Debug("0i_spells", "1198", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                    //         " nSlots: " + IntToString(stSpell.nSlot));
+                    ai_Debug("0i_spells", "1686", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                             " nSlots: " + IntToString(stSpell.nSlot));
                     while(stSpell.nSlot < stSpell.nMaxSlots)
                     {
                         nSpell = GetKnownSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
-                        //ai_Debug("0i_spells", "1203", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
+                        ai_Debug("0i_spells", "1691", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
                         if(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell))
                         {
+                            ai_Debug("0i_spells", "1694", "nSpell: " + IntToString(nSpell));
                             if(Get2DAString("ai_spells", "Category", nSpell) == "S")
                             {
                                 SetLocalInt(stSpell.oCaster, "AI_USED_SPELL_GROUP_S", TRUE);
-                                //ai_Debug("0i_spells", "1209", "nSpell: " + IntToString(nSpell));
                                 ai_CastKnownSpell(stSpell.oCaster, stSpell.nClass, nSpell, stSpell.oCaster, bInstantSpell, stSpell.oPC);
-                                stSpell.nPosition = 1;
-                                stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-                                stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-                                stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-                                stSpell.nSlot = 0;
-                                ai_SetupAllyTargets(stSpell.oCaster, stSpell.oPC);
-                                DelayCommand(fDelay, AssignCommand(stSpell.oCaster, ai_ActionCastKnownBuff(stSpell, fDelay, bInstantSpell)));
+                                DelayCommand(2.0, ai_CheckForBuffSpells(stSpell, fDelay, bInstantSpell));
                                 return;
                             }
                         }
@@ -1733,7 +1708,7 @@ void ai_ActionCastKnownSummons(struct stSpell stSpell, float fDelay, int bInstan
                     }
                 }
                 stSpell.nLevel--;
-                //ai_Debug("0i_spells", "1218", "nLevel: " + IntToString(stSpell.nLevel));
+                ai_Debug("0i_spells", "1704", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1743,16 +1718,17 @@ void ai_ActionCastKnownSummons(struct stSpell stSpell, float fDelay, int bInstan
         }
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
+        ai_Debug("0i_spells", "1714", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        //ai_Debug("0i_spells", "1229", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
+            if(stSpell.nLevel > 9) stSpell.nLevel = 9;
             stSpell.nSlot = 0;
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
                 stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-                AssignCommand(stSpell.oCaster, ai_ActionCastMemorizedBuff(stSpell, fDelay, bInstantSpell));
+                AssignCommand(stSpell.oCaster, ai_ActionCastMemorizedSummons(stSpell, fDelay, bInstantSpell));
                 return;
             }
             else stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1767,24 +1743,24 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell, float fDelay, int bInsta
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        ai_Debug("0i_spells", "1252", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        //ai_Debug("0i_spells", "1739", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            ai_Debug("0i_spells", "1255", "nLevel: " + IntToString(stSpell.nLevel));
+            //ai_Debug("0i_spells", "1742", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
-                ai_Debug("0i_spells", "1258", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                         " nSlots: " + IntToString(stSpell.nSlot));
+                //ai_Debug("0i_spells", "1745", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                //         " nSlots: " + IntToString(stSpell.nSlot));
                 while(stSpell.nSlot < stSpell.nMaxSlots)
                 {
-                    ai_Debug("0i_spells", "1262", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
+                    //ai_Debug("0i_spells", "1749", "Ready: " + IntToString(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot)));
                     if(GetMemorizedSpellReady(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot))
                     {
                         nSpell = GetMemorizedSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
                         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                        ai_Debug("0i_spells", "1267", "nBuffType: " + IntToString(stSpell.nBuffType) +
-                                 " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
-                                 " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
+                        //ai_Debug("0i_spells", "1754", "nBuffType: " + IntToString(stSpell.nBuffType) +
+                        //         " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
+                        //         " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
                         if(stSpell.nBuffType == nSpellBuffDuration || stSpell.nBuffType == 1)
                         {
                             if(stSpell.nTarget > 0)
@@ -1799,8 +1775,8 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell, float fDelay, int bInsta
                                 else oTarget == OBJECT_INVALID;
                             }
                             else oTarget = ai_GetBuffTarget(stSpell.oCaster, nSpell);
-                            ai_Debug("0i_spells", "1284", "nSpell: " + IntToString(nSpell) +
-                                     " oTarget: " + GetName(oTarget));
+                            //ai_Debug("0i_spells", "1771", "nSpell: " + IntToString(nSpell) +
+                            //         " oTarget: " + GetName(oTarget));
                             if(oTarget != OBJECT_INVALID)
                             {
                                 ai_CastMemorizedSpell(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot, oTarget, bInstantSpell, stSpell.oPC);
@@ -1813,7 +1789,7 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell, float fDelay, int bInsta
                     stSpell.nSlot++;
                 }
                 stSpell.nLevel--;
-                ai_Debug("0i_spells", "1298", "nLevel: " + IntToString(stSpell.nLevel));
+                //ai_Debug("0i_spells", "1785", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1824,10 +1800,11 @@ void ai_ActionCastMemorizedBuff(struct stSpell stSpell, float fDelay, int bInsta
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        ai_Debug("0i_spells", "1309", "nClass: " + IntToString(stSpell.nClass));
+        //ai_Debug("0i_spells", "1796", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
+           if(stSpell.nLevel > 9) stSpell.nLevel = 9;
             stSpell.nSlot = 0;
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
@@ -1850,26 +1827,26 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell, float fDelay, int bInstantSp
     object oTarget;
     while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
     {
-        //ai_Debug("0i_spells", "1834", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+        ai_Debug("0i_spells", "1823", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
-            //ai_Debug("0i_spells", "1837", "nLevel: " + IntToString(stSpell.nLevel));
+            ai_Debug("0i_spells", "1831", "nLevel: " + IntToString(stSpell.nLevel));
             while(stSpell.nLevel > -1)
             {
                 if(stSpell.nMaxSlots)
                 {
-                    //ai_Debug("0i_spells", "1842", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
-                    //         " nSlots: " + IntToString(stSpell.nSlot));
+                    ai_Debug("0i_spells", "1836", "nMaxSlots: " + IntToString(stSpell.nMaxSlots) +
+                             " nSlots: " + IntToString(stSpell.nSlot));
                     while(stSpell.nSlot < stSpell.nMaxSlots)
                     {
                         nSpell = GetKnownSpellId(stSpell.oCaster, stSpell.nClass, stSpell.nLevel, stSpell.nSlot);
                         int nSpellBuffDuration = StringToInt(Get2DAString("ai_spells", "Buff_Duration", nSpell));
-                        //ai_Debug("0i_spells", "1361", "nBuffType: " + IntToString(stSpell.nBuffType) +
-                        //         " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
-                        //         " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
+                        ai_Debug("0i_spells", "1842", "nBuffType: " + IntToString(stSpell.nBuffType) +
+                                 " nSpellBuffDuration: " + IntToString(nSpellBuffDuration) +
+                                 " sBuffGroup: " + Get2DAString("ai_spells", "Buff_Group", nSpell));
                         if(stSpell.nBuffType == nSpellBuffDuration || stSpell.nBuffType == 1)
                         {
-                            //ai_Debug("0i_spells", "1367", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
+                            ai_Debug("0i_spells", "1847", "Ready: " + IntToString(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell)));
                             if(GetSpellUsesLeft(stSpell.oCaster, stSpell.nClass, nSpell))
                             {
                                 if(stSpell.nTarget > 0)
@@ -1884,8 +1861,8 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell, float fDelay, int bInstantSp
                                     else oTarget == OBJECT_INVALID;
                                 }
                                 else oTarget = ai_GetBuffTarget(stSpell.oCaster, nSpell);
-                                //ai_Debug("0i_spells", "1868", "nSpell: " + IntToString(nSpell) +
-                                //         " oTarget: " + GetName(oTarget));
+                                ai_Debug("0i_spells", "1862", "nSpell: " + IntToString(nSpell) +
+                                         " oTarget: " + GetName(oTarget));
                                 if(oTarget != OBJECT_INVALID)
                                 {
                                     ai_CastKnownSpell(stSpell.oCaster, stSpell.nClass, nSpell, oTarget, bInstantSpell, stSpell.oPC);
@@ -1899,7 +1876,7 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell, float fDelay, int bInstantSp
                     }
                 }
                 stSpell.nLevel--;
-                if(AI_DEBUG) ai_Debug("0i_spells", "1883", "nLevel: " + IntToString(stSpell.nLevel));
+                ai_Debug("0i_spells", "1877", "nLevel: " + IntToString(stSpell.nLevel));
                 if(stSpell.nLevel > -1)
                 {
                     stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1909,16 +1886,17 @@ void ai_ActionCastKnownBuff(struct stSpell stSpell, float fDelay, int bInstantSp
         }
         stSpell.nPosition++;
         stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
+        ai_Debug("0i_spells", "1883", "nClass: " + IntToString(stSpell.nClass));
         if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-        //ai_Debug("0i_spells", "921", "nClass: " + IntToString(stSpell.nClass));
         if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
         {
             stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
+            if(stSpell.nLevel > 9) stSpell.nLevel = 9;
             stSpell.nSlot = 0;
             if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
             {
                 stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
-                AssignCommand(stSpell.oCaster, ai_ActionCastMemorizedBuff(stSpell, fDelay, bInstantSpell));
+                 AssignCommand(stSpell.oCaster, ai_ActionCastMemorizedBuff(stSpell, fDelay, bInstantSpell));
                 return;
             }
             else stSpell.nMaxSlots = GetKnownSpellCount(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1932,8 +1910,9 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
     // Buff groups are used to prevent a henchmen to cast spells that have the same effect,
     // for example: resist elements and protection from elements are similiar so the henchmen
     // would cast only the most powerful among these if he has them both.
-    if(AI_DEBUG) ai_Debug("0i_spells", "1670", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
+    if(AI_DEBUG) ai_Debug("0i_spells", "1924", GetName(oCaster) + " is casting buffs: " + IntToString(nBuffType) +
              " nTarget: " + IntToString(nTarget) + "!");
+    // Setup the structure that each function will use to pass spell data around.
     struct stSpell stSpell;
     stSpell.oPC = oPC;
     stSpell.oCaster = oCaster;
@@ -1944,19 +1923,20 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
     int bInstantSpell;
     if(fDelay < 4.9) bInstantSpell = TRUE;
     else fDelay = 6.0;
-    // Look for summons spells on All, Long durations and the whole party.
+    // Look for summons spells on [nBuffType: All(1), Long (3)] durations and targeting [nTarget: Whole Party (0)].
     if((nBuffType == 1 || nBuffType == 3) && nTarget == 0 && GetAssociate(ASSOCIATE_TYPE_SUMMONED, oCaster) == OBJECT_INVALID)
     {
         while(stSpell.nPosition <= AI_MAX_CLASSES_PER_CHARACTER)
         {
             stSpell.nClass = GetClassByPosition(stSpell.nPosition, stSpell.oCaster);
-            if(AI_DEBUG) ai_Debug("0i_spells", "1684", "nClass: " + IntToString(stSpell.nClass));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1943", "nClass: " + IntToString(stSpell.nClass));
             if(stSpell.nClass == CLASS_TYPE_INVALID) break;
-            if(AI_DEBUG) ai_Debug("0i_spells", "1686", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
+            if(AI_DEBUG) ai_Debug("0i_spells", "1945", "SpellCaster: " + Get2DAString("classes", "SpellCaster", stSpell.nClass));
             if(Get2DAString("classes", "SpellCaster", stSpell.nClass) == "1")
             {
                 stSpell.nLevel = (GetLevelByPosition(stSpell.nPosition, stSpell.oCaster) + 1) / 2;
-                if(AI_DEBUG) ai_Debug("0i_spells", "1692", "MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
+                if(stSpell.nLevel > 9) stSpell.nLevel = 9;
+                if(AI_DEBUG) ai_Debug("0i_spells", "1950", " MemorizesSpells: " + Get2DAString("classes", "MemorizesSpells", stSpell.nClass));
                 if(Get2DAString("classes", "MemorizesSpells", stSpell.nClass) == "1")
                 {
                     stSpell.nMaxSlots = GetMemorizedSpellCountByLevel(stSpell.oCaster, stSpell.nClass, stSpell.nLevel);
@@ -1972,6 +1952,8 @@ void ai_CastBuffs(object oCaster, int nBuffType, int nTarget, object oPC)
             }
             stSpell.nPosition++;
         }
+        // Exit here; if we summoned a monster then it linked off of that spell
+        // cast to continue the action queue for all buff spell cast actions.
     }
     ai_CheckForBuffSpells(stSpell, fDelay, bInstantSpell);
 }
@@ -2157,7 +2139,7 @@ int ai_CastMemorizedHealing(object oCreature, object oTarget, object oPC, int nC
                     return TRUE;
                 }
                 // Save the lowest level cure spell as we might need to cast it.
-                else if(nLevel < nLevelSave && (nSpell > 26 && nSpell < 32))
+                else if(nLevel < nLevelSave && (nSpell > 30 && nSpell < 36))
                 {
                     nClassSave = nClass;
                     nLevelSave = nLevel;
@@ -2203,7 +2185,7 @@ int ai_CastKnownHealing(object oCreature, object oTarget, object oPC, int nClass
                     return TRUE;
                 }
                 // Save the lowest level cure spell as we might need to cast it.
-                else if(nLevel < nLevelSave && (nSpell > 26 && nSpell < 32))
+                else if(nLevel < nLevelSave && (nSpell > 30 && nSpell < 36))
                 {
                     nClassSave = nClass;
                     nLevelSave = nLevel;
@@ -2322,7 +2304,7 @@ float ai_GetOffensiveSpellSearchRange(object oCreature, int nSpell)
         // We check this because if the enemy is moving or has not started acting
         // then we don't want to move up on them as they might move towards us!
         int nAction = GetCurrentAction(oNearestEnemy);
-        if(AI_DEBUG) ai_Debug("0i_spells", "1130", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
+        if(AI_DEBUG) ai_Debug("0i_spells", "2228", GetName(oNearestEnemy) + " current action: " + IntToString(nAction));
         if(nAction != ACTION_MOVETOPOINT || nAction != ACTION_ITEMCASTSPELL ||
            nAction != ACTION_INVALID || nAction != ACTION_USEOBJECT ||
            nAction != ACTION_RANDOMWALK) fRange = fEnemyDistance + (fRange - 7.5);
@@ -2432,9 +2414,9 @@ void ai_UseWidgetItem(object oPC, object oAssociate, object oTarget, location lL
         if(nIprpSubType == GetItemPropertySubType(ipProperty)) break;
         ipProperty = GetNextItemProperty(oItem);
     }
-    if(!GetIsObjectValid(oTarget))
+    if(GetIsObjectValid(oTarget))
     {
-        AssignCommand(oAssociate, ActionUseItemAtLocation(oItem, ipProperty, lLocation));
+        AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oTarget));
     }
-    else AssignCommand(oAssociate, ActionUseItemOnObject(oItem, ipProperty, oTarget));
+    else AssignCommand(oAssociate, ActionUseItemAtLocation(oItem, ipProperty, lLocation));
 }

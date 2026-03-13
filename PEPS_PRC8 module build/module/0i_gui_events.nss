@@ -14,6 +14,7 @@
 #include "0i_nui"
 void ai_SetupModuleGUIEvents()
 {
+    if(AI_DISABLE_GUI_EVENTS) return;
     object oModule = GetModule();
     string sModuleGUIEvents = GetEventScript(oModule, EVENT_SCRIPT_MODULE_ON_PLAYER_GUIEVENT);
     if(sModuleGUIEvents != "" || sModuleGUIEvents != "0e_gui_events")

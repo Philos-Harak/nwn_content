@@ -52,7 +52,7 @@ void ai_OnRested(object oCreature);
 
 // Increments/Decrements the following distance of associates.
 void ai_FollowIncrement(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
-// Increments/Decrements the Delay in casting buff spells of associates.
+// Increments/Decrements the delay when casting each auto buff spell.
 void ai_DelaySpellSpeed(object oPC, object oAssociate, float fIncrement, string sAssociateType, int nToken = 0);
 // Turns on/off Ranged combat for oAssociate.
 void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
@@ -60,6 +60,8 @@ void ai_Ranged(object oPC, object oAssociate, string sAssociateType);
 void ai_EquipWeapons(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Ignore enemy associates for oAssociate.
 void ai_Ignore_Associates(object oPC, object oAssociate, string sAssociateType);
+// Turns on/off Ignore floor traps for oAssociate.
+void ai_Ignore_Traps(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Search for oAssociate.
 void ai_Search(object oPC, object oAssociate, string sAssociateType);
 // Turns on/off Stealth for oAssociate.
@@ -117,7 +119,7 @@ void ai_Philos_SetStealth(object oMaster, object oCreature, string sAssociateTyp
 // Button action for giving commands to associates.
 void ai_DoCommand(object oPC, object oAssociate, int nCommand);
 // Button action to have associate do an action based on the target via OnPlayer Target event.
-void ai_Action(object oPC, object oAssociate);
+void ai_Action(object oPC, object oAssociate, int bPCAI = FALSE);
 // Toggles between normal ai script and special tactic ai scripts.
 void ai_AIScript(object oPC, object oAssociate, string sAssociate, int nToken = 0);
 // Has the PC select a Trap and then place it on the ground from an associate.
@@ -504,7 +506,7 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
             // Menu used by a player to open a henchmans inventory to give, move, or take.
             case ASSOCIATE_COMMAND_INVENTORY:
             {
-                if(AI_OPEN_INVENTORY)
+                if(AI_OPEN_INVENTORY && !GetLocalInt(oCreature, AI_LIMIT_HENCHMAN_MENUS))
                 {
                     ai_HaveCreatureSpeak(oCreature, 4, ":29:46:35:");
                     OpenInventory(oCreature, oCommander);
@@ -524,6 +526,24 @@ void ai_SelectAssociateCommand(object oCreature, object oCommander, int nCommand
                     ai_ClearCreatureActions();
                     ai_FireHenchman (GetPCSpeaker(), oCreature);
                     PlayVoiceChat (VOICE_CHAT_GOODBYE, oCreature);
+                }
+                else if(AI_PATROL_AHEAD_RADIAL_OPTION)
+                {
+                    if(ai_GetAIMode(oCreature, AI_MODE_SCOUT_AHEAD))
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:10");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, FALSE);
+                        ai_SendMessages(GetName(oCreature) + " has stopped patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                    }
+                    else
+                    {
+                        ai_ClearCreatureActions();
+                        ai_HaveCreatureSpeak(oCreature, 6, ":29:35:46:22:");
+                        ai_SetAIMode(oCreature, AI_MODE_SCOUT_AHEAD, TRUE);
+                        ai_SendMessages(GetName(oCreature) + " is now patrolling ahead.", AI_COLOR_YELLOW, oMaster);
+                        ai_ScoutAhead(oCreature);
+                    }
                 }
             }
         }
@@ -775,7 +795,7 @@ void ai_AssociateEvaluateNewThreat(object oCreature, object oLastPerceived, stri
     if(sPerception == AI_I_SEE_AN_ENEMY || GetObjectSeen(oLastPerceived, oCreature))
     {
         // We are not in combat and we see the enemy so alert our allies!
-        ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+        ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         SetLocalObject (oCreature, AI_MY_TARGET, oLastPerceived);
         SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
         ai_StartAssociateCombat(oCreature);
@@ -838,10 +858,10 @@ void ai_MonsterEvaluateNewThreat(object oCreature, object oLastPerceived, string
         if(d100() < 34)
         {
             // We are not in combat so alert our allies!
-            ai_HaveCreatureSpeak(oCreature, 5, ":0:1:2:3:6:");
+            ai_HaveCreatureSpeak(oCreature, 10, ":0:1:2:3:6:");
         }
         SetLocalObject(oCreature, AI_MY_TARGET, oLastPerceived);
-        SpeakString(sPerception, TALKVOLUME_SILENT_TALK);
+        SpeakString(AI_I_SEE_AN_ENEMY, TALKVOLUME_SILENT_TALK);
         ai_StartMonsterCombat(oCreature);
     }
     else ai_FindTheEnemy(oCreature, oLastPerceived, oLastPerceived, TRUE);
@@ -980,54 +1000,6 @@ void ai_EquipWeapons(object oPC, object oAssociate, string sAssociateType)
         ai_SendMessages(GetName(oAssociate) + " will not equip their best weapons.", AI_COLOR_YELLOW, oPC);
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_equip_weapon_tooltip", "  Equiping Best Weapons Off");
         ai_SetAIMode(oAssociate, AI_MODE_EQUIP_WEAPON_OFF, TRUE);
-    }
-    aiSaveAssociateModesToDb(oPC, oAssociate);
-}
-void ai_Cure_OnOff(object oPC, object oAssociate, string sAssociateType)
-{
-    if(ai_GetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF))
-    {
-        ai_SendMessages(GetName(oAssociate) + " will now cast cure spells.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cure_onoff_tooltip", "  Cast Cure Spells On");
-        ai_SetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF, FALSE);
-    }
-    else
-    {
-        ai_SendMessages(GetName(oAssociate) + " will stop casting cure spells.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cure_onoff_tooltip", "  Cast Cure Spells Off");
-        ai_SetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF, TRUE);
-    }
-    aiSaveAssociateModesToDb(oPC, oAssociate);
-}
-void ai_Ignore_Associates(object oPC, object oAssociate, string sAssociateType)
-{
-    if(ai_GetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES))
-    {
-        ai_SendMessages(GetName(oAssociate) + " is turning ignore associates off.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_assoc_tooltip", "  Ignore Enemy Associates Off");
-        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES, FALSE);
-    }
-    else
-    {
-        ai_SendMessages(GetName(oAssociate) + " is turning ignore associates on.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_assoc_tooltip", "  Ignore Enemy Associates On");
-        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES, TRUE);
-    }
-    aiSaveAssociateModesToDb(oPC, oAssociate);
-}
-void ai_Ignore_Traps(object oPC, object oAssociate, string sAssociateType)
-{
-    if(ai_GetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS))
-    {
-        ai_SendMessages(GetName(oAssociate) + " will stop ignoring traps on the floor and will stop moving when one is seen.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_traps_tooltip", "  Ignore Floor Traps Off");
-        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS, FALSE);
-    }
-    else
-    {
-        ai_SendMessages(GetName(oAssociate) + " will now ignore traps on the floor and will continue with their actions.", AI_COLOR_YELLOW, oPC);
-        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_traps_tooltip", "  Ignore Floor Traps On");
-        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS, TRUE);
     }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
@@ -1474,6 +1446,54 @@ void ai_Heal_OnOff(object oPC, object oAssociate, string sAssociateType, int nMo
         ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_healp_onoff_tooltip", sText);
     }
     ai_SendMessages(GetName(oAssociate) + sText2, AI_COLOR_YELLOW, oPC);
+    aiSaveAssociateModesToDb(oPC, oAssociate);
+}
+void ai_Cure_OnOff(object oPC, object oAssociate, string sAssociateType)
+{
+    if(ai_GetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF))
+    {
+        ai_SendMessages(GetName(oAssociate) + " will now cast cure spells.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cure_onoff_tooltip", "  Cast Cure Spells On");
+        ai_SetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF, FALSE);
+    }
+    else
+    {
+        ai_SendMessages(GetName(oAssociate) + " will stop casting cure spells.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_cure_onoff_tooltip", "  Cast Cure Spells Off");
+        ai_SetMagicMode(oAssociate, AI_MAGIC_CURE_SPELLS_OFF, TRUE);
+    }
+    aiSaveAssociateModesToDb(oPC, oAssociate);
+}
+void ai_Ignore_Associates(object oPC, object oAssociate, string sAssociateType)
+{
+    if(ai_GetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES))
+    {
+        ai_SendMessages(GetName(oAssociate) + " will stop ignoring henchman's associates and enemy associates.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_assoc_tooltip", "  Ignore Enemy Associates Off");
+        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES, FALSE);
+    }
+    else
+    {
+        ai_SendMessages(GetName(oAssociate) + " will now ignore henchman's associates and enemy associates.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_assoc_tooltip", "  Ignore Enemy Associates On");
+        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_ASSOCIATES, TRUE);
+    }
+    aiSaveAssociateModesToDb(oPC, oAssociate);
+}
+void ai_Ignore_Traps(object oPC, object oAssociate, string sAssociateType)
+{
+    if(ai_GetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS))
+    {
+        ai_SendMessages(GetName(oAssociate) + " will stop ignoring traps on the floor and will stop moving when one is seen.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_traps_tooltip", "  Ignore Floor Traps Off");
+        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS, FALSE);
+    }
+    else
+    {
+        ai_SendMessages(GetName(oAssociate) + " will now ignore traps on the floor and will continue with their actions.", AI_COLOR_YELLOW, oPC);
+        ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ignore_traps_tooltip", "  Ignore Floor Traps On");
+        ai_SetAIMode(oAssociate, AI_MODE_IGNORE_TRAPS, TRUE);
+    }
     aiSaveAssociateModesToDb(oPC, oAssociate);
 }
 void ai_FollowTarget(object oPC, object oAssociate)
@@ -1957,7 +1977,7 @@ void ai_DoCommand(object oPC, object oAssociate, int nCommand)
         }
     }
 }
-void ai_Action(object oPC, object oAssociate)
+void ai_Action(object oPC, object oAssociate, int bPCAI = FALSE)
 {
     if(oPC == oAssociate)
     {
@@ -1969,8 +1989,8 @@ void ai_Action(object oPC, object oAssociate)
         SetLocalObject(oPC, AI_TARGET_ASSOCIATE, oAssociate);
         SetLocalObject(oPC, AI_TARGET_MODE_ASSOCIATE, oAssociate);
         SetLocalString(oPC, AI_TARGET_MODE, "ASSOCIATE_ACTION");
-        SetLocalInt(oPC, "AI_TARGET_MODE_ON", TRUE);
-        if(!GetLocalInt(GetModule(), AI_USING_PRC)) ai_TurnOn(oPC, oPC, "pc");
+        SetLocalInt(oPC, AI_TARGET_MODE_ON, TRUE);
+        if(!GetLocalInt(GetModule(), AI_USING_PRC) && bPCAI) ai_TurnOn(oPC, oPC, "pc");
         ai_SendMessages("Select an action for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
     }
     EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_ACTION, MOUSECURSOR_NOWALK);
@@ -2195,7 +2215,7 @@ void ai_ChangeCameraView(object oPC, object oAssociate)
     {
         SetLocalObject(oPC, "AI_CAMERA_ON_ASSOCIATE", oAssociate);
         AttachCamera(oPC, oAssociate);
-        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate);
+        if(!ai_GetIsCharacter(oAssociate)) ai_Action(oPC, oAssociate, TRUE);
     }
 }
 void ai_SelectCameraView(object oPC)
@@ -2246,6 +2266,49 @@ void ai_Plugin_Execute(object oPC, string sElem, int bUser = 0)
         ai_SendMessages("Executing plugin " + sName + ".", AI_COLOR_GREEN, oPC);
         ExecuteScript(sScript, oPC);
     }
+}
+void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
+{
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI On");
+    ai_SendMessages("AI turned on for " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_4_convers");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_5_phyatked");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_6_damaged");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_8_disturb");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_b_castat");
+    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_e_blocked");
+    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    // This sets the script for the PC to run AI based on class.
+    ai_SetAssociateAIScript(oTarget, FALSE);
+    // Set so PC can hear associates talking in combat.
+    ai_SetListeningPatterns(oTarget);
+}
+void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
+{
+    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI Off");
+    ai_SendMessages("AI Turned off for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_NOTICE, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
+    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
+    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
+    DeleteLocalInt(oAssociate, "AI_I_AM_BEING_HEALED");
+    DeleteLocalString(oAssociate, "AIScript");
+    ai_ClearCreatureActions();
 }
 void ai_IncrementMaxHenchman(object oPC, int nIncrement, int nToken, string sElem)
 {
@@ -2322,47 +2385,3 @@ void ai_IncrementHitpoints(object oPC, int nIncrement, int nToken, string sElem)
     jRules = JsonObjectSet(jRules, AI_INCREASE_MONSTERS_HP, JsonInt(nNumber));
     NuiSetBind(oPC, nToken, sElem, JsonString(IntToString(nNumber)));
 }
-void ai_TurnOn(object oPC, object oTarget, string sAssociateType)
-{
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI On");
-    ai_SendMessages("AI turned on for " + GetName(oTarget) + ".", AI_COLOR_YELLOW, oPC);
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "xx_pc_1_hb");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_NOTICE, "xx_pc_2_percept");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "xx_pc_3_endround");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "xx_pc_4_convers");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "xx_pc_5_phyatked");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "xx_pc_6_damaged");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "xx_pc_8_disturb");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "xx_pc_b_castat");
-    SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "xx_pc_e_blocked");
-    //SetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
-    // This sets the script for the PC to run AI based on class.
-    ai_SetAssociateAIScript(oTarget, FALSE);
-    // Set so PC can hear associates talking in combat.
-    ai_SetListeningPatterns(oTarget);
-}
-void ai_TurnOff(object oPC, object oAssociate, string sAssociateType)
-{
-    ai_UpdateToolTipUI(oPC, sAssociateType + AI_NUI, sAssociateType + AI_WIDGET_NUI, "btn_ai_tooltip", "  AI Off");
-    ai_SendMessages("AI Turned off for " + GetName(oAssociate) + ".", AI_COLOR_YELLOW, oPC);
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_NOTICE, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DIALOGUE, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DAMAGED, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DEATH, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_DISTURBED, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPAWN_IN, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_RESTED, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT, "");
-    SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR, "");
-    //SetEventScript(oAssociate, EVENT_SCRIPT_CREATURE_ON_USER_DEFINED_EVENT, "");
-    DeleteLocalInt(oAssociate, "AI_I_AM_BEING_HEALED");
-    DeleteLocalString(oAssociate, "AIScript");
-    ai_ClearCreatureActions();
-}
-

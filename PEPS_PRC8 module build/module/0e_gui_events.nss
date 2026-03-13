@@ -4,7 +4,6 @@
 ////////////////////////////////////////////////////////////////////////////////
  OnPlayerGUIEvent event script
     Used to allow PEPS to gain control of specific GUI events.
-
 /*//////////////////////////////////////////////////////////////////////////////
 #include "0i_gui_events"
 #include "0i_menus"
@@ -29,7 +28,7 @@ void main()
             {
                 jData = NuiGetUserData(oPC, nToken);
                 int nOldEffectIcon = JsonGetInt(JsonArrayGet(jData, 1));
-                DelayCommand(0.0, NuiDestroy(oPC, nToken));
+                NuiDestroy(oPC, nToken);
                 if(nOldEffectIcon == nEventInt) return;
             }
             ai_CreateEffectIconMenu(oPC, nEventInt);
@@ -39,10 +38,11 @@ void main()
             object oAssociate = GetLastGuiEventObject();
             if(GetMaster(oAssociate) == oPC)
             {
+                string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
                 // If all the Command buttons are blocked then don't load the menu.
-                if(GetLocalInt(GetModule(), sDMWidgetAccessVarname) != 7340028)
+                if(GetLocalInt(GetModule(), sDMWidgetAccessVarname) != 7340028 &&
+                   GetLocalInt(oAssociate, AI_LIMIT_HENCHMAN_MENUS) != TRUE)
                 {
-                    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
                     if(IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI))
                     {
                         ai_CreateAssociateCommandNUI(oPC, oAssociate);
@@ -54,7 +54,17 @@ void main()
                     IsWindowClosed(oPC, sAssociateType + AI_SPELL_MEMORIZE_NUI);
                     IsWindowClosed(oPC, sAssociateType + AI_SPELL_KNOWN_NUI);
                 }
-            }
+                else
+                {
+                    int bLocked = !ai_GetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType);
+                    ai_SetWidgetButton(oPC, BTN_WIDGET_LOCK, oAssociate, sAssociateType, bLocked);
+                    if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssociate, sAssociateType) || oPC == oAssociate)
+                    {
+                        NuiDestroy(oPC, NuiFindWindow(oPC, sAssociateType + AI_WIDGET_NUI));
+                        ai_CreateWidgetNUI(oPC, oAssociate);
+                    }
+                }
+           }
         }
     }
 }

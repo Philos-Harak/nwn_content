@@ -33,8 +33,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default1", oCreature);
-                ExecuteScript("prc_npc_hb", oCreature);
             }
+            ExecuteScript("prc_npc_hb", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_NOTICE:
@@ -43,8 +43,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default2", oCreature);
-                ExecuteScript("prc_npc_percep", oCreature);
             }
+            ExecuteScript("prc_npc_percep", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DIALOGUE:
@@ -63,8 +63,8 @@ void main()
             else
             {
                 //ExecuteScript("nw_c2_default4", oCreature);
-                ExecuteScript("prc_npc_conv", oCreature);
             }
+            ExecuteScript("prc_npc_conv", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_MELEE_ATTACKED:
@@ -73,8 +73,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default5", oCreature);
-                ExecuteScript("prc_npc_physatt", oCreature);
             }
+            ExecuteScript("prc_npc_physatt", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DAMAGED:
@@ -83,8 +83,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default6", oCreature);
-                ExecuteScript("prc_npc_damaged", oCreature);
             }
+            ExecuteScript("prc_npc_damaged", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_SPELLCASTAT:
@@ -93,8 +93,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_defaultb", oCreature);
-                ExecuteScript("prc_npc_spellat", oCreature);
             }
+            ExecuteScript("prc_npc_spellat", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_END_COMBATROUND:
@@ -103,8 +103,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default3", oCreature);
-                ExecuteScript("prc_npc_combat", oCreature);
             }
+            ExecuteScript("prc_npc_combat", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR:
@@ -113,14 +113,14 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_defaulte", oCreature);
-                ExecuteScript("prc_npc_blocked", oCreature);
             }
+            ExecuteScript("prc_npc_blocked", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_RESTED:
         {
             if(bFollower) ExecuteScript("nw_ch_aca", oCreature);
-            else ExecuteScript("prc_npc_rested", oCreature);
+            ExecuteScript("prc_npc_rested", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DISTURBED:
@@ -129,8 +129,8 @@ void main()
             else
             {
                 ExecuteScript("nw_c2_default8", oCreature);
-                ExecuteScript("prc_npc_disturb", oCreature);
             }
+            ExecuteScript("prc_npc_disturb", oCreature);
             break;
         }
         case EVENT_SCRIPT_CREATURE_ON_DEATH:

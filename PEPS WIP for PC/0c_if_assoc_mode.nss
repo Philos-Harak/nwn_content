@@ -15,7 +15,7 @@ int StartingConditional()
     // This conversation line turns off picking up any items.
     if (nMode == -1)
     {
-        if(ai_SetAIMode (oHenchman, AI_MODE_PICKUP_ITEMS)) return TRUE;
+        if(ai_GetAIMode (oHenchman, AI_MODE_PICKUP_ITEMS)) return TRUE;
         return FALSE;
     }
     return ai_GetAIMode (oHenchman, nMode);

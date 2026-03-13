@@ -4018,6 +4018,8 @@ int ai_CheckMeleeCombatPosition(object oCreature, object oTarget, int nAction, i
         if(AI_DEBUG) ai_Debug("0i_combat", "3417", "I am being attacked so stand my ground!");
         return FALSE;
     }
+    // These are intelligent actions and thus should only be done by intelligent creatures.
+    if(GetAbilityScore(oCreature, ABILITY_INTELLIGENCE) < 8) return FALSE;
     object oNearestEnemy = GetLocalObject(oCreature, AI_ENEMY_NEAREST);
     float fDistance = GetDistanceBetween(oCreature, oNearestEnemy);
     if(AI_DEBUG) ai_Debug("0i_combat", "3422", "oNearestEnemy: " + GetName(oNearestEnemy) + " fDistance " + FloatToString(fDistance, 0, 2));
@@ -4191,7 +4193,7 @@ int ai_CanIAwesomeBlow(object oCreature, object oTarget)
        int nAttackBonus = GetBaseAttackBonus(oCreature) - 4;
     //:: Calculate average hit chance.
        int nHitChance = 10 + nAttackBonus - nTargetAC;
-    //:: If hit chance <= 50%, don’t bother
+    //:: If hit chance <= 50%, donï¿½t bother
     if (nHitChance <= 5) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_combat", "3674", "ai_CanIAwesomeBlow: Attack check PASSED!");
     if(AI_DEBUG) ai_Debug("0i_combat", "3676", "ai_CanIAwesomeBlow: Can use Awesome Blow on oTarget.");
@@ -4310,7 +4312,7 @@ int ai_CanIGrapple(object oCreature, object oTarget)
     int nTargetBAB = GetBaseAttackBonus(oTarget);
     int nTargetGrapple = nTargetBAB + nTargetStrMod + nTargetSizeMod;
     int nWinChance = 10 + nGrappleScore - nTargetGrapple;
-    //:: If chance to win grapple check < 60%, don’t bother
+    //:: If chance to win grapple check < 60%, donï¿½t bother
     if (nWinChance < 6) return FALSE;
     if(AI_DEBUG) ai_Debug("0i_combat", "3743", "Can use Grapple on oTarget."); return TRUE;
 }

@@ -31,7 +31,9 @@ void main()
         if (!ai_GetIsBusy(oCreature))
         {
             ai_ClearCreatureActions();
-            if(GetAssociateType(oCreature) == ASSOCIATE_TYPE_HENCHMAN) BeginConversation("oc_ai_henchmen", oLastSpeaker);
+            // If the henchman has been limited then don't load the AI conversation.
+            if(GetAssociateType(oCreature) == ASSOCIATE_TYPE_HENCHMAN && 
+               !GetLocalInt(oCreature, AI_LIMIT_HENCHMAN_MENUS)) BeginConversation("oc_ai_henchmen", oLastSpeaker);
             else
             {
                 json jHenchman = ObjectToJson(oCreature);

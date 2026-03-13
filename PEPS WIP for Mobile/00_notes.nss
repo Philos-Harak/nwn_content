@@ -1,13 +1,11 @@
 /*
 Mobile Notes:
 Keep the following files in the mobile version:
-0i_constants
-0i_menu
-0e_nui
-0e_payer_target
-0i_associates
-0i_module
-0i_spells
+0i_constants - 03/13/26
+0i_menu - 03/13/26
+0e_nui - 03/13/26
+0e_payer_target - 03/13/26
+0i_associates - 03/13/26
 
 Key:
 * Not looked at, new.

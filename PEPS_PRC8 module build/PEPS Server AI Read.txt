@@ -1,4 +1,4 @@
-Philos' Enhancing Player System and AI for Servers version 07.10.25
+Philos' Enhancing Player System and AI for Servers version 03.13.26
 
 This is the read me document for PEPS AI for Servers. It goes over how to install and use PEPS AI for builders making a module or persistant world that wants to add PEPS.
 
@@ -134,6 +134,73 @@ your chests are opened by a henchmen.
 *****************************
 ********** Changes **********
 *****************************
+---------- 1-13-25 ----------
+       COMPATIBILITY
+* PEPS is now compatible with Tortured Hearts I. New Development Folder setup.
+	MENU CHANGES
+* Added Healing kits and Thieves Tools to the loot filter.
+---------- 1-11-25 ----------
+       BUFFING PLUGIN
+* Spells cast from feats now work. Note: Feat spells cannot be fast and cast normally.
+      CRAFTING PLUGIN
+* Changed the file name of the cloth/leather pallet tga used for selecting cloth and leather colors.
+       HENCHMAN PLUGIN
+* Henchman can now be reset to any class. Select the class you want then hit reset!
+	AI CHANGES
+* Fixed characters of high level causing underflow errors when using the quick buff options.
+* AI will now use items again in combat.
+---------- 12-14-25 ----------
+* Opened up the spell levels in the Quick widget menu to allow a character to take unique class spells at higher level.
+---------- 11-29-25 ----------
+       HENCHMAN PLUGIN
+* Fixed error with adding custom portraits to characters not working.
+	MENU CHANGES
+* Cleaned up some menu work arounds for previous game crashes.
+* Quick widget now will allow you to add feats that Target self.
+	AI CHANGES
+* Added check for prc_2da_cache in perception checks and combat state checks.
+---------- 11-16-25 ----------
+	CONVERSATION
+* Fixed spells not casting through the conversation when you tell a henchman to use one.
+        MENU CHANGES
+* Spells, Items, and Special abilities now show the number of uses left on the icons in the Quick widget.
+* Self use items now work. Like Ioun Stones and other non-spell module specific items.
+* Fixed issue where some custom portraits would not show up.
+* Main menu is sized wrong for 1920x1080 scale 1.0 has been fixed.
+        AI CHANGES
+* Fixed issue where henchman can sometime get stuck attacking without checking AI each round.
+* Fixed issue where henchman is defending the player and may attack another henchman that did damage to the player with a spell.
+* Fixed issue where a creature could get into an endless loop trying to cast a spell they cannot cast.
+* Changed how it checks if a creature can hurt the enemy, will attack creatures they can hurt first then target ones they cannot last.
+---------- 10-20-25 ----------
+       FAST TRAVEL PLUGIN
+* Added New plugin! You can now save your location to quickly get back instead of a slow walk!
+* Saves per the locations per module/chapter and allows an unlimited number to be saved.
+       BUFFING PLUGIN
+* Add a text box for adjusting delay for casting spells that have been saved.
+* You can now save spells cast from henchmen or PC to anyone in PC's party to the Quick Buff plugin.
+      CRAFTING PLUGIN
+* Added Constant to allow server to limit or allow players to change item names and descriptions.
+* Now you may select the Player, a henchmen, or an item that either possesses to inspect or change.
+* Now DM's may select any Player, creature, or item to inspect or change!
+       HENCHMAN PLUGIN
+* Fixed Spell check for feats when the class has no spells at 1st level.
+* Fixed Feat checks to look at already selected feats from the feat list.
+* Fixed name field being too short and cuting off some NPC names increased the size. 
+	GENERAL CHANGES
+* Increased the maximum health increase for monsters from 100% to 500% in main menu!
+* When henchmen are killed then revived they may have plot set on them, this has been fixed when they become a henchman.
+* Added script 0e_animations to allow servers to do special walk and animation code for monsters.
+* Add Main menu option to allow monsters to prebuff with all spells for harder difficulty.
+	MENU CHANGES
+* Fixed Custom portraits not showing up correctly in the Widget when there is only one size.
+* Add option to delay auto spell buffing speeds. Use mouse wheel on any of the Auto buff buttons.
+	AI CHANGES
+* Creatures with Point Blank Range should move in close to use a bow. Testing this to see how well it works!
+* Spells are removed from the talent list when trying to cast them instead of after casting.
+  If a spell fails to cast they can still use it for this combat now.
+* Added check for casters to abort spells if the target is dead just before casting. Improves spell usage!
+* When a creature cannot hurt the only enemy left they will flee from them.
 ---------- 8-31-25 ----------
        BUFFING PLUGIN
 * Fixed not casting on henchmen with changed names.

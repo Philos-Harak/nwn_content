@@ -195,7 +195,8 @@ void main()
             sTargetName = JsonGetString(JsonArrayGet(jSpell, 6));
             sResRef = Get2DAString("spells", "IconResRef", nSpell);
             sName = "  " + sCasterName + " (";
-            sName += GetStringByStrRef(StringToInt(Get2DAString("classes", "Short", nClass)));
+            if(nClass == -1) sName += "Feat";
+            else sName += GetStringByStrRef(StringToInt(Get2DAString("classes", "Short", nClass)));
             sName += " / " + IntToString (nLevel) + ") casting ";
             sName += GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", nSpell)));
             if(nMetamagic > 0)
