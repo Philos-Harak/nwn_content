@@ -120,7 +120,7 @@ json ai_UpdatePluginsForPC(object oPC);
 json ai_UpdatePluginsForDM (object oPC);
 // Runs all plugins that are loaded into the database.
 void ai_StartupPlugins(object oPC);
-// Sets nspell to the end of oAssociates widget spell list. 
+// Sets nspell to the end of oAssociates widget spell list.
 // Must be called after the oAssociate is in oPlayers party!
 // nSpell is the spell id.
 // nClass is the class id associated with the spell.
@@ -294,9 +294,9 @@ void ai_SetAIRules()
         SetLocalInt(oModule, AI_RULE_MON_PERC_DISTANCE, nValue);
         // Variable name set to hold the maximum number of henchman the player wants.
         nValue = JsonGetInt(JsonObjectGet(jRules, AI_RULE_MAX_HENCHMAN));
-        if(nValue == 0) 
+        if(nValue == 0)
         {
-            if(AI_MAX_NUMBER_OF_MODULE_HENCHMAN) 
+            if(AI_MAX_NUMBER_OF_MODULE_HENCHMAN)
             {
                 nValue = AI_MAX_NUMBER_OF_MODULE_HENCHMAN;
                 SetMaxHenchmen(nValue);
@@ -767,7 +767,7 @@ string ai_GetAssociateType(object oPlayer, object oAssociate, int nAssociateType
             // Check for duplicate tags and change.
             while(nIndex <= AI_MAX_HENCHMAN && oCreature != OBJECT_INVALID)
             {
-                if(oAssociate != oCreature && sAITag == GetTag(oCreature))
+                if(oAssociate != oCreature && sAITag == GetLocalString(oCreature, AI_TAG))
                 {
                     sAITag += IntToString(Random(1000));
                     break;
@@ -782,7 +782,7 @@ string ai_GetAssociateType(object oPlayer, object oAssociate, int nAssociateType
             oCreature = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPlayer, nIndex);
             while(nIndex <= 10 && oCreature != OBJECT_INVALID)
             {
-                if(oAssociate != oCreature && sAITag == GetTag(oCreature))
+                if(oAssociate != oCreature && sAITag == GetLocalString(oCreature, AI_TAG))
                 {
                     nCounter++;
                     sAITag += IntToString(nCounter);
@@ -1419,11 +1419,11 @@ void ai_SetSpelltoAssociateWidget(object oPlayer, object oAssociate, int nSpell,
     string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
     json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
     json jSpells = JsonArrayGet(jAIData, 10);
-    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL)
     {
         jSpells = JsonArray();
-        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass)); 
-        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass));
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10));
         jSpells = JsonArrayInsert(jSpells, JsonArray());
     }
     json jWidget = JsonArrayGet(jSpells, 2);
@@ -1441,25 +1441,25 @@ void ai_SetSpelltoAssociateWidget(object oPlayer, object oAssociate, int nSpell,
         jSpells = JsonArraySet(jSpells, 2, jWidget);
         jAIData = JsonArraySet(jAIData, 10, jSpells);
         ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
-    }    
+    }
 }
 void ai_SetFeattoAssociateWidget(object oPlayer, object oAssociate, int nFeat, int nSpell, int nClass)
 {
     string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
     json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
     json jSpells = JsonArrayGet(jAIData, 10);
-    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL)
     {
         jSpells = JsonArray();
-        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass)); 
-        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(nClass));
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10));
         jSpells = JsonArrayInsert(jSpells, JsonArray());
     }
     json jWidget = JsonArrayGet(jSpells, 2);
     int nWidgetLength = JsonGetLength(jWidget);
     if(nWidgetLength < 20)
     {
-        json jFeat = JsonArray();   
+        json jFeat = JsonArray();
         jFeat = JsonArrayInsert(jFeat, JsonInt(nSpell));
         jFeat = JsonArrayInsert(jFeat, JsonInt(nClass));
         jFeat = JsonArrayInsert(jFeat, JsonInt(0)); // Level
@@ -1477,11 +1477,11 @@ void ai_SetItemtoAssociateWidget(object oPlayer, object oAssociate, object oItem
     string sAssociateType = ai_GetAssociateType(oPlayer, oAssociate);
     json jAIData = ai_GetAssociateDbJson(oPlayer, sAssociateType, "aidata");
     json jSpells = JsonArrayGet(jAIData, 10);
-    if(JsonGetType(jSpells) == JSON_TYPE_NULL) 
+    if(JsonGetType(jSpells) == JSON_TYPE_NULL)
     {
         jSpells = JsonArray();
-        jSpells = JsonArrayInsert(jSpells, JsonInt(GetClassByPosition(1, oAssociate))); 
-        jSpells = JsonArrayInsert(jSpells, JsonInt(10)); 
+        jSpells = JsonArrayInsert(jSpells, JsonInt(GetClassByPosition(1, oAssociate)));
+        jSpells = JsonArrayInsert(jSpells, JsonInt(10));
         jSpells = JsonArrayInsert(jSpells, JsonArray());
     }
     json jWidget = JsonArrayGet(jSpells, 2);

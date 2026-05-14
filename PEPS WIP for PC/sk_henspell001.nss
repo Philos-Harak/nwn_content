@@ -170,28 +170,76 @@ void main()
     object oCaster = GetLastSpellCaster();
     if(GetLastSpell() == SPELL_RAISE_DEAD || GetLastSpell()  == SPELL_RESURRECTION)
     {
-       //restore merchant faction to neutral?
-       //SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 100, oCaster);
+        if (GetLocalInt(OBJECT_SELF,"NORAISE")==TRUE)
+        {
+            FloatingTextStringOnCreature("Raising does not work in this case.",oCaster);
+            return;
+        }
+        //restore merchant faction to neutral?
+        //SetStandardFactionReputation(STANDARD_FACTION_MERCHANT, 100, oCaster);
 
-       ClearPersonalReputation(oCaster, OBJECT_SELF);
-       AssignCommand(OBJECT_SELF, SurrenderToEnemies());
+        ClearPersonalReputation(oCaster, OBJECT_SELF);
+        AssignCommand(OBJECT_SELF, SurrenderToEnemies());
         object oHench = OBJECT_SELF;
         AssignCommand(oHench, ClearAllActions(TRUE));
         string sFile = GetDialogFileToUse(oCaster);
+
+        //*Customized
+        string sTag = GetTag(OBJECT_SELF);
 
         // * reset henchmen attack state - Oct 28 (BK)
         SetAssociateState(NW_ASC_MODE_DEFEND_MASTER, FALSE, oHench);
         SetAssociateState(NW_ASC_MODE_STAND_GROUND, FALSE, oHench);
 
-         // Feb 11, 2004 - Jon: Don't fire the HireHenchman function if the
-         // henchman is already oCaster's associate. Fixes a silly little problem
-         // that occured when you try to raise a henchman who wasn't actually dead.
-        if(GetMaster(oHench)!=oCaster)
-         {
-          HireHench(oCaster, oHench, TRUE);
-          SpeakString("Thanks for raising me. I thought that I had met my doom.");
-         }
-     }
-     else ExecuteScript("nw_ch_acb", OBJECT_SELF);
+        // Feb 11, 2004 - Jon: Don't fire the HireHenchman function if the
+        // henchman is already oCaster's associate. Fixes a silly little problem
+        // that occured when you try to raise a henchman who wasn't actually dead.
+        if(GetMaster(oHench) != oCaster && GetPlayerHasHired(oCaster, oHench))
+        {
+            HireHench(oCaster, oHench, TRUE);
+            if (GetLocalInt(GetArea(oHench),"DEADMAGIC")==TRUE)
+            {
+                effect eSpellFailure = EffectSpellFailure(100, SPELL_SCHOOL_GENERAL);
+                DelayCommand(0.25,ApplyEffectToObject(DURATION_TYPE_PERMANENT, eSpellFailure, oHench));
+            }
+            if(sTag == "zarala001")
+            {
+                SpeakString("Thanks for raising me. I thought that I had met my doom.");
+            }
+            else if(sTag == "schnella001")
+            {
+                SpeakString("I would have perished here if not for you. You have my gratitude.");
+            }
+            else if (sTag=="garad001")
+            {
+                SpeakString("It is only right that you have brought me back, since it was only due to your incompetence that I fell in the first place.");
+            }
+            else if (sTag=="gund001")
+            {
+                SpeakString("Much rather be killing goblins than getting killed myself.");
+            }
+            else if (sTag=="chelys001")
+            {
+                SpeakString("I'm not going to give in to death easily.");
+            }
+            else if (sTag=="korzob001")
+            {
+                SpeakString("Even death cannot restrain my ferocity!");
+            }
+            else if (sTag=="broadfoot002")
+            {
+                SpeakString("That was a nasty hit...thanks for making sure it didn't take me out for good.");
+            }
+            else if (sTag=="quord001")
+            {
+                SpeakString("Been a while since I've needed a raising. I must be slipping.");
+            }
+            else
+            {
+                SpeakString("That was a nasty blow...but I'm back now.");
+            }
+        }
+    }
+    else ExecuteScript("nw_ch_acb", OBJECT_SELF);
 }
 

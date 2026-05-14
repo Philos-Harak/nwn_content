@@ -18,7 +18,7 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version:1.
 // This will only work if you are using the PEPS menu system.
 const int AI_DEBUG = TRUE;
 // Defines if we are compiling for single player or a server. Always on for servers!
-const int AI_SERVER = FALSE;
+const int AI_SERVER = TRUE;
 // Disables all GUI Events from being set in the module.
 const int AI_DISABLE_GUI_EVENTS = FALSE;
 // Allows Henchman to have a widget if using the henchman AI.
@@ -86,8 +86,8 @@ const int AI_MONSTER_PERCEPTION = 11;
 // Should the AI auto adjust the XP scale to remove party size penalty?
 const int AI_PARTY_SCALE = FALSE;
 //************************** HENCHMAN LIMTED CONSTANTS *************************
-// To limit a henchman from using the AI or Comand menus you need to set the 
-// following constant to TRUE on the henchman you don't want to use them. 
+// To limit a henchman from using the AI or Comand menus you need to set the
+// following constant to TRUE on the henchman you don't want to use them.
 // Once limited clicking on the widget's picture will lock/unlock the widget.
 // Set this variable name to TRUE on a henchman to lock the widget from the menus.
 // SetLocalInt(oHenchman, "AI_LIMIT_HENCHMAN_MENUS", TRUE);

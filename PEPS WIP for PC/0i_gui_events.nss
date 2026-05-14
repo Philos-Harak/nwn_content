@@ -692,8 +692,7 @@ void ai_CreateEffectChatReport(object oPlayer, int nEffectIconID)
                     if(GetIsObjectValid(oSource))
                     {
                         sText = GetObjectType(oSource) ? GetName(oSource) : "<Unknown>";
-                        sText = "        Creator: " + sText;
-                        float fLength = IntToFloat(GetStringLength(sText) * 8);
+                        sText = "        Creator: " + sText + " Caster Level: " + IntToString(GetEffectCasterLevel(eEffect));
                         ai_SendMessages(sText, AI_COLOR_YELLOW, oPlayer);
                     }
                 }
@@ -985,7 +984,7 @@ void ai_CreateEffectIconMenu(object oPlayer, int nEffectIconID)
                     if(GetIsObjectValid(oSource))
                     {
                         sText = GetObjectType(oSource) ? GetName(oSource) : "<Unknown>";
-                        sText = "        Creator: " + sText;
+                        sText = "        Creator: " + sText + " Caster Level: " + IntToString(GetEffectCasterLevel(eEffect));
                         float fLength = IntToFloat(GetStringLength(sText) * 8);
                         jRow = CreateLabel(JsonArray(), sText, "lbl_buff_source" + IntToString(nIndex), fLength, 15.0f, NUI_HALIGN_LEFT, NUI_VALIGN_BOTTOM, 0.0);
                         if(oSource == oPlayer)

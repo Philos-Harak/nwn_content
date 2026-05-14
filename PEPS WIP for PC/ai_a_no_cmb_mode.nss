@@ -85,7 +85,6 @@ void main()
     {
         if(ai_HasRangedWeaponWithAmmo(oCreature))
         {
-            if(ai_TryRangedSneakAttack(oCreature, nInMelee)) return;
             // Lets pick off the weaker targets.
             if(!nInMelee)
             {
@@ -101,7 +100,6 @@ void main()
             }
             if(oTarget != OBJECT_INVALID)
             {
-                if(ai_TryRangedTalents(oCreature, oTarget, nInMelee)) return;
                 if(AI_DEBUG) ai_Debug("ai_a_no_modes", "105", GetName(OBJECT_SELF) + " does ranged attack on weakest: " + GetName(oTarget) + "!");
                 ai_ActionAttack(oCreature, AI_LAST_ACTION_RANGED_ATK, oTarget, nInMelee, TRUE);
                 return;
@@ -117,7 +115,6 @@ void main()
     if(AI_DEBUG) ai_Debug("ai_a_no_modes", "117", "Check for melee attack on weakest enemy!");
     // ************************** Melee feat attacks *************************
     if(ai_InCombatEquipBestMeleeWeapon(oCreature)) return;
-    if(ai_TrySneakAttack(oCreature, nInMelee, bAlwaysAtk)) return;
     if(ai_GetAIMode(oCreature, AI_MODE_DEFEND_MASTER)) oTarget = ai_GetLowestCRAttackerOnMaster(oCreature);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetNearestFavoredEnemyTarget(oCreature, AI_RANGE_PERCEPTION, bAlwaysAtk);
     if(oTarget == OBJECT_INVALID) oTarget = ai_GetLowestCRTargetForMeleeCombat(oCreature, nInMelee, bAlwaysAtk);

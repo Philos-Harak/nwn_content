@@ -108,14 +108,17 @@ void main()
             SetLocalString(oPC, AI_TARGET_MODE, "TEST_JUMP");
             EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_TRANSITION, MOUSECURSOR_NOWALK);
         }
-        else if(sTargetMode == "TEST_KILL_AREA")
+        else if(sTargetMode == "TEST_IMMORTAL")
         {
-            effect eDmg = EffectDamage(10000);
-            object oKill = GetFirstObjectInShape(SHAPE_SPHERE, 6.67, lLocation, FALSE);
-            while(oKill != OBJECT_INVALID)
+            if(GetImmortal(oTarget))
             {
-                ApplyEffectToObject(DURATION_TYPE_INSTANT, eDmg, oKill);
-                oKill = GetNextObjectInShape(SHAPE_SPHERE, 6.67, lLocation, FALSE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is no longer immortal!");
+                SetImmortal(oTarget, FALSE);
+            }
+            else
+            {
+                SetImmortal(oTarget, TRUE);
+                SendMessageToPC(oPC, GetName(oTarget) + " is now immortal!");
             }
         }
         else if(sTargetMode == "RESURRECT")
@@ -230,15 +233,14 @@ void main()
                 SetLocalString(oPC, AI_TARGET_MODE, "TEST_JUMP");
                 EnterTargetingMode(oPC, OBJECT_TYPE_TILE, MOUSECURSOR_TRANSITION, MOUSECURSOR_NOWALK);
             }
-            else if(sElem == "btn_kill_area")
+            else if(sElem == "btn_immortal")
             {
                 // Set this variable on the player so PEPS can run the targeting script for this plugin.
                 SetLocalString(oPC, AI_PLUGIN_TARGET_SCRIPT, "pe_test");
                 // Set Targeting variables.
                 SetLocalObject(oPC, AI_TARGET_ASSOCIATE, OBJECT_SELF);
-                SetLocalString(oPC, AI_TARGET_MODE, "TEST_KILL_AREA");
-                SetEnterTargetingModeData(oPC, SPELL_TARGETING_SHAPE_SPHERE, 6.67, 0.0, 3);
-                EnterTargetingMode(oPC, OBJECT_TYPE_ALL, MOUSECURSOR_KILL, MOUSECURSOR_NOKILL);
+                SetLocalString(oPC, AI_TARGET_MODE, "TEST_IMMORTAL");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_MAGIC, MOUSECURSOR_NOMAGIC);
             }
             else if(sElem == "btn_resurrect")
             {

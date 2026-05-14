@@ -3541,14 +3541,15 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5+ ******************************************************************* 244 / 185
     float fHeight = 213.0;
-    int nIndex;
+    int nIndex, nMultipleSummons;
     string sAssocName;
     object oAssoc;
-    for(nIndex = 1; nIndex < AI_MAX_HENCHMAN; nIndex++)
+    for(nIndex = 1; nIndex < 10; nIndex++)
     {
         oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
         if(oAssoc != OBJECT_INVALID)
         {
+            nMultipleSummons++;
             sAssocName = GetName(oAssoc);
             if(GetStringRight(sAssocName, 1) == "s") sAssocName = sAssocName + "'";
             else sAssocName = sAssocName + "'s";
@@ -3558,6 +3559,15 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
             fHeight += 28.0;
         }
         else break;
+    }
+    if(nMultipleSummons > 1)
+    {
+            jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
+            jRow = CreateButton(jRow, "All Summons", "btn_paste_all_summons", 220.0, 20.0);
+            jRow = JsonArrayInsert(jRow, NuiSpacer());
+            // Add row to the column.
+            jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+            fHeight += 28.0;
     }
     // Row 5+ ****************************************************************** 244 / 241
     for(nIndex = 1; nIndex < AI_MAX_HENCHMAN; nIndex++)
@@ -3602,8 +3612,16 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_paste_familiar_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
     oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
     NuiSetBind(oPC, nToken, "btn_paste_companion_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
-    oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC);
-    NuiSetBind(oPC, nToken, "btn_paste_summons_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
+    for(nIndex = 1; nIndex < 10; nIndex++)
+    {
+        oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
+        if(oAssoc != OBJECT_INVALID)
+        {
+            NuiSetBind(oPC, nToken, "btn_paste_summons" + IntToString(nIndex) + "_event", JsonBool(oAssoc != oAssociate));
+        }
+        else break;
+    }
+    if(nMultipleSummons > 1) NuiSetBind(oPC, nToken, "btn_paste_all_summons_event", JsonBool(TRUE));
     oAssoc = GetAssociate(ASSOCIATE_TYPE_DOMINATED, oPC);
     NuiSetBind(oPC, nToken, "btn_paste_dominated_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
     for(nIndex = 1; nIndex < AI_MAX_HENCHMAN; nIndex++)

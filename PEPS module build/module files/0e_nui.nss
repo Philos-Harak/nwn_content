@@ -1164,7 +1164,7 @@ void main()
     {
         if(sEvent == "click")
         {
-            int nIndex, nAssociateType = GetAssociateType(oAssociate);
+            int nTypeIndex, nIndex, nAssociateType = GetAssociateType(oAssociate);
             string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
             object oAssoc;
             string sAssocType;
@@ -1177,20 +1177,22 @@ void main()
             if(sElem == "btn_paste_all")
             {
                 // Check all non-henchman associates.
-                for(nIndex = 2; nIndex < 6; nIndex++)
+                for(nTypeIndex = 2; nTypeIndex < 6; nTypeIndex++)
                 {
-                    if(nAssociateType != nIndex)
+                    nIndex = 1;
+                    oAssoc = GetAssociate(nTypeIndex, oPC, nIndex);
+                    while(oAssoc != OBJECT_INVALID)
                     {
-                        oAssoc = GetAssociate(nIndex, oPC);
-                        sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                        ai_SetAssociateDbJson(oPC, sAssocType, "modes", jModes);
-                        ai_SetAssociateDbJson(oPC, sAssocType, "buttons", jButtons);
-                        ai_SetAssociateDbJson(oPC, sAssocType, "aidata", jAIData);
-                        ai_SetAssociateDbJson(oPC, sAssocType, "lootfilters", jLootFilters);
-                        SetLocalString(oAssoc, AI_COMBAT_SCRIPT, sCombatScript);
-                        SetLocalString(oAssoc, AI_DEFAULT_SCRIPT, sDefaultScript);
-                        if(oAssoc != OBJECT_INVALID)
+                        oAssoc = GetAssociate(nTypeIndex, oPC, nIndex);
+                        if(oAssoc != oAssociate)
                         {
+                            sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "modes", jModes);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "buttons", jButtons);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "aidata", jAIData);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "lootfilters", jLootFilters);
+                            SetLocalString(oAssoc, AI_COMBAT_SCRIPT, sCombatScript);
+                            SetLocalString(oAssoc, AI_DEFAULT_SCRIPT, sDefaultScript);
                             // Clear the creatures Perception distance so we can
                             // repopulate the local variables.
                             SetLocalFloat(oAssoc, AI_ASSOC_PERCEPTION_DISTANCE, 0.0);
@@ -1201,6 +1203,7 @@ void main()
                                 ai_CreateWidgetNUI(oPC, oAssoc);
                             }
                         }
+                        nIndex++;
                     }
                 }
                 // Check all of our henchman.
@@ -1257,22 +1260,23 @@ void main()
                 }
                 return;
             }
-            else if(sElem == "btn_paste_familiar") nIndex = ASSOCIATE_TYPE_FAMILIAR;
-            else if(sElem == "btn_paste_companion") nIndex = ASSOCIATE_TYPE_ANIMALCOMPANION;
-            else if(sElem == "btn_paste_summons") nIndex = ASSOCIATE_TYPE_SUMMONED;
-            else if(sElem == "btn_paste_dominated") nIndex = ASSOCIATE_TYPE_DOMINATED;
-            if(nIndex > 1 && nIndex < 6)
+            else if(sElem == "btn_paste_familiar") nTypeIndex = ASSOCIATE_TYPE_FAMILIAR;
+            else if(sElem == "btn_paste_companion") nTypeIndex = ASSOCIATE_TYPE_ANIMALCOMPANION;
+            else if(GetStringLeft(sElem, 17) == "btn_paste_summons") nTypeIndex = ASSOCIATE_TYPE_SUMMONED;
+            else if(sElem == "btn_paste_dominated") nTypeIndex = ASSOCIATE_TYPE_DOMINATED;
+            if(nTypeIndex != 0)
             {
-                oAssoc = GetAssociate(nIndex, oPC);
-                sAssocType = ai_GetAssociateType(oPC, oAssoc);
-                ai_SetAssociateDbJson(oPC, sAssocType, "modes", jModes);
-                ai_SetAssociateDbJson(oPC, sAssocType, "buttons", jButtons);
-                ai_SetAssociateDbJson(oPC, sAssocType, "aidata", jAIData);
-                ai_SetAssociateDbJson(oPC, sAssocType, "lootfilters", jLootFilters);
-                SetLocalString(oAssoc, AI_COMBAT_SCRIPT, sCombatScript);
-                SetLocalString(oAssoc, AI_DEFAULT_SCRIPT, sDefaultScript);
+                nIndex = StringToInt(GetStringRight(sElem, 1));
+                oAssoc = GetAssociate(nTypeIndex, oPC, nIndex);
                 if(oAssoc != OBJECT_INVALID)
                 {
+                    sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                    ai_SetAssociateDbJson(oPC, sAssocType, "modes", jModes);
+                    ai_SetAssociateDbJson(oPC, sAssocType, "buttons", jButtons);
+                    ai_SetAssociateDbJson(oPC, sAssocType, "aidata", jAIData);
+                    ai_SetAssociateDbJson(oPC, sAssocType, "lootfilters", jLootFilters);
+                    SetLocalString(oAssoc, AI_COMBAT_SCRIPT, sCombatScript);
+                    SetLocalString(oAssoc, AI_DEFAULT_SCRIPT, sDefaultScript);
                     // Clear the creatures Perception distance so we can
                     // repopulate the local variables.
                     SetLocalFloat(oAssoc, AI_ASSOC_PERCEPTION_DISTANCE, 0.0);
@@ -1284,6 +1288,38 @@ void main()
                     }
                     ai_SendMessages(GetName(oAssociate) + "'s settings have been copied to " + GetName(oAssoc) + ".", AI_COLOR_GREEN, oPC);
                 }
+                return;
+            }
+            else if(sElem == "btn_paste_all_summons")
+            {
+                for(nIndex = 1; nIndex < 10; nIndex++)
+                {
+                    oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
+                    if(oAssoc != OBJECT_INVALID)
+                    {
+                        if(oAssoc != oAssociate)
+                        {
+                            sAssocType = ai_GetAssociateType(oPC, oAssoc);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "modes", jModes);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "buttons", jButtons);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "aidata", jAIData);
+                            ai_SetAssociateDbJson(oPC, sAssocType, "lootfilters", jLootFilters);
+                            SetLocalString(oAssoc, AI_COMBAT_SCRIPT, sCombatScript);
+                            SetLocalString(oAssoc, AI_DEFAULT_SCRIPT, sDefaultScript);
+                            // Clear the creatures Perception distance so we can
+                            // repopulate the local variables.
+                            SetLocalFloat(oAssoc, AI_ASSOC_PERCEPTION_DISTANCE, 0.0);
+                            ai_CheckAssociateData(oPC, oAssoc, sAssocType);
+                            if(!ai_GetWidgetButton(oPC, BTN_WIDGET_OFF, oAssoc, sAssocType))
+                            {
+                                NuiDestroy(oPC, NuiFindWindow(oPC, sAssocType + AI_WIDGET_NUI));
+                                ai_CreateWidgetNUI(oPC, oAssoc);
+                            }
+                        }
+                    }
+                    else break;
+                }
+                ai_SendMessages(GetName(oAssociate) + "'s settings have been copied to all summons.", AI_COLOR_GREEN, oPC);
             }
         }
         return;

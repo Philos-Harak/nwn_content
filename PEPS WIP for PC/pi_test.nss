@@ -47,7 +47,7 @@ void main()
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Jump To", "btn_jump", 150.0f, 20.0f, -1.0, "btn_jump_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButton(jRow, "Kill In Area", "btn_kill_area", 150.0f, 20.0f, -1.0, "btn_kill_area_tooltip");
+    jRow = CreateButton(jRow, "Set Immortal", "btn_immortal", 150.0f, 20.0f, -1.0, "btn_immortal_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     jRow = CreateButton(jRow, "Resurrect", "btn_resurrect", 150.0f, 20.0f, -1.0, "btn_ressurrect_tooltip");
@@ -86,8 +86,8 @@ void main()
     NuiSetBind(oPC, nToken, "btn_damage_tooltip", JsonString("  Damage target creature for 5 hitpoints."));
     NuiSetBind(oPC, nToken, "btn_jump_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_jump_tooltip", JsonString("  Jump to target location."));
-    NuiSetBind(oPC, nToken, "btn_kill_area_event", JsonBool(TRUE));
-    NuiSetBind(oPC, nToken, "btn_kill_area_tooltip", JsonString("  Kills all creatures in target area."));
+    NuiSetBind(oPC, nToken, "btn_immortal_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_immortal_tooltip", JsonString("  Toggle Creature Immortal."));
     NuiSetBind(oPC, nToken, "btn_resurrect_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_resurrect_tooltip", JsonString("  Resurrects target creatures."));
 }

@@ -1481,6 +1481,8 @@ int ai_ShouldIPickItUp(object oCreature, object oItem)
         if(ai_GetLootFilter(oCreature, AI_LOOT_THIEVES_TOOLS)) nMinGold = GetLocalInt(oCreature, "AI_MIN_GOLD_21");
         else return FALSE;
     }
+    // We don't want to pick up any creatures skins! Ewwwww.
+    else if(nBaseItem == BASE_ITEM_CREATUREITEM) return FALSE;
     else if(ai_GetIsWeapon(oItem))
     {
         if(ai_GetLootFilter(oCreature, AI_LOOT_WEAPONS)) nMinGold = GetLocalInt(oCreature, "AI_MIN_GOLD_16");
