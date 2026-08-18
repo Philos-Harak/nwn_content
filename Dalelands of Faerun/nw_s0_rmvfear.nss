@@ -73,6 +73,7 @@ void main()
         // Set the save bonus and link with effects.
         eSave = EffectSavingThrowIncrease (SAVING_THROW_WILL, Spell.iResult, SAVING_THROW_TYPE_FEAR);
         eLink = EffectLinkEffects (eDur, eSave);
+        eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
         // Apply the linked effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         // Apply the impact effect.

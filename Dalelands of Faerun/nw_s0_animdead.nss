@@ -43,11 +43,14 @@ void main()
     if(GetSpellId() == 623) Spell.iClass = CLASS_TYPE_PALE_MASTER;
     else Spell.iClass = GetLastSpellCastClass();
     Spell = GetCasterTotalLevel(Spell);
-    // We add +25 to the value so 1/2's are taken as well.
-    int nComponentAmount = Spell.iCasterLevel * 25 + 25;
-    Spell.sArcaneComponent = "onyx";
-    Spell.sDivineComponent = "onyx";
-    Spell.iCompAmount = nComponentAmount;
+    // Only use the component if they are casting the real spell, not a special ability.
+    if(GetSpellId() == SPELL_ANIMATE_DEAD) 
+    {
+        Spell.sArcaneComponent = "onyx";
+        Spell.sDivineComponent = "onyx";
+    }
+    Spell.sEnhancingComp = "chrysocolla_dust";
+    Spell.iCompAmount = Spell.iCasterLevel;
     // Setup the spell.
     Spell = SetSpell(Spell);
     // Check to see if we should still fire off the spell.
@@ -55,7 +58,16 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    string sSkeleton, sZombie;
+    string sSkeleton = "a_skeleton", sSkeleton2 = "a2_skeleton";
+    string sZombie = "a_zombie", sZombie2 = "a2_zombie";
+    // Chrysocolla Dust Enhancing component increase hit dice by +1.
+    if (Spell.sEnhancingComp == "TRUE")
+    {
+        sSkeleton = "a2_skeleton";
+        sSkeleton2 = "a3_skeleton";
+        sZombie = "a2_zombie";
+        sZombie2 = "a3_zombie";
+    }
     float fDistance;
     effect eSummon = EffectVisualEffect(VFX_FNF_SUMMON_UNDEAD);
     effect eCenter = EffectVisualEffect(VFX_FNF_LOS_EVIL_20);
@@ -72,13 +84,13 @@ void main()
         {
             if(d100() > 50)
             {
-                oCreature = CreateObject(OBJECT_TYPE_CREATURE, "a2_skeleton", Spell.lTarget);
+                oCreature = CreateObject(OBJECT_TYPE_CREATURE, sSkeleton2, Spell.lTarget);
                 if(GetIsCharacter(Spell.oCaster)) AddAnimateDeadToParty(Spell.oCaster, oCreature, nTotalHD);
                 nCasterLevel -= 2;
             }
             else
             {
-                oCreature = CreateObject(OBJECT_TYPE_CREATURE, "a2_zombie", Spell.lTarget);
+                oCreature = CreateObject(OBJECT_TYPE_CREATURE, sZombie2, Spell.lTarget);
                 if(GetIsCharacter(Spell.oCaster)) AddAnimateDeadToParty(Spell.oCaster, oCreature, nTotalHD);
                 nCasterLevel -= 4;
             }
@@ -87,13 +99,13 @@ void main()
         {
             if(nCasterLevel == 1 || d100() > 50)
             {
-                oCreature = CreateObject(OBJECT_TYPE_CREATURE, "a_skeleton", Spell.lTarget);
+                oCreature = CreateObject(OBJECT_TYPE_CREATURE, sSkeleton, Spell.lTarget);
                 if(GetIsCharacter(Spell.oCaster)) AddAnimateDeadToParty(Spell.oCaster, oCreature, nTotalHD);
                 nCasterLevel -= 1;
             }
             else
             {
-                oCreature = CreateObject(OBJECT_TYPE_CREATURE, "a_zombie", Spell.lTarget);
+                oCreature = CreateObject(OBJECT_TYPE_CREATURE, sZombie, Spell.lTarget);
                 if(GetIsCharacter(Spell.oCaster)) AddAnimateDeadToParty(Spell.oCaster, oCreature, nTotalHD);
                 nCasterLevel -= 2;
             }

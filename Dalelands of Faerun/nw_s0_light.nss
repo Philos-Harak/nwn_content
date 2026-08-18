@@ -70,6 +70,7 @@ void main()
         // Get the duration of the spell.
         Spell = GetDuration (Spell);
         effect eVisual = EffectVisualEffect (VFX_DUR_LIGHT_WHITE_20);
+        eVisual = SetEffectCasterLevel(eVisual, Spell.iCasterLevel);
         effect eImpact = EffectVisualEffect (Spell.iImpact);
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);

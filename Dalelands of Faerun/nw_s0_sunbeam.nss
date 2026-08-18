@@ -40,11 +40,9 @@ void main()
     Spell.iDescriptor = DESC_LIGHT;
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 40.0f;
-    Spell.iTargetType = TARGET_TYPE_ALL;
+    Spell.iTargetType = TARGET_TYPE_ENEMIES;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
-    Spell.iDurationType = DURATION_TYPE_ROUNDS;
-    Spell.iDuration = 1;
-    Spell.iDurPerLvl = 1;
+    Spell.iDurationType = DURATION_TYPE_INSTANT;
     Spell.iSpellResistance = TRUE;
     Spell.iSaveType = SAVING_THROW_TYPE_DIVINE;
     Spell.iDamageType = DAMAGE_TYPE_DIVINE;
@@ -70,6 +68,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     // Link effects
     effect eLink = EffectLinkEffects (eBlind, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Get Number of beams.
     iBeams = Spell.iCasterLevel / 3;
     if (iBeams < 1) iBeams = 1;
@@ -134,10 +133,11 @@ void main()
             if (Spell.iResult > 0)
             {
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply the VFX impact and damage effect
                 if (sTag == "vampire") DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDeathImpact, Spell.oAreaTarget));
                 else DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-                DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
+                DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
             }
         }
         // Sets the beam to start from the caster for each beam.

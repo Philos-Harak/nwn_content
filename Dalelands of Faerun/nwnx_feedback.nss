@@ -26,7 +26,7 @@ const int NWNX_FEEDBACK_COMBATLOG_SAVING_THROW        = 7;  // Saving_Throw: <ch
 const int NWNX_FEEDBACK_COMBATLOG_CAST_SPELL          = 8;  // Cast_Spell: <charname> casts <spell name> : Spellcraft check *failure* / *success*
 const int NWNX_FEEDBACK_COMBATLOG_USE_SKILL           = 9;  // Use_Skill: <charname> : <skill name> : *success* / *failure* : (<skill roll> + <skill modifier> = <modified total> vs <DC> )
 const int NWNX_FEEDBACK_COMBATLOG_SPELL_RESISTANCE    = 10; // Spell_Resistance: <charname> : Spell Resistance <SR value> : *success* / *failure*
-const int NWNX_FEEDBACK_COMBATLOG_FEEDBACK            = 11; // Reason skill/feat/ability failed, SendMessageToPC() NOTE: This hides ALL feedback messages, to hide individual messages use NWNX_Feedback_SetFeedbackMessageHidden()
+const int NWNX_FEEDBACK_COMBATLOG_FEEDBACK            = 11; // Reason skill/feat/ability failed, SendMessage To PC() NOTE: This hides ALL feedback messages, to hide individual messages use NWNX_Feedback_SetFeedbackMessageHidden()
 const int NWNX_FEEDBACK_COMBATLOG_COUNTERSPELL        = 12; // Counterspel: <charname> casts <spell name> : *spell countered by* : <charname> casting <spell name>
 const int NWNX_FEEDBACK_COMBATLOG_TOUCHATTACK         = 13; // TouchAttack: <charname> attempts <melee/ranged touch attack> on <charname> : *hit/miss/critical* : (<attack roll> + <attack mod> = <modified roll>)
 const int NWNX_FEEDBACK_COMBATLOG_INITIATIVE          = 14; // Initiative: <charname> : Initiative Roll : <total> : (<roll> + <modifier> = <total>)

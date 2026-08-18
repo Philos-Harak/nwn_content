@@ -56,6 +56,7 @@ void main()
     }
     // Create effect.
     effect eDisease = EffectDisease (iDisease);
+    eDisease = SetEffectCasterLevel(eDisease, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

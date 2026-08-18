@@ -47,6 +47,7 @@ void main()
     else
     {
         effect eAOE = EffectAreaOfEffect (AOE_PER_GREASE);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         effect eCenter = EffectVisualEffect (VFX_FNF_GAS_EXPLOSION_GREASE);
         ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
         ApplyEffectAtLocation (Spell.iDurationType, eAOE, Spell.lTarget, Spell.fDuration);

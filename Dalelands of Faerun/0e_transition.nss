@@ -7,6 +7,8 @@
  0_TransitionTag: Will use this variable if Param is "".
  0_TransitionTag_Fail: Where to send someone if they fail.
      If not set then uses original transition.
+ 0_Var_Required: If set then it will check for the variable in the placeable with the same name as the value of this variable.
+     If the variable is not set to 1 then it will fail.
  0_Skill Uses the skill number linked to the skill 2da to make a skill check.
  0_DC: If set will use this DC instead of 9 + Area Level.
  0_Tool: If set to an item it will give a bonus to the skill check based on that item.
@@ -84,22 +86,36 @@ void SkillTransition (object oPC, object oPlaceable)
             SendMessages (sMessage, COLOR_GREEN, oPC, FALSE, FALSE);
         }
    }
-   int nEffect = GetLocalInt(oPlaceable, "0_Effect");
-   if(nEffect)
+   string sVariable = GetLocalString(oPlaceable, "0_Var_Required");
+   if(sVariable != "")
    {
-        float fDelay;
-        if(nEffect == -1) fDelay = PortalEffect(oPlaceable, oPC);
-        else if(nEffect == -2) ReturnToPrimeEffect(OBJECT_INVALID, oPC);
-        else if(nEffect == -3) fDelay = RodOfRecallEffect(oPC);
-        else
-        {
-            effect eVisual = EffectVisualEffect(nEffect);
-            ApplyEffectToObject(DURATION_TYPE_INSTANT, eVisual, oPC);
-        }
-        DelayCommand(fDelay, Transition(oPC));
-        return;
+       object oItem = GetCreatureHasItem(oPC, "players_book");
+       if(GetLocalInt(oItem, sVariable))
+       {
+            SendMessages(GetLocalString(oPlaceable, "0_SuccessText"), COLOR_GREEN, oPC);
+       }
+       else
+       {
+            SendMessages(GetLocalString(oPlaceable, "0_FailText"), COLOR_RED, oPC);
+            return;
+       }
+       int nEffect = GetLocalInt(oPlaceable, "0_Effect");
+       if(nEffect)
+       {
+            float fDelay;
+            if(nEffect == -1) fDelay = PortalEffect(oPlaceable, oPC);
+            else if(nEffect == -2) ReturnToPrimeEffect(OBJECT_INVALID, oPC);
+            else if(nEffect == -3) fDelay = RodOfRecallEffect(oPC);
+            else
+            {
+                effect eVisual = EffectVisualEffect(nEffect);
+                ApplyEffectToObject(DURATION_TYPE_INSTANT, eVisual, oPC);
+            }
+            DelayCommand(fDelay, Transition(oPC));
+            return;
+       }
    }
-   Transition (oPC);
+   Transition(oPC);
 }
 
 // Delay transition until the creature is at the transition location.
@@ -134,33 +150,33 @@ void main ()
     object oPC = GetPlaceableLastClickedBy ();
     string sTag = GetLocalString (OBJECT_SELF, "0_TransitionTag");
     //Debug("0e_transition", "117", "sTag: " + sTag);
-    DeleteMoveVariables (oPC);
+    DeleteMoveVariables(oPC);
     // Transition function uses Move_Tran to get the transitioning object.
-    SetLocalObject (oPC, "Move_Tran", OBJECT_SELF);
+    SetLocalObject(oPC, "Move_Tran", OBJECT_SELF);
     // Check distance as we don't want to transition until they are close.
     float fDistance = GetDistanceToObject (oPC);
-    if (fDistance > 2.0f)
+    if(fDistance > 2.0f)
     {
         // Check to see if we are already looking to move.
-        int nCount = GetLocalInt (oPC, "Move_Count");
+        int nCount = GetLocalInt(oPC, "Move_Count");
         // If the original count was 0 then we need to start a
         // wait for transition function for this PC Clear if the counter is 30+.
-        if (nCount > 29)
+        if(nCount > 29)
         {
-            SetLocalInt (oPC, "Move_Count", 0);
+            SetLocalInt(oPC, "Move_Count", 0);
             nCount = 0;
         }
-        if (nCount == 0)
+        if(nCount == 0)
         {
-            //Debug ("0e_oi_walk_wp_b", "66", "Running WaitToTransition (oClicker)!");
-            WaitToSkillTransition (oPC, OBJECT_SELF);
+            //Debug("0e_oi_walk_wp_b", "66", "Running WaitToTransition (oClicker)!");
+            WaitToSkillTransition(oPC, OBJECT_SELF);
         }
         // If it is counting then we need to clear the count since we have
         // clicked a new location. The old wait for transition will still run.
         else
         {
-            SetLocalInt (oPC, "Move_Count", 0);
+            SetLocalInt(oPC, "Move_Count", 0);
         }
     }
-    else SkillTransition (oPC, OBJECT_SELF);
+    else SkillTransition(oPC, OBJECT_SELF);
 }

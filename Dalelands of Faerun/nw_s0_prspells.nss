@@ -27,9 +27,9 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
-    Spell.sArcaneComponent = "0_diamond_dust";
-    Spell.sDivineComponent = "0_diamond_dust";
-    Spell.iCompAmount = 500;
+    Spell.sArcaneComponent = "diamond_dust";
+    Spell.sDivineComponent = "diamond_dust";
+    Spell.iCompAmount = 20; // 500gp worth of Diamond Dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 10.0f;
     Spell.iLineOfSight = FALSE;
@@ -63,6 +63,7 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eSave, eDuration);
     eLink = EffectLinkEffects(eLink, eVisual);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Make the spell centered on the caster.
     Spell.lTarget = GetLocation (Spell.oCaster);
     //Get the spells target(s).
@@ -76,7 +77,7 @@ void main()
             // Fire spell cast at event for target
             SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
             // Remove any previously cast spell on this target.
-            RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+            RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
             // Apply VFX impact
             DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             // Apply the effect.

@@ -39,6 +39,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     //Spell.sArcaneComponent = "0_jade_circlet";
+    Spell.sEnhancingComp = "sarbossa_dust";
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -57,6 +58,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect ePolymorph;
     int iPolymorph;
@@ -67,6 +69,7 @@ void main()
     else if (Spell.iSpellID == 395) iPolymorph = POLYMORPH_TYPE_DEATH_SLAAD;
     else if (Spell.iSpellID == 396) iPolymorph = POLYMORPH_TYPE_IRON_GOLEM;
     ePolymorph = EffectPolymorph (iPolymorph);
+    ePolymorph = SetEffectCasterLevel(ePolymorph, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

@@ -47,6 +47,7 @@ void main()
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eDur2 = EffectVisualEffect (249);
     effect eLink = EffectLinkEffects (eSR, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -54,7 +55,7 @@ void main()
         //Signal spell cast at event
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply the effects.
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eDur2, Spell.oAreaTarget, 6.0));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));

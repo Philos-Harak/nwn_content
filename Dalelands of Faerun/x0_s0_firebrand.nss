@@ -48,7 +48,7 @@ void main()
     Spell.iSaveType = SAVING_THROW_TYPE_FIRE;
     Spell.iSaveHalf = TRUE;
     Spell.iDamageType = DAMAGE_TYPE_FIRE;
-    Spell.iModNumOfDice = 1;
+    Spell.iModNumOfDice = 1;                         ``
     Spell.iModifierDie = 6;
     Spell.iModDicePerLvl = 1;
     Spell.iMaxModNumOfDice = 15;
@@ -57,17 +57,13 @@ void main()
     Spell = SetSpell (Spell);
     // Check to see if we should still fire off the spell.
     if (Spell.iSpellID == STOP_SPELL) return;
-    // Get the duration of the spell, sets Spell.fDuration.
-    Spell = GetDuration (Spell);
-    // Get the result for the effect, sets Spell.iResult.
-    Spell = GetModifier (Spell);
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
     int iNumOfMissles = Spell.iCasterLevel;
-    if (iNumOfMissles > 15) iNumOfMissles = 15;
-    MissileStorm (Spell, iNumOfMissles, VFX_IMP_MIRV_FLAME, TRUE, FALSE);
-    CleanUpSpell (Spell);
+    if(iNumOfMissles > 15) iNumOfMissles = 15;
+    MissileStorm(Spell, iNumOfMissles, VFX_IMP_MIRV_FLAME, TRUE, FALSE, TRUE);
+    CleanUpSpell(Spell);
 }
 
 

@@ -15,7 +15,7 @@ Spell Resistance: Yes
 The crushing hand gets one grapple attack per round.
 Its attack bonus to make contact equals your caster level + your Intelligence,
 Wisdom, or Charisma modifier (for wizards, clerics, and sorcerers, respectively),
-+12 for the hand’s Strength score (35), -1 for being Large. Its grapple bonus is
++12 for the hand's Strength score (35), -1 for being Large. Its grapple bonus is
 this same figure, except with a +4 modifier for being Large instead of -1. The
 hand crushes the creature it has grappled for 2d6+12 damage.If the creature dies
 it will move to the nearest enemy.
@@ -230,6 +230,7 @@ void CrushingHandDamage(struct stSpell Spell, object oTarget)
     // Get the result for the effect, sets Spell.iResult.
     Spell = GetModifier (Spell);
     effect eDmg = EffectDamage(Spell.iResult, Spell.iDamageType);
+    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
     effect eVisual = EffectVisualEffect (VFX_IMP_ACID_L);
     effect eVisual2 = EffectVisualEffect (VFX_IMP_BIGBYS_FORCEFUL_HAND);
     ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, oTarget);

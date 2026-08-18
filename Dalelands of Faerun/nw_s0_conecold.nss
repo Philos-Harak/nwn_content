@@ -72,6 +72,7 @@ void main()
         {
             // Set the damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             // Apply effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
             // Apply impact effect.

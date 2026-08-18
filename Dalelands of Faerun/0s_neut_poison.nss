@@ -28,6 +28,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.iDivineFocus = TRUE;
+    Spell.sEnhancingComp = "pearl_dust";
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iDurationType = DURATION_TYPE_MINUTES;
     Spell.iDuration = 10;
@@ -42,6 +43,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // Create effects.
     effect eProt = EffectImmunity (IMMUNITY_TYPE_POISON);
     //Create visual effects.
@@ -49,6 +51,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eDuration, eProt);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -56,7 +59,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply the effect
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oTarget, Spell.fDuration));
         // Apply visual effect

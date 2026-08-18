@@ -56,6 +56,7 @@ void main()
     // Link effects.
     effect eLoopLink;
     effect eLink = EffectLinkEffects (eStrength, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -63,7 +64,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         RemoveTempHitPoints ();
         // Calculate attacks.
         int iTotalCharacterLevel = GetCharacterLevels (Spell.oCaster);
@@ -91,8 +92,9 @@ void main()
         // Link effects.
         eLoopLink = EffectLinkEffects (eLink, eAttack);
         eLoopLink = EffectLinkEffects (eLoopLink, eAttackMod);
+        eLoopLink = SetEffectCasterLevel(eLoopLink, Spell.iCasterLevel);
         //Apply the armor bonuses and the VFX impact
-        DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+        DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLoopLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eHP, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         //Get the spells target(s).

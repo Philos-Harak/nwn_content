@@ -65,6 +65,7 @@ void main()
     effect eLink = EffectLinkEffects (eHaste, eDuration);
     eLink = EffectLinkEffects (eLink, eAttack);
     eLink = EffectLinkEffects (eLink, eReflex);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid (Spell.oAreaTarget) && iCounter < Spell.iCasterLevel)
@@ -72,20 +73,10 @@ void main()
         //Signal spell cast at event
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Remove other spells that effect haste and speed.
-        if (GetHasSpellEffect (SPELL_EXPEDITIOUS_RETREAT, Spell.oAreaTarget))
-        {
-            RemoveSpellEffects (SPELL_EXPEDITIOUS_RETREAT, Spell.oCaster, Spell.oAreaTarget);
-        }
-        if (GetHasSpellEffect (647/*Epic_Blinding_Speed*/, Spell.oAreaTarget))
-        {
-            RemoveSpellEffects (647/*Epic_Blinding_Speed*/, Spell.oCaster, Spell.oAreaTarget);
-        }
-        if (GetHasSpellEffect (SPELL_HASTE, Spell.oAreaTarget))
-        {
-            RemoveSpellEffects (SPELL_HASTE, Spell.oCaster, Spell.oAreaTarget);
-        }
+        RemoveSpellEffects (SPELL_EXPEDITIOUS_RETREAT, Spell.oAreaTarget);
+        RemoveSpellEffects (647/*Epic_Blinding_Speed*/, Spell.oCaster, Spell.oAreaTarget);
         // Apply effects.
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

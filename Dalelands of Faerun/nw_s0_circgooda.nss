@@ -8,11 +8,14 @@
 void main()
 {
     object oTarget = GetEnteringObject ();
-    if (GetIsFriend (oTarget, GetAreaOfEffectCreator ()))
+    object oCreator = GetAreaOfEffectCreator ();
+    if (GetIsFriend (oTarget, oCreator))
     {
-        effect eAC = EffectACIncrease (2, AC_DEFLECTION_BONUS);
+        int nACBonus = GetLocalInt(oCreator, "0_PROT_AC_BONUS");
+        int nSaveBonus = GetLocalInt(oCreator, "0_PROT_SAVE_BONUS");
+        effect eAC = EffectACIncrease (nACBonus, AC_DEFLECTION_BONUS);
         eAC = VersusAlignmentEffect (eAC, ALIGNMENT_ALL, ALIGNMENT_GOOD);
-        effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, 2);
+        effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, nSaveBonus);
         eSave = VersusAlignmentEffect (eSave, ALIGNMENT_ALL, ALIGNMENT_GOOD);
         effect eImmune = EffectImmunity (IMMUNITY_TYPE_MIND_SPELLS);
         eImmune = VersusAlignmentEffect (eImmune,ALIGNMENT_ALL, ALIGNMENT_GOOD);

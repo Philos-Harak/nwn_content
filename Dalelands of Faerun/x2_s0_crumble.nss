@@ -80,6 +80,7 @@ void DoCrumble (struct stSpell Spell)
     Spell = GetModifier (Spell);
     // Create effect.
     effect eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
     // Create visual effects.
     effect eMissile = EffectVisualEffect (477); /*VFX_FNF_MYSTICAL_EXPLOSION*/
     effect eImpact = EffectVisualEffect (Spell.iImpact);

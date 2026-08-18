@@ -70,6 +70,7 @@ void main()
     eNegLink = EffectLinkEffects(eNegLink, eNegDam);
     eNegLink = EffectLinkEffects(eNegLink, eNegSkill);
     eNegLink = EffectLinkEffects(eNegLink, eNegDur);
+    eNegLink = SetEffectCasterLevel(eNegLink, Spell.iCasterLevel);
     // Create visual effects.
     effect ePosVis = EffectVisualEffect(VFX_IMP_HOLY_AID);
     effect eNegVis = EffectVisualEffect(VFX_IMP_DOOM);
@@ -81,7 +82,7 @@ void main()
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         if(GetIsFriend (Spell.oAreaTarget, Spell.oCaster))
         {
             //Signal spell cast at event as friendly.

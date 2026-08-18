@@ -49,7 +49,7 @@ int StartingConditional()
         }
     }
     else if(sInput == "Has_Master") return GetMaster(oHenchman) != OBJECT_INVALID;
-    else if(sInput == "Have_An_Open_Henchman_Slot" && !HasMaxNumberOfHenchman(oPC)) return TRUE;
+    else if(sInput == "Have_An_Open_Henchman_Slot" && !HasMaxNumberOfHenchman(oPC, TRUE)) return TRUE;
     else if(sInput == "Summons_With_No_Master")
     {
         if(GetLocalInt(oHenchman, "0_Summon_ID"))

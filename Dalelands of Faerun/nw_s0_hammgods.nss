@@ -69,6 +69,7 @@ void main()
     // Link effects
     effect eLink = EffectLinkEffects (eMind, eDaze);
     eLink = EffectLinkEffects (eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -91,6 +92,7 @@ void main()
         {
             // Set the damage effect
             eDamage = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
             // Apply effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDamage, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

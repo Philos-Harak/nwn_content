@@ -10,8 +10,8 @@ Range:  Personal
 Target: You
 Duration:   1 round/level
 
-You become a virtual fighting machine—stronger, tougher, faster, and more skilled
-in combat. Your mind-set changes so that you relish combat and you can’t cast spells,
+You become a virtual fighting machine stronger, tougher, faster, and more skilled
+in combat. Your mind-set changes so that you relish combat and you can't cast spells,
 even from magic items.
 
 You gain a +4 enhancement bonus to Strength, Dexterity, and Constitution, a +4
@@ -23,7 +23,7 @@ You lose your spellcasting ability, including your ability to use spell trigger
 or spell completion magic items, just as if the spells were no longer on your class list.
 
 Material Component
-A potion of bull’s strength, which you drink (and whose effects are subsumed by the spell effects).
+A potion of bull's strength, which you drink (and whose effects are subsumed by the spell effects).
 /*///////////////////////////////////////////////
 #include "0i_spells"
 #include "nwnx_creature"
@@ -36,7 +36,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = "p_bullsstrength";
-    Spell.iCompAmount = -1;
+    Spell.iCompAmount = 1;
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iLineOfSight = TRUE;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
@@ -67,6 +67,36 @@ void main()
         WriteTimestampedLogEntry (GetName(OBJECT_SELF) + "[" + GetTag (OBJECT_SELF) +"] tried to cast Tensors Transformation. Bad! Remove that spell from the creature");
         return;
     }
+    int nACBonus;
+    // Do a special check for enhancing components in one inventory pass.
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        int nEnhancedAmount, nEnhancedLimit, nStack;
+        int nAlestoneDust, nCarnelianDust, nCrownOfSilverDust, nJasmalDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nJasmalDust && GetTag(oItem) == "jasmal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nJasmalDust = TRUE;
+                nACBonus += 1;
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nACBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase AC by +" + IntToString(nACBonus) + "!", COLOR_GREEN, oObject);
+        }
+    }
+    nACBonus += Spell.iResult;
     int nTotalLevels, nEpicBAB;
     object oSkin;
     itemproperty ipFeat = ItemPropertyBonusFeat (IP_CONST_FEAT_WEAPON_PROF_SIMPLE);
@@ -80,18 +110,20 @@ void main()
     effect eStrength = EffectAbilityIncrease (ABILITY_STRENGTH, Spell.iResult);
     effect eDexterity = EffectAbilityIncrease (ABILITY_DEXTERITY, Spell.iResult);
     effect eConstitution = EffectAbilityIncrease (ABILITY_CONSTITUTION, Spell.iResult);
-    effect eAC = EffectACIncrease (Spell.iResult, AC_NATURAL_BONUS);
     effect eFortitude = EffectSavingThrowIncrease (SAVING_THROW_FORT, Spell.iResult + 1);
+    effect eAC = EffectACIncrease (nACBonus, AC_NATURAL_BONUS);
     // Link effects.
     effect eLink = EffectLinkEffects (eStrength, eDuration);
     eLink = EffectLinkEffects(eLink, eDexterity);
     eLink = EffectLinkEffects(eLink, eConstitution);
     eLink = EffectLinkEffects(eLink, eAC);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Setup an expire script passing data in a string array.
     // Setup an expire script to remove spells non-effects effects.
     effect eScript = EffectRunScript("", "0s_tenstrans_r");
     // Link the effects
     eFortitude = EffectLinkEffects (eFortitude, eScript);
+    eFortitude = SetEffectCasterLevel(eFortitude, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -99,7 +131,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects(Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects(Spell.iSpellID, Spell.oAreaTarget);
         ExecuteScript("0s_tenstrans_r", Spell.oAreaTarget);
         // Add attacks.
         nTotalLevels = GetHitDice(Spell.oAreaTarget);

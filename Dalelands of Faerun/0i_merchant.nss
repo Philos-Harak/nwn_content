@@ -37,7 +37,7 @@ int GetLevelForMerchant(object oStore)
     int nLevel = GetLocalInt (oStore, "0_Level");
     if(nLevel == 0) nLevel = GetLocalInt(GetArea (oStore), "0_Area_Level");
     if(nLevel < 3) return 3;
-    else if(nLevel > 20) return 20;
+    else if(nLevel > 40) return 40;
     return nLevel;
 }
 

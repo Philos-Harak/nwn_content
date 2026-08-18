@@ -54,6 +54,7 @@ void main()
     effect eAC = EffectACIncrease (Spell.iResult, AC_VS_DAMAGE_TYPE_ALL);
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     effect eLink = EffectLinkEffects(eAC, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -63,7 +64,7 @@ void main()
         if(GetRacialType(Spell.oAreaTarget) == RACIAL_TYPE_UNDEAD)
         {
             // Remove any previously cast spell on this target.
-            RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+            RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
             //Apply the armor bonuses and the VFX impact
             DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDuration, eLink, Spell.oAreaTarget, Spell.fDuration));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

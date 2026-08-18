@@ -87,6 +87,7 @@ void main()
                 Spell = GetModifier (Spell);
                 eSR = EffectSpellResistanceDecrease (Spell.iResult);
                 eLink = EffectLinkEffects (eSR, eDuration);
+                eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
                 //Apply reduce SR effects
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eLink, Spell.oAreaTarget, Spell.fDuration));
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact2, Spell.oAreaTarget));

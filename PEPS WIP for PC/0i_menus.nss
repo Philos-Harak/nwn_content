@@ -3544,7 +3544,7 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     int nIndex, nMultipleSummons;
     string sAssocName;
     object oAssoc;
-    for(nIndex = 1; nIndex < 10; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_SUMMONS; nIndex++)
     {
         oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
         if(oAssoc != OBJECT_INVALID)
@@ -3612,7 +3612,7 @@ void ai_CreateCopySettingsNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "btn_paste_familiar_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
     oAssoc = GetAssociate(ASSOCIATE_TYPE_ANIMALCOMPANION, oPC);
     NuiSetBind(oPC, nToken, "btn_paste_companion_event", JsonBool(oAssoc != oAssociate && oAssoc != OBJECT_INVALID));
-    for(nIndex = 1; nIndex < 10; nIndex++)
+    for(nIndex = 1; nIndex <= AI_MAX_SUMMONS; nIndex++)
     {
         oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
         if(oAssoc != OBJECT_INVALID)

@@ -52,6 +52,7 @@ void main()
     // Link Effects.
     effect eLink = EffectLinkEffects(eMind, eDom);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     int iRacial;
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);

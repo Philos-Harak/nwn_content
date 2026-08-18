@@ -15,7 +15,7 @@ Spell Resistance:   Yes (harmless)
 The subject is immune to all death spells, magical death effects, energy drain,
 and any negative energy effects.
 
-This spell doesn’t remove negative levels that the subject has already gained,
+This spell doesnï¿½t remove negative levels that the subject has already gained,
 nor does it affect the saving throw necessary 24 hours after gaining a negative level.
 
 Death ward does not protect against other sorts of attacks even if those attacks
@@ -56,6 +56,7 @@ void main()
     effect eDeath = EffectImmunity (IMMUNITY_TYPE_DEATH);
     // Link effects.
     effect eLink = EffectLinkEffects (eDeath, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -63,7 +64,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply VFX impact and death immunity effect
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

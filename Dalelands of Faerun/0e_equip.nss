@@ -27,7 +27,7 @@ void main()
         // Check for open faced helms.
         if(nBaseItemType == BASE_ITEM_OPEN_FACE_HELMET) DoOpenFaceHelmetVisuals(oCreature, oItem);
         // Check for weapons.
-        else if(GetIsWeapon(oItem))
+        else if(GetIsWeapon(oItem) && !GetIsAmmo(oItem))
         {
             // Check for Feats, Class abilities and Spell effects that work on weapons.
             // we must wait until the player is loaded the first time.
@@ -62,7 +62,7 @@ void main()
             SetLocalObject(oItem, "0_ITEMSET_OWNER", oCreature);
             DelayCommand(5.0, ExecuteScript("eq_itemset_1", oItem));
         }
-        // We have removed ond of the U'l Phair's set, reapply.
+        // We have removed one of the U'l Phair's set, reapply.
         else if(sTag == "itemset_2")
         {
             // We set this for eq_itemset_2 since we cannot reliably get the
@@ -78,15 +78,6 @@ void main()
         // Check for open faced helms.
         int nBaseItemType = GetBaseItemType(oItem);
         if(nBaseItemType == BASE_ITEM_OPEN_FACE_HELMET) DoOpenFaceHelmetVisuals(oCreature, oItem);
-        // Check for weapons.
-        else if(GetIsWeapon(oItem))
-        {
-            CheckEquipWeaponFeats(oCreature, oItem);
-            // We set this for eq_itemset_1 since we cannot reliably get the
-            // creature that equips this item.
-            SetLocalObject(oItem, "0_ITEMSET_OWNER", oCreature);
-            DelayCommand(0.5, ExecuteScript("eq_itemset_1", oItem));
-        }
         // Check for head gear used with U'l Phair's set.
         else if(nBaseItemType == BASE_ITEM_HELMET) ExecuteScript("eq_itemset_2", oItem);
         else if(nBaseItemType == BASE_ITEM_ARMOR)
@@ -97,6 +88,32 @@ void main()
             CheckForArmorBonus(oCreature);
             // Check armor to see if a tiefling has demonic legs.
             CheckDemonicAppearance(oCreature, oItem, 1);
+        }
+        else if(nBaseItemType == 181/*BASE_ITEM_ACCESSORY_MOUTH*/)
+        {
+            // Remove any effect that is already using the mouth effects slot.
+            string sEffectTag;
+            effect eVFX = GetFirstEffect(oCreature);
+            while(GetIsEffectValid(eVFX))
+            {
+                sEffectTag = GetEffectTag(eVFX);
+                if(GetStringLeft(sEffectTag, 9) == "VFXMOUTH_" && nBaseItemType == 181) 
+                {
+                    RemoveEffect(oCreature, eVFX);
+                    DeleteLocalInt(oItem, "VFX_APPLIED");
+                    break;
+                }
+                eVFX = GetNextEffect(oCreature);
+            }            
+        }
+        // Check for weapons.
+        else if(GetIsWeapon(oItem) && !GetIsAmmo(oItem))
+        {
+            CheckEquipWeaponFeats(oCreature, oItem);
+            // We set this for eq_itemset_1 since we cannot reliably get the
+            // creature that equips this item.
+            SetLocalObject(oItem, "0_ITEMSET_OWNER", oCreature);
+            DelayCommand(0.5, ExecuteScript("eq_itemset_1", oItem));
         }
         // Check for shield adjustments
         else if(nBaseItemType == BASE_ITEM_LARGESHIELD ||

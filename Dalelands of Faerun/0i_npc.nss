@@ -6,8 +6,8 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_spells"
 #include "0i_creature"
-
-// Sets scripts, and abilities for NPC's.
+// Sets scripts, and abilities for oNPC.
+// bFirstSetup - TRUE it is the first time setup for oNPC, FALSE for reloads of oNPC.
 void SetUpNPC(object oNPC, int bFirstSetup = TRUE);
 // Sets scripts and abilities for villains.
 void SetUpVillain(object oVillain);
@@ -41,8 +41,7 @@ void SetUpNPC(object oNPC, int bFirstSetup = TRUE)
     {
         SetEventScript (oNPC, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_ch_ac1");
     }
-    // Let's make sure we are firing our OnDeath script after the AI.
-    SetLocalString(oNPC, "AI_ON_DEATH", "nw_ch_ac7");
+    // Set the NPC to the NPC type.
     SetLocalInt(oNPC, PC_ASSOCIATE_TYPE, ASSOCIATE_TYPE_NPC);
     // Set to not disappear when dead, not be resurrectable, and selectable.
     SetIsDestroyable (FALSE, FALSE, TRUE, oNPC);
@@ -64,13 +63,14 @@ void SetUpVillain(object oVillain)
     SetEventScript(oVillain, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_c2_default1");
     // Set to not disappear when dead, resurrectable, and selectable.
     SetIsDestroyable (FALSE, TRUE, TRUE, oVillain);
+    // These are all done in the spawn script.
     // Give class/race specific abilities.
-    CheckForClaws(oVillain, GetHitDice (oVillain));
-    CheckForWings(oVillain);
-    SetCharacterEffectsToSkin(oVillain);
-    SetCharacterEffects(oVillain);
-    CheckForFeatsToAdd(oVillain);
-    SetCreatureAuras(oVillain);
+    //CheckForClaws(oVillain, GetHitDice (oVillain));
+    //CheckForWings(oVillain);
+    //SetCharacterEffectsToSkin(oVillain);
+    //SetCharacterEffects(oVillain);
+    //CheckForFeatsToAdd(oVillain);
+    //SetCreatureAuras(oVillain);
 }
 
 // Creates a base set of traits for an NPC.
@@ -226,7 +226,7 @@ json RanomizeJsonNPC (json jNPC)
     string sName = JsonGetString (JsonObjectGet (jNPC, "name"));
     if (sName == "" || sName == "random" || sName == "Random")
     {
-        sName = GetRandomName (nGender, nRace);
+        sName = GetRandomName(nGender, nRace);
         jNPC = JsonObjectSet (jNPC, "name", JsonString (sName));
     }
     int nClass1 = JsonGetInt (JsonObjectGet (jNPC, "class1"));

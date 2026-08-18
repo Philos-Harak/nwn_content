@@ -52,6 +52,7 @@ void main()
     effect eShield =  EffectConcealment (Spell.iResult, MISS_CHANCE_TYPE_VS_RANGED);
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eLink = EffectLinkEffects (eShield, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -59,7 +60,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the armor bonuses and the VFX impact
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

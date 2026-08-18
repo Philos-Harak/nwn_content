@@ -48,20 +48,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eImpact = EffectVisualEffect(Spell.iImpact);
-    effect eFrightened = EffectAttackDecrease(4);
-    eFrightened = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 4), eFrightened);
-    eFrightened = EffectLinkEffects(EffectSkillDecrease (SKILL_ALL_SKILLS, 4), eFrightened);
-    effect eShaken = EffectAttackDecrease(2);
-    eShaken = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 2), eShaken);
-    eShaken = EffectLinkEffects(EffectSkillDecrease (SKILL_ALL_SKILLS, 2), eShaken);
-    effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
-    eFrightened = EffectLinkEffects(eDuration, eFrightened);
-    eShaken = EffectLinkEffects(eDuration, eShaken);
-    effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
-    eFrightened = EffectLinkEffects(eVisual, eFrightened);
-    eShaken = EffectLinkEffects(eVisual, eShaken);
-
-    //Get the spells target(s).
+   //Get the spells target(s).
     Spell = GetSpellTarget(Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
@@ -78,13 +65,13 @@ void main()
             {
                 //Apply linked effects and VFX impact
                 DelayCommand(Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-                DelayCommand(Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eFrightened, Spell.oAreaTarget, Spell.fDuration));
+                DelayCommand(Spell.fDelay, Frightened(Spell.oAreaTarget, Spell.fDuration, Spell.iCasterLevel));
             }
             else if (Spell.iSaveResult == 4)
             {
                 //Apply linked effects and VFX impact
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-                DelayCommand(Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eShaken, Spell.oAreaTarget, 6.0));
+                DelayCommand(Spell.fDelay, Shaken(Spell.oAreaTarget, 6.0, Spell.iCasterLevel));
             }
         }
         // Get the spells target(s).

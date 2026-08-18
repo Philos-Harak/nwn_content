@@ -52,6 +52,7 @@ void main()
     effect eDmg;
     // Create poison effect.
     effect ePoison = EffectPoison (POISON_LARGE_SCORPION_VENOM);
+    ePoison = SetEffectCasterLevel(ePoison, Spell.iCasterLevel);
     // Create visual effect.
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     //Get the spells target(s).

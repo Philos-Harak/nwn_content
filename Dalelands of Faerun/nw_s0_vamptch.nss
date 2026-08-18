@@ -88,6 +88,7 @@ void main()
                     eDmg = EffectDamage(Spell.iResult, Spell.iDamageType);
                     // Link effects.
                     effect eLink = EffectLinkEffects (eHeal, eDur);
+                    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
                     // Apply effects.
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));

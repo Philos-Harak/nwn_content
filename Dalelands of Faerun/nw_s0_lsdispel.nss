@@ -19,7 +19,6 @@ a DC of 11 + the spell effect's caster level.
 NOTE: To make creatures immune to dispell set 0_IMMUNE_TO_DISPEL = true on the creature.
 /*///////////////////////////////////////////////
 #include "0i_spells"
-
 void main()
 {
     // ***********************************************************
@@ -27,6 +26,8 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "nune_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Nune Dust.
     Spell.iAreaShape = SHAPE_RANGE_TARGET;
     Spell.fAreaSize = 20.0f;
     Spell.iLineOfSight = TRUE;
@@ -47,6 +48,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += 2;;
     effect eImpact = EffectVisualEffect(Spell.iImpact);
     effect eFnf = EffectVisualEffect(VFX_FNF_LOS_NORMAL_20);
     // Check to see if they selected one target.

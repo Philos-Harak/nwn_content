@@ -48,6 +48,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (AOE_PER_FOGFIRE);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create visual effect.
         effect eCenter = EffectVisualEffect (260); /*VFX_FNF_GAS_EXPLOSION_FIRE*/
         // Apply visual effect at the center of the effect area.

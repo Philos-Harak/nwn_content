@@ -71,6 +71,7 @@ void main()
                 Spell = GetModifier (Spell);
                 //Apply damage effect and VFX impact
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
             }

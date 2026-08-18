@@ -81,9 +81,9 @@ void DoActions ()
         SetLocalObject (OBJECT_SELF, "0_ATTACKED_TARGET", oTarget);
         ActionAttack (oTarget);
     }
-}
+} */
 void main ()
 {
-    DoActions ();
-    ActionDoCommand (CheckCombatMovement ());
+    //DoActions ();
+    //ActionDoCommand (CheckCombatMovement ());
 }

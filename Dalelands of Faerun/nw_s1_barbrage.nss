@@ -41,11 +41,11 @@ void CheckAndApplyThunderingRage (float fDuration)
 // intimidation skill
 void CheckAndApplyTerrifyingRage (float fDuration)
 {
-    if (GetHasFeat (989, OBJECT_SELF))
+    if(GetHasFeat(989, OBJECT_SELF))
     {
-        effect eAOE = EffectAreaOfEffect (AOE_MOB_FEAR, "x2_s2_terrage_A", "", "");
+        effect eAOE = EffectAreaOfEffect(AOE_MOB_DRAGON_FEAR, "x2_s2_terrage_A", "", "");
         eAOE = ExtraordinaryEffect(eAOE);
-        ApplyEffectToObject (DURATION_TYPE_TEMPORARY,eAOE, OBJECT_SELF, fDuration);
+        ApplyEffectToObject(DURATION_TYPE_TEMPORARY,eAOE, OBJECT_SELF, fDuration);
     }
 }
 

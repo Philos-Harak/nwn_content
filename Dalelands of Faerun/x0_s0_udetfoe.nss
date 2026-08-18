@@ -34,6 +34,7 @@ void main()
     Spell.iDurationType = DURATION_TYPE_ROUNDS;
     Spell.iDurNumOfDice = 1;
     Spell.iDurationDie = 1;
+    Spell.iModifier = 4;
     Spell.iImpact = VFX_IMP_HOLY_AID;
     // Setup the spell.
     Spell = SetSpell (Spell);
@@ -44,9 +45,57 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedAC, nStack;
+        int nAlestoneDust, nJasmalDust, nSatinSparDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nAlestoneDust && GetTag(oItem) == "alestone_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nAlestoneDust = TRUE;
+                fEnhancedDuration += 0.5;
+            }
+            else if(!nJasmalDust && GetTag(oItem) == "jasmal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nJasmalDust = TRUE;
+                    nEnhancedAC += 1;
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nEnhancedAC)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase armor bonus by +" + IntToString(nEnhancedAC) + "!", COLOR_GREEN, oObject);
+            Spell.iResult += nEnhancedAC;
+        }
+        if(fEnhancedDuration > 0.0)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the duration by +" + FloatToString(fEnhancedDuration * 100.0) + "%!", COLOR_GREEN, oObject);
+            Spell.fDuration *= 1.0 + fEnhancedDuration;
+        }
+    }
     // Create effects.
-    effect eAC = EffectACIncrease (4, AC_DEFLECTION_BONUS);
-    effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, 4);
+    effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, Spell.iResult);
+    effect eAC = EffectACIncrease (Spell.iResult, AC_DEFLECTION_BONUS);
     effect eNegativeDmg = EffectDamageImmunityIncrease (DAMAGE_TYPE_NEGATIVE, 100);
     effect eNegativeLevel = EffectImmunity (IMMUNITY_TYPE_NEGATIVE_LEVEL);
     effect eAbDecrease = EffectImmunity (IMMUNITY_TYPE_ABILITY_DECREASE);
@@ -65,6 +114,7 @@ void main()
     eLink = EffectLinkEffects(eLink, ePoison);
     eLink = EffectLinkEffects(eLink, eDisease);
     eLink = EffectLinkEffects(eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply vfx at spells center and over caster.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     ApplyEffectToObject (DURATION_TYPE_INSTANT, eCaster, Spell.oCaster);
@@ -75,7 +125,7 @@ void main()
         //Signal spell cast at event
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply the effects.
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

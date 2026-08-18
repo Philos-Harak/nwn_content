@@ -15,8 +15,8 @@ Spell Resistance:   No
 Any opponent attempting to strike or otherwise directly attack the warded creature,
 even with a targeted spell, must attempt a Will save. If the save succeeds, the
 opponent can attack normally and is unaffected by that casting of the spell.
-If the save fails, the opponent can’t follow through with the attack, that part
-of its action is lost, and it can’t directly attack the warded creature for the
+If the save fails, the opponent can't follow through with the attack, that part
+of its action is lost, and it can't directly attack the warded creature for the
 duration of the spell. Those not attempting to attack the subject remain unaffected.
 This spell does not prevent the warded creature from being attacked or affected
 by area or effect spells. The subject cannot attack without breaking the spell
@@ -50,14 +50,15 @@ void main()
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eSanc = EffectSanctuary (Spell.iSaveDC);
     effect eLink = EffectLinkEffects(eSanc, eDur);
-    //Get the spells target(s).
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+   //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

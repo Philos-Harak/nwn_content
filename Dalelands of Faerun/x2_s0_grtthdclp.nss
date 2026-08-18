@@ -35,6 +35,7 @@ void main()
     Spell.iDurationType = DURATION_TYPE_ROUNDS;
     Spell.iDurNumOfDice = 1;
     Spell.iDurationDie = 4;
+    Spell.iSave = SAVING_THROW_WILL;
     Spell.iDamageType = DAMAGE_TYPE_SONIC;
     Spell.iModNumOfDice = 1;
     Spell.iModifierDie = 4;
@@ -42,9 +43,9 @@ void main()
     Spell.iMaxModNumOfDice = 5;
     Spell.iImpact = VFX_IMP_SONIC;
     // Setup the spell.
-    Spell = SetSpell (Spell);
+    Spell = SetSpell(Spell);
     // Check to see if we should still fire off the spell.
-    if (Spell.iSpellID == STOP_SPELL) return;
+    if(Spell.iSpellID == STOP_SPELL) return;
     // Get the duration of the spell.
     Spell = GetDuration (Spell);
     // *******************************************************************
@@ -52,43 +53,48 @@ void main()
     // *******************************************************************
     // Create visual effects.
     effect eImpact = EffectVisualEffect(Spell.iImpact);
-    effect eCenter = EffectVisualEffect (VFX_FNF_MYSTICAL_EXPLOSION);
-    effect eVStun = EffectVisualEffect (VFX_IMP_STUN);
+    effect eCenter = EffectVisualEffect(VFX_FNF_MYSTICAL_EXPLOSION);
+    effect eVStun = EffectVisualEffect(VFX_IMP_STUN);
     // Create effects.
     effect eDmg;
     effect eKnock = EffectKnockdown();
+    eKnock = SetEffectCasterLevel(eKnock, Spell.iCasterLevel);
     effect eStun = EffectStunned();
-    effect eShake = EffectVisualEffect (356); /*VFX_FNF_SCREEN_SHAKE2*/
+    eStun = SetEffectCasterLevel(eStun, Spell.iCasterLevel);
+    effect eShake = EffectVisualEffect(356); /*VFX_FNF_SCREEN_SHAKE2*/
     // Apply center vfx effect.
-    ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
-    ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eShake, Spell.oCaster, 2.0f);
+    ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
+    ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eShake, Spell.oCaster, 2.0f);
+    // We have to get the spell save DC since we are using SavingThrowWithEffects in the loop below.
+    Spell = GetSaveDC(Spell);
     //Get the spells target(s).
-    Spell = GetSpellTarget (Spell);
+    Spell = GetSpellTarget(Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         // Shake all creatures within the spell effect.
-        ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eShake, Spell.oAreaTarget, 2.0f);
+        ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eShake, Spell.oAreaTarget, 2.0f);
         // Does not effect the caster.
-        if (Spell.oCaster != Spell.oAreaTarget)
+        if(Spell.oCaster != Spell.oAreaTarget)
         {
             //Fire cast spell at event for the specified target
-            SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID));
-            DelayCommand(Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eImpact, Spell.oAreaTarget,4.0f));
+            SignalEvent(Spell.oAreaTarget, EventSpellCastAt(Spell.oCaster, Spell.iSpellID));
+            DelayCommand(Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eImpact, Spell.oAreaTarget,4.0f));
             // Get the result for the effect, sets Spell.iResult.
-            Spell = GetModifier (Spell);
-            if (SavingThrowWithEffects (SAVING_THROW_FORT, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
+            Spell = GetModifier(Spell);
+            if(SavingThrowWithEffects(SAVING_THROW_FORT, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
             {
                 // Made the save and take 1/2 dmg.
                 Spell.iResult = Spell.iResult / 2;
             }
             eDmg =  EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             DelayCommand(Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget, Spell.fDuration * 10.0f));
-            if (SavingThrowWithEffects (SAVING_THROW_WILL, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
+            if(!SavingThrowWithEffects(SAVING_THROW_WILL, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
             {
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eStun, Spell.oAreaTarget, Spell.fDuration));
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eVStun, Spell.oAreaTarget));
             }
-            if (!SavingThrowWithEffects (SAVING_THROW_REFLEX, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
+            if(!SavingThrowWithEffects (SAVING_THROW_REFLEX, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_SONIC))
             {
                 DelayCommand(Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eKnock, Spell.oAreaTarget, 6.0f));
             }

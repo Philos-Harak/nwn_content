@@ -34,10 +34,10 @@ void main()
     // We run our OnSpawn in the heartbeat so the creator can use the original
     // OnSpawn for their own use.
     ai_OnAssociateSpawn(oCreature);
-    if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat, ai_OnAssociateSpawn");
-    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "37", GetName(oCreature) + " Heartbeat." +
-                 " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
-                 " Action: " + IntToString(GetCurrentAction(oCreature)));
+    //if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat, ai_OnAssociateSpawn");
+    if(AI_DEBUG) ai_Debug("nw_ch_ac1", "37", GetName(oCreature) + " Heartbeat.");// +
+    //             " MODE_FOLLOW: " + IntToString(ai_GetAIMode(oCreature, AI_MODE_FOLLOW)) +
+    //             " Action: " + IntToString(GetCurrentAction(oCreature)));
     if(ai_GetIsBusy(oCreature) || ai_Disabled(oCreature)) return;
     if(AI_DEBUG) ai_Counter_End(GetName(oCreature) + ": Heartbeat, ai_GetIsBusy/ai_Disabled");
     // If we are an associate and don't have a master then exit.

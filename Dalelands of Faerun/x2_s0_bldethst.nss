@@ -19,7 +19,21 @@ The weapon takes on a blue, fiery glow, shedding illumination as if it were a to
 /*///////////////////////////////////////////////
 #include "0i_spells"
 #include "x2_inc_itemprop"
-
+void AddDamageEffectToWeapon(object oTarget, float fDuration, int nCasterLevel, int nDamageType)
+{
+    if(nDamageType == DAMAGE_TYPE_FIRE) nDamageType = ITEM_VISUAL_FIRE;
+    else if(nDamageType == DAMAGE_TYPE_ACID) nDamageType = ITEM_VISUAL_ACID;
+    else if(nDamageType == DAMAGE_TYPE_COLD) nDamageType = ITEM_VISUAL_COLD;
+    else if(nDamageType == DAMAGE_TYPE_ELECTRICAL) nDamageType = ITEM_VISUAL_ELECTRICAL;
+    else if(nDamageType == DAMAGE_TYPE_SONIC) nDamageType = ITEM_VISUAL_SONIC;
+    else if(nDamageType == DAMAGE_TYPE_DIVINE) nDamageType = ITEM_VISUAL_HOLY;
+    else if(nDamageType == DAMAGE_TYPE_POSITIVE) nDamageType = ITEM_VISUAL_HOLY;
+    else if(nDamageType == DAMAGE_TYPE_NEGATIVE) nDamageType = ITEM_VISUAL_EVIL;
+    else if(nDamageType == DAMAGE_TYPE_MAGICAL) nDamageType = ITEM_VISUAL_SONIC;
+    // If the spell is cast again, any previous itemproperties matching are removed.
+    IPSafeAddItemProperty(oTarget, ItemPropertyOnHitCastSpell (124, nCasterLevel), fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING, FALSE, TRUE);
+    IPSafeAddItemProperty(oTarget, ItemPropertyVisualEffect (nDamageType), fDuration,X2_IP_ADDPROP_POLICY_REPLACE_EXISTING, FALSE, TRUE);
+}
 void main()
 {
     // ***********************************************************
@@ -32,6 +46,7 @@ void main()
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;
     Spell.iModifier = 3;
+    Spell.iDamageType = DAMAGE_TYPE_MAGICAL;
     Spell.iImpact = VFX_IMP_SUPER_HEROISM;
     // Setup the spell.
     Spell = SetSpell (Spell);
@@ -44,6 +59,55 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    int nDamageDice, nEnhancedBonus;
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack, nGarnetDust, nGoldlineDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nGarnetDust && GetTag(oItem) == "garnet_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 1)
+                {
+                    if(nStack > 2) SetItemStackSize(oItem, nStack - 2);
+                    else DestroyObject (oItem);
+                    nGarnetDust = TRUE;
+                    nDamageDice += 2;    
+                }
+            }
+            else if(!nGoldlineDust && GetTag(oItem) == "goldline_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 1)
+                {
+                    if(nStack > 2) SetItemStackSize(oItem, nStack - 2);
+                    else DestroyObject (oItem);
+                    nGoldlineDust = TRUE;
+                    nEnhancedBonus += 1;    
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nGarnetDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the damage dice to d" + IntToString(nDamageDice) + "!", COLOR_GREEN, oObject);
+        }
+        if(nEnhancedBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced by increasing the Enhancement bonus by +" + IntToString(nEnhancedBonus) + "!", COLOR_GREEN, oObject);
+            Spell.iResult += nEnhancedBonus;
+        }
+    }
     object oWeapon, oPossessor;
     // Create visual effects.
     effect eImpact = EffectVisualEffect (Spell.iImpact);
@@ -65,6 +129,13 @@ void main()
             // Apply effect.
             DelayCommand (Spell.fDelay, IPSafeAddItemProperty (oWeapon, ItemPropertyEnhancementBonus (Spell.iResult), Spell.fDuration, X2_IP_ADDPROP_POLICY_KEEP_EXISTING , TRUE, TRUE));
             DelayCommand (Spell.fDelay, IPSafeAddItemProperty (oWeapon, ItemPropertyLight (IP_CONST_LIGHTBRIGHTNESS_NORMAL, IP_CONST_LIGHTCOLOR_BLUE), Spell.fDuration, X2_IP_ADDPROP_POLICY_KEEP_EXISTING , TRUE, TRUE));
+            if(nDamageDice)
+            {
+                // Also adding the damage dice and damage type as variables on the weapon to be used in onhit script.
+                SetLocalInt(oWeapon, "0_Dmg_Dice", nDamageDice);
+                SetLocalInt(oWeapon, "0_Dmg_Type", Spell.iDamageType);
+                AddDamageEffectToWeapon(oWeapon, Spell.fDuration, Spell.iCasterLevel, Spell.iDamageType);
+            }
         }
         // Display failure text.
         else DelayCommand (Spell.fDelay, FloatingTextStrRefOnCreature(83621, Spell.oAreaTarget));

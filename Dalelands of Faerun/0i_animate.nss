@@ -150,15 +150,15 @@ void AIActionStopTalking(object oFriend, int iHDiff = 0);
 
 // Play a greeting animation and possibly voicechat.
 // If a negative difference is passed in, caller will bow.
-void AIActionPlayRandomGreeting (int iHDiff);
+void AIActionPlayRandomGreeting(int iHDiff = 0);
 
 // Play a random farewell animation and possibly voicechat.
 // If a negative difference is passed in, caller will bow.
-void AIActionPlayRandomGoodbye (int iHDiff);
+void AIActionPlayRandomGoodbye(int iHDiff);
 
 // Randomly move away from an object the specified distance.
 // This is mainly because ActionMoveAwayFromLocation isn't working.
-void AIActionRandomMoveAway (object oSource, float fDistance);
+void AIActionRandomMoveAway(object oSource, float fDistance);
 
 // Play animation of shaking head "no" to left and right
 void AIActionShakeHead();
@@ -783,7 +783,7 @@ void AIActionStopTalking(object oFriend, int iHDiff=0)
 // Play a greeting animation and possibly voicechat.
 // If a negative hit dice difference (HD caller - HD greeted) is
 // passed in, the caller will bow.
-void AIActionPlayRandomGreeting (int iHDiff = 0)
+void AIActionPlayRandomGreeting(int iHDiff = 0)
 {
     if (Random (100) < 5) VoiceHello();
     if (iHDiff < 0 || Random(4) == 0) ActionPlayAnimation (ANIMATION_FIREFORGET_BOW);

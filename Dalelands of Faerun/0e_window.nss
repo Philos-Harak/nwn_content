@@ -1,3 +1,7 @@
+#include "0i_server_const"
+#include "0i_database"
+
+
 /*//////////////////////////////////////////////////////////////////////////////
  Script Name: 0e_window
  Programmer: Philos
@@ -51,7 +55,7 @@ void main()
     int    nIndex  = NuiGetEventArrayIndex();
     string sWndId  = NuiGetWindowId (oPC, nToken);
     int bNumberRolls;
-    Debug ("0e_window", "54", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem);
+    //Debug ("0e_window", "54", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem);
     //**************************************************************************
     // Watch to see if the window moves and save to database unless its the small window.
     if (sElem == "window_geometry" && sEvent == "watch" && sWndId != "plsmallwin")
@@ -335,181 +339,6 @@ void main()
         }
     }
     //**************************************************************************
-    // Crafting window events.
-    else if (sWndId == "plcraftwin")
-    {
-        // Delay crafting so it has time to equip and unequip as well as remove.
-        if (GetLocalInt (oPC, "0_CRAFT_COOL_DOWN")) return;
-        SetLocalInt (oPC, "0_CRAFT_COOL_DOWN", TRUE);
-        DelayCommand (0.25f, DeleteLocalInt (oPC, "0_CRAFT_COOL_DOWN"));
-        // Check if we are a DM then use our target.
-        object oTarget;
-        if (GetIsDungeonMaster (oPC)) oTarget = GetLocalObject (oPC, "0_DM_Target");
-        else oTarget = oPC;
-        // Get the item we are crafting.
-        int nItemSelected = GetLocalInt (oPC, "0_CRAFT_ITEM_SELECTION");
-        object oItem = GetSelectedItem (oTarget, nItemSelected);
-        // They have selected a color.
-        if (sEvent == "mousedown" && sElem == "color_pallet")
-        {
-            // Get the color they selected from the color pallet cell.
-            int nColorId = GetColorPalletId (oPC);
-            if (!GetIsWeapon (oItem) && !GetIsShield (oItem))
-            {
-                if (CanCraftItem (oPC, oItem, nToken))
-                {
-                    int nMaterialSelected = GetLocalInt (oPC, "0_CRAFT_MATERIAL_SELECTION");
-                    // Unlock the item so we can swap the old for the new.
-                    SetLocalInt (oItem, "0_EQUIP_LOCKED", FALSE);
-                    HideFeedbackForCraftText (oPC, TRUE);
-                    object oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_COLOR, nMaterialSelected, nColorId, TRUE);
-                    DestroyObject (oItem);
-                    // Lock the new item so they can't change it on the character.
-                    LockItemInCraftingWindow (oPC, oNewItem, nToken);
-                    // Equip new item.
-                    int iBaseItem = GetBaseItemType (oNewItem);
-                    if (iBaseItem == BASE_ITEM_CLOAK) AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CLOAK));
-                    else if (iBaseItem == BASE_ITEM_HELMET) AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_HEAD));
-                    else if (iBaseItem == BASE_ITEM_ARMOR) AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
-                    HideFeedbackForCraftText (oPC, FALSE);
-                }
-            }
-        }
-        if (sEvent == "watch")
-        {
-            // The player is changing the item they are crafting.
-            if (sElem == "item_combo_selected")
-            {
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetLocalInt (oPC, "0_CRAFT_ITEM_SELECTION", nSelected);
-                // Set special option.
-                if (nSelected == 0)
-                {
-                    int nSpecial = GetLocalInt (oPC, "0_MODEL_SPECIAL");
-                    if (nSpecial > 2) nSpecial = 0;
-                    SetLocalInt (oPC, "0_MODEL_SPECIAL", nSpecial);
-                }
-                // Set button for cloak and helms.
-                else if (nSelected == 1 || nSelected == 2)
-                {
-                    int nHidden = GetHiddenWhenEquipped (oItem);
-                    if (nHidden) SetLocalInt (oPC, "0_MODEL_SPECIAL", 4);
-                    else SetLocalInt (oPC, "0_MODEL_SPECIAL", 3);
-                }
-                // Remove any copy.
-                SetLocalInt (oPC, "0_COPY_ITEM", FALSE);
-                NuiDestroy (oPC, nToken);
-                PopUpCraftingGUIPanel (oPC);
-            }
-            // They have selected a part to change.
-            else if (sElem == "model_combo_selected")
-            {
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetLocalInt (oPC, "0_CRAFT_MODEL_SELECTION", nSelected);
-            }
-            // They have changed the material (color item) for the item.
-            else if (sElem == "material_combo_selected")
-            {
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetLocalInt (oPC, "0_CRAFT_MATERIAL_SELECTION", nSelected);
-                // Change the pallet for the correct material.
-                string sColorPallet;
-                if (nSelected == 0 || nSelected == 1) sColorPallet = "cloth_pallet";
-                else if (nSelected == 2 || nSelected == 3) sColorPallet = "leather_pallet";
-                else sColorPallet = "armor_pallet";
-                NuiSetBind (oPC, nToken, "color_pallet_image", JsonString (sColorPallet));
-
-            }
-        }
-        else if (sEvent == "click")
-        {
-            // Paste the copy item with the current item.
-            if (sElem == "btn_paste")
-            {
-                if (CanCraftItem (oPC, oItem, nToken, TRUE))
-                {
-                    HideFeedbackForCraftText (oPC, TRUE);
-                    oItem = PasteCraftingItem (oPC, oTarget, oItem);
-                    HideFeedbackForCraftText (oPC, FALSE);
-                    LockItemInCraftingWindow (oPC, oItem, nToken);
-                    NuiSetBind (oPC, nToken, "btn_paste_event", JsonBool (FALSE));
-                }
-            }
-            // Copy the item they have selected.
-            else if (sElem == "btn_copy")
-            {
-                if (!GetLocalInt (oPC, "0_COPY_ITEM"))
-                {
-                    CopyCraftingItem (oPC, oItem);
-                    NuiSetBind (oPC, nToken, "btn_paste_event", JsonBool (TRUE));
-                    SetLocalInt (oPC, "0_COPY_ITEM", TRUE);
-                }
-                NuiSetBind (oPC, nToken, "btn_copy", JsonBool (TRUE));
-            }
-            // Random button to change items looks randomly.
-            else if (sElem == "btn_rand")
-            {
-                if (CanCraftItem (oPC, oItem, nToken))
-                {
-                    HideFeedbackForCraftText (oPC, TRUE);
-                    oItem = RandomizeItemsCraftAppearance (oPC, oTarget, nToken, oItem);
-                    HideFeedbackForCraftText (oPC, FALSE);
-                    LockItemInCraftingWindow (oPC, oItem, nToken);
-                }
-            }
-            // Get the previous model of the selected item.
-            else if (sElem == "btn_prev")
-            {
-                if (CanCraftItem (oPC, oItem, nToken))
-                {
-                    HideFeedbackForCraftText (oPC, TRUE);
-                    oItem = ChangeItemsAppearance (oPC, oTarget, nToken, oItem, -1);
-                    HideFeedbackForCraftText (oPC, FALSE);
-                    LockItemInCraftingWindow (oPC, oItem, nToken);
-                }
-            }
-            // Get the next model of the selected item.
-            else if (sElem == "btn_next")
-            {
-                if (CanCraftItem (oPC, oItem, nToken))
-                {
-                    HideFeedbackForCraftText (oPC, TRUE);
-                    oItem = ChangeItemsAppearance (oPC, oTarget, nToken, oItem, 1);
-                    HideFeedbackForCraftText (oPC, FALSE);
-                    LockItemInCraftingWindow (oPC, oItem, nToken);
-                }
-            }
-            // Save any changes made to the selected item.
-            else if (sElem == "btn_save")
-            {
-                SaveCraftedItem (oPC, oTarget, nToken);
-            }
-            // Do a specific tast based on selected item.
-            // i.e. Left/Right/Link and disappear/visible.
-            else if (sElem == "btn_special")
-            {
-                if (CanCraftItem (oPC, oItem, nToken)) DoSpecialButton (oPC, oItem, nToken);
-            }
-            // Cancel any changes made to the selected item.
-            else if (sElem == "btn_cancel")
-            {
-                // If the button is on cancel then clear the item.
-                if (JsonGetString (NuiGetBind (oPC, nToken, "btn_cancel_label")) == "Cancel")
-                {
-                    CancelCraftedItem (oPC, oTarget);
-                    ClearItemInCraftingWindow (oPC, oItem, nToken);
-                }
-                // If the button is on Exit not Cancel then exit.
-                else
-                {
-                    AssignCommand (oPC, RestoreCameraFacing());
-                    RemoveTagedEffects (oPC, "0_FREEZE_CRAFTING");
-                    NuiDestroy (oPC, nToken);
-                }
-            }
-        }
-    }
-    //**************************************************************************
     // Player options window events.
     else if (sWndId == "ploptionwin")
     {
@@ -637,6 +466,13 @@ void main()
                     DestroyObject(oPaper);
                     DeleteLocalObject(oPC, "REMOVE_QUEST_PAPER");
                     SendMessages(GetName (oPaper) + " has been removed.", COLOR_RED, oPC);
+                    int nPointer = GetLocalInt(GetCreatureHasItem(oPC, "players_book"), "0_SideQuest_Num");
+                    if(nPointer > 0)
+                    {
+                        nPointer ++;
+                        if(nPointer > 8) nPointer = 1;
+                        SetLocalInt(GetCreatureHasItem(oPC, "players_book"), "0_SideQuest_Num", 0);
+                    }
                     NuiDestroy(oPC, nToken);
                 }
             }
@@ -681,7 +517,9 @@ void main()
             }
             else NuiSetBind (oPC, nToken, "port_id_label", JsonString ("Custom Portrait"));
             sResRef = JsonGetString (NuiGetBind (oPC, nToken, "port_name"));
-            NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "l"));
+            if(ResManGetAliasFor(sResRef, RESTYPE_TGA) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef));
+            else if(ResManGetAliasFor(sResRef + "l", RESTYPE_TGA) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "l"));
+            else if(ResManGetAliasFor(sResRef + "m", RESTYPE_TGA) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "m"));
         }
         if (sEvent == "click")
         {
@@ -705,7 +543,7 @@ void main()
                 sResRef = JsonGetString (NuiGetBind (oPC, nToken, "port_name"));
                 sID = JsonGetString (NuiGetBind (oPC, nToken, "port_id_label"));
                 //Debug ("0e_window", "575", "sID: " + sID);
-                if (sID != "Custom Portrait") SetPortraitId (oPC, StringToInt (sID));
+                if (sID != "Custom Portrait") SetPortraitId(oPC, StringToInt (sID));
                 else SetPortraitResRef (oPC, sResRef);
             }
             if (nChange != 0)
@@ -752,36 +590,16 @@ void main()
     // Player magic window events.
     else if (sWndId == "pcmagicwin")
     {
-        if (sEvent == "click")
+        if(sEvent == "click")
         {
-            if (sElem == "btn_enh_comp")
+            if(sElem == "btn_enh_comp")
             {
-                if (GetLocalInt (oPC, "0_Use_Enhancing_Component"))
-                {
-                    object oItem = GetCreatureHasItem (oPC, COMPONENT_POUCH);
-                    if (GetIsObjectValid (oItem))
-                    {
-                        SetLocalInt (oItem, "0_Use_Enhancing_Component", FALSE);
-                        SetLocalInt (oPC, "0_Use_Enhancing_Component", FALSE);
-                        SendMessages ("Enhancing Components have been turned off for your spells.", COLOR_RED, oPC);
-                    }
-                    else SendMessages ("You must have component pouch to use enhanced components.", COLOR_RED, oPC);
-                }
-                else
-                {
-                    object oItem = GetCreatureHasItem (oPC, COMPONENT_POUCH);
-                    if (GetIsObjectValid (oItem))
-                    {
-                        SetLocalInt (oItem, "0_Use_Enhancing_Component", TRUE);
-                        SetLocalInt (oPC, "0_Use_Enhancing_Component", TRUE);
-                        SendMessages ("Enhancing Components have been turned on for your spells.", COLOR_GREEN, oPC);
-                    }
-                    else
-                    {
-                        SendMessages ("You must have component pouch to use enhanced components.", COLOR_RED, oPC);
-                        NuiSetBind (oPC, nToken, "btn_enh_comp", JsonBool (FALSE));
-                    }
-                }
+                object oPlayersHandBook = GetCreatureHasItem(oPC, "players_book");
+                int bEnhancing = !GetLocalInt(oPC, "0_Use_Enhancing_Component");
+                if(bEnhancing) SendMessages ("Enhancing Components have been turned on for your spells.", COLOR_GREEN, oPC);
+                else SendMessages("Enhancing Components have been turned off for your spells.", COLOR_RED, oPC);
+                SetLocalInt(oPlayersHandBook, "0_Use_Enhancing_Component", bEnhancing);
+                SetLocalInt(oPC, "0_Use_Enhancing_Component", bEnhancing);
             }
             else if (sElem == "btn_fast_buff")
             {
@@ -981,15 +799,15 @@ void main()
     ***************************************************************************/
     //**************************************************************************
     // DM creature window events.
-    else if (sWndId == "dmcreaturewin")
+    else if(sWndId == "dmcreaturewin")
     {
         int nID;
         string sID, sResRef;
-        // Get the DM target.
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
-        if (oTarget == OBJECT_INVALID) oTarget = oPC;
+        // Get the DM creature target.
+        object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+        if(oTarget == OBJECT_INVALID) oTarget = oPC;
         // Change character textedit boxes.
-        if (sEvent == "watch")
+        if(sEvent == "watch")
         {
             if (sElem == "char_name")
             {
@@ -1023,6 +841,24 @@ void main()
                 string sDeity = JsonGetString (NuiGetBind (oPC, nToken, "deity_box"));
                 SetDeity (oTarget, sDeity);
                 CheckDeityInDatabase (oPC, oTarget);
+            }
+            else if(sElem == "wings_combo_selected")
+            {
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                if(Get2DAString ("wingmodel", "Label", nSelected) != "")
+                {
+                    SetCreatureWingType(nSelected, oTarget);
+                }
+                else NuiSetBind (oPC, nToken, "wings_combo_selected", JsonInt(0));
+            }
+            else if(sElem == "tails_combo_selected")
+            {
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                if(Get2DAString ("tailmodel", "Label", nSelected) != "")
+                {
+                    SetCreatureTailType(nSelected, oTarget);
+                }
+                else NuiSetBind (oPC, nToken, "tails_combo_selected", JsonInt(0));
             }
         }
         else if (sEvent == "mousedown")
@@ -1073,6 +909,11 @@ void main()
             // Open the quest menu *********************************************
             else if (sElem == "btn_quest")
             {
+                if(GetIsDungeonMaster(oTarget)) 
+                {
+                    SendMessages("You cannot change a DM's quests!", COLOR_RED, oPC);
+                    return;
+                }
                 NuiDestroy (oPC, nToken);
                 PopUpQuestsGUIPanel (oPC);
             }
@@ -1159,48 +1000,81 @@ void main()
                 NuiSetBind (oPC, nToken, IntToString (nAbility) + "_mod_label", JsonString (IntToString (nMod)));
                 NWNX_Creature_ModifyRawAbilityScore (oTarget, nAbility, nAdj);
             }
+            else if(sElem == "btn_quest_create") 
+            {
+                object oPaper = CreateBlankQuest(oPC, oTarget);
+                SetLocalObject(oPC, "0_DM_QUEST_TARGET", oPaper);
+                PopUpDMQuestItemGUIPanel(oPC);
+            }
         }
     }
     //**************************************************************************
     // DM server main quests window events.
-    else if (sWndId == "dmmainquestswin")
+    else if(sWndId == "dmmainquestswin")
     {
+        object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+        if(GetIsDungeonMaster(oTarget)) 
+        {
+            SendMessages("You cannot change a DM's quests!", COLOR_RED, oPC);
+            return;
+        }
         int nSelected;
         string sQuestName, sOption;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
-        int nQuestType = GetLocalInt (oTarget, "0_Menu_Quest_type");
+        int nQuestType = GetLocalInt(oTarget, "0_Menu_Quest_type");
         string s2daQuestColumn, sText;
-        if (nQuestType == 0) s2daQuestColumn = "Story_Quest";
-        else s2daQuestColumn = "Quest";
-        if (sEvent == "watch")
+        if(nQuestType == STORY_QUESTS) s2daQuestColumn = "Story_Quest";
+        else if(nQuestType == SIDE_QUESTS) s2daQuestColumn = "Side_Quest";
+        else s2daQuestColumn = "Loc_Quest";
+        if(sEvent == "watch")
         {
-            if (sElem == "menu_quest_selected")
+            if(sElem == "menu_quest_selected")
             {
                 // Save the selection.
-                nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                sOption = GetServerDatabaseString (oPC, PLAYER_TABLE, "dmmainquestswin");
-                sOption = SetStringArray (sOption, 0, IntToString (nSelected));
-                SetServerDatabaseString (oPC, PLAYER_TABLE, "dmmainquestswin", sOption);
+                nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                sOption = GetServerDatabaseString(oPC, PLAYER_TABLE, "dmmainquestswin");
+                sOption = SetStringArray(sOption, 0, IntToString(nSelected));
+                sQuestName = Get2DAString("quest_list", s2daQuestColumn + "_Name", nSelected);
+                SetServerDatabaseString(oPC, PLAYER_TABLE, "dmmainquestswin", sOption);
                 // Get the quest description to display.
-                string sQuestDesc = Get2DAString ("quest_list", s2daQuestColumn + "_Desc", nSelected);
-                NuiSetBind (oPC, nToken, "menu_quest_desc_label", JsonString (sQuestDesc));
+                string sQuestDesc = Get2DAString("quest_list", s2daQuestColumn + "_Desc", nSelected);
+                NuiSetBind(oPC, nToken, "menu_quest_desc_label", JsonString (sQuestDesc));
                 // Get the quest name and player quest pointer.
-                sQuestName = Get2DAString ("quest_list", s2daQuestColumn + "_Name", nSelected);
-                int nTargetPointer = GetObjectDatabaseInt (oTarget, QUEST_TABLE, "questpointer", sQuestName);
+                int nTargetPointer = GetObjectDatabaseInt(oTarget, QUEST_TABLE, "questpointer", sQuestName);
                 // Set the buttons based on players location in the quest.
                 int bQuestSet = FALSE, bQuestClear = FALSE, bQuestComplete = FALSE;
-                if (nTargetPointer == 0) bQuestClear = TRUE;
+                string sText;
+                if(nTargetPointer == 0) 
+                {
+                    bQuestClear = TRUE;
+                    sText = " has not started.";
+                }
+                else if(nTargetPointer == -1) 
+                {
+                    bQuestComplete = TRUE;
+                    sText = " is Completed!";
+                }
+                else 
+                {
+                    if(nQuestType == STORY_QUESTS) sText = " is on part " + GetStringLeft(Get2DAString ("quest_list", s2daQuestColumn + "_Desc", nTargetPointer), 1);
+                    else if(nQuestType == SIDE_QUESTS || nQuestType == LOCATION_QUESTS) sText = " is active.";
+                }
                 NuiSetBind (oPC, nToken, "btn_quest_clear", JsonBool (bQuestClear));
-                if (nTargetPointer > nSelected) bQuestSet = TRUE;
+                if (nTargetPointer == nSelected) bQuestSet = TRUE;
                 NuiSetBind (oPC, nToken, "btn_quest_set", JsonBool (bQuestSet));
-                if (nTargetPointer == -1) bQuestComplete = TRUE;
                 NuiSetBind (oPC, nToken, "btn_quest_complete", JsonBool (bQuestComplete));
+                NuiSetBind(oPC, nToken, "lbl_quest_part_label", JsonString(sQuestName + sText));
             }
             if (sElem == "quest_type_selected")
             {
                 // Save the selection.
                 nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
                 SetLocalInt (oTarget, "0_Menu_Quest_type", nSelected);
+                // Get the quest name and player quest pointer.
+                sQuestName = Get2DAString ("quest_list", s2daQuestColumn + "_Name", nSelected);
+                int nTargetPointer = GetObjectDatabaseInt (oTarget, QUEST_TABLE, "questpointer", sQuestName);
+                int bQuestSet;
+                if(nTargetPointer == nSelected) bQuestSet = TRUE;
+                NuiSetBind (oPC, nToken, "btn_quest_set", JsonBool (bQuestSet));
                 PopUpQuestsGUIPanel (oPC);
             }
             if (sElem == "mquests_done")
@@ -1218,7 +1092,7 @@ void main()
         {
             // Get the players selection in the combo box.
             sOption = GetServerDatabaseString (oPC, PLAYER_TABLE, "dmmainquestswin");
-            nSelected = StringToInt (GetStringArray (sOption, 0));
+            nSelected = StringToInt(GetStringArray (sOption, 0));
             // Get the quest name and save the quest as finished, make sure to initialize.
             sQuestName = Get2DAString ("quest_list", s2daQuestColumn + "_Name", nSelected);
             // Make sure this quest is setup in the database.
@@ -1230,64 +1104,92 @@ void main()
                 // Set the buttons to the new point.
                 NuiSetBind (oPC, nToken, "btn_quest_complete", JsonBool (FALSE));
                 NuiSetBind (oPC, nToken, "btn_quest_set", JsonBool (FALSE));
-                // Get the paper and destroy it if it exists.
-                string sID = GetQuestIDByQuestName(oTarget, sQuestName);
-                // !!! Need to add code to find paper and remove.
-                //if (GetIsObjectValid (oPaper)) DestroyObject (oPaper);
+                NuiSetBind(oPC, nToken, "lbl_quest_part_label", JsonString(sQuestName + " has not started."));
+                RemoveJournalEntry(sQuestName, oTarget);
+                string sQuestID = GetQuestIDByQuestName(oTarget, sQuestName);
+                // Find the quest paper on oPC for sQuestID and destroy it!
+                object oPaper = GetFirstItemInInventory(oTarget);
+                while(oPaper != OBJECT_INVALID)
+                {
+                    if(sQuestID == GetLocalString(oPaper, "0_Q_ID") && GetTag(oPaper) == "0_quest_paper") 
+                    {
+                        RemoveQuestPaperFromDatabase(oTarget, oPaper);
+                        DestroyObject(oPaper);
+                        break;
+                    }
+                    oPaper = GetNextItemInInventory(oTarget);
+                }
             }
-            else if (sElem == "btn_quest_set")
+            else if(sElem == "btn_quest_set")
             {
                 // Get the paper for this quest if it exists and destroy it.
                 string sQuestID = GetQuestIDByQuestName(oTarget, sQuestName);
-                // !!! Need to add code to find paper and remove.
-                //if (GetIsObjectValid (oPaper)) DestroyObject (oPaper);
                 // Get the quest StrRef and create the quest selected.
-                string sStrRef = Get2DAString ("quest_list", s2daQuestColumn + "_StrRef", nSelected);
+                string sStrRef = Get2DAString("quest_list", s2daQuestColumn + "_StrRef", nSelected);
+                // Find the quest paper on oPC for sQuestID and destroy it!
+                object oPaper = GetFirstItemInInventory(oTarget);
+                while(oPaper != OBJECT_INVALID)
+                {
+                    if(sQuestID == GetLocalString(oPaper, "0_Q_ID") && GetTag(oPaper) == "0_quest_paper") 
+                    {
+                        RemoveQuestPaperFromDatabase(oTarget, oPaper);
+                        DestroyObject(oPaper);
+                        break;
+                    }
+                    oPaper = GetNextItemInInventory(oTarget);
+                }
                 // Move paper to Quest book if they have one else give to the PC and lock it.
-                object oPaper, oBook = GetItemPossessedBy (oTarget, "0_quest_book");
-                if (oBook != OBJECT_INVALID) oPaper = CreateQuest (oTarget, oBook, STORY_QUESTS, StringToInt (sStrRef));
-                else oPaper = CreateQuest (oTarget, oTarget, STORY_QUESTS, StringToInt (sStrRef));
-                SetItemCursedFlag (oPaper, TRUE);
-                // Save the pointer for the quest in the database make sure it is initialized.
-                SetObjectDatabaseInt (oTarget, QUEST_TABLE, "questpointer", nSelected, sQuestName);
+                object oBook = GetItemPossessedBy(oTarget, "0_quest_book");
+                if(oBook != OBJECT_INVALID) oPaper = CreateQuest(oTarget, oBook, nQuestType, StringToInt(sStrRef));
+                else oPaper = CreateQuest(oTarget, oTarget, nQuestType, StringToInt(sStrRef));
+                SetItemCursedFlag(oPaper, TRUE);
+                // Save the pointer for the quest in the database.
+                SetObjectDatabaseInt(oTarget, QUEST_TABLE, "questpointer", nSelected, sQuestName);
                 // Set the quest papers description.
                 // Quest givers StrRef Lines are +1 Starting convo
-                int nQuestStrRef = StringToInt (GetLocalString (oPaper, "0_Q_STRREF"));
-                string sQuestText = GetStringByStrRef (nQuestStrRef + 1);
+                int nQuestStrRef = StringToInt(GetLocalString (oPaper, "0_Q_STRREF"));
+                string sQuestText = GetStringByStrRef(nQuestStrRef + 1);
                 sQuestText = ParseQuestTextByPaper(sQuestText, oPaper, oTarget);
                 // Get the givers name to place on papers.
-                string sArray = GetLocalString (oPaper, "0_Q_GIVER");
-                string sName = AddColorToText (GetStringArray (sArray, 0, "-"), COLOR_GREEN);
+                string sArray = GetLocalString(oPaper, "0_Q_GIVER");
+                string sName = AddColorToText(GetStringArray (sArray, 0, "-"), COLOR_GREEN);
                 sArray = GetLocalString(oPaper, "0_Q_START");
-                string sArea = AddColorToText (GetStringArray (sArray, 0, "-"), COLOR_GREEN);
+                string sArea = AddColorToText(GetStringArray (sArray, 0, "-"), COLOR_GREEN);
                 // Set the Papers description.
-                SetDescription (oPaper, sName + " located in " + sArea + " has given you a quest. '" + sQuestText + "'.");
+                if(sName != "" && sArea != "") sQuestText = sName + " located in " + sArea + " has given you a quest. '" + sQuestText + "'.";
+                SetDescription(oPaper, sQuestText);
                 // Set the quest papers name using parts via journal ID.
-                string sQuestArray = GetLocalString (oPaper, "0_Q_QUEST");
-                string sJournalID = GetStringArray (sQuestArray, 6, "-");
-                sQuestName = sQuestName + " Quest (Part " + sJournalID + ")";
-                SetName (oPaper, AddColorToText (sQuestName, COLOR_MAGENTA));
+                string sQuestArray = GetLocalString(oPaper, "0_Q_QUEST");
+                string sJournalID = GetStringArray(sQuestArray, 6, "-");
+                string sPaperQuestName = sQuestName + " Quest (Part " + sJournalID + ")";
+                SetName(oPaper, AddColorToText(sPaperQuestName, COLOR_MAGENTA));
                 // Plot #2: Delivering Item.
-                string sPlot = GetLocalString (oPaper, "0_Q_PLOT");
-                if (sPlot == "2") DelayCommand(0.5f, CreateQuestItem(oTarget, oTarget, sQuestID, "item"));
+                string sPlot = GetLocalString(oPaper, "0_Q_PLOT");
+                if(sPlot == "2") DelayCommand(0.5f, CreateQuestItem(oTarget, oTarget, sQuestID, "item"));
                 // Check to see if they are giving an item.
-                if (GetLocalString (oPaper, "0_Q_GIVEITEM") != "")
+                if(GetLocalString(oPaper, "0_Q_GIVEITEM") != "")
                 {
                     DelayCommand(0.5f, CreateQuestItem(oTarget, oTarget, sQuestID, "giveitem"));
                 }
                // Plot #1:Destroy Placeable, #5:Kill, #6/#7:Delivering NPC, #8:Clear area.
-                if (sPlot == "1" || sPlot == "5" || sPlot == "6" || sPlot == "7" || sPlot == "8")
+                if(sPlot == "1" || sPlot == "5" || sPlot == "6" || sPlot == "7" || sPlot == "8")
                 {
                     string sNPCArray = GetLocalString(oPaper, "0_Q_NPC");
                     DelayCommand (0.2f, GiveQuestNPC(oPaper, sQuestID, sNPCArray, sQuestArray));
                 }
                 // Does this quest add a Journal entry on quest start?
                 int nJournalID = StringToInt(GetStringArray (sQuestArray, 6, "-"));
-                if (nJournalID > 0) AddJournalEntry(sQuestName, nJournalID, oTarget);
+                if(nJournalID > 0) 
+                {
+                    RemoveJournalEntry(sQuestName, oTarget);
+                    AddJournalEntry(sQuestName, nJournalID, oTarget);
+                }
                 // Set the buttons to the new point.
                 NuiSetBind(oPC, nToken, "btn_quest_clear", JsonBool (FALSE));
-                NuiSetBind(oPC, nToken, "btn_quest_set", JsonBool (FALSE));
+                NuiSetBind(oPC, nToken, "btn_quest_set", JsonBool (TRUE));
                 NuiSetBind(oPC, nToken, "btn_quest_complete", JsonBool (FALSE));
+                string sText = " is on part " + GetStringLeft(Get2DAString ("quest_list", s2daQuestColumn + "_Desc", nSelected), 1);
+                NuiSetBind(oPC, nToken, "lbl_quest_part_label", JsonString(sQuestName + sText));
             }
             else if(sElem == "btn_quest_complete")
             {
@@ -1295,10 +1197,41 @@ void main()
                 // Set the buttons to the new point.
                 NuiSetBind(oPC, nToken, "btn_quest_clear", JsonBool (FALSE));
                 NuiSetBind(oPC, nToken, "btn_quest_set", JsonBool (FALSE));
+                NuiSetBind(oPC, nToken, "lbl_quest_part_label", JsonString(sQuestName + " is Completed!"));
+                RemoveJournalEntry(sQuestName, oTarget);
+                // Add the final journal entry if there is one.
+                if(nQuestType == STORY_QUESTS)
+                { 
+                    int nIndex = nSelected;
+                    string s2DAQuestName = Get2DAString ("quest_list", "Story_Quest_Name", nIndex);
+                    while(s2DAQuestName == sQuestName)
+                    {
+                        s2DAQuestName = Get2DAString ("quest_list", "Story_Quest_Name", ++nIndex);
+                    }
+                    string sStrRef = GetStringByStrRef( StringToInt(Get2DAString("quest_list", "Story_Quest_StrRef", --nIndex)));
+                    int i = FindSubString(sStrRef, "[REWARDS:");
+                    string sRewardsArray = GetQuestData(sStrRef, i + 8);
+                    int nJournalID = StringToInt(GetStringArray (sRewardsArray, 5, "-"));
+                    AddJournalEntry(sQuestName, nJournalID, oTarget);
+                }
+                if(nQuestType == LOCATION_QUESTS)
+                {
+                    AddJournalEntry(sQuestName, 2, oTarget);
+                }
                 // Get the paper and destroy it if it exists.
                 string sID = GetQuestIDByQuestName(oTarget, sQuestName);
-                // !!! Need to add code to find paper and remove.
-                //if (GetIsObjectValid (oPaper)) DestroyObject (oPaper);
+                string sQuestID = GetQuestIDByQuestName(oTarget, sQuestName);
+                // Find the quest paper on oPC for sQuestID and destroy it!
+                object oPaper = GetFirstItemInInventory(oPC);
+                while(oPaper != OBJECT_INVALID)
+                {
+                    if(sQuestID == GetLocalString(oPaper, "0_Q_ID")) 
+                    {
+                        DestroyObject(oPaper);
+                        break;
+                    }
+                    oPaper = GetNextItemInInventory(oPC);
+                }
             }
         }
     }
@@ -1306,7 +1239,7 @@ void main()
     // DM server main quests window events.
     else if (sWndId == "dmdatabasewin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
         if (sEvent == "click")
         {
             if(sElem == "btn_o_delete")
@@ -1366,177 +1299,178 @@ void main()
     }
     //**************************************************************************
     // DM Experience window events.
-    else if (sWndId == "dmxpwin")
+    else if(sWndId == "dmxpwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
-        if (sEvent == "click")
+        object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+        if(sEvent == "click")
         {
+            if(sElem == "btn_party_xp") return;
             string sType;
-            string sXpAdj = JsonGetString (NuiGetBind (oPC, nToken, "xp_amount"));
-            string sRacialXpAdj = JsonGetString (NuiGetBind (oPC, nToken, "racial_xp_amount"));
+            string sXpAdj = JsonGetString(NuiGetBind(oPC, nToken, "xp_amount"));
+            string sRacialXpAdj = JsonGetString(NuiGetBind(oPC, nToken, "racial_xp_amount"));
             int nXp;
-            int nXpAdj = StringToInt (sXpAdj);
-            float fRacialXpAdj = StringToFloat (sRacialXpAdj);
-            float fRacialXp = GetLocalFloat (oTarget, "0_RacialXP");
+            int nXpAdj = StringToInt(sXpAdj);
+            float fRacialXpAdj = StringToFloat(sRacialXpAdj);
+            float fRacialXp = GetLocalFloat(oTarget, "0_RacialXP");
             object oPlayer;
-            int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, "xp_opt_selected"));
-            if (nSelected == 0) sType = "";
-            else if (nSelected == 1) sType = " roleplay";
-            else if (nSelected == 2) sType = " quest";
-            else if (nSelected == 3) sType = " puzzle";
-            else if (nSelected == 4) sType = " milestone";
-            else if (nSelected == 5) sType = " adventure";
-            if (sElem == "btn_1_xp")
+            int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, "xp_opt_selected"));
+            if(nSelected == 0) sType = "";
+            else if(nSelected == 1) sType = " roleplay";
+            else if(nSelected == 2) sType = " quest";
+            else if(nSelected == 3) sType = " puzzle";
+            else if(nSelected == 4) sType = " milestone";
+            else if(nSelected == 5) sType = " adventure";
+            if(sElem == "btn_1_xp")
             {
-                nXpAdj = FloatToInt (IntToFloat (GetXpForNextLevel (GetCharacterLevels (oTarget))) * 0.01f);
-                sXpAdj = IntToString (nXpAdj);
-                NuiSetBind (oPC, nToken, "xp_amount", JsonString (sXpAdj));
+                nXpAdj = FloatToInt(IntToFloat(GetXpForNextLevel(GetCharacterLevels(oTarget))) * 0.01f);
+                sXpAdj = IntToString(nXpAdj);
+                NuiSetBind(oPC, nToken, "xp_amount", JsonString(sXpAdj));
             }
-            else if (sElem == "btn_5_xp")
+            else if(sElem == "btn_5_xp")
             {
-                nXpAdj = FloatToInt (IntToFloat (GetXpForNextLevel (GetCharacterLevels (oTarget))) * 0.05f);
-                sXpAdj = IntToString (nXpAdj);
-                NuiSetBind (oPC, nToken, "xp_amount", JsonString (sXpAdj));
+                nXpAdj = FloatToInt(IntToFloat(GetXpForNextLevel(GetCharacterLevels(oTarget))) * 0.05f);
+                sXpAdj = IntToString(nXpAdj);
+                NuiSetBind(oPC, nToken, "xp_amount", JsonString(sXpAdj));
             }
-            else if (sElem == "btn_10_xp")
+            else if(sElem == "btn_10_xp")
             {
-                nXpAdj = FloatToInt (IntToFloat (GetXpForNextLevel (GetCharacterLevels (oTarget))) * 0.10f);
-                sXpAdj = IntToString (nXpAdj);
-                NuiSetBind (oPC, nToken, "xp_amount", JsonString (sXpAdj));
+                nXpAdj = FloatToInt(IntToFloat(GetXpForNextLevel(GetCharacterLevels(oTarget))) * 0.10f);
+                sXpAdj = IntToString(nXpAdj);
+                NuiSetBind(oPC, nToken, "xp_amount", JsonString(sXpAdj));
             }
-            else if (nXpAdj == 0 && fRacialXpAdj == 0.0f)
+            else if(nXpAdj == 0 && fRacialXpAdj == 0.0f)
             {
-                SendMessages ("Invalid amount of Experience!", COLOR_RED, oPC);
+                SendMessages("Invalid amount of Experience!", COLOR_RED, oPC);
             }
-            else if (sElem == "btn_give_xp")
+            else if(sElem == "btn_give_xp")
             {
-                if (JsonDump (NuiGetBind (oPC, nToken, "btn_party_xp")) == "true")
+                if(JsonDump(NuiGetBind(oPC, nToken, "btn_party_xp")) == "true")
                 {
-                    if (nXpAdj != 0) SendMessages ("Party gains" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPC);
-                    if (fRacialXpAdj != 0.0f) SendMessages ("Party gains" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPC);
-                    oPlayer = GetFirstFactionMember (oTarget);
-                    while (oPlayer != OBJECT_INVALID)
+                    if(nXpAdj != 0) SendMessages("Party gains" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPC);
+                    if(fRacialXpAdj != 0.0f) SendMessages("Party gains" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPC);
+                    oPlayer = GetFirstFactionMember(oTarget);
+                    while(oPlayer != OBJECT_INVALID)
                     {
-                        if (fRacialXpAdj > 0.0f)
+                        if(fRacialXpAdj > 0.0f)
                         {
-                            SetLocalFloat (oPlayer, "0_RacialXP", fRacialXp + fRacialXpAdj);
-                            SendMessages ("You have gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPlayer);
+                            SetLocalFloat(oPlayer, "0_RacialXP", fRacialXp + fRacialXpAdj);
+                            SendMessages("You have gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPlayer);
                         }
-                        if (nXpAdj > 0)
+                        if(nXpAdj > 0)
                         {
-                            nXp = GetXP (oPlayer);
-                            SetXP (oPlayer, nXp + nXpAdj);
-                            SendMessages ("You have gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPlayer);
+                            nXp = GetXP(oPlayer);
+                            SetXP(oPlayer, nXp + nXpAdj);
+                            SendMessages("You have gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPlayer);
                         }
-                        oPlayer = GetNextFactionMember (oTarget);
+                        oPlayer = GetNextFactionMember(oTarget);
                     }
                 }
                 else
                 {
-                    if (fRacialXpAdj > 0.0f)
+                    if(fRacialXpAdj > 0.0f)
                     {
-                        SetLocalFloat (oTarget, "0_RacialXP", fRacialXp + fRacialXpAdj);
-                        SendMessages (GetName (oTarget) + " has gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPC);
-                        SendMessages ("You have gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oTarget);
+                        SetLocalFloat(oTarget, "0_RacialXP", fRacialXp + fRacialXpAdj);
+                        SendMessages(GetName(oTarget) + " has gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oPC);
+                        SendMessages("You have gained" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_RED, oTarget);
                     }
-                    if (nXpAdj > 0)
+                    if(nXpAdj > 0)
                     {
-                        nXp = GetXP (oTarget);
-                        SetXP (oTarget, nXp + nXpAdj);
-                        SendMessages (GetName (oTarget) + " has gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPC);
-                        SendMessages ("You have gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oTarget);
+                        nXp = GetXP(oTarget);
+                        SetXP(oTarget, nXp + nXpAdj);
+                        SendMessages(GetName (oTarget) + " has gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oPC);
+                        SendMessages("You have gained" + sType + " experience of " + sXpAdj + "!", COLOR_GREEN, oTarget);
                     }
                 }
-                NuiDestroy (oPC, nToken);
+                NuiDestroy(oPC, nToken);
             }
-            else if (sElem == "btn_take_xp")
+            else if(sElem == "btn_take_xp")
             {
-                if (JsonDump (NuiGetBind (oPC, nToken, "btn_party_xp")) == "true")
+                if(JsonDump(NuiGetBind (oPC, nToken, "btn_party_xp")) == "true")
                 {
-                    if (nXpAdj != 0) SendMessages ("Party loses" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
-                    if (fRacialXpAdj != 0.0f) SendMessages ("Party loses" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
+                    if(nXpAdj != 0) SendMessages("Party loses" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
+                    if(fRacialXpAdj != 0.0f) SendMessages("Party loses" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
+                    oPC = GetFirstFactionMember(oTarget);
+                    while(oPC != OBJECT_INVALID)
+                    {
+                        if(fRacialXpAdj > 0.0f)
+                        {
+                            SetLocalFloat(oPC, "0_RacialXP", fRacialXp - fRacialXpAdj);
+                            SendMessages("You have lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
+                        }
+                        if(nXpAdj > 0)
+                        {
+                            nXp = GetXP(oPC);
+                            SetXP(oPC, nXp - nXpAdj);
+                            SendMessages("You have lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
+                        }
+                        oPC = GetNextFactionMember(oTarget);
+                    }
+                }
+                else
+                {
+                    if(fRacialXpAdj > 0.0f)
+                    {
+                        SetLocalFloat(oTarget, "0_RacialXP", fRacialXp - fRacialXpAdj);
+                        SendMessages(GetName (oTarget) + " has lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
+                        SendMessages("You have lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oTarget);
+                    }
+                    if(nXpAdj > 0)
+                    {
+                        nXp = GetXP(oTarget);
+                        SetXP(oTarget, nXp - nXpAdj);
+                        SendMessages(GetName (oTarget) + " has lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
+                        SendMessages("You have lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oTarget);
+                    }
+                }
+                NuiDestroy(oPC, nToken);
+            }
+            else if(sElem == "btn_set_xp")
+            {
+                if(JsonDump (NuiGetBind (oPC, nToken, "btn_party_xp")) == "true")
+                {
+                    if(nXpAdj != 0) SendMessages("Parties experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
+                    if(fRacialXpAdj != 0.0f) SendMessages("Parties racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
                     oPC = GetFirstFactionMember (oTarget);
-                    while (oPC != OBJECT_INVALID)
+                    while(oPC != OBJECT_INVALID)
                     {
-                        if (fRacialXpAdj > 0.0f)
+                        if(fRacialXpAdj > 0.0f)
                         {
-                            SetLocalFloat (oPC, "0_RacialXP", fRacialXp - fRacialXpAdj);
-                            SendMessages ("You have lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
+                            SetLocalFloat(oPC, "0_RacialXP", fRacialXpAdj);
+                            SendMessages("Your racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
                         }
-                        if (nXpAdj > 0)
+                        if(nXpAdj > 0)
                         {
-                            nXp = GetXP (oPC);
-                            SetXP (oPC, nXp - nXpAdj);
-                            SendMessages ("You have lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
+                            SetXP(oPC, nXpAdj);
+                            SendMessages("Your experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
                         }
-                        oPC = GetNextFactionMember (oTarget);
+                        oPC = GetNextFactionMember(oTarget);
                     }
                 }
                 else
                 {
-                    if (fRacialXpAdj > 0.0f)
+                    if(fRacialXpAdj > 0.0f)
                     {
-                        SetLocalFloat (oTarget, "0_RacialXP", fRacialXp - fRacialXpAdj);
-                        SendMessages (GetName (oTarget) + " has lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oPC);
-                        SendMessages ("You have lost" + sType + " racial experience of " + sRacialXpAdj + "!", COLOR_GREEN, oTarget);
+                        SetLocalFloat(oTarget, "0_RacialXP", fRacialXpAdj);
+                        SendMessages(GetName(oTarget) + "'s racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
+                        SendMessages("Your racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oTarget);
                     }
-                    if (nXpAdj > 0)
+                    if(nXpAdj > 0)
                     {
-                        nXp = GetXP (oTarget);
-                        SetXP (oTarget, nXp - nXpAdj);
-                        SendMessages (GetName (oTarget) + " has lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oPC);
-                        SendMessages ("You have lost" + sType + " experience of " + sXpAdj + "!", COLOR_RED, oTarget);
+                        SetXP(oTarget, nXpAdj);
+                        SendMessages(GetName(oTarget) + "'s experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
+                        SendMessages("Your experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oTarget);
                     }
                 }
-                NuiDestroy (oPC, nToken);
+                NuiDestroy(oPC, nToken);
             }
-            else if (sElem == "btn_set_xp")
-            {
-                if (JsonDump (NuiGetBind (oPC, nToken, "btn_party_xp")) == "true")
-                {
-                    if (nXpAdj != 0) SendMessages ("Parties experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
-                    if (fRacialXpAdj != 0.0f) SendMessages ("Parties racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
-                    oPC = GetFirstFactionMember (oTarget);
-                    while (oPC != OBJECT_INVALID)
-                    {
-                        if (fRacialXpAdj > 0.0f)
-                        {
-                            SetLocalFloat (oPC, "0_RacialXP", fRacialXpAdj);
-                            SendMessages ("Your racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
-                        }
-                        if (nXpAdj > 0)
-                        {
-                            SetXP (oPC, nXpAdj);
-                            SendMessages ("Your experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
-                        }
-                        oPC = GetNextFactionMember (oTarget);
-                    }
-                }
-                else
-                {
-                    if (fRacialXpAdj > 0.0f)
-                    {
-                        SetLocalFloat (oTarget, "0_RacialXP", fRacialXpAdj);
-                        SendMessages (GetName (oTarget) + "'s racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oPC);
-                        SendMessages ("Your racial experience has been set to " + sRacialXpAdj + "!", COLOR_YELLOW, oTarget);
-                    }
-                    if (nXpAdj > 0)
-                    {
-                        SetXP (oTarget, nXpAdj);
-                        SendMessages (GetName (oTarget) + "'s experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oPC);
-                        SendMessages ("Your experience has been set to " + sXpAdj + "!", COLOR_YELLOW, oTarget);
-                    }
-                }
-                NuiDestroy (oPC, nToken);
-            }
-            UpdateDMCreatureScreen (oPC, oTarget);
+            UpdateDMCreatureScreen(oPC, oTarget);
         }
     }
     //**************************************************************************
     // DM Hitpoint window events.
     else if (sWndId == "dmhpwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         if (sEvent == "click")
         {
             string sHp, sHpAdj = JsonGetString (NuiGetBind (oPC, nToken, "hp_amount"));
@@ -1729,7 +1663,7 @@ void main()
     else if (sWndId == "dmclasswin")
     {
         int nSelected, nClass, nLevel, nIndex = 0;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         if (sEvent == "click")
         {
             if (sElem == "btn1_up_lvl") nIndex = 1;
@@ -1766,7 +1700,7 @@ void main()
     else if (sWndId == "dmreputationwin")
     {
         int nSelected;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         if (sEvent == "watch")
         {
             if (sElem == "fame_opt_selected")
@@ -1786,7 +1720,7 @@ void main()
     // DM Gold window events.
     else if (sWndId == "dmgoldwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         if (sEvent == "click")
         {
             string sType, sGoldAdj = JsonGetString (NuiGetBind (oPC, nToken, "gold_amount"));
@@ -1901,7 +1835,7 @@ void main()
     // DM alignment window events.
     else if (sWndId == "dmalignwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         int nLC = JsonGetInt (NuiGetBind (oPC, nToken, "law_chaos_value"));
         int nGE = JsonGetInt (NuiGetBind (oPC, nToken, "good_evil_value"));
         if (sEvent == "click")
@@ -1933,21 +1867,29 @@ void main()
     // DM player window events.
     else if (sWndId == "dmplayerwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
         if (sEvent == "watch" && sElem == "status_opt_selected")
         {
             // Get the selection.
             int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
+            int nDMStatus = GetServerDatabaseStatusByCDKey(oPC);
+            int nTargetStatus = GetServerDatabaseStatusByCDKey(oTarget);
+            if(nDMStatus <= nTargetStatus)
+            {
+                SendMessages("You cannot change a players status that is equal or higher than yours!", COLOR_RED, oPC);
+                NuiDestroy(oPC, nToken);
+                return;
+            }
             if (nSelected < 6)
             {
-                SetServerDatabaseInt (oTarget, PLAYER_TABLE, "status", nSelected);
                 string sStatusText;
-                if (nSelected == 0) sStatusText = "unknown player";
-                else if (nSelected == 1) sStatusText = "known player";
+                if (nSelected == 0) sStatusText = "new player";
+                else if (nSelected == 1) sStatusText = "player";
                 else if (nSelected == 2) sStatusText = "privileged player";
                 else if (nSelected == 3) sStatusText = "dungeon master";
                 else if (nSelected == 4) sStatusText = "privileged dm";
                 else if (nSelected == 5) sStatusText = "administrator";
+                SetServerDatabaseInt (oTarget, PLAYER_TABLE, "status", nSelected);
                 SendMessages ("You have been set to " + sStatusText + " status by " + GetName (oPC) + ".", COLOR_YELLOW, oTarget);
                 SendMessages (GetName (oPC) + " has set " + GetName (oTarget) + " " + sStatusText + "!", COLOR_RED, OBJECT_INVALID, FALSE, TRUE);
             }
@@ -2028,10 +1970,10 @@ void main()
     else if (sWndId == "dmobjectwin")
     {
         int nLevel, nDC = 00, nDC1, nDC2, nDC3, nDC4, nDC5, nTreasureLevel;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_PLACEABLE);
         if (sEvent == "click")
         {
-            if (sElem == "btn_open")
+            if(sElem == "btn_open")
             {
                 if (GetIsOpen (oTarget))
                 {
@@ -2302,7 +2244,10 @@ void main()
     // DM Inventory window events.
     else if (sWndId == "dminventorywin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget;
+        int nTargetType = GetLocalInt(oPC, DM_TARGET_TYPE);
+        if(nTargetType == OBJECT_TYPE_CREATURE) oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+        else if(nTargetType == OBJECT_TYPE_PLACEABLE) oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
         if (sEvent == "click")
         {
             int nTreasureType = JsonGetInt (NuiGetBind (oPC, nToken, "treasure_type_selected"));
@@ -2351,16 +2296,44 @@ void main()
             else if (sElem == "btn_destroy_all" && !GetIsPC (oTarget)) RemoveItems (oTarget, TRUE);
             else if (sElem == "btn_destroy_unequip" && !GetIsPC (oTarget)) RemoveItems (oTarget, FALSE);
         }
+        if(sEvent == "mousedown")
+        {
+            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
+            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
+            {
+                object oItem;
+                if(sElem == "img_left") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_L, oTarget);
+                else if(sElem == "img_right") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oTarget);
+                else if(sElem == "img_special") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_B, oTarget);
+                else if(sElem == "img_skin") oItem = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oTarget);
+                if(oItem != OBJECT_INVALID) AssignCommand(oPC, ActionExamine(oItem));
+            }
+            if(nMouseButton == NUI_MOUSE_BUTTON_LEFT)
+            {
+                object oItem;
+                if(sElem == "img_left") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_L, oTarget);
+                else if(sElem == "img_right") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oTarget);
+                else if(sElem == "img_special") oItem = GetItemInSlot(INVENTORY_SLOT_CWEAPON_B, oTarget);
+                else if(sElem == "img_skin") oItem = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oTarget);
+                if(oItem != OBJECT_INVALID)
+                {
+                    AssignCommand(oTarget, ActionUnequipItem(oItem));
+                    NuiDestroy(oPC, nToken);
+                    DelayCommand(0.2, PopUpDMInventoryGUIPanel(oPC));
+                }
+            }
+        }
     }
     //**************************************************************************
     // DM Move Placeable window events.
-    else if (sWndId == "dmmoveplaceablewin")
+    else if(sWndId == "dmmoveplaceablewin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
-        if (sEvent == "click")
+        object oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
+        if(sEvent == "click")
         {
-            if (sElem == "btn_get_placeable")
+            if(sElem == "btn_get_placeable")
             {
+                NuiDestroy(oPC, nToken);
                 // Get Target.
                 SetLocalString (oPC, "0_Target_Mode", "0_DM_GET_PLACEABLE_TARGET");
                 EnterTargetingMode (oPC, OBJECT_TYPE_PLACEABLE | OBJECT_TYPE_TILE, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
@@ -2424,7 +2397,7 @@ void main()
             if (sElem == "btn_destroy")
             {
                 DestroyObject (oTarget);
-                SetLocalObject (oPC, "0_DM_Target", OBJECT_INVALID);
+                SetLocalObject(oPC, DM_TARGET_PLACEABLE, OBJECT_INVALID);
                 SetPlayerWinTarget (oPC, "No Target");
                 oTarget = OBJECT_INVALID;
                 NuiSetBind (oPC, nToken, "btn_rotate_right_event", JsonBool (FALSE));
@@ -2444,7 +2417,7 @@ void main()
     // DM Item window events.
     else if (sWndId == "dmitemwin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_ITEM);
         if (sEvent == "watch")
         {
             if (sElem == "desc_value")
@@ -2531,7 +2504,7 @@ void main()
             else if (sElem == "quality_selected")
             {
                 // Get the selection.
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
+                int nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
                 itemproperty ipQuality = HasProperty (oTarget, 86);
                 RemoveItemProperty(oTarget, ipQuality);
                 if (nSelected > 0)
@@ -2551,54 +2524,294 @@ void main()
                 SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
                 EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
-            else if (sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
+            else if(sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
+            else if(sElem == "btn_equip")
+            {
+                object oOwner = GetItemPossessor(oTarget);
+                int nBaseItemType = GetBaseItemType(oTarget);
+                string sSlot = Get2DAString("baseitems", "EquipableSlots", nBaseItemType);
+                int nSlot = HexStringToInt(sSlot);
+                if(nSlot != 0)
+                {
+                    if(nSlot & 1) nSlot = INVENTORY_SLOT_HEAD;
+                    else if(nSlot & 2) nSlot = INVENTORY_SLOT_CHEST;
+                    else if(nSlot & 4) nSlot = INVENTORY_SLOT_BOOTS;
+                    else if(nSlot & 8) nSlot = INVENTORY_SLOT_ARMS;
+                    else if(nSlot & 16) nSlot = INVENTORY_SLOT_RIGHTHAND;
+                    else if(nSlot & 32) nSlot = INVENTORY_SLOT_LEFTHAND;
+                    else if(nSlot & 64) nSlot = INVENTORY_SLOT_CLOAK;
+                    else if(nSlot & 384) nSlot = INVENTORY_SLOT_RIGHTRING;
+                    else if(nSlot & 512) nSlot = INVENTORY_SLOT_NECK;
+                    else if(nSlot & 1024) nSlot = INVENTORY_SLOT_BELT;
+                    else if(nSlot & 2048) nSlot = INVENTORY_SLOT_ARROWS;
+                    else if(nSlot & 4096) nSlot = INVENTORY_SLOT_BULLETS;
+                    else if(nSlot & 8192) nSlot = INVENTORY_SLOT_BOLTS;
+                    else if(nSlot & 114688)
+                    {
+                        object oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oOwner);
+                        if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_R;
+                        else
+                        {
+                            oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_L, oOwner);
+                            if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_L;
+                            else
+                            {
+                                oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_B, oOwner);
+                                if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_B;
+                                else nSlot = INVENTORY_SLOT_CWEAPON_R;
+                            }
+                        }
+                    }
+                    else if(nSlot & 131072) nSlot = INVENTORY_SLOT_CARMOUR;
+                    AssignCommand(oOwner, ActionEquipItem(oTarget, nSlot));
+                    NuiDestroy (oPC, nToken);
+                    // Get Target.
+                    SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
+                    EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+                }
+            }
+            if(sElem == "btn_properties")
+            {
+                int nActualProperty;
+                itemproperty ip;
+                json jProperty;
+                if(nIndex > 0)
+                {
+                    int nListedProperty, nIPType;
+                    ip = GetFirstItemProperty(oTarget);
+                    while(GetIsItemPropertyValid(ip))
+                    {
+                        nIPType = GetItemPropertyType(ip);
+                        if(nIPType != ITEM_PROPERTY_QUALITY) nListedProperty++;
+                        nActualProperty++;
+                        if(nIndex == nListedProperty) break;
+                        ip = GetNextItemProperty(oTarget);
+                    }
+                    // jProperty {Item property index, Property Type, SubPropertyType,
+                    //            CostTable Value, Param1 Value, Item window fX, Item window fY}
+                    jProperty = JsonArrayInsert(JsonArray(), JsonInt(nActualProperty));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(GetItemPropertyType(ip)));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(GetItemPropertySubType(ip)));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(GetItemPropertyCostTableValue(ip)));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(GetItemPropertyParam1Value(ip)));
+                }
+                else
+                {
+                    // jProperty {Item property index, Property Type, SubPropertyType,
+                    //            CostTable Value, Param1 Value, Item window fX, Item window fY}
+                    jProperty = JsonArrayInsert(JsonArray(), JsonInt(0));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(0));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(0));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(0));
+                    jProperty = JsonArrayInsert(jProperty, JsonInt(0));
+                }
+                json jGeometry = NuiGetBind(oPC, nToken, "window_geometry");
+                float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
+                float fY = JsonGetFloat(JsonObjectGet(jGeometry, "y"));
+                if(fX == 0.0) fX = 0.0001;
+                if(fY == 0.0) fY = 0.0001;
+                jProperty = JsonArrayInsert(jProperty, JsonFloat(fX));
+                jProperty = JsonArrayInsert(jProperty, JsonFloat(fY));
+                PopUpDMItemPropertiesGUIPanel(oPC, oTarget, jProperty);
+            }
+        }
+        if(sEvent == "mousedown")
+        {
+            int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
+            if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
+            {
+                if(sElem == "btn_equip")
+                {
+                    object oOwner = GetItemPossessor(oTarget);
+                    int nBaseItemType = GetBaseItemType(oTarget);
+                    string sSlot = Get2DAString("baseitems", "EquipableSlots", nBaseItemType);
+                    int nSlot = HexStringToInt(sSlot);
+                    if(nSlot != 0)
+                    {
+                        if(nSlot & 1) nSlot = INVENTORY_SLOT_HEAD;
+                        else if(nSlot & 2) nSlot = INVENTORY_SLOT_CHEST;
+                        else if(nSlot & 4) nSlot = INVENTORY_SLOT_BOOTS;
+                        else if(nSlot & 8) nSlot = INVENTORY_SLOT_ARMS;
+                        else if(nSlot & 16) nSlot = INVENTORY_SLOT_LEFTHAND;
+                        else if(nSlot & 32) nSlot = INVENTORY_SLOT_LEFTHAND;
+                        else if(nSlot & 64) nSlot = INVENTORY_SLOT_CLOAK;
+                        else if(nSlot & 384) nSlot = INVENTORY_SLOT_LEFTRING;
+                        else if(nSlot & 512) nSlot = INVENTORY_SLOT_NECK;
+                        else if(nSlot & 1024) nSlot = INVENTORY_SLOT_BELT;
+                        else if(nSlot & 2048) nSlot = INVENTORY_SLOT_ARROWS;
+                        else if(nSlot & 4096) nSlot = INVENTORY_SLOT_BULLETS;
+                        else if(nSlot & 8192) nSlot = INVENTORY_SLOT_BOLTS;
+                        else if(nSlot & 114688)
+                        {
+                            object oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oOwner);
+                            if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_R;
+                            else
+                            {
+                                oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_L, oOwner);
+                                if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_L;
+                                else
+                                {
+                                    oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_B, oOwner);
+                                    if(oWeapon == OBJECT_INVALID) nSlot = INVENTORY_SLOT_CWEAPON_B;
+                                    else nSlot = INVENTORY_SLOT_CWEAPON_R;
+                                }
+                            }
+                        }
+                        else if(nSlot & 131072) nSlot = INVENTORY_SLOT_CARMOUR;
+                        AssignCommand(oOwner, ActionEquipItem(oTarget, nSlot));
+                        NuiDestroy (oPC, nToken);
+                        // Get Target.
+                        SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
+                        EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
+                    }
+                }
+            }
+        }
+    }
+    //**************************************************************************
+    // DM Item Property window events.
+    else if(sWndId == "dmitempropertywin")
+    {
+        object oTarget = GetLocalObject (oPC, DM_TARGET_ITEM);
+        json jProperty = NuiGetUserData(oPC, nToken);
+        if(sEvent == "click")
+        {
+            if(sElem == "btn_add")
+            {
+                int nPropertyIndex = JsonGetInt(JsonArrayGet(jProperty, 0));
+                if(nPropertyIndex > 0)
+                {
+                    int nListedProperty, nIPType;
+                    itemproperty ip = GetFirstItemProperty(oTarget);
+                    while(GetIsItemPropertyValid(ip))
+                    {
+                        nIPType = GetItemPropertyType(ip);
+                        if(nPropertyIndex == ++nListedProperty) break;
+                        ip = GetNextItemProperty(oTarget);
+                    }
+                    RemoveItemProperty(oTarget, ip);
+                }
+                AddRawItemProperty(oPC, oTarget, jProperty);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dmitemwin"));
+                float fX = JsonGetFloat(JsonArrayGet(jProperty, 5));
+                float fY = JsonGetFloat(JsonArrayGet(jProperty, 6));
+                PopUpDMItemGUIPanel(oPC, fX, fY);
+                NuiDestroy(oPC, nToken);
+            }
+            if(sElem == "btn_remove")
+            {
+                int nPropertyIndex = JsonGetInt(JsonArrayGet(jProperty, 0));
+                int nListedProperty, nIPType;
+                itemproperty ip = GetFirstItemProperty(oTarget);
+                while(GetIsItemPropertyValid(ip))
+                {
+                    nIPType = GetItemPropertyType(ip);
+                    if(nPropertyIndex == ++nListedProperty) break;
+                    ip = GetNextItemProperty(oTarget);
+                }
+                RemoveItemProperty(oTarget, ip);
+                NuiDestroy(oPC, NuiFindWindow(oPC, "dmitemwin"));
+                float fX = JsonGetFloat(JsonArrayGet(jProperty, 5));
+                float fY = JsonGetFloat(JsonArrayGet(jProperty, 6));
+
+                PopUpDMItemGUIPanel(oPC, fX, fY);
+                NuiDestroy(oPC, nToken);
+            }
+        }
+        else if(sEvent == "watch" && !GetLocalInt (oPC, "0_No_Win_Save"))
+        {
+            if(GetStringLeft(sElem, 3) == "ip_")
+            {
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                if(sElem == "ip_selected")
+                {
+                    jProperty = JsonArraySet(jProperty, 1, JsonInt(nSelected)); // Property Type
+                    jProperty = JsonArraySet(jProperty, 2, JsonInt(0)); // Property SubType
+                    jProperty = JsonArraySet(jProperty, 3, JsonInt(0)); // Property CostTableValue
+                    jProperty = JsonArraySet(jProperty, 4, JsonInt(0)); // Property Param1Value
+                }
+                if(sElem == "ip_sub_selected")
+                {
+                    jProperty = JsonArraySet(jProperty, 2, JsonInt(nSelected));
+                }
+                if(sElem == "ip_bonus_selected")
+                {
+                    jProperty = JsonArraySet(jProperty, 3, JsonInt(nSelected));
+                    jProperty = JsonArraySet(jProperty, 4, JsonInt(0));
+                }
+                if(sElem == "ip_param_selected")
+                {
+                    jProperty = JsonArraySet(jProperty, 4, JsonInt(nSelected));
+                }
+                PopUpDMItemPropertiesGUIPanel(oPC, oTarget, jProperty);
+            }
         }
     }
     //**************************************************************************
     // DM quest item window events.
     else if (sWndId == "dmquestswin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
+        if(!GetIsCharacter(oTarget)) 
+        {
+            SendMessages(GetName(oTarget) + " is not a character! Only characters can have quests information changed.");
+            return;
+        }
         if (sEvent == "watch" && !GetLocalInt (oPC, "0_No_Win_Save"))
         {
             string sVar = "";
-            if (sElem == "desc_value")
+            if(sElem == "cmb_plot_selected")
+            {
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                SetLocalString(oTarget, "0_Q_PLOT", IntToString(nSelected + 1));
+                object oOwner = GetItemPossessor(oTarget);
+                if(GetIsCharacter(oOwner))
+                {
+                    string sQuestID = GetLocalString(oTarget, "0_Q_ID");
+                    SetServerDatabaseString(oOwner, QUEST_TABLE, "plot", IntToString(nSelected + 1), sQuestID);
+                }
+            }
+            else if (sElem == "desc_value")
             {
                 // Save the Description to target.
                 string sDescription = JsonGetString (NuiGetBind (oPC, nToken, "desc_value"));
                 SetDescription(oTarget, sDescription);
                 string sQuestID = GetLocalString(oTarget, "0_Q_ID");
                 object oOwner = GetItemPossessor(oTarget);
-                SetServerDatabaseString(oOwner, QUEST_TABLE, "description", sDescription, sQuestID);
+                if(GetIsCharacter(oOwner))
+                {
+                    object oOwner = GetItemPossessor(oTarget);
+                    SetServerDatabaseString(oOwner, QUEST_TABLE, "description", sDescription, sQuestID);
+                }
             }
-            else if (sElem == "name_value")
+            else if (sElem == "quest_name_value")
             {
                 // Saving name to target.
-                string sName = JsonGetString(NuiGetBind(oPC, nToken, "name_value"));
+                string sName = JsonGetString(NuiGetBind(oPC, nToken, "quest_name_value"));
                 SetName(oTarget, sName);
             }
-            else if (sElem == "quest_value") sVar = "QUEST";
-            else if (sElem == "startloc_value") sVar = "START";
-            else if (sElem == "giver_value") sVar = "GIVER";
-            else if (sElem == "area_value") sVar = "AREA";
-            else if (sElem == "npc_value") sVar = "NPC";
-            else if (sElem == "villain_value") sVar = "VILLAIN";
-            else if (sElem == "creatures_value") sVar = "CREATURES";
-            else if (sElem == "enemies_value") sVar = "ENEMIES";
-            else if (sElem == "allies_value") sVar = "ALLIES";
-            else if (sElem == "followers_value") sVar = "FOLLOWERS";
-            else if (sElem == "giveitem_value") sVar = "GIVEITEM";
-            else if (sElem == "plotitem_value") sVar = "ITEM";
-            else if (sElem == "placeable_value") sVar = "PLACEABLE";
-            else if (sElem == "fplaceable_value") sVar = "FPLACEABLE";
-            else if (sElem == "finloc_value") sVar = "FINISH";
-            else if (sElem == "finisher_value") sVar = "FINISHER";
+            else if (sElem == "quest_data_value") sVar = "QUEST";
+            else if (sElem == "start_area_value") sVar = "START";
+            else if (sElem == "start_npc_value") sVar = "GIVER";
+            else if (sElem == "quest_area_value") sVar = "AREA";
+            else if (sElem == "quest_npc_value") sVar = "NPC";
+            else if (sElem == "quest_villain_value") sVar = "VILLAIN";
+            else if (sElem == "quest_creatures_value") sVar = "CREATURES";
+            else if (sElem == "finish_enemies_value") sVar = "ENEMIES";
+            else if (sElem == "quest_allies_value") sVar = "ALLIES";
+            else if (sElem == "finish_allies_value") sVar = "FOLLOWERS";
+            else if (sElem == "give_item_value") sVar = "GIVEITEM";
+            else if (sElem == "quest_item_value") sVar = "ITEM";
+            else if (sElem == "quest_placeable_value") sVar = "PLACEABLE";
+            else if (sElem == "finish_placeable_value") sVar = "FPLACEABLE";
+            else if (sElem == "finish_area_value") sVar = "FINISH";
+            else if (sElem == "finish_npc_value") sVar = "FINISHER";
             else if (sElem == "rewards_value") sVar = "REWARDS";
             else if (sElem == "states_value") sVar = "STATE";
             if (sVar != "")
             {
                 // Save quest variable to the item.
-                string sValue = JsonGetString (NuiGetBind (oPC, nToken, sElem));
+                string sValue = JsonGetString(NuiGetBind (oPC, nToken, sElem));
                 SetLocalString (oTarget, "0_Q_" + sVar, sValue);
                 object oOwner = GetItemPossessor(oTarget);
                 if(GetIsCharacter(oOwner))
@@ -2610,14 +2823,115 @@ void main()
         }
         else if(sEvent == "click")
         {
-            if(sElem == "btn_delete")
+            if(sElem == "btn_quest_info")
+            {
+                PopUpInformationPanel(oPC, "Quest Information", GetStringByStrRef(16777223), 600.0, 500.0);
+            }
+            else if(sElem == "btn_start_area")
+            {
+                object oArea = GetArea(oPC);
+                string sArray = "-" + GetName(oArea) + "-" + GetTag(oArea) + "--";
+                NuiSetBind(oPC, nToken, "start_area_value", JsonString(sArray));
+            }
+            else if(sElem == "btn_start_npc")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_START_NPC");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_give_item")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_GIVE_ITEM");
+                EnterTargetingMode(oPC, OBJECT_TYPE_ITEM, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_quest_area")
+            {
+                object oArea = GetArea(oPC);
+                string sArray = "-" + GetName(oArea) + "-" + GetTag(oArea) + "--";
+                NuiSetBind(oPC, nToken, "quest_area_value", JsonString(sArray));
+            }
+            else if(sElem == "btn_quest_npc")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_NPC");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_quest_villain")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_VILLAIN");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_quest_creatures")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_CREATURES");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_quest_allies")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_ALLIES");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_quest_placeable")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_PLACEABLE");
+                EnterTargetingMode(oPC, OBJECT_TYPE_PLACEABLE, MOUSECURSOR_ACTION);
+            }
+           else if(sElem == "btn_quest_item")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_QUEST_ITEM");
+                EnterTargetingMode(oPC, OBJECT_TYPE_ITEM, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_finish_area")
+            {
+                object oArea = GetArea(oPC);
+                string sArray = "-" + GetName(oArea) + "-" + GetTag(oArea) + "--";
+                NuiSetBind(oPC, nToken, "finish_area_value", JsonString(sArray));
+            }
+            else if(sElem == "btn_finish_npc")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_FINISH_NPC");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_finish_enemies")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_FINISH_ENEMIES");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_finish_allies")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_FINISH_ALLIES");
+                EnterTargetingMode(oPC, OBJECT_TYPE_CREATURE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_finish_placeable")
+            {
+                SetLocalString(oPC, "0_Target_Mode", "0_QUEST_FINISH_PLACEABLE");
+                EnterTargetingMode(oPC, OBJECT_TYPE_PLACEABLE, MOUSECURSOR_ACTION);
+            }
+            else if(sElem == "btn_delete")
             {
                 object oOwner = GetItemPossessor(oTarget);
                 if(GetIsCharacter(oOwner))
                 {
                     RemoveQuestPaperFromDatabase(oOwner, oTarget);
-                    NuiDestroy(oPC, nToken);
+                    // If there is a quest NPC then remove them for the player.
+                    string sNPC = GetLocalString(oTarget, "0_Q_NPC");
+                    if(sNPC != "")
+                    {
+                        int nIndex = 1;
+                        string sQuestID = GetStringArray(sNPC, 2, "-");
+                        object oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
+                        while(oNPC != OBJECT_INVALID)
+                        {
+                            if(sQuestID == GetLocalString(oNPC, "0_QUEST_ID"))
+                            {
+                                RemoveQuestNPC(oPC, oNPC);
+                                SetIsDestroyable(TRUE, FALSE, FALSE, oNPC);
+                                DestroyObject(oNPC);
+                                break;
+                            }
+                            oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++nIndex);
+                        }
+                    }
                 }
+                NuiDestroy(oPC, nToken);
                 DestroyObject(oTarget);
             }
         }
@@ -2626,12 +2940,34 @@ void main()
     // DM Variable window events.
     else if (sWndId == "dmvariableswin")
     {
-        if (sEvent == "click")
+        object oTarget;
+        int nTargetType = GetLocalInt(oPC, DM_VAR_TARGET_TYPE);
+        if(nTargetType == OBJECT_TYPE_CREATURE) oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+        else if(nTargetType == OBJECT_TYPE_ITEM) oTarget = GetLocalObject(oPC, DM_TARGET_ITEM);
+        else if(nTargetType == OBJECT_TYPE_PLACEABLE) oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
+        else if(nTargetType == OBJECT_TYPE_TRIGGER) oTarget = GetLocalObject(oPC, DM_TARGET_TRIGGER);
+        else if(nTargetType == OBJECT_TYPE_TILE) oTarget = GetLocalObject(oPC, DM_TARGET_AREA);
+        if (sEvent == "watch")
         {
-            object oTarget = GetLocalObject (oPC, "0_DM_Target");
+            if (sElem == DMV_FILTER_ID)
+            {
+                string sFilter = JsonGetString (NuiGetBind (oPC, nToken, DMV_FILTER_ID));
+                ApplyDMVFilter (oPC, nToken, sFilter);
+                if(sFilter == "") NuiSetBind (oPC, nToken, DMV_FILTER_CLEAR + "_event", JsonBool (FALSE));
+                else NuiSetBind (oPC, nToken, DMV_FILTER_CLEAR + "_event", JsonBool (TRUE));
+            }
+        }
+        else if (sEvent == "click")
+        {
             string sName = JsonGetString (NuiGetBind (oPC, nToken, "name_value"));
             string sVariable = JsonGetString (NuiGetBind (oPC, nToken, "value_value"));
-            if (sElem == "btn_int")
+            if (sElem == DMV_FILTER_CLEAR)
+            {
+                NuiSetBind (oPC, nToken, DMV_FILTER_ID, JsonString (""));
+                NuiSetBind (oPC, nToken, DMV_FILTER_CLEAR + "_event", JsonBool (FALSE));
+                ApplyDMVFilter (oPC, nToken, "");
+            }
+            else if (sElem == "btn_int")
             {
                 if (JsonGetInt (NuiGetBind (oPC, nToken, "btn_delete")))
                     DeleteLocalInt (oTarget, sName);
@@ -2661,7 +2997,12 @@ void main()
                     EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
                 }
             }
-            if (sElem != "btn_delete") NuiSetBind (oPC, nToken, "items_text", JsonString (GetVariableText (oTarget)));
+            if (sElem != "btn_delete" && sElem != DMV_FILTER_CLEAR)
+            {
+                string sRefresh = GetVariableText (oTarget);
+                NuiSetBind (oPC, nToken, DMV_BIND_ITEMS_FULL, JsonString (sRefresh));
+                ApplyDMVFilter (oPC, nToken, JsonGetString (NuiGetBind (oPC, nToken, DMV_FILTER_ID)));
+            }
         }
     }
     //**************************************************************************
@@ -2669,7 +3010,7 @@ void main()
     else if (sWndId == "dmareawin")
     {
         int nLightType = 0;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject(oPC, DM_TARGET_AREA);
         if (sEvent == "watch")
         {
             if (sElem == "name_value")
@@ -2757,17 +3098,19 @@ void main()
         }
         else if (sEvent == "click")
         {
-            if (sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
+            if (sElem == "btn_variables") 
+            {
+                SetLocalInt(oPC, DM_VAR_TARGET_TYPE, OBJECT_TYPE_TILE);
+                PopupDMVariablesGUIPanel (oPC);
+            }
             else if (sElem == "btn_populate")
             {
-                object oTarget = GetLocalObject (oPC, "0_DM_Target");
                 int nLevel = JsonGetInt (NuiGetBind (oPC, nToken, "area_level_selected")) +1;
                 PopulateArea (oTarget, OBJECT_INVALID);
                 SendMessages ("Populating " + GetName (oTarget) + " at a level " + IntToString (nLevel) + " difficulty.", COLOR_GREEN, oPC);
             }
             else if (sElem == "btn_clear")
             {
-                object oTarget = GetLocalObject (oPC, "0_DM_Target");
                 // Check for clear area object.
                 object oClearArea = GetObjectInAreaByTag (oTarget, "0_clear_area", 1, OBJECT_TYPE_PLACEABLE, TRUE);
                 if (oClearArea != OBJECT_INVALID)
@@ -3533,91 +3876,6 @@ void main()
                     BootPC (oPC, "Invalid password!");
                 }
             }
-        }
-    }
-    //**************************************************************************
-    // Spell Buffing.
-    else if (sWndId == "plbuffwin")
-    {
-        if (sEvent == "click")
-        {
-            string sList;
-            if (sElem == "btn_spell")
-            {
-                sList = "list" + GetServerDatabaseString (oPC, BUFF_TABLE, "spells", "list");
-                json jSpells = GetServerDatabaseJson (oPC, BUFF_TABLE, "spells", sList);
-                jSpells = JsonArrayDel (jSpells, nIndex);
-                SetServerDatabaseJson (oPC, BUFF_TABLE, "spells", jSpells, sList);
-                PopUpBuffGUIPanel (oPC);
-            }
-            else if (sElem == "btn_save")
-            {
-                if (JsonGetInt (NuiGetBind (oPC, nToken, "btn_save")))
-                {
-                    SetLocalInt (oPC, "0_SAVE_BUFF_SPELL", TRUE);
-                }
-                else DeleteLocalInt (oPC, "0_SAVE_BUFF_SPELL");
-            }
-            else if (sElem == "btn_clear")
-            {
-                sList = "list" + GetServerDatabaseString (oPC, BUFF_TABLE, "spells", "list");
-                SetServerDatabaseJson (oPC, BUFF_TABLE, "spells", JsonArray (), sList);
-                PopUpBuffGUIPanel (oPC);
-            }
-            else if (sElem == "btn_buff") ExecuteScript ("0s_tool_buff", oPC);
-            // Runs all the List 1-4 buttons.
-            if (GetStringLeft (sElem, 8) == "btn_list")
-            {
-                sList = GetStringRight (sElem, 1);
-                SetServerDatabaseString (oPC, BUFF_TABLE, "spells", sList, "list");
-                PopUpBuffGUIPanel (oPC);
-            }
-        }
-        else if (sEvent == "watch")
-        {
-            object oPlayersHandbook = GetCreatureHasItem (oPC, "players_book");
-            if (sElem == "buff_widget_check")
-            {
-                int bBuffWidget = JsonGetInt (NuiGetBind (oPC, nToken, "buff_widget_check"));
-                SetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF", bBuffWidget);
-                if (bBuffWidget)
-                {
-                    bBuffWidget = JsonGetInt (NuiGetBind (oPC, nToken, "lock_buff_widget_check"));
-                    if (bBuffWidget) SetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF", 2);
-                    PopupWidgetBuffGUIPanel (oPC);
-                }
-                else NuiDestroy (oPC, NuiFindWindow (oPC, "widgetbuffwin"));
-            }
-            if (sElem == "lock_buff_widget_check")
-            {
-                int nBuffWidget = GetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF");
-                int bBuffWidget = JsonGetInt (NuiGetBind (oPC, nToken, "lock_buff_widget_check"));
-                if (bBuffWidget)
-                {
-                    SetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF", 2);
-                    if (nBuffWidget == 0)
-                    {
-                        NuiSetBind (oPC, nToken, "buff_widget_check", JsonBool (TRUE));
-                    }
-                }
-                else SetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF", 1);
-                PopupWidgetBuffGUIPanel (oPC);
-            }
-        }
-    }
-    //**************************************************************************
-    // Spell Buffing.
-    else if (sWndId == "widgetbuffwin")
-    {
-        if (sEvent == "click")
-        {
-            string sList;
-            if (sElem == "btn_one") sList = "1";
-            if (sElem == "btn_two") sList = "2";
-            if (sElem == "btn_three") sList = "3";
-            if (sElem == "btn_four") sList = "4";
-            SetServerDatabaseString (oPC, BUFF_TABLE, "spells", sList, "list");
-            ExecuteScript ("0s_tool_buff", oPC);
         }
     }
 }

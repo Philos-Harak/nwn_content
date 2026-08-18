@@ -1,19 +1,18 @@
-/*////////////////////////////////////////////////
- Detect Evil: On Exit
+/*/////////////////////////////////////////////////////////////////////////////////// 
+ Aura of defense: On Exit
  Created By: Philos
-////////////////////////////////////////////////
-    Creatures exiting the zone if evil have the
-    highlight removed.
-/*///////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+    Creatures exiting the zone : remove Aura of Defense.
+    Give +1 ac at Paladin 6th+ or +2 ac if Paladins is 13th+ if in this PC's party.
+/*/////////////////////////////////////////////////////////////////////////////////// 
 #include "0i_effects"
 void main()
 {
     object oTarget = GetExitingObject();
     object oCaster = GetAreaOfEffectCreator();
     // Check that they are in the party.
-    if (GetFactionEqual (oCaster, oTarget))
+    if (GetFactionEqual(oCaster, oTarget))
     {
-        // Remove VFX from target.
-        RemoveTagedEffects (oTarget, "AURA_OF_DEFENSE" + GetName (oCaster));
+        RemoveTagedEffects(oTarget, "AURA_OF_DEFENSE" + GetName (oCaster));
     }
 }

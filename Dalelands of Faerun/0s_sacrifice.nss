@@ -30,7 +30,7 @@ void main()
     if (iAllyHealed)
     {
         // We have an ally that was healed so now we die!
-        effect eDeath = EffectDeath ();
+        effect eDeath = EffectDeath();
         ApplyEffectToObject (DURATION_TYPE_PERMANENT, eDeath, OBJECT_SELF);
     }
 }

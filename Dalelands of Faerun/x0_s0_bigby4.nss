@@ -15,9 +15,9 @@ Spell Resistance: Yes
 The Clenched fist gets one attack per round.
 Its attack bonus to make contact equals your caster level + your Intelligence,
 Wisdom, or Charisma modifier (for wizards, clerics, and sorcerers, respectively),
-+11 for the fist’s Strength score (33), -1 for being Large.
++11 for the fist's Strength score (33), -1 for being Large.
 The fist deals 1d8 + 11 points of damage each attack and any creature struck
-make a Fortitude save (against this spell’s save DC) or be stunned for 1 round.
+make a Fortitude save (against this spellï¿½s save DC) or be stunned for 1 round.
 
 Arcane Focus: A leather glove.
 /*///////////////////////////////////////////////
@@ -120,6 +120,7 @@ void ClenchedFist (struct stSpell Spell, object oTarget)
     // Link effects.
     effect eLink = EffectLinkEffects (eDuration, eMind);
     eLink = EffectLinkEffects (eLink, eStun);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Make attack.
     iCasterAtkMod = GetCasterAbilityModifier (Spell.oCaster) + Spell.iCasterLevel + 11 - 1;
     iCasterAtkRoll = d20();
@@ -136,6 +137,7 @@ void ClenchedFist (struct stSpell Spell, object oTarget)
         // Get the result for the effect, sets Spell.iResult.
         Spell = GetModifier (Spell);
         eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+        eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
         ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oTarget);
         ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact2, oTarget);
         ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, oTarget);

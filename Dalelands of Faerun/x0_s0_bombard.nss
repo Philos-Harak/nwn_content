@@ -67,6 +67,7 @@ void main()
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     // Link effects.
     effect eLink = EffectLinkEffects (eKnockdown, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -88,6 +89,7 @@ void main()
         {
             // Set the damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             // Apply effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
             // Apply impact effect.

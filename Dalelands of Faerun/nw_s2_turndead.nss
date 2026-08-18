@@ -28,7 +28,7 @@ void main()
     // Characters and henchman have to have a holy symbol. Monsters do not.
     if(oMaster != OBJECT_INVALID)
     {
-        object oHolySymbol = GetCreatureHasItem(oCreature, CLERIC_HOLY_SYMBOL);
+        object oHolySymbol = GetLocalObject(oCreature, CLERIC_HOLY_SYMBOL);
         if(oHolySymbol == OBJECT_INVALID)
         {
             string sText;
@@ -84,6 +84,53 @@ void main()
     else if(nTurnCheck <= 18) nTurnLevel += 2;
     else if(nTurnCheck <= 21) nTurnLevel += 3;
     else if(nTurnCheck >= 22) nTurnLevel += 4;
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack, nTigerEyeAgateDust, nTombJadeDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nTigerEyeAgateDust && GetTag(oItem) == "tiger_eye_agate_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nTigerEyeAgateDust = TRUE;
+                    nTurnHD += nClassLevel;
+                }
+            }
+            else if(!nTombJadeDust && GetTag(oItem) == "tomb_jade_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nTombJadeDust = TRUE;
+                    nTurnLevel += 2;
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nTigerEyeAgateDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the HD affected by +" + IntToString(nClassLevel) + "!", COLOR_GREEN, oObject);
+        }
+        if(nTombJadeDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the turn level by +2!", COLOR_GREEN, oObject);
+        }
+    }
     if(oMaster != OBJECT_INVALID)
     {
         string sText;
@@ -117,6 +164,7 @@ void main()
     eFrightened = EffectLinkEffects(eVisual, eFrightened);
     eFrightened = EffectLinkEffects(eFrightened, eDuration);
     eFrightened = TagEffect(eFrightened, "TURNED");
+    effect eParalyzed = EffectParalyze();
     effect eDeath = SupernaturalEffect(EffectDeath(TRUE));
     ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eCenterVisual, GetLocation(oCreature));
     //Get nearest enemy within 20m (60ft)
@@ -124,7 +172,6 @@ void main()
     object oTarget = GetNearestCreature(CREATURE_TYPE_IS_ALIVE, TRUE , oCreature, nCnt,CREATURE_TYPE_PERCEPTION , PERCEPTION_SEEN);
     while(GetIsObjectValid(oTarget) && nHDCount < nTurnHD && GetDistanceToObject(oTarget) <= 20.0)
     {
-        SendMessageToPC(oCreature, "GetIsFriend: " + IntToString(GetIsFriend(oTarget, oCreature)));
         if(!GetIsFriend(oTarget, oCreature))
         {
             nRacial = GetRacialType(oTarget);
@@ -187,8 +234,8 @@ void main()
                         DelayCommand(fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eDeath, oTarget));
                         if(oMaster != OBJECT_INVALID)
                         {
-                            DelayCommand(fDelay, SendMessageToPC(oMaster, "With Lathander's power " + GetName(oCreature) + " has destroyed " +
-                                GetName(oTarget) + " with " + IntToString(nHD) + " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left."));
+                            DelayCommand(fDelay, SendMessages("With Lathander's power " + GetName(oCreature) + " has destroyed " +
+                                GetName(oTarget) + " with " + IntToString(nHD) + " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster));
                         }
                     }
                     // Normal clerics can destroy/control creatures up to 1/2 their level.
@@ -201,8 +248,8 @@ void main()
                             DelayCommand(fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eDeath, oTarget));
                             if(oMaster != OBJECT_INVALID)
                             {
-                                DelayCommand(fDelay, SendMessageToPC(oMaster, GetName(oCreature) + " has dismissed " + GetName(oTarget) + " with " + IntToString(nHD) +
-                                    " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left."));
+                                DelayCommand(fDelay, SendMessages(GetName(oCreature) + " has dismissed " + GetName(oTarget) + " with " + IntToString(nHD) +
+                                    " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster));
                             }
                         }
                         else
@@ -219,8 +266,8 @@ void main()
                                 DelayCommand(fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eDeath, oTarget));
                                 if(oMaster != OBJECT_INVALID)
                                 {
-                                    DelayCommand(fDelay, SendMessageToPC(oMaster, GetName(oCreature) + " has destroyed " + GetName(oTarget) + " with " + IntToString(nHD) +
-                                        " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left."));
+                                    DelayCommand(fDelay, SendMessages(GetName(oCreature) + " has destroyed " + GetName(oTarget) + " with " + IntToString(nHD) +
+                                        " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster));
                                 }
                             }
                         }
@@ -230,10 +277,11 @@ void main()
                     {
                         SignalEvent(oTarget, EventSpellCastAt(oCreature, SPELLABILITY_TURN_UNDEAD));
                         ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eFrightened, oTarget, RoundsToSeconds(nClassLevel + 5));
+                        ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eParalyzed, oTarget, RoundsToSeconds(d6()));
                         if(oMaster != OBJECT_INVALID)
                         {
-                            DelayCommand(fDelay, SendMessageToPC(oMaster, GetName(oCreature) + " has frightened " + GetName(oTarget) + " with " + IntToString(nHD) +
-                                " Hit Dice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left."));
+                            DelayCommand(fDelay, SendMessages(GetName(oCreature) + " has frightened " + GetName(oTarget) + " with " + IntToString(nHD) +
+                                " Hit Dice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster));
                         }
                     }
                     fDelay += 0.2;
@@ -296,7 +344,7 @@ void DoEvilTurnUndead(object oCaster, object oTarget, object oMaster, int nHD, i
         ApplyEffectToObject(DURATION_TYPE_INSTANT, ePlane, oTarget);
         if(oMaster != OBJECT_INVALID)
         {
-            SendMessageToPC(oMaster, "With " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.");
+            SendMessages("With " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster);
         }
         TakeControl(oCaster, oTarget, nClassLevel);
     }
@@ -305,10 +353,12 @@ void DoEvilTurnUndead(object oCaster, object oTarget, object oMaster, int nHD, i
         ePlane = EffectVisualEffect(VFX_IMP_DIVINE_STRIKE_HOLY);
         ApplyEffectToObject(DURATION_TYPE_INSTANT, ePlane, oTarget);
         ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eFrightened, oTarget, RoundsToSeconds(nClassLevel + 5));
+        effect eParalyze = EffectParalyze();
+        ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eParalyze, oTarget, RoundsToSeconds(d6()));
         if(oMaster != OBJECT_INVALID)
         {
-            SendMessageToPC(oMaster, GetName(oCaster) + " has frightened " + GetName(oTarget) + " with " + IntToString(nHD) +
-                  " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.");
+            SendMessages(GetName(oCaster) + " has frightened " + GetName(oTarget) + " with " + IntToString(nHD) +
+                  " hitdice from a total of " + IntToString(nTurnHD - nHDCount) + " hitdice turning power left.", COLOR_YELLOW, oMaster);
         }
     }
 }

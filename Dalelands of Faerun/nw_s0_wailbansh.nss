@@ -44,6 +44,7 @@ void main()
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eCenter = EffectVisualEffect (VFX_FNF_WAIL_O_BANSHEES);
     effect eDeath = EffectDeath ();
+    eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
     //Apply the spell center effect.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).

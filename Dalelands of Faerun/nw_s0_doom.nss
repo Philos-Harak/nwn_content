@@ -15,7 +15,7 @@ This spell fills a single subject with a feeling of horrible dread that
 causes it to become shaken.
 
 Shaken: A shaken character takes a -2 penalty on attack rolls, saving throws,
-skill checks, and ability checks.
+skill checks.
 /*///////////////////////////////////////////////
 #include "0i_spells"
 
@@ -49,16 +49,6 @@ void main()
     // *******************************************************************
     // Setup effects.
     effect eImpact = EffectVisualEffect(Spell.iImpact);
-    effect eSaves = EffectSavingThrowDecrease(SAVING_THROW_ALL, 2);
-    effect eAttack = EffectAttackDecrease(2);
-    effect eDamage = EffectDamageDecrease(2);
-    effect eSkill = EffectSkillDecrease(SKILL_ALL_SKILLS, 2);
-    effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
-    // Link effects.
-    effect eLink = EffectLinkEffects(eAttack, eDamage);
-    eLink = EffectLinkEffects(eLink, eSaves);
-    eLink = EffectLinkEffects(eLink, eSkill);
-    eLink = EffectLinkEffects(eLink, eDur);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -69,7 +59,7 @@ void main()
         if (!Spell.iSaveResult)
         {
             DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-            DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink , Spell.oAreaTarget, Spell.fDuration));
+            DelayCommand (Spell.fDelay, Shaken(Spell.oAreaTarget, Spell.fDuration, Spell.iCasterLevel));
         }
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);

@@ -60,6 +60,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eDuration, eSlow);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     // Get will save DC since we do an external will save.

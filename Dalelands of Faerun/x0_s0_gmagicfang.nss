@@ -63,8 +63,8 @@ void main()
         return;
     }
     //Remove effects of anyother fang spells
-    RemoveSpellEffects (452, GetMaster (oTarget), oTarget);
-    RemoveSpellEffects (453, GetMaster (oTarget), oTarget);
+    RemoveSpellEffects (452, oTarget);
+    RemoveSpellEffects (453, oTarget);
     // Setup effects.
     effect eVis = EffectVisualEffect (VFX_IMP_HOLY_AID);
     effect eAttack = EffectAttackIncrease (Spell.iResult);
@@ -76,6 +76,7 @@ void main()
     effect eLink = EffectLinkEffects(eAttack, eDur);
     eLink = EffectLinkEffects(eLink, eDamage);
     eLink = EffectLinkEffects(eLink, eReduction);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Fire spell cast at event for target
     SignalEvent (oTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
     //Apply VFX impact and bonus effects

@@ -45,6 +45,7 @@ void main()
     effect eDamageBonus = EffectDamageIncrease (Spell.iResult);
     // Link effects.
     effect eLink = EffectLinkEffects (eAttackBonus, eDamageBonus);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

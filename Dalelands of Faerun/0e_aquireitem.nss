@@ -22,9 +22,12 @@
 
 void main()
 {
-    object oReceiver = GetModuleItemAcquiredBy ();
-    object oItem = GetModuleItemAcquired ();
-    Debug("0e_aquireitem", "25", GetName(oReceiver) + " oItem: " + GetName(oItem));
+    object oReceiver = GetModuleItemAcquiredBy();
+    object oItem = GetModuleItemAcquired();
+    // This is a fix for the bug where GetModuleItemAcquiredBy() does not get the player
+    // on any logins after the first of a server reset!
+    if(!GetIsObjectValid(oReceiver)) oReceiver = GetItemPossessor(oItem);
+    Debug("0e_aquireitem", "30", "oReceiver: " + GetName(oReceiver) + " oItem: " + GetName(oItem));
     string sItemTag = GetTag (oItem);
     // Run this only if it is a player.
     if(GetIsCharacter(oReceiver))
@@ -39,7 +42,7 @@ void main()
             {
                 if(IdentifyItemVsKnowledge(oReceiver, oItem))
                 {
-                    SendMessageToPC(oReceiver, AddColorToText("You have identified ", COLOR_GREEN) + GetName(oItem));
+                    SendMessages("You have identified " + GetName(oItem), COLOR_GREEN, oReceiver);
                 }
             }
             object oGiver = GetModuleItemAcquiredFrom();
@@ -50,15 +53,47 @@ void main()
                 if(!GetIsItemStackable(oItem)) SetLocalString(oItem, "0_Binded", StripColorCodes(GetName(oReceiver, TRUE)));
             }
             // Check to see if a PC can see them pickup the item.
-            if(!GetIsDungeonMaster(oGiver) && !GetIsDungeonMaster (oReceiver)) DoSpotVsSleightOfHandCheck(oReceiver, oItem, oGiver);
+            if(!GetIsDungeonMaster(oGiver) && !GetIsDungeonMaster(oReceiver)) DoSpotVsSleightOfHandCheck(oReceiver, oItem, oGiver);
             CheckSmartContainers(oItem, oReceiver);
         }
+        // Only run if the character is loading in for the first time on this server reset.
+        else if(GetLocalInt(oItem, "VFX_APPLIED")) DoAccessoryVisuals(oReceiver, oItem, TRUE);
         // Leave here temporarily... then put back into character loaded code!
         // Also remove the db check once we move this back.
         if(sItemTag == "0_quest_paper") AddQuestPaperToDatabase(oReceiver, oItem);
+        // Make sure to set any component containers or other focus items for quick retrieval later.
+        if(sItemTag == CLERIC_HOLY_SYMBOL) SetLocalObject(oReceiver, CLERIC_HOLY_SYMBOL, oItem);
+        else if(sItemTag == DRUID_HOLY_SYMBOL) SetLocalObject(oReceiver, DRUID_HOLY_SYMBOL, oItem);
+        else if(sItemTag == COMPONENT_POUCH && !GetIsObjectValid(GetLocalObject(oReceiver, COMPONENT_POUCH)))
+        {
+            SetLocalObject(oReceiver, COMPONENT_POUCH, oItem);
+        }
+        // Check an item to see if we need to adjust the equip level of this item.
+        AdjustItemsEquipLevel(oItem, oReceiver);
     }
-    // Check an item to see if we need to adjust the equip level of this item.
-    AdjustItemsEquipLevel(oItem, oReceiver);
+    else if(GetLocalInt(oReceiver, PC_ASSOCIATE_TYPE) == ASSOCIATE_TYPE_HENCHMAN)
+    {
+        object oMaster = GetMaster(oReceiver);
+        // Check to see if we can auto identify this item.
+        if(!GetIdentified (oItem) && GetTag (oItem) != "" && GetSkillRank (SKILL_KNOWLEDGE, oReceiver, TRUE) > 0)
+        {
+            if(IdentifyItemVsKnowledge(oReceiver, oItem))
+            {
+                SendMessages(GetName(oReceiver) +" has identified " + GetName(oItem), COLOR_GREEN, oMaster);
+            }
+        }
+        CheckSmartContainers(oItem, oReceiver);
+        if(GetLocalInt(oItem, "VFX_APPLIED")) DoAccessoryVisuals(oReceiver, oItem);
+        // Make sure to set any component containers or other focus items for quick retrieval later.
+        if(sItemTag == CLERIC_HOLY_SYMBOL) SetLocalObject(oReceiver, CLERIC_HOLY_SYMBOL, oItem);
+        else if(sItemTag == DRUID_HOLY_SYMBOL) SetLocalObject(oReceiver, DRUID_HOLY_SYMBOL, oItem);
+        else if(sItemTag == COMPONENT_POUCH && !GetIsObjectValid(GetLocalObject(oReceiver, COMPONENT_POUCH)))
+        {
+            SetLocalObject(oReceiver, COMPONENT_POUCH, oItem);
+        }
+        // Check an item to see if we need to adjust the equip level of this item.
+        AdjustItemsEquipLevel(oItem, oReceiver);
+    }
     // Check for weight and adjust if need be.
     int nWeight = GetLocalInt(oItem, "0_Weight");
     if(nWeight > 0) NWNX_Item_SetWeight(oItem, nWeight);

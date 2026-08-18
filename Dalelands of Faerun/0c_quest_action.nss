@@ -30,7 +30,6 @@ void IncreaseQuestCounters (object oPC, int nQuestType);
 // Disables the main quest that goes with this alternate quest.
 string CheckForAlternateQuest(object oNPC, object oPC, string sQuestID, string sQuestArray);
 void NPCDied (object oPCSpeaker, object oPC, object oNPC, object oPaper);
-int PCSpeakerQuestpointer_Equals_PCQuestPointer(object oPC, int nPCSpeakerQuestPointer, string sQuestID);
 
 void main()
 {
@@ -43,7 +42,7 @@ void main()
     if(oPCSpeaker == OBJECT_INVALID) oPCSpeaker = GetPCSpeaker();
     if(sInput == "Create_Quest")
     {
-        // Get the type of quest (0 - story quests, 1 - side quests, 2 - quests, 3 - treasure quests).
+        // Get the type of quest (0 - story quests, 1 - side quests, 2 - quests, 3 - treasure quests, 4 - DM quests).
         int nQuestType = GetLocalInt(oNPC, "0_Quest_Type");
         // Check to see if the NPC already has a quest paper.
         object oPaper = GetItemPossessedBy(oNPC, "0_quest_paper");
@@ -67,53 +66,51 @@ void main()
         // Get the StrRef of the quest to be parsed.
         else if(nQuestType == STORY_QUESTS) nQuestStrRef = GetStoryQuestStrRef(oPCSpeaker, oNPC);
         else if(nQuestType == SIDE_QUESTS) nQuestStrRef = GetSideQuestStrRef(oPCSpeaker, oNPC);
-        else if(nQuestType == QUESTS) nQuestStrRef = GetQuestStrRef(oPCSpeaker, oNPC);
+        else if(nQuestType == LOCATION_QUESTS) nQuestStrRef = GetLocationQuestStrRef(oPCSpeaker, oNPC);
         Debug("0c_quest_action", "71", " Creating the Quest!");
         CreateQuest(oPCSpeaker, oNPC, nQuestType, nQuestStrRef);
         return;
     }
     if(sInput == "Setup_Quest_Giver")
     {
+        string sQuestText;
         object oArea = GetArea(oPCSpeaker);
         // Get the paper quest from the oPCSpeaker saved in 0c_quest_appear: If_Quest_Giver.
         object oPaper = GetLocalObject(oPCSpeaker, "0_QUEST_PAPER");
-        // Get quest givers conversation line.
-        // Quest givers StrRef Lines are +1 Starting convo
-        int nQuestStrRef = StringToInt(GetLocalString(oPaper, "0_Q_STRREF"));
-        string sQuestText = GetStringByStrRef(nQuestStrRef + 1);
-        sQuestText = CheckIsGiverMoving(oPCSpeaker, oPaper, sQuestText);
-        sQuestText = ParseQuestTextByPaper(sQuestText, oPaper, oPCSpeaker);
-        // Set in game conversation text.
+         // Get the type of quest (0 - story quests, 1 - side quests, 2 - quests, 3 - treasure quests, 4 - DM quests).
+        int nQuestType = GetLocalInt(oNPC, "0_Quest_Type");
+        // Set the quest givers conversation line, should be the same as the quest paper description.
+        sQuestText = GetDescription(oPaper);
         SetCustomToken(501, sQuestText);
-        // Get the givers name to place on papers.
-        string sName = AddColorToText(GetName(oNPC), COLOR_GREEN);
-        string sArea = AddColorToText(GetName(oArea), COLOR_GREEN);
-        // Set the Papers description.
-        SetDescription(oPaper, sName + " located in " + sArea + " has given you a quest. '" + sQuestText + "'.");
-        // Set the Papers Name.
-        // Get the quests name.
-        // Quest Array: (-Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks-Quest_Type-Journal_ID-Start_Effect-)
-        string sQuestArray = GetLocalString(oPaper, "0_Q_QUEST");
-        string sQuestName = GetStringArray(sQuestArray, 0, "-");
-        int nQuestType = StringToInt(GetStringArray(sQuestArray, 5, "-"));
-        string sColor;
-        if(nQuestType == STORY_QUESTS) sColor = COLOR_MAGENTA;
-        else if(nQuestType == SIDE_QUESTS) sColor = COLOR_CYAN;
-        else if(nQuestType == 2) sColor = COLOR_SET; // Town Quests
-        else sColor = COLOR_YELLOW;
-        if(sQuestName != "")
+        if(nQuestType == DM_QUESTS) sQuestText = "I will help you.";
+        else
         {
-            string sJournalID = GetStringArray(sQuestArray, 6, "-");
-            // If there is a journal ID then add the part # since it has multiple parts and journal entries.
-            if(StringToInt(sJournalID) > 0) sQuestName = sQuestName + " Quest (Part " + sJournalID + ")";
-            else sQuestName = sQuestName + " Quest";
-            SetName(oPaper, AddColorToText(sQuestName, sColor));
+            // Set the Papers Name.
+            // Get the quests name.
+            // Quest Array: (-Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks-Quest_Type-Journal_ID-Start_Effect-)
+            string sQuestArray = GetLocalString(oPaper, "0_Q_QUEST");
+            string sQuestName = GetStringArray(sQuestArray, 0, "-");
+            int nQuestType = StringToInt(GetStringArray(sQuestArray, 5, "-"));
+            string sColor;
+            if(nQuestType == STORY_QUESTS) sColor = COLOR_MAGENTA;
+            else if(nQuestType == SIDE_QUESTS) sColor = COLOR_CYAN;
+            else if(nQuestType == 2) sColor = COLOR_SET; // Town Quests
+            else sColor = COLOR_YELLOW;
+            if(sQuestName != "")
+            {
+                string sJournalID = GetStringArray(sQuestArray, 6, "-");
+                // If there is a journal ID then add the part # since it has multiple parts and journal entries.
+                if(StringToInt(sJournalID) > 0) sQuestName = sQuestName + " Quest (Part " + sJournalID + ")";
+                else sQuestName = sQuestName + " Quest";
+                SetName(oPaper, AddColorToText(sQuestName, sColor));
+            }
+            else SetName(oPaper, AddColorToText(GetName (oNPC) + "'s Quest", sColor));
+            // Setup the PC's text.
+            int nQuestStrRef = StringToInt(GetLocalString(oPaper, "0_Q_STRREF"));
+            sQuestText = GetStringByStrRef(nQuestStrRef + 2);
+            sQuestText = ParseQuestTextByPaper(sQuestText, oPaper, oPCSpeaker);
         }
-        else SetName(oPaper, AddColorToText(GetName (oNPC) + "'s Quest", sColor));
-        // Setup the PC's text.
-        sQuestText = GetStringByStrRef(nQuestStrRef + 2);
-        sQuestText = ParseQuestTextByPaper(sQuestText, oPaper, oPCSpeaker);
-        // Set in game conversation text.
+        // Set in game conversation text for the PC.
         SetCustomToken(502, sQuestText);
         return;
     }
@@ -166,56 +163,50 @@ void main()
         }
         return;
     }
-    // Get quest saved from 0c_quest_appear script sParam: If_Quest_Finisher.
-    // or get quest paper saved from 0c_quest_action script sParam: Create_Quest.
-    object oPC;
-    object oPCSpeakerPaper = GetLocalObject(oPCSpeaker, "0_QUEST_PAPER");
+    // Below is all code for giving the quest or finishing the quest for all faction PC's.
+    // All quest updates are done for all PC's in the faction, the speaker gets any NPC's controlled by the party.
+    // All faction PC's need any required items.
+    object oPC, oPCSpeakerPaper = GetLocalObject(oPCSpeaker, "0_QUEST_PAPER");
     string sQuestID = GetLocalString(oPCSpeakerPaper, "0_Q_ID");
     string sQuestArray = GetLocalString(oPCSpeakerPaper, "0_Q_QUEST");
     string sQuestName = GetStringArray(sQuestArray, 0, "-");
     int nDBQuestPointer, bFinish = FALSE;
-    int nPCSpeakerQuestPointer = GetObjectDatabaseInt(oPCSpeaker, QUEST_TABLE, "questpointer", sQuestID);
-    Debug("0c_quest_action", "156", "oPCSpeakerPaper: " + GetName(oPCSpeakerPaper) +
-          "nPCSpeakerQuestPointer: " + IntToString(nPCSpeakerQuestPointer));
-    int nPCCounter = 1;
-    // if nPCSpeakerQuestPointer is higher than 0 then PCSpeaker is already on this quest
-    // so we need to check nearby PC's and update their quest as well if possible.
+    int nQuestPointer = GetObjectDatabaseInt(oPCSpeaker, QUEST_TABLE, "questpointer", sQuestID);
+    Debug("0c_quest_action", "175", "sQuestID: " + sQuestID +
+          " nQuestPointer: " + IntToString(nQuestPointer));
     location lLocation = GetLocation(oPCSpeaker);
-    if(nPCSpeakerQuestPointer) oPC = GetFirstObjectInShape(SHAPE_SPHERE, 20.0, lLocation);
-    else oPC = oPCSpeaker;
+    oPC = GetFirstFactionMember(oPCSpeaker);
     while(oPC != OBJECT_INVALID)
     {
-        if(GetIsCharacter(oPC))
+        // Make sure the PC speaker and Faction PC we are checking are on the same pointer.
+        Debug("0c_quest_action", "182", "FactionPC: " + GetName(oPC) +
+          " nQuestPointer: " + IntToString(nQuestPointer));        
+        if(nQuestPointer == GetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", sQuestID))
         {
-            // Make sure the speaking PC and PC we are checking are on the same pointer.
-            if(PCSpeakerQuestpointer_Equals_PCQuestPointer(oPC, nPCSpeakerQuestPointer, sQuestID))
+            // We are giving the quest, run all give quest code for each faction PC.
+            // Only give the quest to faction PC's without the paper.
+            // Note players with pointers equal to quest and no paper should get the quest.
+            Debug("0c_quest_action", "189", "GetQuestIDByQuestName: " + GetQuestIDByQuestName(oPC, sQuestName));
+            if(sInput == "Give_Quest" && GetQuestIDByQuestName(oPC, sQuestName) == "")
             {
-                // We are giving the quest, run all give quest code for each player.
-                // Only do players without the paper or is the PCSpeaker.
-                // Note players with pointers equal to quest and no paper should get the quest.
-                if(sInput == "Give_Quest" && GetQuestIDByQuestName(oPC, sQuestName) == "")
-                {
-                    GiveTheQuest(oPC, oNPC, oPCSpeakerPaper, sQuestID);
-                }
-                // We are finishing the quest, run all finish the quest code for each player.
-                else if(sInput == "Finish_Quest") bFinish = FinishTheQuest(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper, sQuestID);
-                // We are running code for NPC died during the quest for each player.
-                else if(sInput == "Quest_NPC_Died")
-                {
-                    NPCDied(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper);
-                    // If bFinish then the NPC finished the quest so log that for
-                    // when we cleanup after checking all players.
-                    bFinish = TRUE;
-                }
+                GiveTheQuest(oPC, oNPC, oPCSpeakerPaper, sQuestID);
+            }
+            // We are finishing the quest, run all finish the quest code for each faction PC.
+            else if(sInput == "Finish_Quest") bFinish = FinishTheQuest(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper, sQuestID);
+            // We are running code for NPC died during the quest for each player.
+            else if(sInput == "Quest_NPC_Died")
+            {
+                NPCDied(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper);
                 // If bFinish then the NPC finished the quest so log that for
                 // when we cleanup after checking all players.
-                else if(sInput == "Quest_NPC_Action") bFinish = NPCQuestActions(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper, sQuestID);
+                bFinish = TRUE;
             }
+            // If bFinish then the NPC finished the quest so log that for when we cleanup after checking all faction PC's.
+            else if(sInput == "Quest_NPC_Action") bFinish = NPCQuestActions(oPCSpeaker, oPC, oNPC, oPCSpeakerPaper, sQuestID);
         }
-        if(nPCSpeakerQuestPointer) oPC = GetNextObjectInShape(SHAPE_SPHERE, 20.0, lLocation);
-        else oPC = OBJECT_INVALID;
+        oPC = GetNextFactionMember(oPCSpeaker);
     }
-    // **************** Do any actions after all PC's have been updated.
+    // **************** Do any actions after all faction PC's have been updated.
     string sPlot = GetLocalString(oPCSpeakerPaper, "0_Q_PLOT");
     //Debug ("0c_quest", "117", "sInput: " + sInput + " sPlot: " + sPlot +
     //       " sQuestID: " + sQuestID);
@@ -246,54 +237,151 @@ void main()
             DelayCommand(1.0, SetServerDatabaseString(oPC, QUEST_TABLE, "giver", "", sQuestID));
             DelayCommand(1.0, SetServerDatabaseString(oPC, QUEST_TABLE, "start", "", sQuestID));
         }
-        DeleteLocalString(oPC, "0_QUEST_ID");
-        DeleteLocalObject(oPC, "0_QUEST_PAPER");
+        DeleteLocalString(oPCSpeaker, "0_QUEST_ID");
+        DeleteLocalObject(oPCSpeaker, "0_QUEST_PAPER");
     }
     else if((sInput == "Finish_Quest" || bFinish) && oPCSpeakerPaper != OBJECT_INVALID)
     {
         string sSTRREF = GetLocalString(oPCSpeakerPaper, "0_Q_STRREF");
         int nQuestStrRef = StringToInt(sSTRREF);
-        // Plot taking NPC to location.
-        if(sPlot == "6")
+        if(nQuestStrRef == 0)
         {
-            // Quest NPC's quest done speech.
-            string sQuest14Text = GetStringByStrRef(nQuestStrRef + 14);
-            // Setup PC's reply for next quest.
-            string sQuest8Text = GetStringByStrRef(nQuestStrRef + 8);
-            if(oPCSpeakerPaper != OBJECT_INVALID)
+            string sPCMessage, sNPCMessage;
+            int nRoll = d4();
+            // Plot - 4 Save NPC, 7 Deliver NPC to Finish NPC.
+            if(sPlot == "4" || sPlot == "7")
             {
-                sQuest14Text = ParseQuestTextByPaper(sQuest14Text, oPCSpeakerPaper, oPCSpeaker);
-                sQuest8Text = ParseQuestTextByPaper(sQuest8Text, oPCSpeakerPaper, oPCSpeaker);
+                string sName = GetLocalString(oPCSpeakerPaper, "0_Q_NPC");
+                sName = GetStringArray(sName, 0, "-");
+                if(nRoll == 1) sNPCMessage = "Thank you for bringing " + sName + "to me."; 
+                if(nRoll == 2) sNPCMessage = "I've been waiting so long to see " + sName + "."; 
+                if(nRoll == 3) sNPCMessage = "It is so glad to see you, " + sName + "."; 
+                if(nRoll == 4) sNPCMessage = "Thank you for protecting " + sName + ", I hope the journey was safe."; 
+                nRoll = d4();
+                if(nRoll == 1) sPCMessage = "You are welcome, I shall take my leave now.";
+                if(nRoll == 2) sPCMessage = "I'm glad to be of assistance. Good day.";
+                if(nRoll == 3) sPCMessage = "It is my pleasure to bring " + sName +" here. Fare well.";
+                if(nRoll == 4) sPCMessage = "All part of the job. Now I must move on.";
+                SetCustomToken(507, sNPCMessage);
+                SetCustomToken(508, sPCMessage);           
             }
-            else
+            // 6 Deliver NPC to Finish Area.
+            if(sPlot == "6")
             {
-                sQuest14Text = ParseQuestTextByDatabase(sQuest14Text, sQuestID, oPCSpeaker);
-                sQuest8Text = ParseQuestTextByDatabase(sQuest8Text, sQuestID, oPCSpeaker);
+                string sName = GetLocalString(oPCSpeakerPaper, "0_Q_FINISH");
+                sName = GetStringArray(sName, 0, "-");
+                if(nRoll == 1) sNPCMessage = "Finally we are here. So this is " + sName + "?"; 
+                if(nRoll == 2) sNPCMessage = "This is " + sName + "? Good now I will leave you. Good day."; 
+                if(nRoll == 3) sNPCMessage = "I'm glad to be at " + sName + ". You have done well to get me here safely."; 
+                if(nRoll == 4) sNPCMessage = "Thank you for your protection, but now that I'm here, I must go."; 
+                nRoll = d4();
+                if(nRoll == 1) sPCMessage = "You are welcome, I shall take my leave now.";
+                if(nRoll == 2) sPCMessage = "Good day to you. Becareful in " + sName + ".";
+                if(nRoll == 3) sPCMessage = "Take care and we may meet again.";
+                if(nRoll == 4) sPCMessage = "I need to leave now. Good luck in " + sName + ".";
+                SetCustomToken(511, sNPCMessage);
+                SetCustomToken(508, sPCMessage);
             }
-            SetCustomToken(511, sQuest14Text);
-            SetCustomToken(508, sQuest8Text);
-            // Save variable so conversation can flow correctly.
-            // See script:0c_if_q_finished.
-            SetLocalInt (oPCSpeaker, "0_QUEST_FINISHED", TRUE);
+            if(sPlot == "1") // DestroyPlaceable.
+            {
+                string sName = GetLocalString(oPCSpeakerPaper, "0_Q_PLACEABLE");
+                sName = GetStringArray(sName, 0, "-");
+                if(nRoll == 1) sNPCMessage = "Now that " + sName + " is destroyed? We can move on."; 
+                if(nRoll == 2) sNPCMessage = "With " + sName + " destroyed our lives can get back to normal.";    
+                if(nRoll == 3) sNPCMessage = "Thank you for destorying " + sName + ", You are truly great.";
+                if(nRoll == 4) sNPCMessage = "With " + sName + " gone I can relaxe.";
+                nRoll = d4();
+                if(nRoll == 1) sPCMessage = "I shall bid you a good day.";
+                if(nRoll == 2) sPCMessage = "It was a pleasure to help you. I must be on my way.";
+                if(nRoll == 3) sPCMessage = "Finally I can continue on my journey. Good day.";
+                if(nRoll == 4) sPCMessage = "Becareful and if you need anymore help, I will be around.";
+                SetCustomToken(507, sNPCMessage);
+                SetCustomToken(508, sPCMessage);           
+            }
+            if(sPlot == "2" || sPlot == "3") // 2)Deliver item or 3)Retrieve item.
+            {
+                string sName = GetLocalString(oPCSpeakerPaper, "0_Q_ITEM");
+                sName = GetStringArray(sName, 0, "-");
+                if(nRoll == 1) sNPCMessage = "Now that I have the " + sName + " your services are no longer needed."; 
+                if(nRoll == 2) sNPCMessage = "I can't believe I finally have " + sName + ". Thank you!";    
+                if(nRoll == 3) sNPCMessage = "With " + sName + " in my hands you can go. Safe journy to you.";
+                if(nRoll == 4) sNPCMessage = "Your delivery of " + sName + " is appreciated. Becarefull on your travels.";
+                nRoll = d4();
+                if(nRoll == 1) sPCMessage = "Farewell.";
+                if(nRoll == 2) sPCMessage = "I was happy to bring your " + sName + " to you. Good day.";
+                if(nRoll == 3) sPCMessage = "It was no trouble, take care.";
+                if(nRoll == 4) sPCMessage = "I shall leave now. Good luck with your " + sName + ".";
+                SetCustomToken(507, sNPCMessage);
+                SetCustomToken(508, sPCMessage);           
+            }
+            if(sPlot == "5" || sPlot == "8") // 5)Kill Villain/Creature or 8)Clear area of creatures.
+            {
+                string sName = GetLocalString(oPCSpeakerPaper, "0_Q_VILLAIN");
+                sName = GetStringArray(sName, 0, "-");
+                if(sName == "")
+                {
+                    sName = GetLocalString(oPCSpeakerPaper, "0_Q_CREATURES");
+                    sName = "the " + GetStringArray(sName, 0, "-") + "s";                        
+                }
+                string sAreaName = GetLocalString(oPCSpeakerPaper, "0_Q_AREA");
+                sAreaName = GetStringArray(sAreaName, 0, "-");
+                if(nRoll == 1) sNPCMessage = "Where is the " + sAreaName + "? We must find and kill " + sName + "!"; 
+                if(nRoll == 2) sNPCMessage = "The area of " + sAreaName + " is not safe. Our task is to eliminate " + sName + "!";    
+                if(nRoll == 3) sNPCMessage = "We must go to " + sAreaName + " and kill " + sName + " before they get away!";
+                if(nRoll == 4) sNPCMessage = "Our task is to find " + sAreaName + " and defeat the " + sName + ". Lets hurry!";
+                nRoll = d4();
+                if(nRoll == 1) sPCMessage = "Yes, we should be there soon.";
+                if(nRoll == 2) sPCMessage = "I shall get you to " + sName + " so we can kill " + sName + ".";
+                if(nRoll == 3) sPCMessage = "We are headed to " + sAreaName + " now. You will get to kill " + sName + " soon enough.";
+                if(nRoll == 4) sPCMessage = "My plan is to get to " + sAreaName + ". We will defeat " + sName + " and return victorious.";
+                SetCustomToken(507, sNPCMessage);
+                SetCustomToken(508, sPCMessage);           
+            }
         }
         else
         {
-            // Get quest finishers ending speech.
-            string sQuest7Text = GetStringByStrRef(nQuestStrRef + 7);
-            // Setup PC's reply.
-            string sQuest8Text = GetStringByStrRef(nQuestStrRef + 8);
-            if(oPCSpeakerPaper != OBJECT_INVALID)
+            // Plot taking NPC to location.
+            if(sPlot == "6")
             {
-                sQuest7Text = ParseQuestTextByPaper(sQuest7Text, oPCSpeakerPaper, oPCSpeaker);
-                sQuest8Text = ParseQuestTextByPaper(sQuest8Text, oPCSpeakerPaper, oPCSpeaker);
+                // Quest NPC's quest done speech.
+                string sQuest14Text = GetStringByStrRef(nQuestStrRef + 14);
+                // Setup PC's reply for next quest.
+                string sQuest8Text = GetStringByStrRef(nQuestStrRef + 8);
+                if(oPCSpeakerPaper != OBJECT_INVALID)
+                {
+                    sQuest14Text = ParseQuestTextByPaper(sQuest14Text, oPCSpeakerPaper, oPCSpeaker);
+                    sQuest8Text = ParseQuestTextByPaper(sQuest8Text, oPCSpeakerPaper, oPCSpeaker);
+                }
+                else
+                {
+                    sQuest14Text = ParseQuestTextByDatabase(sQuest14Text, sQuestID, oPCSpeaker);
+                    sQuest8Text = ParseQuestTextByDatabase(sQuest8Text, sQuestID, oPCSpeaker);
+                }
+                SetCustomToken(511, sQuest14Text);
+                SetCustomToken(508, sQuest8Text);
+                // Save variable so conversation can flow correctly.
+                // See script:0c_if_q_finished.
+                SetLocalInt (oPCSpeaker, "0_QUEST_FINISHED", TRUE);
             }
             else
             {
-                sQuest7Text = ParseQuestTextByDatabase(sQuest7Text, sQuestID, oPCSpeaker);
-                sQuest8Text = ParseQuestTextByDatabase(sQuest8Text, sQuestID, oPCSpeaker);
+                // Get quest finishers ending speech.
+                string sQuest7Text = GetStringByStrRef(nQuestStrRef + 7);
+                // Setup PC's reply.
+                string sQuest8Text = GetStringByStrRef(nQuestStrRef + 8);
+                if(oPCSpeakerPaper != OBJECT_INVALID)
+                {
+                    sQuest7Text = ParseQuestTextByPaper(sQuest7Text, oPCSpeakerPaper, oPCSpeaker);
+                    sQuest8Text = ParseQuestTextByPaper(sQuest8Text, oPCSpeakerPaper, oPCSpeaker);
+                }
+                else
+                {
+                    sQuest7Text = ParseQuestTextByDatabase(sQuest7Text, sQuestID, oPCSpeaker);
+                    sQuest8Text = ParseQuestTextByDatabase(sQuest8Text, sQuestID, oPCSpeaker);
+                }
+                SetCustomToken(507, sQuest7Text);
+                SetCustomToken(508, sQuest8Text);
             }
-            SetCustomToken(507, sQuest7Text);
-            SetCustomToken(508, sQuest8Text);
         }
         // Clear the quest area so other players can do the quest!
         string sAreaArray = GetLocalString(oPCSpeakerPaper, "0_Q_AREA");
@@ -308,17 +396,39 @@ void main()
 }
 void GiveTheQuest(object oPC, object oNPC, object oPaper, string sQuestID)
 {
+    Debug("0c_quest", "397", GetName(oPC) + " is getting the quest: " + sQuestID);
     int nDatabasePointer;
     NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_RECEIVED, TRUE, oPC);
     // Move paper to Quest book if they have one else give to the PC and lock it.
     object oCopyPaper;
     object oBook = GetItemPossessedBy(oPC, "0_quest_book");
-    if(oBook != OBJECT_INVALID) oCopyPaper = CopyItem(oPaper, oBook, TRUE);
-    else oCopyPaper = CopyItem(oPaper, oPC, TRUE);
+    if(oBook != OBJECT_INVALID)
+    {
+        object oContainer;
+        object oInventoryObject = GetFirstItemInInventory(oPC);
+        while(oInventoryObject != OBJECT_INVALID)
+        {
+            if(GetTag(oInventoryObject) == "0_quest_book")
+            {
+                if(GetBaseItemFitsInInventory(178/*BASE_ITEM_QUEST_BOOK*/, oInventoryObject))
+                {
+                    oCopyPaper = CopyItem(oPaper, oBook, TRUE);
+                    break;
+                }
+            }
+            oInventoryObject = GetNextItemInInventory(oPC);
+        }
+    }
+    if(oCopyPaper == OBJECT_INVALID) oCopyPaper = CopyItem(oPaper, oPC, TRUE);
+    // Get the givers name to place on papers.
+    string sQuestText = GetDescription(oPaper);
+    string sName = AddColorToText(GetName(oNPC), COLOR_GREEN);
+    string sArea = AddColorToText(GetName(GetArea(oPC)), COLOR_GREEN);
+    // Set the Papers description.
+    SetDescription(oCopyPaper, sName + " located in " + sArea + " has given you a quest. '" + sQuestText + "'.");
     NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_RECEIVED, FALSE, oPC);
     //Debug ("0c_quest", "187", "oCopyPaper: " + GetName (oCopyPaper));
     SetItemCursedFlag(oCopyPaper, TRUE);
-    SetDescription(oCopyPaper, GetDescription(oPaper));
     // Quest Array:(-Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks
     //              -Quest_Type-Journal_ID-Visual_Effect-Sound_Effect-)
     string sQuestArray = GetLocalString(oCopyPaper, "0_Q_QUEST");
@@ -329,7 +439,7 @@ void GiveTheQuest(object oPC, object oNPC, object oPaper, string sQuestID)
     {
         // Check the pointer for this quest from the database.
         nDatabasePointer = GetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", sQuestName);
-        string sNextQuestPointer = GetStringArray(sQuestArray, 2, "-");
+        string sNextQuestPointer = GetStringArray(sQuestArray, 3, "-");
         // If there is no pointer then this is a new quest so lets save it to the
         // database as long as there is a next quest pointer.
         //Debug ("0c_quest", "201", "nDatabasePointer: " + IntToString (nDatabasePointer) +
@@ -372,8 +482,9 @@ void GiveTheQuest(object oPC, object oNPC, object oPaper, string sQuestID)
     // Plot #9: Talk to FINISHER.
     // Plot #10: Special tasks - must be coded.
     // ****************** Special code for setting up quests. ******************
-    // All plots but 4 may give an NPC if there is one.
-    else if(sPlot != "4" && GetLocalString(oCopyPaper, "0_Q_NPC") != "")
+    // All plots but 4 may give an NPC if there is one, set so all faction PC's can get the NPC
+    // later if the quest is not finished.
+    if(sPlot != "4" && GetLocalString(oCopyPaper, "0_Q_NPC") != "")
     {
         DelayCommand(0.5f, SetQuestState(oPC, sQuestID, 5, 1));
     }
@@ -393,9 +504,8 @@ void GiveTheQuest(object oPC, object oNPC, object oPaper, string sQuestID)
 }
 int FinishTheQuest(object oPCSpeaker, object oPC, object oNPC, object oPaper, string sQuestID)
 {
-    int i;
-    //Debug ("0c_quest", "224", "Check GetIsQuestDone!");
-    if(GetIsQuestDone(oPC, sQuestID))
+    Debug("0c_quest", "506", GetName(oPC) + " is finishing the quest: " + sQuestID);
+   if(GetIsQuestDone(oPC, sQuestID))
     {
         // Quest array:(-Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks
         //              -Quest_Type-Journal_ID-Start_Effect-)
@@ -410,7 +520,7 @@ int FinishTheQuest(object oPCSpeaker, object oPC, object oNPC, object oPaper, st
             SetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", -1, sQuestName);
             DelayCommand(0.2f, SetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", 0, sQuestName));
         }
-        // All sides quests are only have 1 quest chain and do not have a database entry.
+        // All sides quests only have 1 quest chain and do not have a database entry.
         // Set on the NPC that the PC's has finished the quest.
         else if(nQuestType == SIDE_QUESTS)
         {
@@ -436,15 +546,16 @@ int FinishTheQuest(object oPCSpeaker, object oPC, object oNPC, object oPaper, st
         int nJournalID = StringToInt(GetStringArray(sRewardsArray, 5, "-"));
         if(nJournalID > 0) AddJournalEntry (sQuestName, nJournalID, oPC);
         // Check for an NPC henchman to remove.
+        int nHenchmanIndex;
         string sNPCArray = GetLocalString(oPaper, "0_Q_NPC");
         //Debug ("0c_quest", "301", "0_Q_NPC: " + sNPCArray);
         if(sNPCArray != "")
         {
-            i = 1;
+            nHenchmanIndex = 1;
             string sNPCID;
             string sQName = GetStringArray(sNPCArray, 0, "-");
             string sQID = GetStringArray(sNPCArray, 2, "-");
-            object oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, i);
+            object oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nHenchmanIndex);
             while (oNPC != OBJECT_INVALID)
             {
                 sNPCID = GetLocalString(oNPC, "0_QUEST_ID");
@@ -463,7 +574,7 @@ int FinishTheQuest(object oPCSpeaker, object oPC, object oNPC, object oPaper, st
                         DelayCommand (0.2f, RemoveQuestNPC (oPC, oNPC));
                     }
                 }
-                oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++i);
+                oNPC = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, ++nHenchmanIndex);
             }
         }
         string sAreaArray = GetLocalString(oPaper, "0_Q_AREA");
@@ -489,7 +600,14 @@ int FinishTheQuest(object oPCSpeaker, object oPC, object oNPC, object oPaper, st
         }
         // Remove quest paper for all PC's not in the conversation.
         // PCSpeaker's will be removed in the script 0c_if_questagain.
-        if(oPCSpeaker != oPC) DestroyObject(oPaper);
+        if(oPCSpeaker != oPC) 
+        {
+            NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, TRUE, oPC);
+            object oPaper = GetQuestPaper(oPC, sQuestID);
+            RemoveQuestPaperFromDatabase(oPC, oPaper);
+            DestroyObject(oPaper);
+            NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, FALSE, oPC);
+        }
         return TRUE;
     }
     return FALSE;
@@ -555,16 +673,13 @@ string CheckForAlternateQuest(object oNPC, object oPC, string sQuestID, string s
 
 void IncreaseQuestCounters(object oPC, int nQuestType)
 {
-    if(nQuestType != STORY_QUESTS)
-    {
-        IncreaseServerDatabaseCounter(oPC, PLAYER_TABLE, "sidequests");
-        IncreaseObjectDatabaseCounter(oPC, CHARACTER_TABLE, "sidequests");
-    }
-    else
-    {
-        IncreaseServerDatabaseCounter(oPC, PLAYER_TABLE, "mainquests");
-        IncreaseObjectDatabaseCounter(oPC, CHARACTER_TABLE, "mainquests");
-    }
+    string sText;
+    if(nQuestType == STORY_QUESTS) sText = "mainquests";
+    else if(nQuestType == TREASURE_QUESTS) sText = "mapquests";
+    else if(nQuestType == DM_QUESTS) sText = "dmquests";
+    else sText = "sidequests";
+    IncreaseServerDatabaseCounter(oPC, PLAYER_TABLE, sText);
+    IncreaseObjectDatabaseCounter(oPC, CHARACTER_TABLE, sText);
 }
 
 void NPCDied(object oPCSpeaker, object oPC, object oNPC, object oPaper)
@@ -594,16 +709,3 @@ void NPCDied(object oPCSpeaker, object oPC, object oNPC, object oPaper)
     // PCSpeaker's will be removed in the script 0c_if_questagain.
     if(oPCSpeaker != oPC) DestroyObject(oPaper);
 }
-int PCSpeakerQuestpointer_Equals_PCQuestPointer(object oPC, int nPCSpeakerQuestPointer, string sQuestID)
-{
-    // Check each players Questpointer to see if we should update the quest.
-    // All quests save the quest pointer by oPC and sQuestID.
-    int nPCQuestPointer = GetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", sQuestID);
-    // Check if they are at the same quest pointer.
-    Debug("0c_quest_action", "578", GetName(oPC) + " nPCSpeakerQuestPointer: " + IntToString (nPCSpeakerQuestPointer) +
-           " nPCQuestPointer: " + IntToString (nPCQuestPointer));
-    if (nPCSpeakerQuestPointer == nPCQuestPointer) return TRUE;
-    return FALSE;
-}
-
-

@@ -56,5 +56,7 @@ void main()
         nCounter ++;
         oCreature = GetNextObjectInShape (SHAPE_SPHERE, 50.0f, lTarget, TRUE, OBJECT_TYPE_CREATURE);
     }
+} */
+void main()
+{
 }
-

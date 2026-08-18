@@ -57,24 +57,27 @@ void main()
             return;
         }
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Also check for greater magic fang.
-        RemoveSpellEffects (SPELL_GREATER_MAGIC_FANG, Spell.oCaster, Spell.oAreaTarget);
-        //Fire spell cast at event for target
-        SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
-        // Get the modifier for the effect, sets Spell.iResult.
-        Spell = GetModifier (Spell);
-        // Create effects and link.
-        // Add damage reduction to give creature ability to damage damage reduction creatures.
-        eReduction = EffectDamageReduction(Spell.iResult, DAMAGE_POWER_PLUS_ONE);
-        eAttack = EffectAttackIncrease (Spell.iResult);
-        eDamage = EffectDamageIncrease (Spell.iResult);
-        eLink = EffectLinkEffects (eAttack, eDur);
-        eLink = EffectLinkEffects (eLink, eDamage);
-        eLink = EffectLinkEffects (eLink, eReduction);
-        //Apply VFX impact and bonus effects
-        DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-        DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+        if(!GetHasSpellEffect(SPELL_GREATER_MAGIC_FANG, Spell.oAreaTarget))
+        {
+            //Fire spell cast at event for target
+            SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
+            // Get the modifier for the effect, sets Spell.iResult.
+            Spell = GetModifier (Spell);
+            // Create effects and link.
+            // Add damage reduction to give creature ability to damage damage reduction creatures.
+            eReduction = EffectDamageReduction(Spell.iResult, DAMAGE_POWER_PLUS_ONE);
+            eAttack = EffectAttackIncrease (Spell.iResult);
+            eDamage = EffectDamageIncrease (Spell.iResult);
+            eLink = EffectLinkEffects (eAttack, eDur);
+            eLink = EffectLinkEffects (eLink, eDamage);
+            eLink = EffectLinkEffects (eLink, eReduction);
+            eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+            //Apply VFX impact and bonus effects
+            DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+            DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+        }
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);
     }

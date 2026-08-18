@@ -24,11 +24,12 @@ void main()
         eAbility = EffectLinkEffects (EffectAbilityDecrease (ABILITY_DEXTERITY, d4()), eAbility);
         eAbility = EffectLinkEffects (EffectAbilityDecrease (ABILITY_CONSTITUTION, d4()), eAbility);
         eAbility = SupernaturalEffect (eAbility);
+        eAbility = SetEffectCasterLevel(eAbility, Spell.iCasterLevel);
         ApplyEffectToObject(DURATION_TYPE_INSTANT, eVisual, oTarget);
         if (!FortitudeSave (oTarget, nDC, SAVING_THROW_TYPE_NONE, oSource))
         {
             ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, oTarget);
-            ApplyEffectToObject(DURATION_TYPE_INSTANT, eAbility, oTarget);
+            ApplyEffectToObject(DURATION_TYPE_PERMANENT, eAbility, oTarget);
         }
     }
 }

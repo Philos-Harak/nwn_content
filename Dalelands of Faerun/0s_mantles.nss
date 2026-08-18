@@ -25,7 +25,6 @@ Enchanting:
 Armor, Clothing, and Shields gain spell resistance.
 /*///////////////////////////////////////////////
 #include "0i_spells"
-
 void main()
 {
     Spell.iSubType = SUBTYPE_MAGICAL;
@@ -70,12 +69,62 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedAmount, nStack;
+        int nOpalDust, nPeridotDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nOpalDust && GetTag(oItem) == "opal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nOpalDust = TRUE;
+                    Spell.fDuration *= 2.0;    
+                }
+            }
+            else if(!nPeridotDust && GetTag(oItem) == "peridot_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nPeridotDust = TRUE;
+                    nEnhancedAmount += 10;    
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nOpalDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the duration by double!", COLOR_GREEN, oObject);
+        }
+        if(nEnhancedAmount)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to absorb +" + IntToString(nEnhancedAmount) + " additional spell levels!", COLOR_GREEN, oObject);
+            Spell.iResult += nEnhancedAmount;
+        }
+    }
     effect eVisual = EffectVisualEffect (VFX_DUR_SPELLTURNING);
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     //Link Effects
     effect eAbsorb = EffectSpellLevelAbsorption (9, Spell.iResult);
     effect eLink = EffectLinkEffects (eVisual, eAbsorb);
     eLink = EffectLinkEffects(eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

@@ -13,7 +13,7 @@ Saving Throw: None
 Spell Resistance: No
 
 This spell turns an oak tree into a protector or guardian. The spell can be cast
-on only a single tree at a time; while liveoak is in effect, you can’t cast it
+on only a single tree at a time; while liveoak is in effect, you can't cast it
 again on another tree. This spell only works in a natural area above ground.
 /*///////////////////////////////////////////////
 #include "0i_spells"

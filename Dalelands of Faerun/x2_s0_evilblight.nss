@@ -45,6 +45,7 @@ void main()
     effect eCurse = EffectCurse (Spell.iResult, Spell.iResult, Spell.iResult, Spell.iResult, Spell.iResult, Spell.iResult);
     // Make sure that curse is of type supernatural not magical
     eCurse = SupernaturalEffect (eCurse);
+    eCurse = SetEffectCasterLevel(eCurse, GetCasterLevel (Spell.oCaster));
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))

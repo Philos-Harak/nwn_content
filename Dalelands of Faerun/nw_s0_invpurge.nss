@@ -34,11 +34,13 @@ void main()
     // *******************************************************************
     // Create effect.
     effect eAOE = EffectAreaOfEffect (35);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     // Create visual effects.
     effect eDur1 = EffectVisualEffect (VFX_DUR_MAGICAL_SIGHT);
     effect eDur2 = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects(eDur1, eDur2);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Create an instance of the AOE Object using the Apply Effect function
     ApplyEffectToObject (Spell.iDurationType, eAOE, OBJECT_SELF, Spell.fDuration);
     ApplyEffectToObject (Spell.iDurationType, eLink, OBJECT_SELF, Spell.fDuration);

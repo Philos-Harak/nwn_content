@@ -47,6 +47,7 @@ void main()
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eImpact2 = EffectVisualEffect (VFX_IMP_NEGATIVE_ENERGY);
     effect eDmg, eDeath = EffectDeath ();
+    eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid (Spell.oAreaTarget))
@@ -73,6 +74,7 @@ void main()
                     // Get the result for the effect, sets Spell.iResult.
                     Spell = GetModifier (Spell);
                     eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                     //Apply damage effect and VFX impact
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact2, Spell.oAreaTarget));

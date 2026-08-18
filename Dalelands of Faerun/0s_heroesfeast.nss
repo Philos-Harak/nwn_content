@@ -45,7 +45,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_CREATION;
     Spell.sArcaneComponent = COMPONENT_POUCH;
-    Spell.sDivineComponent = COMPONENT_POUCH;
+    Spell.iDivineFocus = TRUE;
     Spell.iAreaShape = SHAPE_RANGE_TARGET;
     Spell.iDurationType = DURATION_TYPE_MINUTES;
     Spell.iDuration = 10;

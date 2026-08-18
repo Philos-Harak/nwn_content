@@ -58,6 +58,7 @@ void main()
     effect eCenter = EffectVisualEffect(VFX_FNF_LOS_NORMAL_30);
     // Link effects.
     effect eLink = EffectLinkEffects (eSlow, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     // Get the spells target(s).

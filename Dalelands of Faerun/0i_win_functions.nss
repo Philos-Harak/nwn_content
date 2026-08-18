@@ -674,7 +674,7 @@ json JsonArrayInsertAmbientSounds ()
     json jCombo = JsonArray ();
     jCombo = JsonArrayInsert (jCombo, NuiComboEntry ("None", 0));
     int nCount = 1;
-    while (nCount < 114)
+    while(nCount < 230)
     {
         sText = GetStringByStrRef (StringToInt (Get2DAString ("ambientsound", "Description", nCount)));
         if (sText == "") sText = "None";
@@ -684,6 +684,36 @@ json JsonArrayInsertAmbientSounds ()
     return jCombo;
 }
 
+json JArrayInsertWings()
+{
+    string sText;
+    json jCombo = JsonArray();
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Wings - None", 0));
+    int nCount = 1;
+    while(nCount < 230)
+    {
+        sText = Get2DAString("wingmodel", "Label", nCount);
+        if(sText == "") sText = "Invalid";
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry(sText, nCount));
+        nCount ++;
+    }
+    return jCombo;
+}
+json JArrayInsertTails()
+{
+    string sText;
+    json jCombo = JsonArray();
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Tail - None", 0));
+    int nCount = 1;
+    while(nCount < 14)
+    {
+        sText = Get2DAString("tailmodel", "Label", nCount);
+        if(sText == "") sText = "Invalid";
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry(sText, nCount));
+        nCount ++;
+    }
+    return jCombo;
+}
 json JArrayInsertNPCRaces ()
 {
     // Insert elements into the combo box array for races.
@@ -1260,16 +1290,16 @@ void RemoveAllExamineWindows (object oPC)
 // Clears any databases for a character that is deleted.
 void DeleteCharacterFromDatabase (object oPC)
 {
-    int nSpell, nCntr = 1;
+    int nCntr = 1;
     string sCntr;
-    // Delete any objects the player may have, Chests and NPC's.
+    // Delete any objects the player may have, Chests henchman and NPC's.
     while(nCntr < 11)
     {
         sCntr = IntToString(nCntr);
         DeleteServerDatabaseObject(oPC, OBJECT_TABLE, "chest" + sCntr);
         DeleteServerDatabaseObject(oPC, OBJECT_TABLE, "henchmen" + sCntr);
         DeleteServerDatabaseObject(oPC, OBJECT_TABLE, "npc" + sCntr);
-        nCntr ++;
+        nCntr++;
     }
     // Delete any quest data.
     int bDelete;
@@ -1283,22 +1313,61 @@ void DeleteCharacterFromDatabase (object oPC)
         if(SqlStep (sql)) bDelete = TRUE;
         else bDelete = FALSE;
     }
-    // Delete any adventures a DM/Player may have.
-    // Delete any areas that a DM/Player may have in an adventure.
-    // Delete any objects that a DM/Player may have in an area.
-    DeleteServerDatabase(oPC, DM_TABLE);
-    // Delete any Fast Buff spell lists.
-    nCntr = 1;
-    while (nCntr <= 4)
+    // All Fast Buff spell lists are saved on the character.
+    // Delete all Party Manager information.
+    sQuery = "DELETE FROM PARTY_TABLE WHERE character = @name AND player = @playername;";
+    sql = SqlPrepareQueryCampaign("philos_party_db", sQuery);
+    SqlBindString (sql, "@name", GetName(oPC, TRUE));
+    SqlBindString (sql, "@playername", GetPCPlayerName(oPC));
+    if(SqlStep(sql)) bDelete = TRUE;
+    while(bDelete)
     {
-        DeleteServerDatabaseObject (oPC, BUFF_TABLE, "list" + IntToString (nCntr));
-        nCntr ++;
+        if(SqlStep (sql)) bDelete = TRUE;
+        else bDelete = FALSE;
     }
-    // Don't forget to remove the list entry as well!
-    DeleteServerDatabaseObject(oPC, BUFF_TABLE, "list");
+    // CHeck for all DM database information on DM's and Administrators.
+    int nStatus = GetServerDatabaseStatusByCDKey(oPC);
+    if(nStatus > 2)
+    {
+        // Delete all adventures a DM may have set with this character.
+        sQuery = "DELETE FROM AdvObjTable WHERE name = @name AND playername = @playername;";
+        sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+        SqlBindString (sql, "@name", GetName(oPC, TRUE));
+        SqlBindString (sql, "@playername", GetPCPlayerName(oPC));
+        if(SqlStep(sql)) bDelete = TRUE;
+        while(bDelete)
+        {
+            if(SqlStep (sql)) bDelete = TRUE;
+            else bDelete = FALSE;
+        }
+        // Delete all areas that a DM may have in an adventure with this character.
+        sQuery = "DELETE FROM AdventureTable WHERE name = @name;";
+        sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+        SqlBindString (sql, "@name", GetName(oPC, TRUE));
+        if(SqlStep(sql)) bDelete = TRUE;
+        while(bDelete)
+        {
+            if(SqlStep (sql)) bDelete = TRUE;
+            else bDelete = FALSE;
+        }
+        // Delete all objects that a DM may have in an area with this character.
+        sQuery = "DELETE FROM AreaTable WHERE name = @name;";
+        sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+        SqlBindString (sql, "@name", GetName(oPC, TRUE));
+        if(SqlStep(sql)) bDelete = TRUE;
+        while(bDelete)
+        {
+            if(SqlStep (sql)) bDelete = TRUE;
+            else bDelete = FALSE;
+        }
+        // Delete the DM database information.
+        DeleteServerDatabase(oPC, DM_TABLE);
+    }
     DecreaseServerDatabaseCounter(oPC, PLAYER_TABLE, "characters");
     SendMessages(GetPCPlayerName(oPC) + " has deleted the " +
                   "character named " + GetName (oPC) + ".", COLOR_RED, OBJECT_INVALID, TRUE, TRUE);
     SendPlayerLogToDiscord(oPC, TEXT_CHAR_DELETE);
+    // Set here so that in 0e_clientleave we don't save the characters information.
+    SetLocalInt(oPC, "0_CHAR_DELETED", TRUE);
     NWNX_Administration_DeletePlayerCharacter(oPC, FALSE, "Your character has been deleted!");
 }

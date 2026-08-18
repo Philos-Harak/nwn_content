@@ -181,6 +181,7 @@ void SetXpGold (object oPC, int iLevel, int bXP = TRUE, int bGold = TRUE)
            {
                 //Debug ("0i_character", "285", "iRace: " + IntToString (iRace));
                 // ERL 1
+                case 38: // Duergar
                 case 60: // Aasimar
                 case 61: // Tiefling
                 case 62: // Air Genasi
@@ -190,8 +191,8 @@ void SetXpGold (object oPC, int iLevel, int bXP = TRUE, int bGold = TRUE)
                     fRacialXP = 1000.0;
                     break;
                 // ERL 2
-                case 38: // Duergar
                 case 42: // Drow
+                case 66: // Gloaming
                     fRacialXP = 3000.0;
                     break;
                 // ERL 3
@@ -518,7 +519,8 @@ void SetDeityInDatabase (object oPC)
 // getting an item. Sends message to them if successful.
 void DoSpotVsSleightOfHandCheck (object oReceiver, object oItem, object oGiver)
 {
-    int nCheck, nDistance;
+    if(GetTag(oItem) == "0_quest_paper") return;
+    int nCheck;
     string sBaseName;
     location lLocation = GetLocation (oReceiver);
     int nItemSize = GetItemSize (oItem) - 1;

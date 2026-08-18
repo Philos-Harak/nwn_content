@@ -24,7 +24,7 @@ Special: Some creature components can focus the magic to give an armor bonus vs 
 
 void  AddACBonusToArmor(object oMyArmor, float fDuration, int nAmount)
 {
-    IPSafeAddItemProperty(oMyArmor,ItemPropertyACBonus(nAmount), fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING ,FALSE,TRUE);
+    IPSafeAddItemProperty(oMyArmor,ItemPropertyACBonus(nAmount), fDuration, X2_IP_ADDPROP_POLICY_IGNORE_EXISTING ,FALSE,TRUE);
    return;
 }
 
@@ -58,6 +58,54 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedAC, nStack;
+        int nAlestoneDust, nJasmalDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nAlestoneDust && GetTag(oItem) == "alestone_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nAlestoneDust = TRUE;
+                fEnhancedDuration += 0.5;    
+            }
+            else if(!nJasmalDust && GetTag(oItem) == "jasmal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nJasmalDust = TRUE;
+                    nEnhancedAC += 1;    
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nEnhancedAC)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase armor bonus by +" + IntToString(nEnhancedAC) + "!", COLOR_GREEN, oObject);
+            Spell.iResult += nEnhancedAC;
+        }
+        if(fEnhancedDuration > 0.0)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the duration by +" + FloatToString(fEnhancedDuration * 100.0) + "%!", COLOR_GREEN, oObject);
+            Spell.fDuration *= 1.0 + fEnhancedDuration;
+        }
+    }
     object oArmor, oPossessor;
     // Create visual effects.
     effect eImpact = EffectVisualEffect (Spell.iImpact);
@@ -77,7 +125,7 @@ void main()
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oPossessor));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDur, oPossessor, Spell.fDuration));
             // Apply effect.
-            DelayCommand (Spell.fDelay, IPSafeAddItemProperty(oArmor,ItemPropertyACBonus(Spell.iResult), Spell.fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING ,FALSE,TRUE));
+            DelayCommand (Spell.fDelay, IPSafeAddItemProperty(oArmor,ItemPropertyACBonus(Spell.iResult), Spell.fDuration, X2_IP_ADDPROP_POLICY_IGNORE_EXISTING ,FALSE,TRUE));
         }
         // Display failure text.
         else DelayCommand (Spell.fDelay, FloatingTextStrRefOnCreature(83826, Spell.oAreaTarget));

@@ -27,6 +27,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_SCRYING;
     Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "luriyl_dust";
     Spell.iDivineFocus = TRUE;
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
@@ -48,6 +49,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     //Declare major variables
     effect eSpot = EffectSkillIncrease (SKILL_SPOT, Spell.iResult);
     effect eListen = EffectSkillIncrease (SKILL_LISTEN, Spell.iResult);
@@ -57,6 +59,7 @@ void main()
     effect eLink = EffectLinkEffects(eSpot, eListen);
     eLink = EffectLinkEffects(eLink, eVis);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -64,7 +67,7 @@ void main()
         //Fire spell cast at event for target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply linked and VFX effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDuration, eLink, Spell.oAreaTarget, Spell.fDuration));
         // Get the spells target(s).

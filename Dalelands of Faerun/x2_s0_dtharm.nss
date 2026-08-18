@@ -16,7 +16,7 @@ Spell Resistance: Yes
 A magical aura surrounds the caster -- injuring creatures that touch it.
 Any creature striking the caster takes 1d4 points of damage +1 point
 per 2 caster levels (maximum +5).
-Boosted: If the caster has the boosting component (onyx worth 50gp) then any
+Boosted: If the caster has the boosting component (onyx dust worth 50gp) then any
 creature striking the caster takes 2d4 points of damage +1 point per level of
 the caster (maximum +20).
 
@@ -34,7 +34,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.sEnhancingComp = "0_onyx_dust";
-    Spell.iCompAmount = 50;
+    Spell.iCompAmount = 2; // 50 gp worth of onyx dust.
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -72,6 +72,7 @@ void main()
     effect eDur = EffectVisualEffect (463);
     //Link effects
     effect eLink = EffectLinkEffects (eShield, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -79,7 +80,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply effects to target.
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

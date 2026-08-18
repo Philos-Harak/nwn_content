@@ -2,8 +2,22 @@
  Script Name: x2_s0_balllghtng
  Programmer: Brent
 ////////////////////////////////////////////////
- You create a ball of lightning per level that
- do 1d6 damage up to a maximum of 15 balls.
+School: Evocation
+Descriptor(s): Electricity
+Component(s): Verbal, Somatic
+Range: Medium
+Area of Effect / Target: Gargantuan
+Duration: Instantaneous
+Additional Counter Spells:
+Save: Reflex 1/2
+Spell Resistance: Yes
+
+You create a number of lightning balls (one per caster level up to a maximum
+of 15) that appear and target any hostile creature in the area of effect.
+If there are more creatures than balls, only the closest targets will be hit up
+to the number of balls created. If there are more balls than creatures, the
+creatures will be hit with an even number of balls. Each ball of lightning does
+1d6 points of electrical damage.
  /*///////////////////////////////////////////////
 #include "0i_spells"
 void main()
@@ -21,6 +35,9 @@ void main()
     Spell.iTargetType = TARGET_TYPE_ENEMIES;
     Spell.iDurationType = DURATION_TYPE_INSTANT;
     Spell.iSpellResistance = TRUE;
+    Spell.iSave = SAVING_THROW_REFLEX;
+    Spell.iSaveType = SAVING_THROW_TYPE_ELECTRICITY;
+    Spell.iSaveHalf = TRUE;
     Spell.iDamageType = DAMAGE_TYPE_ELECTRICAL;
     Spell.iModNumOfDice = 1;
     Spell.iModifierDie = 6;
@@ -35,6 +52,6 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     int iNumOfMissles = Spell.iCasterLevel;
-    MissileStorm (Spell, iNumOfMissles, 503, FALSE, FALSE);
+    MissileStorm(Spell, iNumOfMissles, 503, FALSE, FALSE, TRUE);
     CleanUpSpell (Spell);
 }

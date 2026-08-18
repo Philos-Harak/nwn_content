@@ -15,12 +15,13 @@ void main()
     if (iSubType == NWNX_ELC_SUBTYPE_MIN_EQUIP_LEVEL)
     {
         object oItem = NWNX_ELC_GetValidationFailureItem ();
-        //int iItemType = GetBaseItemType (oItem);
+        int iItemType = GetBaseItemType (oItem);
+        Debug("0i_creature", "1662", "ELC: " + GetName(oPC) + " hit item level restriction for item type " + IntToString(iItemType));
         // If a skin is being equiped then skip the ILR.
         //if (iItemType == 73 || iItemType == 160) NWNX_ELC_SkipValidationFailure();
 
     }
-    if (bSkip)
+    if(bSkip)
     {
         int iType = NWNX_ELC_GetValidationFailureType ();
         int iStrRef = NWNX_ELC_GetValidationFailureMessageStrRef ();

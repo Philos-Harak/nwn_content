@@ -15,7 +15,7 @@ Spell Resistance:   Yes
 
 A sleep spell causes a magical slumber to come upon 4 Hit Dice of creatures.
 Creatures with the fewest HD are affected first. Among creatures with equal HD,
-those who are closest to the spell’s point of origin are affected first.
+those who are closest to the spell's point of origin are affected first.
 Hit Dice that are not sufficient to affect a creature are wasted.
 Sleeping creatures are helpless. Slapping or wounding awakens an affected creature,
 but normal noise does not.
@@ -37,7 +37,7 @@ void main()
     Spell.iDescriptor = DESC_MIND;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.iAreaShape = SHAPE_SPHERE;
-    Spell.fAreaSize = 10.0f;
+    Spell.fAreaSize = 10.0;
     Spell.iLineOfSight = FALSE;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALL;
@@ -59,10 +59,44 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    int iCreatureHD, iHD = 4, iRacialType;
-    if (Spell.iSpellID == 165) iHD = 4;
-    else if (Spell.iSpellID == 975) iHD = 10;
-    int iLowest = iHD + 1;
+    int nCreatureHD, nHD = 4, nRacialType;
+    if (Spell.iSpellID == 165) nHD = 4;
+    else if (Spell.iSpellID == 975) nHD = 10;
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedHD, nStack;
+        int nBandedAgateDust, nFrostAgateDust;
+        float fEnhancedAOE;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nBandedAgateDust && GetTag(oItem) == "banded_agate_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nBandedAgateDust = TRUE;
+                nEnhancedHD += 5;    
+            }
+            else if(!nFrostAgateDust && GetTag(oItem) == "frost_agate_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nFrostAgateDust = TRUE;
+                nEnhancedHD += 5;    
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        if(nEnhancedHD)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            SendMessages(sSpellName + " has been enhanced to increase the HitDice affected by +" + IntToString(nEnhancedHD) + "!", COLOR_GREEN, Spell.oCaster);
+            nHD += nEnhancedHD;
+        }
+    }
+    int nLowest = nHD + 1;
     object oLowest;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eSleep =  EffectSleep ();
@@ -77,22 +111,22 @@ void main()
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact, Spell.lTarget);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
-    while(GetIsObjectValid (Spell.oAreaTarget) && iHD > 0)
+    while(GetIsObjectValid (Spell.oAreaTarget) && nHD > 0)
     {
-        iRacialType = GetRacialType (Spell.oAreaTarget);
+        nRacialType = GetRacialType (Spell.oAreaTarget);
         //Make check to ignore specific creatures.
-        if (iRacialType != RACIAL_TYPE_CONSTRUCT && iRacialType != RACIAL_TYPE_UNDEAD)
+        if (nRacialType != RACIAL_TYPE_CONSTRUCT && nRacialType != RACIAL_TYPE_UNDEAD)
         {
             // Has this creature already been hit by the spell, check SpellLocal variable.
             if (!GetLocalInt (Spell.oAreaTarget, sSpellLocal))
             {
                 //Get the current HD of the target creature
-                iCreatureHD = GetHitDice(Spell.oAreaTarget);
+                nCreatureHD = GetHitDice(Spell.oAreaTarget);
                 //Check to see if the HD are lower than the current Lowest HD stored and that the
                 //HD of the monster are lower than the number of HD left to use up.
-                if(iCreatureHD < iLowest && iCreatureHD <= iHD)
+                if(nCreatureHD < nLowest && nCreatureHD <= nHD)
                 {
-                    iLowest = iCreatureHD;
+                    nLowest = nCreatureHD;
                     oLowest = Spell.oAreaTarget;
                 }
             }
@@ -114,16 +148,16 @@ void main()
                     // Check to see if they are immune to sleep;
                     if (!GetIsImmune (oLowest, IMMUNITY_TYPE_SLEEP)) DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink2, oLowest, Spell.fDuration));
                     // * even though I am immune apply just the sleep effect for the immunity message
-                    else DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eSleep, oLowest, Spell.fDuration));
+                    else DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, oLowest, Spell.fDuration));
                 }
                 // Set a local int to make sure the creature is not used twice in the pass.  Destroy that variable in
                 // 1.0f seconds to remove it from the creature
                 SetLocalInt (oLowest, sSpellLocal, TRUE);
                 DelayCommand (1.0, DeleteLocalInt(oLowest, sSpellLocal));
                 //Remove the HD of the creature from the total
-                iHD = iHD - GetHitDice (oLowest);
+                nHD = nHD - GetHitDice (oLowest);
                 oLowest = OBJECT_INVALID;
-                iLowest = iHD + 1;
+                nLowest = nHD + 1;
                 // Check the area again for the next lowest.
                 // Do this by clearing the spells target to start over.
                 Spell.oAreaTarget = OBJECT_INVALID;

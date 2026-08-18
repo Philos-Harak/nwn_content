@@ -10,7 +10,7 @@
 void main()
 {
     object oTrigger, oPC = GetLastUsedBy ();
-    if (!GetLocalInt (OBJECT_SELF,"Lever_is_on"))
+    if(!GetLocalInt(OBJECT_SELF, "Lever_is_on"))
     {
         PlayAnimation (ANIMATION_PLACEABLE_ACTIVATE);
         SetLocalInt (OBJECT_SELF,"Lever_is_on", TRUE);

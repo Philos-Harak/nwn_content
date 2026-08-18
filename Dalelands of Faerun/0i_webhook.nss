@@ -119,27 +119,30 @@ void SendServerMessageToDiscord (string sTitle, string sDescription, string sUse
 }
 // nTextOption = TEXT_*
 // nData allows us to pass special data to specific TEXT_* options.
-void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, int nData = 0)
+void SendPlayerLogToDiscord(object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, int nData = 0)
 {
-    if (GetIsDungeonMaster (oPC))
+    WriteTimestampedLogEntry("Debug, 124, 0i_webhook, " + GetName(oPC) +
+      " IsDM: " + IntToString(GetIsDungeonMaster(oPC)));
+    if(GetIsDungeonMaster(oPC))
     {
-        string sOptions = GetServerDatabaseString (oPC, DM_TABLE, "options");
-        if (GetStringArray (sOptions, 1) == "0") return;
+        string sOptions = GetServerDatabaseString(oPC, DM_TABLE, "options");
+        WriteTimestampedLogEntry("Debug, 129, 0i_webhook, " + " Option: " + GetStringArray(sOptions, 1));
+        if(GetStringArray(sOptions, 1) == "0") return;
     }
     struct NWNX_WebHook_Message stMessage;
     string sActionText, sDMs, sChar = "", sPlayers = "", sUserAction;
     // Set the description to show if they aregloging in or out.
-    int nPlayers = GetPlayerCount ();
-    int nDMs = GetDMCount ();
-    if (nTextOption == TEXT_PLAYER_LOG_IN)
+    int nPlayers = GetPlayerCount();
+    int nDMs = GetDMCount();
+    if(nTextOption == TEXT_PLAYER_LOG_IN)
     {
         sUserAction = " has logged in.";
         sActionText += " has logged in";
         stMessage.sColor = LOG_PLAYER_COLOR;
-        if (nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
-        sPlayers = "Players: " + IntToString (nPlayers) + sDMs;
+        if(nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
+        sPlayers = "Players: " + IntToString(nPlayers) + sDMs;
     }
-    else if (nTextOption == TEXT_PLAYER_LOG_OUT)
+    else if(nTextOption == TEXT_PLAYER_LOG_OUT)
     {
         sUserAction = " has logged out.";
         sActionText += " has logged out";
@@ -149,7 +152,7 @@ void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, i
         if (nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
         sPlayers = "Players: " + IntToString (nPlayers) + sDMs;
     }
-    else if (nTextOption == TEXT_CHAR_CREATE)
+    else if(nTextOption == TEXT_CHAR_CREATE)
     {
         sUserAction = " has created a new character.";
         sActionText = " has been created";
@@ -159,7 +162,7 @@ void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, i
         if (nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
         sPlayers = "Players: " + IntToString (nPlayers) + sDMs;
     }
-    else if (nTextOption == TEXT_CHAR_DELETE)
+    else if(nTextOption == TEXT_CHAR_DELETE)
     {
         sUserAction = " has deleted a character.";
         sActionText = " has been deleted";
@@ -172,7 +175,7 @@ void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, i
         if (nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
         sPlayers = "Players: " + IntToString (nPlayers) + sDMs;
     }
-    else if (nTextOption == TEXT_LEVEL_UP)
+    else if(nTextOption == TEXT_LEVEL_UP)
     {
         sUserAction = " leveled up a character.";
         sActionText = "has leveled up";
@@ -181,9 +184,9 @@ void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, i
     stMessage.sUsername = GetPCPlayerName (oPC) + sUserAction;
     stMessage.sAvatarURL = "https://battledale-nwsync.com/pictures/character.jpg";
     stMessage.sThumbnailURL = "https://battledale-nwsync.com/portraits/" + GetStringLowerCase (GetPortraitResRef (oPC)) + "m.png";
-    if (GetIsDungeonMaster (oPC))
+    if(GetIsDungeonMaster(oPC))
     {
-        stMessage.sDescription += "**" + GetName (oPC) + "** " + sActionText + " as a Dungeon Master.";
+        stMessage.sDescription += "**" + GetName(oPC) + "** " + sActionText + " as a Dungeon Master.";
     }
     else
     {
@@ -191,21 +194,21 @@ void SendPlayerLogToDiscord (object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, i
         stMessage.sDescription = "**" + GetName (oPC) + "** " + sActionText + ".\\n";
         // Set line 2 for gender and race description.
         string sGender;
-        if (GetGender (oPC)) sGender = "female";
+        if(GetGender(oPC)) sGender = "female";
         else sGender = "male";
         string sRace = GetStringByStrRef (StringToInt (Get2DAString ("racialtypes", "Name", GetRacialType (oPC))));
         stMessage.sDescription += sGender + " " +  sRace + "\\n";
         // Set line 3 for class description.
         stMessage.sDescription += GetClassesAndLevels (oPC);
         // Set line 4/5 for Characters and/or Players.
-        if (sChar != "") stMessage.sDescription += "\\n" + sChar;
+        if(sChar != "") stMessage.sDescription += "\\n" + sChar;
     }
-    if (sPlayers != "") stMessage.sDescription += "\\n" + sPlayers;
+    if(sPlayers != "") stMessage.sDescription += "\\n" + sPlayers;
     stMessage.sDescription = StripColorCodes (stMessage.sDescription);
     string sConstructedMsg = NWNX_WebHook_BuildMessageForWebHook (stMessage);
     NWNX_WebHook_SendWebHookHTTPS (sConstructedMsg, "NWNX_ACTIVITY_DISCORD_PATH");
 }
-void SendPlayerRespawnToDiscord (object oPC, object oKiller)
+void SendPlayerRespawnToDiscord(object oPC, object oKiller)
 {
     struct NWNX_WebHook_Message stMessage;
     stMessage.sAvatarURL = "https://battledale-nwsync.com/pictures/death.jpg";

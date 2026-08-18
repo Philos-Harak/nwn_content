@@ -13,9 +13,9 @@ Saving Throw:   Will disbelief (if interacted with), then Fortitude partial; see
 Spell Resistance:   Yes
 
 You create a phantasmal image of the most fearsome creature imaginable to the
-subject simply by forming the fears of the subject’s subconscious mind into
+subject simply by forming the fears of the subject''s subconscious mind into
 something that its conscious mind can visualize: this most horrible beast.
-Only the spell’s subject can see the phantasmal killer. You see only a vague
+Only the spell's subject can see the phantasmal killer. You see only a vague
 shape. The target first gets a Will save to recognize the image as unreal. If
 that save fails, the phantasm touches the subject, and the subject must succeed
 on a Fortitude save or die from fear. Even if the Fortitude save is successful,
@@ -69,13 +69,14 @@ void main()
                 // Make a Fort save and take damage.
                 if (SavingThrowWithEffects (SAVING_THROW_FORT, Spell.oAreaTarget, Spell.iSaveDC))
                 {
-                     // Get the result for the effect, sets Spell.iResult.
-                     Spell = GetModifier (Spell);
-                     //Set the damage property
-                     eDmg = EffectDamage (Spell.iResult, DAMAGE_TYPE_MAGICAL);
-                     // Apply effects
-                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
-                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+                    // Get the result for the effect, sets Spell.iResult.
+                    Spell = GetModifier (Spell);
+                    //Set the damage property
+                    eDmg = EffectDamage (Spell.iResult, DAMAGE_TYPE_MAGICAL);
+                    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
+                    // Apply effects
+                    DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
+                    DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                 }
                 // Failed the save and die!
                 else

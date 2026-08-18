@@ -39,6 +39,8 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "nune_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Nune Dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 40.0f;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE | OBJECT_TYPE_AREA_OF_EFFECT | OBJECT_TYPE_PLACEABLE;
@@ -63,6 +65,8 @@ void main()
     }
     else
     {
+        int nCasterLevel = Spell.iCasterLevel;
+        if(Spell.sEnhancingComp == "TRUE") nCasterLevel += 2;;
         // Apply visual effect at the center of the effect area.
         ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
         //Get the spells target(s).
@@ -72,7 +76,7 @@ void main()
             // Check for area of effect spells.
             if (GetObjectType (Spell.oAreaTarget) == OBJECT_TYPE_AREA_OF_EFFECT)
             {
-                DelayCommand (Spell.fDelay, DispelAoEEffect (Spell.oAreaTarget, Spell.oCaster, Spell.iCasterLevel));
+                DelayCommand (Spell.fDelay, DispelAoEEffect (Spell.oAreaTarget, Spell.oCaster, nCasterLevel));
             }
             // Check for placeables.
             else if (GetObjectType (Spell.oAreaTarget) == OBJECT_TYPE_PLACEABLE)
@@ -82,7 +86,7 @@ void main()
             // Do creatures.
             else
             {
-                DelayCommand (Spell.fDelay, DispelMagicEffect (Spell.oAreaTarget, Spell.iCasterLevel, eImpact, eCenter, TRUE, TRUE));
+                DelayCommand (Spell.fDelay, DispelMagicEffect (Spell.oAreaTarget, nCasterLevel, eImpact, eCenter, TRUE, TRUE));
                 DelayCommand (Spell.fDelay, CheckSpellEffectsForRemoval (Spell.oAreaTarget));
             }
             //Get the spells target(s).
@@ -110,6 +114,7 @@ void ItemDisjunction (struct stSpell Spell)
     // Give the magic item a save.
     iRoll = d20();
     iCasterBonus = Spell.iCasterLevel + GetCasterAbilityModifier (Spell.oCaster);
+    if(Spell.sEnhancingComp == "TRUE") iCasterBonus += 2;;
     switch (iQuality)
     {
         case 1: iItemDC = 30; break; // Masterwork

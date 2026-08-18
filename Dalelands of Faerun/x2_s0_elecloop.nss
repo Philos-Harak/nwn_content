@@ -68,6 +68,7 @@ void main()
     effect   eImpact    = EffectVisualEffect(Spell.iImpact);
     effect   eRay, eDmg;
     effect   eStun = EffectLinkEffects (EffectVisualEffect (VFX_IMP_STUN), EffectStunned());
+    eStun = SetEffectCasterLevel(eStun, Spell.iCasterLevel);
     //Get the spells beam target(s).
     Spell = GetSpellBeamTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))
@@ -90,6 +91,7 @@ void main()
         if (Spell.iResult > 0)
         {
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         }

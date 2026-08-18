@@ -7,9 +7,9 @@
  * Gain +1 hitpoint per level when resting.
  May also increase hitpoints per level as follows.
  These are gained for using items or making a successful Survival check.
- 1 hp the base bonus hitpoints gained per character level when resting.
+ 1 hp is the base bonus hitpoints gained per character level when resting.
  (DC: 10) +1 hp (+2/lvl) for using a bed roll
- (DC: 15) +1 hp (+3/lvl) for being near a campfire (Doubles encounter chances).
+ (DC: 15) +1 hp (+3/lvl) for being near a campfire (+10% to encounter chances).
  (DC: 20) +1 hp (+4/lvl) for having rations and a water skin.
  (DC: Per 5 over 20) +1 hp when using Survival.
 *///////////////////////////////////////////////////////////////////////////////
@@ -35,13 +35,12 @@ void main ()
          if(GetLocalInt(oPC, USING_PLACEABLE_TO_REST)) nPlaceableRestValue = GetNearestRestPlaceableValue(oPC);
          if(CanPCRest(oPC, nPlaceableRestValue))
          {
-            // Has a forage bonus already been made in this area?
-            int nForageBonus = GetForageBonus(oPC);
-            if(!nPlaceableRestValue && !nForageBonus) nForageBonus = MakePartyForageCheck(oPC);
-            if(IsThereAnEncounter(oPC, nForageBonus)) SetupRandomEncounter(oPC);
-            else
+            if(!nPlaceableRestValue)
             {
-                if(!nPlaceableRestValue && nForageBonus)
+                // Has a forage bonus already been made in this area?
+                int nForageBonus = GetForageBonus(oPC);
+                if(!nForageBonus) nForageBonus = MakePartyForageCheck(oPC);
+                else
                 {
                     SendMessages("Your party has already foraged this area.", COLOR_GREEN, oPC);
                     // Rolled 20+ (Same as Bedroll, Campfire, Food & Rations).
@@ -52,8 +51,13 @@ void main ()
                     else if(nForageBonus == 2) SendMessages("You successfully found a place to rest.", COLOR_GREEN, oPC);
                     else SendMessages("You failed to find a place to rest.", COLOR_RED, oPC);
                 }
-                SetupResting(oPC);
+                if(IsThereAnEncounter(oPC, nForageBonus)) 
+                {
+                    SetupRandomEncounter(oPC);
+                    return;
+                }
             }
+            SetupResting(oPC);
          }
          else AssignCommand (oPC, ClearAllActions ());
          break;
@@ -94,8 +98,10 @@ int IsThereAnEncounter(object oPC, int nForageBonus)
     if(GetIsObjectValid(oWaypoint))
     {
         int nChance = GetLocalInt(oWaypoint, "0_Enc_Chance");
-        if(IsCampfireNearby(oPC)) nChance = nChance * 2;
+        if(IsCampfireNearby(oPC)) nChance += 10;
         // Forage check must be 20 or higher to decrease encounter chances.
+        // nForageBonus is the number of hitpoints gained i.e. each point is 5 in the skill check.
+        // Thus they get a +1% decrease in encounter chances for every 5 points in the forage check over 20.
         nForageBonus -= 3;
         if(nForageBonus > 8) nForageBonus = 8;
         if(nForageBonus > 0) nChance = nChance - ((nChance * nForageBonus) / 10);
@@ -104,10 +110,10 @@ int IsThereAnEncounter(object oPC, int nForageBonus)
         int nRoll = d100LuckRoll(oPC);
         if(nRoll <= nChance)
         {
-            SendMessages("Your rest has been interupted (Roll: " + IntToString(nRoll) + " Chance: " + IntToString(nChance) + ")!", COLOR_RED, oPC);
+            SendMessages("Your rest has been interupted: Roll (" + IntToString(nRoll) + ") vs Chance (" + IntToString(nChance) + ")!", COLOR_RED, oPC);
             return TRUE;
         }
-        else SendMessages("Your rest was uninterupted (Roll: " + IntToString(nRoll) + " Chance: " + IntToString(nChance) + ").", COLOR_GREEN, oPC);
+        else SendMessages("Your rest was successful: Roll (" + IntToString(nRoll) + ") vs Chance (" + IntToString(nChance) + ").", COLOR_GREEN, oPC);
     }
     return FALSE;
 }
@@ -202,13 +208,19 @@ int GetRestingBonus(object oPC, object oCreature)
             nRestingBonusHP = nRestingBonusHP + nForageBonus + CheckForWaterAndRations(oCreature) + IsCampfireNearby(oCreature);
         }
     }
+    // Check to see if a Healing Kit has been used on them to allow an extra hitpoint while resting outside.
+    if(GetLocalInt(oCreature, "0_Healing_Kit_Resting")) 
+    {
+        nRestingBonusHP += 1;
+        DeleteLocalInt(oCreature, "0_Healing_Kit_Resting");
+    }
     // Check for Periapt of Wound Closure.
     // Periapt of wound closure doubles your resting bonus.
     string sResRef = GetResRef (GetItemInSlot (INVENTORY_SLOT_NECK, oCreature));
     if(sResRef == "0_periapt_woundc" && nRestingBonusHP < 999) nRestingBonusHP = nRestingBonusHP * 2;
     return nRestingBonusHP;
 }
-void SetCorrectHitpoints(object oPC, object oCreature)
+void SetCorrectHitpoints(object oPC, object oCreature, int nForageBonus, int bCampfire)
 {
     int nHitpoints, nRace = GetRacialType(oCreature);
     if(nRace == RACIAL_TYPE_UNDEAD || nRace == RACIAL_TYPE_CONSTRUCT)
@@ -245,17 +257,19 @@ void SetCorrectHitpoints(object oPC, object oCreature)
         }
         else
         {
-           if(oPC == oCreature) SendMessages("You are fully healed after resting.", COLOR_GREEN, oPC, FALSE, FALSE);
+            if(oPC == oCreature) SendMessages("You are fully healed after resting.", COLOR_GREEN, oPC, FALSE, FALSE);
             else SendMessages(GetName(oCreature) + " has fully healed after resting.", COLOR_GREEN, oPC, FALSE, FALSE);
         }
     }
 }
 void FinalizeResting(object oPC)
 {
-    SetCorrectHitpoints(oPC, oPC);
+    int bCampfire = IsCampfireNearby(oPC);
+    int nForageBonus = GetForageBonus(oPC);
+    SetCorrectHitpoints(oPC, oPC, nForageBonus, bCampfire);
     int nIndex, nAssociateType = 1;
     effect eUnsummon;
-    object oAssociate = GetAssociate(nAssociateType, oPC);
+    object oAssociate;
     while(nAssociateType < 7)
     {
         nIndex = 1;
@@ -270,16 +284,15 @@ void FinalizeResting(object oPC)
                 // Animated dead are kept.
                 if(nSummon == SPELL_ANIMATE_DEAD || nSummon == SPELLABILITY_PM_ANIMATE_DEAD)
                 {
-                    SetCorrectHitpoints(oPC, oAssociate);
+                    SetCorrectHitpoints(oPC, oAssociate, nForageBonus, bCampfire);
                 }
                 else
                 {
-                    eUnsummon = EffectVisualEffect(VFX_IMP_UNSUMMON);
-                    ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eUnsummon, GetLocation(oAssociate));
                     SetIsDestroyable(TRUE, FALSE, FALSE, oAssociate);
                     DestroyObject(oAssociate);
                 }
             }
+            else SetCorrectHitpoints(oPC, oAssociate, nForageBonus, bCampfire);
             oAssociate = GetAssociate(nAssociateType, oPC, ++nIndex);
         }
         ++nAssociateType;

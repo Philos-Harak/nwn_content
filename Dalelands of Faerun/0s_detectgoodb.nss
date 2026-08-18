@@ -15,7 +15,9 @@ void main()
     {
         //Declare major variables
         object oCaster = GetAreaOfEffectCreator();
-        if (oTarget != oCaster)
+        if (oTarget != oCaster && 
+           (GetHasFeat(1565/*AURA_OF_ALIGNMENT*/, oTarget) ||
+            GetRacialType(oTarget) == RACIAL_TYPE_OUTSIDER))
         {
             int nVFX;
             // Remove any previous effect on this target.

@@ -73,6 +73,7 @@ void main()
         {
             // Set the damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             // Gives the effect the damage is random in the area instead of from the point.
             fDelay = GetRandomDelay (1.5, 2.5);
             // Apply effect.

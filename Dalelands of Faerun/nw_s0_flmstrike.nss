@@ -29,6 +29,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_FIRE;
     Spell.iDivineFocus = TRUE;
+    Spell.sEnhancingComp = "euclase_dust";
+    Spell.iCompAmount = 2; // 50gp worth of Euclase Dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 10.0f;
     Spell.iLineOfSight = FALSE;
@@ -52,6 +54,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if (Spell.sEnhancingComp == "TRUE") Spell.iModifier += Spell.iCasterLevel;
     // Declare major variables
     int iElementDamage, iDivineDamage;
     effect eHoly, eElement;
@@ -79,6 +82,7 @@ void main()
             if(iDivineDamage > 0)
             {
                 eHoly = EffectDamage (iDivineDamage, DAMAGE_TYPE_DIVINE);
+                eHoly = SetEffectCasterLevel(eHoly, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay + 0.6, ApplyEffectToObject (DURATION_TYPE_INSTANT, eHoly, Spell.oAreaTarget));
             }
             iElementDamage = GetReflexAdjustedDamage (Spell.iResult / 2, Spell.oAreaTarget, Spell.iSaveDC, Spell.iSaveType);
@@ -86,6 +90,7 @@ void main()
             {
                 // Apply effects to the currently selected target.
                 eElement = EffectDamage (iElementDamage, Spell.iDamageType);
+                eElement = SetEffectCasterLevel(eElement, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay + 0.6, ApplyEffectToObject(DURATION_TYPE_INSTANT, eElement, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay + 0.6, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             }

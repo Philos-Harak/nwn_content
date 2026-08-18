@@ -6,7 +6,7 @@
  DC: 10 + 1/2 Sorcerer level + Charisma modifier.
  Duration: 1 round per 1/2 Sorcerer/Dragon Disciple level + Charisma modifier.
 */////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "0i_master"
+#include "0i_effects"
 void main()
 {
     object oTarget = GetEnteringObject();
@@ -25,16 +25,9 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent(oTarget, EventSpellCastAt (oCaster, SPELLABILITY_AURA_FEAR));
         effect eImpact = EffectVisualEffect(VFX_IMP_FEAR_S);
-        effect eFrightened = EffectAttackDecrease(4);
-        eFrightened = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 4), eFrightened);
-        eFrightened = EffectLinkEffects(EffectSkillDecrease (SKILL_ALL_SKILLS, 4), eFrightened);
-        effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
-        effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
-        eFrightened = EffectLinkEffects(eDuration, eFrightened);
-        eFrightened = EffectLinkEffects(eVisual, eFrightened);
         float fDuration = RoundsToSeconds(nLevel);
         //Apply the VFX impact and effects
-        ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eFrightened, oTarget, fDuration);
+        Frightened(oTarget, fDuration, nLevel);
         ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oTarget);
     }
 }

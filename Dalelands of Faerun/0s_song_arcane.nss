@@ -230,8 +230,8 @@ void main()
             }
             if (iSpellDC > 0)
             {
-                iSpellDC += GetLocalInt (Spell.oAreaTarget, "0_SpellDCMod");
-                SetLocalInt (Spell.oAreaTarget, "0_SpellDCMod", iSpellDC);
+                iSpellDC += GetLocalInt (Spell.oAreaTarget, "0_Spell_DC_Mod");
+                SetLocalInt (Spell.oAreaTarget, "0_Spell_DC_Mod", iSpellDC);
             }
             if (iSpellDmg > 0)
             {

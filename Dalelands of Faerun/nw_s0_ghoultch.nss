@@ -20,7 +20,7 @@ living creatures (except you) in a 10-foot-radius spread to become sickened
 creature, and creatures immune to poison are unaffected by the stench.
 
 Material Component
-A small scrap of cloth taken from clothing worn by a ghoul, or a pinch of earth from a ghoul’s lair.
+A small scrap of cloth taken from clothing worn by a ghoul, or a pinch of earth from a ghoulï¿½s lair.
 /*///////////////////////////////////////////////
 #include "0i_spells"
 void main()
@@ -57,6 +57,7 @@ void main()
     effect eDur2 = EffectVisualEffect(VFX_DUR_PARALYZED);
     effect eLink = EffectLinkEffects(eDur2, eDur);
     eLink = EffectLinkEffects(eLink, eParal);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

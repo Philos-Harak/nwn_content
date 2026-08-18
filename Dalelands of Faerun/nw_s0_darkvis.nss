@@ -50,6 +50,7 @@ void main()
     effect eLink = EffectLinkEffects (eVis, eDur);
     eLink = EffectLinkEffects (eLink, eVis2);
     eLink = EffectLinkEffects (eLink, eUltra);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -57,7 +58,7 @@ void main()
         //Signal spell cast at event to fire.
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt(Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);

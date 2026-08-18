@@ -11,7 +11,7 @@
 #include "0i_items"
 
 void main()
-{
+{   
     object oPC = GetLocalObject (OBJECT_SELF, "0_PC_Speaker");
     // Get the selections.
     string sSelection = GetLocalString (OBJECT_SELF, "0_Conv_Select");

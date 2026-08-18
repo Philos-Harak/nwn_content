@@ -13,7 +13,7 @@ Saving Throw:   Fortitude partial
 Spell Resistance:   Yes
 
 This spell instantly slays the subject and removes the soul immediately.
-If the target’s Fortitude saving throw succeeds, it instead takes 10d6 points
+If the targetï¿½s Fortitude saving throw succeeds, it instead takes 10d6 points
 of damage. The only way to restore life to a character who has failed to save
 against this spell is to use true resurrection.
 
@@ -76,6 +76,7 @@ void main()
                 // Get the result for the effect, sets Spell.iResult.
                 Spell = GetModifier (Spell);
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply damage effect and VFX impact
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eImpact2, Spell.oAreaTarget));                }

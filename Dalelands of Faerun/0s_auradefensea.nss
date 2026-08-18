@@ -1,28 +1,25 @@
-/*////////////////////////////////////////////////
+/*/////////////////////////////////////////////////////////////////////////////////// 
  Aura of defense: On Enter
  Created By: Philos
-////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
     Creatures entering the zone :
-    Give +2 ac if in this PC's party.
-/*///////////////////////////////////////////////
-
+    Give +1 ac at Paladin 6th+ or +2 ac if Paladins is 13th+ if in this PC's party.
+/*/////////////////////////////////////////////////////////////////////////////////// 
 void main()
 {
     object oTarget = GetEnteringObject();
     object oCaster = GetAreaOfEffectCreator();
     // Check that they are in the party.
-    if (GetFactionEqual (oCaster, oTarget))
+    if(GetFactionEqual (oCaster, oTarget))
     {
         // Get bonus to AC.
-        int iBonus;
-        if (GetHasFeat (1494 /* Improved Aura of Defense */, oCaster)) iBonus = 2;
-        else iBonus = 1;
-        effect eAC = EffectACIncrease (iBonus, AC_DODGE_BONUS, AC_VS_DAMAGE_TYPE_ALL);
-        effect eVis = EffectVisualEffect (VFX_IMP_AC_BONUS);
+        int nBonus = 1;
+        if(GetHasFeat (1494 /* Improved Aura of Defense */, oCaster)) nBonus = 2;
+        effect eAC = EffectACIncrease (nBonus, AC_DODGE_BONUS, AC_VS_DAMAGE_TYPE_ALL);
+        effect eVisual = EffectVisualEffect (VFX_IMP_AC_BONUS);
         // Tag the effect.
         eAC = TagEffect (eAC, "AURA_OF_DEFENSE" + GetName (oCaster));
-        // Apply VFX until the area effect is gone or they leave it.
-        ApplyEffectToObject (DURATION_TYPE_INSTANT, eVis, oTarget);
-        ApplyEffectToObject (DURATION_TYPE_PERMANENT, eAC, oTarget);
+        ApplyEffectToObject(DURATION_TYPE_INSTANT, eVisual, oTarget);
+        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eAC, oTarget);
     }
 }

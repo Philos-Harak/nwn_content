@@ -1390,8 +1390,16 @@ void ai_ScoutAhead(object oCreature)
 int ai_ShouldIPickItUp(object oCreature, object oItem)
 {
     int nMinGold;
+    // This is a check to make sure we are not duplicating items.
+    if(GetLocalInt(oItem, "0_TAKEN")) 
+    {
+        ai_Debug("0i_actions", "1396", GetName(oItem) + " has already been taken! Leave it alone!");
+        return FALSE;
+    }
     if(GetResRef(oItem) == "nw_it_gold001") return TRUE;
     int nBaseItem = GetBaseItemType(oItem);
+    // This is a check specific to my server so all Set items will be picked up.
+    if(GetStringLeft(GetTag(oItem), 7) == "itemset") return TRUE;
     if(GetPlotFlag(oItem))
     {
         if(ai_GetLootFilter(oCreature, AI_LOOT_PLOT)) nMinGold = GetLocalInt(oCreature, "AI_MIN_GOLD_2");
@@ -1512,6 +1520,8 @@ int ai_ShouldIPickItUp(object oCreature, object oItem)
 }
 void ai_TakeItemMessage(object oCreature, object oObject, object oItem, object oMaster)
 {
+    string sName = GetName(oItem);
+    if(sName == "") return;
     int bId = GetIdentified(oItem);
     int nCreatureSkill = GetSkillRank(SKILL_LORE, oCreature);
     int nMasterSkill = GetSkillRank(SKILL_LORE, oMaster);
@@ -1524,10 +1534,10 @@ void ai_TakeItemMessage(object oCreature, object oObject, object oItem, object o
     {
         if(GetIdentified(oItem))
         {
-            if(bId) ai_SendMessages(GetName(oCreature) + " has found a " + GetName(oItem) + " from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster);
-            else ai_SendMessages(GetName(oCreature) + " has found and identified " + GetName(oItem) + " from the " + GetName(oObject) + ".", AI_COLOR_GREEN, oMaster);
+            if(bId) ai_SendMessages(GetName(oCreature) + " has found a " + sName + " from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster);
+            else ai_SendMessages(GetName(oCreature) + " has found and identified " + sName + " from the " + GetName(oObject) + ".", AI_COLOR_GREEN, oMaster);
         }
-        else if(!ai_GetIsCharacter(oCreature))
+        else
         {
             string sBaseName = GetStringByStrRef(StringToInt(Get2DAString("baseitems", "name", GetBaseItemType(oItem))));
             ai_SendMessages(GetName(oCreature) + " has found a " + sBaseName + " from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster);
@@ -1535,7 +1545,7 @@ void ai_TakeItemMessage(object oCreature, object oObject, object oItem, object o
     }
     else if(GetIdentified(oItem) && !bId)
     {
-        ai_SendMessages(GetName(oCreature) + " has identified " + GetName(oItem) + " from the " + GetName(oObject) + ".", AI_COLOR_GREEN, oMaster);
+        ai_SendMessages(GetName(oCreature) + " has identified " + sName + " from the " + GetName(oObject) + ".", AI_COLOR_GREEN, oMaster);
     }
     if(GetPlotFlag(oItem))
     {
@@ -1544,14 +1554,16 @@ void ai_TakeItemMessage(object oCreature, object oObject, object oItem, object o
 }
 void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce = FALSE)
 {
-    ai_Debug("0i_actions", "966", GetName(OBJECT_SELF) + " is opening " + GetName(oObject));
+    float fObjectDistance = GetDistanceBetween(oCreature, oObject);
+    ai_Debug("0i_actions", "1564", GetName(OBJECT_SELF) + " is searching " + 
+            GetName(oObject) + " Distance from Henchman: " + FloatToString(fObjectDistance, 0, 2));
     string sTag = GetTag(oCreature);
     AssignCommand(oObject, ActionPlayAnimation(ANIMATION_PLACEABLE_OPEN));
     if(GetIsTrapped(oObject)) DoPlaceableObjectAction(oObject, PLACEABLE_ACTION_USE);
     SetLocalInt(oObject, "AI_LOOTED_" + sTag, TRUE);
     // Big Hack to allow NPC's to loot!
     string sLootScript = GetEventScript(oObject, EVENT_SCRIPT_PLACEABLE_ON_OPEN);
-    //ai_Debug("0i_actions", "972", "Loot script: " + sLootScript);
+    ai_Debug("0i_actions", "1572", "Loot script: " + sLootScript);
     if(sLootScript != "")
     {
         // Used in Original Campaign, and SOU for loot scripts to get treasure to work.
@@ -1562,23 +1574,27 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
     AssignCommand(oObject, ActionPlayAnimation(ANIMATION_PLACEABLE_CLOSE));
     int nItemType, nGold;
     object oItem = GetFirstItemInInventory(oObject);
-    //ai_Debug("0i_actions", "983", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem) +
-    //         " in " + GetName(oObject));
+    ai_Debug("0i_actions", "1583", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem) +
+             " in " + GetName(oObject));
     while(oItem != OBJECT_INVALID)
     {
-        ai_Debug("0i_actions", "987", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
+        ai_Debug("0i_actions", "1587", "Found: " + GetName(oItem) + " ResRef: " + GetResRef(oItem));
         if(ai_ShouldIPickItUp(oCreature, oItem))
         {
-            ai_Debug("0i_actions", "1002", "Taking: " + GetName(oItem));
+            ai_Debug("0i_actions", "1590", GetName(oCreature) + " is taking " + GetName(oItem));
+            // Lets mark this item as taken so nobody else tries to take it!
+            SetLocalInt(oItem, "0_TAKEN", TRUE);
+            DelayCommand(6.0, DeleteLocalInt(oItem, "0_TAKEN"));
             if(GetResRef(oItem) == "nw_it_gold001")
             {
-                 if(!ai_GetIsCharacter(oCreature))
+                 if(!ai_GetIsCharacter(oCreature)) 
                  {
-                     int nGold = GetItemStackSize(oItem);
-                     DestroyObject(oItem);
-                     ActionDoCommand(GiveGoldToCreature(oMaster, nGold));
-                     ActionDoCommand(ai_SendMessages(GetName(oCreature) + " has retrieved " + IntToString(nGold) +
-                                     " gold from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster));
+                    SetLocalInt(oItem, "0_TAKEN", TRUE);
+                    int nGold = GetItemStackSize(oItem);
+                    DestroyObject(oItem);                     
+                    ai_SendMessages(GetName(oCreature) + " has retrieved " + IntToString(nGold) +
+                                    " gold from the " + GetName(oObject) + ".", AI_COLOR_GRAY, oMaster);
+                    GiveGoldToCreature(oMaster, nGold);
                  }
                  else AssignCommand(oCreature, ActionTakeItem(oItem, oObject));
             }
@@ -1589,8 +1605,8 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
             {
                 if(GetBaseItemFitsInInventory(GetBaseItemType(oItem), oCreature))
                 {
+                    AssignCommand(oCreature, ActionTakeItem(oItem, oObject));
                     ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster));
-                    ActionTakeItem(oItem, oObject);
                 }
                 else
                 {
@@ -1606,7 +1622,7 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
             {
                 if(GetBaseItemFitsInInventory(GetBaseItemType(oItem), oMaster))
                 {
-                    //ai_Debug("0i_actions", "1010", "Giving to master: " + GetName(oItem));
+                    ai_Debug("0i_actions", "1619", "Giving to master: " + GetName(oItem));
                     ActionDoCommand(ai_TakeItemMessage(oCreature, oObject, oItem, oMaster));
                     AssignCommand(oObject, ActionGiveItem(oItem, oMaster));
                 }
@@ -1622,18 +1638,18 @@ void ai_SearchObject(object oCreature, object oObject, object oMaster, int bOnce
             }
        }
        oItem = GetNextItemInInventory(oObject);
-       //ai_Debug("0i_actions", "1016", GetName(oItem) + " is the next item.");
+       ai_Debug("0i_actions", "1643", GetName(oItem) + " is the next item.");
     }
-    //ai_Debug("0i_actions", "1018", "Setting object as looted. Check for a new Placeable.");
+    ai_Debug("0i_actions", "1645", "Setting object as looted. Check for a new Placeable.");
     if(!bOnce) ActionDoCommand(ai_ActionCheckNearbyObjects(oCreature));
 }
 int ai_IsContainerLootable(object oCreature, object oObject)
 {
     string sTag = GetTag(oCreature);
-    //ai_Debug("0i_actions", "1303", GetName(oObject) + " (sTag " + GetTag(oObject) + ") " +
-    //         "has inventory: " + IntToString(GetHasInventory(oObject)) + " Has been looted: " +
-    //           IntToString(GetLocalInt(oObject, "AI_LOOTED_" + sTag)) + " Is Useable? " +
-    //           IntToString(GetUseableFlag(oObject)));
+    ai_Debug("0i_actions", "1643", GetName(oObject) + " (sTag " + GetTag(oObject) + ") " +
+             "has inventory: " + IntToString(GetHasInventory(oObject)) + " Has been looted: " +
+                 IntToString(GetLocalInt(oObject, "AI_LOOTED_" + sTag)) + " Is Useable? " +
+               IntToString(GetUseableFlag(oObject)));
     if(!GetHasInventory(oObject) || !GetUseableFlag(oObject)) return FALSE;
     // This associate has already looted this object, skip.
     if(GetLocalInt(oObject, "AI_LOOTED_" + sTag) || ai_GetIsCharacter(oObject)) return FALSE;
@@ -1924,6 +1940,7 @@ int ai_AttemptToOpenDoor(object oCreature, object oDoor, int bForce = FALSE)
 void ai_ActionCheckNearbyObjects(object oCreature)
 {
     if(ai_GetIsBusy(oCreature)) return;
+    ai_Debug("0i_actions", "1937", GetName(oCreature) + " Action: CheckNearbyObjects!");
     ai_CheckNearbyObjects(oCreature);
 }
 int ai_CheckNearbyObjects(object oCreature)
@@ -1938,10 +1955,10 @@ int ai_CheckNearbyObjects(object oCreature)
        ai_GetAIMode(oCreature, AI_MODE_BASH_LOCKS)) fLockRange = GetLocalFloat(oCreature, AI_LOCK_CHECK_RANGE);
     if(ai_GetAIMode(oCreature, AI_MODE_PICKUP_ITEMS)) fLootRange = GetLocalFloat(oCreature, AI_LOOT_CHECK_RANGE);
     if(ai_GetAIMode(oCreature, AI_MODE_OPEN_DOORS)) fDoorRange = GetLocalFloat(oCreature, AI_OPEN_DOORS_RANGE);
-    if(AI_DEBUG && fTrapRange != 0.0) ai_Debug("0i_actions", "1579", " Checking " + FloatToString(fTrapRange, 0, 0) + " foot area for traps.");
-    if(AI_DEBUG && fLootRange != 0.0) ai_Debug("0i_actions", "1580", " Checking " + FloatToString(fLootRange, 0, 0) + " foot area for traps.");
-    if(AI_DEBUG && fLockRange != 0.0) ai_Debug("0i_actions", "1581", " Checking " + FloatToString(fLockRange, 0, 0) + " foot area for locks.");
-    if(AI_DEBUG && fDoorRange != 0.0) ai_Debug("0i_actions", "1582", " Checking " + FloatToString(fDoorRange, 0, 0) + " foot area for doors.");
+    if(AI_DEBUG && fTrapRange != 0.0) ai_Debug("0i_actions", "1951", " Checking " + FloatToString(fTrapRange, 0, 0) + " foot area for traps.");
+    if(AI_DEBUG && fLootRange != 0.0) ai_Debug("0i_actions", "1952", " Checking " + FloatToString(fLootRange, 0, 0) + " foot area for loot.");
+    if(AI_DEBUG && fLockRange != 0.0) ai_Debug("0i_actions", "1953", " Checking " + FloatToString(fLockRange, 0, 0) + " foot area for locks.");
+    if(AI_DEBUG && fDoorRange != 0.0) ai_Debug("0i_actions", "1954", " Checking " + FloatToString(fDoorRange, 0, 0) + " foot area for doors.");
     float fLongestRange = fTrapRange;
     vector vCreature = GetPositionFromLocation(GetLocation(oCreature));
     if(fLongestRange < fLootRange) fLongestRange = fLootRange;
@@ -1950,9 +1967,11 @@ int ai_CheckNearbyObjects(object oCreature)
     object oObject = GetFirstObjectInShape(SHAPE_SPHERE, fLongestRange, lMaster, TRUE, nFilter);
     while(oObject != OBJECT_INVALID)
     {
-        fObjectDistance = GetDistanceBetween(oMaster, oObject);
-        if(AI_DEBUG) ai_Debug("0i_actions", "1651", "Checking Nearby Objects: " +
-                  GetName(oObject) + " fDistance: " + FloatToString(fObjectDistance, 0, 2));
+        fObjectDistance = GetDistanceBetween(oCreature, oObject);
+        if(AI_DEBUG) ai_Debug("0i_actions", "1964", "Checking Nearby Objects: " +
+                  GetName(oObject) + " fDistance: " + FloatToString(fObjectDistance, 0, 2) + 
+                  " Object Type: " + IntToString(nObjectType));
+        // Some remains return object type 0? Not sure why, but they have no loot.
         if(GetTrapDetectedBy(oObject, oCreature))
         {
             if(fTrapRange >= fObjectDistance)
@@ -1977,7 +1996,7 @@ int ai_CheckNearbyObjects(object oCreature)
             if(nObjectType == OBJECT_TYPE_PLACEABLE)
             {
                 if(!GetLocalInt(oObject, AI_OBJECT_IN_USE) &&
-                   ai_IsContainerLootable(oCreature, oObject))
+                ai_IsContainerLootable(oCreature, oObject))
                 {
                     if(GetLocked(oObject))
                     {
@@ -1988,8 +2007,8 @@ int ai_CheckNearbyObjects(object oCreature)
                         SetLocalInt(oObject, "AI_LOCKED_" + sTag, TRUE);
                         return FALSE;
                     }
-                    ai_ClearCreatureActions();
-                    ActionMoveToObject(oObject, TRUE);
+                    //ai_ClearCreatureActions();
+                    AssignCommand(oCreature, ActionMoveToObject(oObject, TRUE));
                     AssignCommand(oCreature, ActionDoCommand(ai_SearchObject(oCreature, oObject, oMaster)));
                     return TRUE;
                 }
@@ -2002,8 +2021,8 @@ int ai_CheckNearbyObjects(object oCreature)
                     return TRUE;
                 }
             }
-        }
-        oObject = GetNextObjectInShape(SHAPE_SPHERE, fLongestRange, lMaster, TRUE, nFilter);
+       }
+       oObject = GetNextObjectInShape(SHAPE_SPHERE, fLongestRange, lMaster, TRUE, nFilter);
     }
     return FALSE;
 }

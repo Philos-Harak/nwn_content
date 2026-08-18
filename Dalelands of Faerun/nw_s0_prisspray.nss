@@ -26,7 +26,7 @@ additional effects.
 5     Blue    Turned to stone (Fortitude negates)
 6     Indigo  Insane, as insanity spell (Will negates)
 7     Violet  Death (Will negates)
-8     Struck by two rays; roll twice more, ignoring any “8” result.
+8     Struck by two rays; roll twice more, ignoring any ï¿½8ï¿½ result.
 /*/////////////////////////////////////////////////////////////////////////////
 int GetPrismaticEffect (int iEffect, struct stSpell Spell);
 #include "0i_spells"
@@ -60,6 +60,7 @@ void main()
     effect eDmg, eImpact;
     // Create effects.
     effect eBlind = EffectBlindness ();
+    eBlind = SetEffectCasterLevel(eBlind, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid (Spell.oAreaTarget))
@@ -120,6 +121,7 @@ int GetPrismaticEffect (int iEffect, struct stSpell Spell)
                 iImpact = VFX_IMP_FLAME_S;
                 iDamage = GetReflexAdjustedDamage (iDamage, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_FIRE);
                 ePrism = EffectDamage (iDamage, DAMAGE_TYPE_FIRE);
+                ePrism = SetEffectCasterLevel(ePrism, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, ePrism, Spell.oAreaTarget));
             }
         break;
@@ -129,6 +131,7 @@ int GetPrismaticEffect (int iEffect, struct stSpell Spell)
                 iImpact = VFX_IMP_ACID_L;
                 iDamage = GetReflexAdjustedDamage (iDamage, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_ACID);
                 ePrism = EffectDamage (iDamage, DAMAGE_TYPE_ACID);
+                ePrism = SetEffectCasterLevel(ePrism, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, ePrism, Spell.oAreaTarget));
             }
         break;
@@ -138,12 +141,14 @@ int GetPrismaticEffect (int iEffect, struct stSpell Spell)
                 iImpact = VFX_IMP_LIGHTNING_S;
                 iDamage = GetReflexAdjustedDamage (iDamage, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_ELECTRICITY);
                 ePrism = EffectDamage (iDamage, DAMAGE_TYPE_ELECTRICAL);
+                ePrism = SetEffectCasterLevel(ePrism, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, ePrism, Spell.oAreaTarget));
             }
         break;
         case 4: //Poison
             {
                 ePrism = EffectPoison (45/*PRISMATIC_POISON*/);
+                ePrism = SetEffectCasterLevel(ePrism, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, ePrism, Spell.oAreaTarget));
             }
         break;
@@ -161,7 +166,7 @@ int GetPrismaticEffect (int iEffect, struct stSpell Spell)
                 ePrism = EffectConfused ();
                 eLink = EffectLinkEffects (eMind, ePrism);
                 eLink = EffectLinkEffects (eLink, eDuration);
-
+                eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
                 if (!SavingThrowWithEffects (SAVING_THROW_WILL, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_MIND_SPELLS, Spell.oCaster, Spell.fDelay))
                 {
                     iImpact = VFX_IMP_CONFUSION_S;
@@ -174,6 +179,7 @@ int GetPrismaticEffect (int iEffect, struct stSpell Spell)
                 if (!SavingThrowWithEffects (SAVING_THROW_WILL, Spell.oAreaTarget, Spell.iSaveDC, SAVING_THROW_TYPE_DEATH, Spell.oCaster, Spell.fDelay))
                 {
                     ePrism = EffectDeath ();
+                    ePrism = SetEffectCasterLevel(ePrism, Spell.iCasterLevel);
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, ePrism, Spell.oAreaTarget));
                 }
             }

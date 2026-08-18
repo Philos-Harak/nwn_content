@@ -41,7 +41,7 @@ void main()
          string sJournal = IntToString(nJournal);
          int nCR = FloatToInt(GetChallengeRating(oCreature));
          if(nCR < 1) nCR = 1;
-         else if(nCR > 20) nCR = 20;
+         else if(nCR > 40) nCR = 40;
          location lLocation = GetLocation(oCreature);
          // Get players within the kill area.
          object oPC = GetFirstObjectInShape(SHAPE_SPHERE, XP_PARTY_RADIUS, lLocation, FALSE, OBJECT_TYPE_CREATURE);

@@ -46,6 +46,7 @@ void main()
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects(eHP, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid(Spell.oAreaTarget))

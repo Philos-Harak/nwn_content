@@ -71,6 +71,7 @@ void main()
             Spell = GetModifier (Spell);
             eFeeblemind = EffectAbilityDecrease (ABILITY_INTELLIGENCE, Spell.iResult);
             eLink = EffectLinkEffects (eFeeblemind, eDuration);
+            eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
             DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink , Spell.oAreaTarget, Spell.fDuration));
         }

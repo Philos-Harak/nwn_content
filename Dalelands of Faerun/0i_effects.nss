@@ -20,7 +20,10 @@ int GetHasEffect(int nEffectType, object oTarget = OBJECT_SELF);
 
 int HasEffectWithTag(object oCreature, string sTag);
 
-void RemoveSpellEffects(int nSpell, object oCaster, object oTarget);
+// Removes any effects from nSpellID on oTarget from oCaster.
+// if oCaster is OBJECT_INVALID then it will remove all effects from nSpellID
+// reguardless of who cast it.
+void RemoveSpellEffects(int nSpellID, object oTarget, object oCaster = OBJECT_INVALID);
 
 // This function checks to see if oCreature is disabled and cannot act.
 // Returns a value based on the disabling effect.
@@ -29,10 +32,18 @@ void RemoveSpellEffects(int nSpell, object oCaster, object oTarget);
 // Time Stop = 66, Dazed = 28, Sleep = 30.
 // Returns 0 (FALSE) if not Disabled.
 int Disabled(object oCreature = OBJECT_SELF);
-
+// This function makes oCreature become shaken for fDuration.
+// The shaken effect penalizes oCreature with -2 attack, saves, skill, and checks.
+void Shaken(object oCreature, float fDuration, int nCasterLevel);
+// This function makes oCreature become frightened for fDuration.
+// The frightened effect penalizes oCreature with -4 attack, saves, skill, and checks.
+void Frightened(object oCreature, float fDuration, int nCasterLevel);
+// This function makes oCreature become panicked for fDuration.
+// The panicked effect penalizes oCreature with -6 attack, saves, skill, and checks.
+// and non-player characters become paralyzed for 1-3 rounds.
+void Panicked(object oCreature, float fDuration, int nCasterLevel);
 // Create fly effect for oPC to lTarget.
 void FlyEffect(object oPC, location lTarget);
-
 // Will move an object for special effects.
 // fX moves the object in the x axis.
 // fY moves the object in the y axis.
@@ -70,12 +81,12 @@ void CheckSpellEffectsForRemoval(object oCreature, int bResting = FALSE);
 // iEffectGroup can be 0 - All, 1 - Bad Effects only, 2 - Good Effects only.
 // iEffectTypeKeep will not remove a specific effect if desired.
 void RemoveCreatureEffects(object oCreature, int iEffectGroup = 0, int iEffectTypeKeep = EFFECT_TYPE_INVALIDEFFECT, int iEffectSubTypeKeep = 0);
-
-// Runs visual effects on open faced helmets.
-// iPC is the PC using the helm.
-// oHelm is the helm being used.
-void DoOpenFaceHelmetVisuals(object oPC,object oHelm);
-
+// Applies oHelm vfx to oCreature that equiped oHelm.
+void DoOpenFaceHelmetVisuals(object oCreature,object oHelm, int bReplace = FALSE);
+// Applies oAccessory vfx to oCreature that used oAccessory.
+// bReplace allows the function to remove the old VFX and add it again.
+// This is used for the crafting plugin to update the scale of the VFX when the player changes it.
+void DoAccessoryVisuals(object oCreature,object oAccessory, int bReplace = FALSE, int bRemove = FALSE);
 // Put demonic legs on PC if they have them.
 // oPC is the pc to change.
 // oItem is the armor to change.
@@ -214,24 +225,22 @@ int HasEffectWithTag (object oCreature, string sTag)
    return FALSE;
 }
 
-void RemoveSpellEffects (int nSpell, object oCaster, object oTarget)
+void RemoveSpellEffects(int nSpellID, object oTarget, object oCaster = OBJECT_INVALID)
 {
-    int bValid = FALSE;
     effect eEffect;
-    if (GetHasSpellEffect (nSpell, oTarget))
+    if(GetHasSpellEffect(nSpellID, oTarget))
     {
-        eEffect = GetFirstEffect (oTarget);
-        while (GetIsEffectValid (eEffect) && !bValid)
+        eEffect = GetFirstEffect(oTarget);
+        while(GetIsEffectValid(eEffect))
         {
-            if (GetEffectCreator(eEffect) == oCaster)
+            if(GetEffectCreator(eEffect) == oCaster || oCaster == OBJECT_INVALID)
             {
-                if (GetEffectSpellId (eEffect) == nSpell)
+                if(GetEffectSpellId(eEffect) == nSpellID)
                 {
-                    RemoveEffect (oTarget, eEffect);
-                    bValid = TRUE;
+                    RemoveEffect(oTarget, eEffect);
                 }
             }
-            eEffect = GetNextEffect (oTarget);
+            eEffect = GetNextEffect(oTarget);
         }
     }
 }
@@ -245,62 +254,62 @@ void RemoveEffectsFromSpell (object oTarget, int nSpellID)
       eEffect = GetNextEffect (oTarget);
     }
 }
-
-// This function checks to see if oCreature is disabled and cannot act.
-// Returns a value based on the disabling effect.
-// Dead = 1, Bleeding = 2, Dying = 2, Stunned = 29, Confused = 24, Paralyzed = 27
-// Frightened 25, Turned = 35, Petrified = 79, Charmed = 23, Disappearappear = 75,
-// Time Stop = 66, Dazed = 28, Sleep = 30.
-// Returns 0 (FALSE) if not Disabled.
-int Disabled (object oCreature = OBJECT_SELF)
+void Shaken(object oCreature, float fDuration, int nCasterLevel)
 {
-    //Debug ("0i_effects", "239", GetName (oCreature) + " Checking if disabled.");
-    if (GetIsDead (oCreature)) return 1;
-    // Variable set on Players to show they are bleeding.
-    if (GetLocalInt (oCreature, "0_BLEEDING")) return 2;
-    // Mode set on Associates showing they are bleeding.
-    if (GetAssociateMode (MODE_DYING, oCreature)) return 2;
-    // Check for effects.
-    int iEffectType;
-    effect eEffect = GetFirstEffect (oCreature);
-    while (GetIsEffectValid (eEffect))
-    {
-        iEffectType = GetEffectType (eEffect);
-        if (iEffectType == EFFECT_TYPE_STUNNED ||
-            iEffectType == EFFECT_TYPE_CONFUSED ||
-            iEffectType == EFFECT_TYPE_FRIGHTENED ||
-            iEffectType == EFFECT_TYPE_PARALYZE ||
-            iEffectType == EFFECT_TYPE_TURNED ||
-            iEffectType == EFFECT_TYPE_CHARMED ||
-            iEffectType == EFFECT_TYPE_PETRIFY ||
-            iEffectType == EFFECT_TYPE_DISAPPEARAPPEAR ||
-            iEffectType == EFFECT_TYPE_TIMESTOP) return iEffectType;
-        // If we are checking for ourselves then do we need to do something?
-        if (oCreature == OBJECT_SELF)
-        {
-            // We can move but not attack or cast spells! Lets get outta here!
-            if (iEffectType == EFFECT_TYPE_DAZED)
-            {
-                //Debug ("0i_effects", "275", GetName (OBJECT_SELF) + " is dazed and moving away!");
-                if (GetCurrentAction () != ACTION_MOVETOPOINT) ActionMoveAwayFromLocation (GetLocation (OBJECT_SELF), TRUE);
-                return EFFECT_TYPE_DAZED;
-            }
-            if (iEffectType == EFFECT_TYPE_SLEEP)
-            {
-                if (d10() < 3)
-                {
-                    ApplyEffectToObject (DURATION_TYPE_INSTANT, EffectVisualEffect (VFX_IMP_SLEEP), OBJECT_SELF);
-                    return EFFECT_TYPE_SLEEP;
-                }
-            }
-        }
-        // If we are checking for another creature then return the effect type.
-        else if (iEffectType == EFFECT_TYPE_DAZED || iEffectType == EFFECT_TYPE_SLEEP) return iEffectType;
-        eEffect = GetNextEffect (oCreature);
-    }
-    return FALSE;
+    effect eShaken = EffectAttackDecrease(2);
+    eShaken = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 2), eShaken);
+    eShaken = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, 2), eShaken);
+    effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
+    effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
+    eShaken = EffectLinkEffects(eDuration, eShaken);
+    eShaken = EffectLinkEffects(eVisual, eShaken);
+    eShaken = SetEffectCasterLevel(eShaken, nCasterLevel);
+    ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eShaken, oCreature, fDuration);
 }
-
+void Frightened(object oCreature, float fDuration, int nCasterLevel)
+{
+    effect eFrightened = EffectAttackDecrease(4);
+    eFrightened = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 4), eFrightened);
+    eFrightened = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, 4), eFrightened);
+    effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
+    effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
+    eFrightened = EffectLinkEffects(eDuration, eFrightened);
+    eFrightened = EffectLinkEffects(eVisual, eFrightened);
+    eFrightened = SetEffectCasterLevel(eFrightened, nCasterLevel);
+    ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eFrightened, oCreature, fDuration);
+    if(!GetIsPC(oCreature))
+    {
+        effect eParalyzed = EffectParalyze();
+        eParalyzed = EffectLinkEffects(EffectVisualEffect(VFX_DUR_PARALYZED), eParalyzed);
+        eParalyzed = SetEffectCasterLevel(eParalyzed, nCasterLevel);
+        // Don't let the paralyzing effect last longer than the fear effect.
+        float fParalyzeDuration = RoundsToSeconds(d2());
+        if(fParalyzeDuration > fDuration) fParalyzeDuration = fDuration;
+        ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eParalyzed, oCreature, fParalyzeDuration);
+    }
+}
+void Panicked(object oCreature, float fDuration, int nCasterLevel)
+{
+    effect ePanicked = EffectAttackDecrease(6);
+    ePanicked = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 6), ePanicked);
+    ePanicked = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, 6), ePanicked);
+    effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
+    effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
+    ePanicked = EffectLinkEffects(eDuration, ePanicked);
+    ePanicked = EffectLinkEffects(eVisual, ePanicked);
+    ePanicked = SetEffectCasterLevel(ePanicked, nCasterLevel);
+    ApplyEffectToObject(DURATION_TYPE_TEMPORARY, ePanicked, oCreature, fDuration);
+    if(!GetIsPC(oCreature))
+    {
+        effect eParalyzed = EffectParalyze();
+        eParalyzed = SetEffectCasterLevel(eParalyzed, nCasterLevel);
+        eParalyzed = EffectLinkEffects(EffectVisualEffect(VFX_DUR_PARALYZED), eParalyzed);
+        // Don't let the paralyzing effect last longer than the fear effect.
+        float fParalyzeDuration = RoundsToSeconds(d4());
+        if(fParalyzeDuration > fDuration) fParalyzeDuration = fDuration;
+        ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eParalyzed, oCreature, fParalyzeDuration);
+    }
+}
 // Create fly effect for oPC to lTarget.
 void FlyEffect (object oPC, location lTarget)
 {
@@ -379,24 +388,24 @@ void CheckWeather (object oArea, object oPC)
     int nMonth = GetCalendarMonth ();
     // Get the minimum and maximum temps by month as well as name.
     // nMultiplier is multiplied by the chance to have precipitation, storms, and winds.
-    // This is the temps for the Frostmaiden event!
+    /*/ This is the temps for the Frostmaiden event!
     switch (nMonth)
     {
-        case 1:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 1; sMonth = "Hammer";    break;} // Jan
-        case 2:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 1; sMonth = "Alturiak";  break;} // Feb
-        case 3:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 2; sMonth = "Ches";      break;} // March  (Spring)
-        case 4:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 2; sMonth = "Tarsakh";   break;} // April
-        case 5:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 3; sMonth = "Mirtul";    break;} // May
-        case 6:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 4; sMonth = "Kythorn";   break;} // Jun   (Summer)
-        case 7:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 2; sMonth = "Flamerule"; break;} // July
-        case 8:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 2; sMonth = "Eleasis";   break;} // August
-        case 9:   {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 3; sMonth = "Eleint";    break;} // Sept  (Autumn)
-        case 10:  {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 3; sMonth = "Marpenoth"; break;} // Oct
-        case 11:  {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 1; sMonth = "Uktar";     break;} // Nov
-        case 12:  {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 1; sMonth = "Nightal";   break;} // Dec   (Winter)
-        default : {nMinTemp = 15; nMaxTemp = 31; nMultiplier = 1; sMonth = "";          break;}
-    }
-    /* This is the normal temps for the server.
+        case 1:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 1; sMonth = "Hammer";    break;} // Jan
+        case 2:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 1; sMonth = "Alturiak";  break;} // Feb
+        case 3:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 2; sMonth = "Ches";      break;} // March  (Spring)
+        case 4:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 2; sMonth = "Tarsakh";   break;} // April
+        case 5:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 3; sMonth = "Mirtul";    break;} // May
+        case 6:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 4; sMonth = "Kythorn";   break;} // Jun   (Summer)
+        case 7:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 2; sMonth = "Flamerule"; break;} // July
+        case 8:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 2; sMonth = "Eleasis";   break;} // August
+        case 9:   {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 3; sMonth = "Eleint";    break;} // Sept  (Autumn)
+        case 10:  {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 3; sMonth = "Marpenoth"; break;} // Oct
+        case 11:  {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 1; sMonth = "Uktar";     break;} // Nov
+        case 12:  {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 1; sMonth = "Nightal";   break;} // Dec   (Winter)
+        default : {nMinTemp = 5; nMaxTemp = 26; nMultiplier = 1; sMonth = "";          break;}
+    } */
+    // This is the normal temps for the server.
     switch (nMonth)
     {
         case 1:   {nMinTemp = 15; nMaxTemp = 71; nMultiplier = 1; sMonth = "Hammer";    break;} // Jan
@@ -412,7 +421,7 @@ void CheckWeather (object oArea, object oPC)
         case 11:  {nMinTemp = 42; nMaxTemp = 78; nMultiplier = 1; sMonth = "Uktar";     break;} // Nov
         case 12:  {nMinTemp = 15; nMaxTemp = 71; nMultiplier = 1; sMonth = "Nightal";   break;} // Dec   (Winter)
         default : {nMinTemp = 40; nMaxTemp = 80; nMultiplier = 1; sMonth = "";          break;}
-    } */
+    }
     // Make roll to check for temepature and weather changes.
     if (d100() >= 90 && nDMWeather == 0)
     {
@@ -579,7 +588,8 @@ void CheckWeather (object oArea, object oPC)
     if (GetLocalInt (oModule, "0_LastWeatherCheck") != nCurrentTime)
     {
         SetLocalInt (oModule, "0_LastWeatherCheck", nCurrentTime);
-        if (nTemp <= 30) { sTemp = "freezing."; sTextColor = COLOR_BLUE; }
+        if (nTemp <= 15) { sTemp = "subfreezing!"; sTextColor = COLOR_DARK_BLUE; }
+        else if (nTemp <= 30) { sTemp = "freezing."; sTextColor = COLOR_BLUE; }
         else if (nTemp <= 50) { sTemp = "cold."; sTextColor = COLOR_BLUE; }
         else if (nTemp <= 70) { sTemp = "cool."; sTextColor = COLOR_GREEN; }
         else if (nTemp <= 75) { sTemp = "warm."; sTextColor = COLOR_GREEN; }
@@ -598,7 +608,6 @@ void CheckWeather (object oArea, object oPC)
         else SendMessages ("For the " + IntToString (nCurrentDay) + sSuffix + " day of " + sMonth + " it is " + sTemp, sTextColor, oPC, FALSE, FALSE);
     }
 }
-
 // fWindMagnitude is the power of the wind 0.0f to 3.0f should be followed.
 // bKeepDirection True will not change the winds direction. False randomizes it.
 void SetWind (float fWindMagnitude, int bKeepDirection = FALSE)
@@ -637,7 +646,6 @@ void SetWind (float fWindMagnitude, int bKeepDirection = FALSE)
     SetServerDatabaseFloat (oModule, SERVER_TABLE, "windyaw", fWindYaw);
     SetServerDatabaseFloat (oModule, SERVER_TABLE, "windpitch", fWindPitch);
 }
-
 // Used to delay the creation of an object for effect.
 // Use the DelayCommand (0.0f, DelayCreateObject (); to get a delayed object.
 void DelayCreateObject (int iObjectType, string sResRef, location lLocation)
@@ -645,7 +653,6 @@ void DelayCreateObject (int iObjectType, string sResRef, location lLocation)
     // Create the object with the temp tag so we can clean it up.
     CreateObject (iObjectType, sResRef, lLocation, FALSE, "00_temp_placeable");
 }
-
 // Remove Effect of type specified from oCreature;
 // iEffect is EFFECT_TYPE_*
 void RemoveASpecificEffect (object oCreature, int iEffect)
@@ -663,7 +670,6 @@ void RemoveASpecificEffect (object oCreature, int iEffect)
       else  eEffect = GetNextEffect(oCreature);
    }
 }
-
 // Remove Effect of type specified from oCreature;
 // sEffectTag is the tag of the effect to remove.
 // Base tags are Feat, Class, Racial.
@@ -679,7 +685,6 @@ void RemoveTagedEffects (object oCreature, string sEffectTag)
       eEffect = GetNextEffect (oCreature);
    }
 }
-
 // Checks for bad effects only.
 int GetIsEffectTypeBad (effect eEffect)
 {
@@ -760,8 +765,7 @@ int GetIsEffectTypeGood (effect eEffect)
             (iEffectType == EFFECT_TYPE_TURN_RESISTANCE_INCREASE)
             );
 }
-
-// oCreature the effects are to be reomved from.
+// oCreature the effects are to be removed from.
 // bResting if these effects are being removed due to resting.
 void CheckSpellEffectsForRemoval (object oCreature, int bResting = FALSE)
 {
@@ -771,7 +775,6 @@ void CheckSpellEffectsForRemoval (object oCreature, int bResting = FALSE)
     if(GetIsObjectValid(oToken)) DestroyObject(oToken);
     ExecuteScript("0s_tenstrans_r", oCreature);
 }
-
 // Removes effects All, Bad, or Good effects from a creature.
 // Any effects Tagged "Permanent", "Class", or "Racial" will never be removed.
 // nEffectType can be 0 - All, 1 - Bad Effects only, 2 - Good Effects only.
@@ -841,89 +844,206 @@ void RemoveCreatureEffects(object oCreature, int nEffectGroup = 0, int nEffectTy
     }
 }
 
-void ApplyVisEffectWithNewCreator(object oPC, int iVisual)
+void ApplyVisEffectWithNewCreator(object oPC, int nVisual, string sTagEffect)
 {
-    effect eEffect = EffectVisualEffect (iVisual, FALSE);
+    // Get the visual translations from oObject.
+    object oObject = OBJECT_SELF;
+    json jVFX = GetLocalJson(oObject, "VFX_JSON");    
+    float fScale;
+    vector vTranslate, vRotate;
+    if(JsonGetType(jVFX) == JSON_TYPE_NULL) 
+    {
+        jVFX = JsonObject();
+        jVFX = JsonObjectSet(jVFX, "scale", JsonFloat(1.0));
+        jVFX = JsonObjectSet(jVFX, "Translate_x", JsonFloat(0.0));
+        jVFX = JsonObjectSet(jVFX, "Translate_y", JsonFloat(0.0));
+        jVFX = JsonObjectSet(jVFX, "Translate_z", JsonFloat(0.0));
+        jVFX = JsonObjectSet(jVFX, "Rotate_x", JsonFloat(0.0));
+        jVFX = JsonObjectSet(jVFX, "Rotate_y", JsonFloat(0.0));
+        jVFX = JsonObjectSet(jVFX, "Rotate_z", JsonFloat(0.0));
+        SetLocalJson(oObject, "VFX_JSON", jVFX);
+        fScale = 1.0;
+        vTranslate = Vector(0.0, 0.0, 0.0);
+        vRotate = Vector(0.0, 0.0, 0.0);
+    }
+    else 
+    {
+        fScale = JsonGetFloat(JsonObjectGet(jVFX, "scale"));
+        if(fScale == 0.0) fScale = 1.0;
+        vTranslate = Vector(JsonGetFloat(JsonObjectGet(jVFX, "Translate_x")),
+                                JsonGetFloat(JsonObjectGet(jVFX, "Translate_y")), 
+                                JsonGetFloat(JsonObjectGet(jVFX, "Translate_z")));
+        vRotate = Vector(JsonGetFloat(JsonObjectGet(jVFX, "Rotate_x")),
+                                JsonGetFloat(JsonObjectGet(jVFX, "Rotate_y")), 
+                                JsonGetFloat(JsonObjectGet(jVFX, "Rotate_z")));
+    }
+    effect eEffect = EffectVisualEffect(nVisual, FALSE, fScale, vTranslate, vRotate);
     // Tag the effect permanent so we don't remove them on death and other places.
-    eEffect = TagEffect(eEffect, "EFFECT_HELM");
+    eEffect = TagEffect(eEffect, sTagEffect);
     eEffect = UnyieldingEffect(eEffect);
     ApplyEffectToObject(DURATION_TYPE_PERMANENT, eEffect, oPC);
 }
 
-int GetOpenFaceVisualID(object oItem, object oPC)
+int GetOpenFaceVisualID(object oItem, object oCreature)
 {
-    int iVFX;
-    int iGender = GetGender (oPC);
-    int iRace = GetRacialType (oPC);
-    int iItemApp = GetItemAppearance (oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
-    int iNewVfx = 12 * iItemApp;
+    int nVFX;
+    int nGender = GetGender(oCreature);
+    int nRace = GetRacialType(oCreature);
+    int nItemApp = GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
     // Adjust for new races.
     // Humans
-    if (iRace > 29 && iRace < 36) iRace = RACIAL_TYPE_HUMAN;
+    if(nRace > 29 && nRace < 36) nRace = RACIAL_TYPE_HUMAN;
     // Dwarves
-    else if (iRace > 35 && iRace < 39) iRace = RACIAL_TYPE_DWARF;
+    else if(nRace > 35 && nRace < 39) nRace = RACIAL_TYPE_DWARF;
     // Elves
-    else if (iRace > 38 && iRace < 44) iRace = RACIAL_TYPE_ELF;
+    else if(nRace > 38 && nRace < 44) nRace = RACIAL_TYPE_ELF;
     // Gnomes
-    else if (iRace > 43 && iRace < 47) iRace = RACIAL_TYPE_GNOME;
+    else if(nRace > 43 && nRace < 47) nRace = RACIAL_TYPE_GNOME;
     // Halflings
-    else if (iRace > 46 && iRace < 51) iRace = RACIAL_TYPE_HALFLING;
+    else if(nRace > 46 && nRace < 51) nRace = RACIAL_TYPE_HALFLING;
     // Half-elves
-    else if (iRace > 50 && iRace < 56) iRace = RACIAL_TYPE_HALFELF;
+    else if(nRace > 50 && nRace < 56) nRace = RACIAL_TYPE_HALFELF;
     // Kobolds
-    else if (iRace == 57) iRace = RACIAL_TYPE_HALFLING;
+    else if(nRace == 57) nRace = RACIAL_TYPE_HALFLING;
     // Orcs
-    else if (iRace == 56 || iRace == 58 || iRace == 59) iRace = RACIAL_TYPE_HALFORC;
+    else if(nRace == 56 || nRace == 58 || nRace == 59) nRace = RACIAL_TYPE_HALFORC;
     // Outsiders
-    else if (iRace > 59 && iRace < 66) iRace = RACIAL_TYPE_HUMAN;
-    if (iGender == GENDER_MALE)
+    else if(nRace > 59 && nRace < 66) nRace = RACIAL_TYPE_HUMAN;
+    if(nItemApp < 31)
     {
-        switch(iRace)
+        int nNewVfx = 12 * nItemApp;
+        if(nGender == GENDER_FEMALE) nGender = 6;
+        switch(nRace)
         {
-            case RACIAL_TYPE_DWARF: iVFX = 1489 + iNewVfx; break;
-            case RACIAL_TYPE_ELF: iVFX = 1490 + iNewVfx; break;
-            case RACIAL_TYPE_GNOME: iVFX = 1491 + iNewVfx; break;
-            case RACIAL_TYPE_HALFLING: iVFX = 1492 + iNewVfx; break;
-            case RACIAL_TYPE_HALFORC: iVFX = 1493 + iNewVfx; break;
+            case RACIAL_TYPE_DWARF: nVFX = 1489 + nNewVfx + nGender; break;
+            case RACIAL_TYPE_ELF: nVFX = 1490 + nNewVfx + nGender; break;
+            case RACIAL_TYPE_GNOME: nVFX = 1491 + nNewVfx + nGender; break;
+            case RACIAL_TYPE_HALFLING: nVFX = 1492 + nNewVfx + nGender; break;
+            case RACIAL_TYPE_HALFORC: nVFX = 1493 + nNewVfx + nGender; break;
             case RACIAL_TYPE_HALFELF:
-            case RACIAL_TYPE_HUMAN: iVFX = 1494 + iNewVfx; break;
+            case RACIAL_TYPE_HUMAN: nVFX = 1494 + nNewVfx + nGender; break;
         }
     }
-    if (iGender == GENDER_FEMALE)
+    else
     {
-        switch(iRace)
+        int nNewVfx = 24 * nItemApp;
+        int nPheno = GetPhenoType(oCreature);
+        // The large pheno is 2 but we need to make it 1 for calculations.
+        if(nPheno == 2) nPheno = 1;
+        // Female is 1 but we need to make it 2 for calculations.
+        if(nGender == GENDER_FEMALE) nGender = 2;
+        switch(nRace)
         {
-            case RACIAL_TYPE_DWARF: iVFX = 1495 + iNewVfx; break;
-            case RACIAL_TYPE_ELF: iVFX = 1496 + iNewVfx; break;
-            case RACIAL_TYPE_GNOME: iVFX = 1497 + iNewVfx; break;
-            case RACIAL_TYPE_HALFLING: iVFX = 1498 + iNewVfx; break;
-            case RACIAL_TYPE_HALFORC: iVFX = 1499 + iNewVfx; break;
+            case RACIAL_TYPE_DWARF: nVFX = 1121 + nNewVfx + nGender + nPheno; break;
+            case RACIAL_TYPE_ELF: nVFX = 1125 + nNewVfx + nGender + nPheno; break;
+            case RACIAL_TYPE_GNOME: nVFX = 1129 + nNewVfx + nGender + nPheno; break;
+            case RACIAL_TYPE_HALFLING: nVFX = 1133 + nNewVfx + nGender + nPheno; break;
+            case RACIAL_TYPE_HALFORC: nVFX = 1137 + nNewVfx + nGender + nPheno; break;
             case RACIAL_TYPE_HALFELF:
-            case RACIAL_TYPE_HUMAN: iVFX = 1500 + iNewVfx; break;
+            case RACIAL_TYPE_HUMAN: nVFX = 1117 + nNewVfx + nGender + nPheno; break;
         }
     }
-    return iVFX;
+    return nVFX;
 }
-
-// Runs visual effects on open faced helmets.
-// oPC is the PC using the helm.
-// oHelm is the helm being used.
-void DoOpenFaceHelmetVisuals(object oPC,object oHelm)
+// Applies oHelm vfx to oCreature that equiped oHelm.
+void DoOpenFaceHelmetVisuals(object oCreature,object oHelm, int bReplace = FALSE)
 {
-    // OpenFaceHelm should be applied if the server is loaded
-    // or the server has been reset.
+    // OpenFaceHelm should be applied if the server is loaded or the server has been reset.
     //Debug ("0i_effects", "824", "Loaded: " + IntToString (GetLocalInt (oPC, "0_Character_Loaded")) +
-    //       " Reset: " + IntToString (!GetLocalInt (oPC, "0_Server_Not_Reset")));
-    if (GetLocalInt (oPC, "0_Character_Loaded") ||
-        !GetLocalInt (oPC, "0_Server_Not_Reset"))
+    //       " Reset: " + IntToString (!GetLocalInt (oCreature, "0_Server_Not_Reset")));
+    if(GetLocalInt (oCreature, "0_Character_Loaded") || !GetLocalInt (oCreature, "0_Server_Not_Reset"))
     {
+        if(bReplace) RemoveTagedEffects(oCreature, "EFFECT_HELM");
         //Debug ("0i_effects", "822", "Adding helm effect!");
-        int iVisual = GetOpenFaceVisualID (oHelm, oPC);
-        AssignCommand (oHelm, ApplyVisEffectWithNewCreator (oPC, iVisual));
+        int nVisual = GetOpenFaceVisualID(oHelm, oCreature);
+        AssignCommand(oHelm, ApplyVisEffectWithNewCreator(oCreature, nVisual, "EFFECT_HELM"));
     }
-    SetHiddenWhenEquipped (oHelm, TRUE);
+    SetHiddenWhenEquipped(oHelm, TRUE);
 }
-
+int GetAccessoryVisualID(object oItem, object oCreature, int nVFX)
+{
+    int nGender = GetGender(oCreature);
+    int nRace = GetRacialType(oCreature);
+    int nItemApp = GetItemAppearance(oItem, ITEM_APPR_TYPE_SIMPLE_MODEL, 0);
+    // Adjust for new races.
+    // Humans
+    if(nRace > 29 && nRace < 36) nRace = RACIAL_TYPE_HUMAN;
+    // Dwarves
+    else if(nRace > 35 && nRace < 39) nRace = RACIAL_TYPE_DWARF;
+    // Elves
+    else if(nRace > 38 && nRace < 44) nRace = RACIAL_TYPE_ELF;
+    // Gnomes
+    else if(nRace > 43 && nRace < 47) nRace = RACIAL_TYPE_GNOME;
+    // Halflings
+    else if(nRace > 46 && nRace < 51) nRace = RACIAL_TYPE_HALFLING;
+    // Half-elves
+    else if(nRace > 50 && nRace < 56) nRace = RACIAL_TYPE_HALFELF;
+    // Kobolds
+    else if(nRace == 57) nRace = RACIAL_TYPE_HALFLING;
+    // Orcs
+    else if(nRace == 56 || nRace == 58 || nRace == 59) nRace = RACIAL_TYPE_HALFORC;
+    // Outsiders
+    else if(nRace > 59 && nRace < 66) nRace = RACIAL_TYPE_HUMAN;
+    int nNewVfx = 24 * nItemApp;
+    int nPheno = GetPhenoType(oCreature);
+    // The large pheno is 2 but we need to make it 1 for calculations.
+    if(nPheno == 2) nPheno = 1;
+    // Female is 1 but we need to make it 2 for calculations.
+    if(nGender == GENDER_FEMALE) nGender = 2;
+    switch(nRace)
+    {
+        case RACIAL_TYPE_DWARF: nVFX = nVFX + 4 + nNewVfx + nGender + nPheno; break;
+        case RACIAL_TYPE_ELF: nVFX = nVFX + 8 + nNewVfx + nGender + nPheno; break;
+        case RACIAL_TYPE_GNOME: nVFX = nVFX + 12 + nNewVfx + nGender + nPheno; break;
+        case RACIAL_TYPE_HALFLING: nVFX = nVFX + 16 + nNewVfx + nGender + nPheno; break;
+        case RACIAL_TYPE_HALFORC: nVFX = nVFX + 20 + nNewVfx + nGender + nPheno; break;
+        case RACIAL_TYPE_HALFELF:
+        case RACIAL_TYPE_HUMAN: nVFX = nVFX + nNewVfx + nGender + nPheno; break;
+    }
+    return nVFX;
+}
+// Applies oAccessory vfx to oCreature that used oAccessory.
+void DoAccessoryVisuals(object oCreature, object oAccessory, int bReplace = FALSE, int bRemove = FALSE)
+{
+    int nVFX, nBaseItemType = GetBaseItemType(oAccessory);
+    string sTag;
+    if(nBaseItemType == 179/*ITEM_HEAD_ACCESSORY*/) { nVFX = 3205; sTag = "VFX_HEAD_" + GetResRef(oAccessory); }
+    else if(nBaseItemType == 180/*ITEM_EYE_ACCESSORY*/) { nVFX = 3246; sTag = "VFX_EYES_" + GetResRef(oAccessory); }
+    else if(nBaseItemType == 181/*ITEM_MOUTH_ACCESSORY*/) 
+    { 
+        if(!bReplace) AssignCommand(oCreature, ActionUnequipItem(oAccessory));
+        nVFX = 3309; 
+        sTag = "VFXMOUTH_" + GetResRef(oAccessory); 
+    }
+    else if(nBaseItemType == 182/*ITEM_BACK_ACCESSORY*/) { nVFX = 3326; sTag = "VFX_BACK_" + GetResRef(oAccessory); }
+    else if(nBaseItemType == 183/*ITEM_SIDE_ACCESSORY*/) { nVFX = 3356; sTag = "VFX_SIDE_" + GetResRef(oAccessory); }
+    int bHasEffect = HasEffectWithTag(oCreature, sTag);
+    if(bHasEffect) 
+    {
+        RemoveTagedEffects(oCreature, sTag);
+        if(!bReplace) DeleteLocalInt(oAccessory, "VFX_APPLIED");
+    }
+    if((!bHasEffect || bReplace) && !bRemove)
+    {
+        // Remove any effect that is already using the new effects slot.
+        string sEffectTag;
+        effect eVFX = GetFirstEffect(oCreature);
+        while(GetIsEffectValid(eVFX))
+        {
+            sEffectTag = GetEffectTag(eVFX);
+            if(GetStringLeft(sEffectTag, 9) == "VFX_HEAD_" && nBaseItemType == 179) RemoveEffect(oCreature, eVFX);
+            else if(GetStringLeft(sEffectTag, 9) == "VFX_EYES_" && nBaseItemType == 180) RemoveEffect(oCreature, eVFX);
+            else if(GetStringLeft(sEffectTag, 9) == "VFXMOUTH_" && nBaseItemType == 181) RemoveEffect(oCreature, eVFX);
+            else if(GetStringLeft(sEffectTag, 9) == "VFX_BACK_" && nBaseItemType == 182) RemoveEffect(oCreature, eVFX);
+            else if(GetStringLeft(sEffectTag, 9) == "VFX_SIDE_" && nBaseItemType == 183) RemoveEffect(oCreature, eVFX);
+            eVFX = GetNextEffect(oCreature);
+        }
+        nVFX += GetItemAppearance(oAccessory, ITEM_APPR_TYPE_SIMPLE_MODEL, 0) - 1;
+        if(bReplace) AssignCommand(oAccessory, ApplyVisEffectWithNewCreator(oCreature, nVFX, sTag));
+        else DelayCommand(1.5, AssignCommand(oAccessory, ApplyVisEffectWithNewCreator(oCreature, nVFX, sTag)));
+        SetLocalInt(oAccessory, "VFX_APPLIED", TRUE);
+    }
+}
 // Put demonic appearances on PC if they have them.
 // oPC is the pc to change.
 // oItem is the armor to change.
@@ -1317,8 +1437,8 @@ void CheckEquipWeaponFeats (object oCreature, object oItem, int bEquip = TRUE)
             else if (nIntMod == 9) nIntMod = DAMAGE_BONUS_9;
             else nIntMod = DAMAGE_BONUS_10;
             // Get Weapon damage.
-            if (GetIsPiercingWeapon (oItem)) nWeaponDmg = DAMAGE_TYPE_PIERCING;
-            else if (GetIsSlashingWeapon  (oItem)) nWeaponDmg = DAMAGE_TYPE_SLASHING;
+            if(GetIsPiercingWeapon(oItem)) nWeaponDmg = DAMAGE_TYPE_PIERCING;
+            else if(GetIsSlashingWeapon(oItem)) nWeaponDmg = DAMAGE_TYPE_SLASHING;
             else nWeaponDmg = DAMAGE_TYPE_BLUDGEONING;
             CreateFeatEffect(oCreature, EffectDamageIncrease(nIntMod, nWeaponDmg), "FEAT_INSIGHTFULL_STRIKE");
         }
@@ -1391,7 +1511,7 @@ void Burning (struct stSpell Spell, int nNumOfDice, int nDie, int nBonus, int bS
             else
             {
                 DeleteLocalInt (Spell.oAreaTarget, "0_BURNING");
-                RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+                RemoveSpellEffects(Spell.iSpellID, Spell.oAreaTarget, Spell.oCaster);
             }
         }
         else
@@ -1404,7 +1524,7 @@ void Burning (struct stSpell Spell, int nNumOfDice, int nDie, int nBonus, int bS
    else
    {
        DeleteLocalInt (Spell.oAreaTarget, "0_BURNING");
-       RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+       RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget, Spell.oCaster);
    }
 }
 
@@ -1439,75 +1559,60 @@ void CheckForArmorBonus(object oCreature)
     nArmorBonus -= nArmorAC;
     // If the armor bonus is less than the armor ac set it to 0.
     if(nArmorBonus < 0) nArmorBonus = 0;
+
     NWNX_Creature_SetBaseAC(oCreature, nArmorBonus);
 }
 
 // Sets Armor's Arcane Spell Failure on the armor if they have the correct feats and armor.
 // oCreature is the craature with the armor.
 // oItem is the Item being equiped.
-void CheckForArmorArcaneSpellFailure (object oCreature, object oItem)
+void CheckForArmorArcaneSpellFailure(object oCreature, object oItem)
 {
-    if (GetHasFeat (1525/*FEAT_ARMORED_MAGE_MEDIUM*/, oCreature))
+    int nASFMod;
+    if(GetHasFeat(1525/*FEAT_ARMORED_MAGE_MEDIUM*/, oCreature))
     {
-        int nASFMod;
-        if (GetBaseItemType (oItem) == BASE_ITEM_SMALLSHIELD) nASFMod = 9;
-        else
+        int nBaseItemType = GetBaseItemType(oItem);
+        if(nBaseItemType == BASE_ITEM_SMALLSHIELD) nASFMod = 9;
+        else if(nBaseItemType == BASE_ITEM_ARMOR)
         {
-            int nAC = NWNX_Item_GetBaseArmorClass (oItem);
+            int nAC = NWNX_Item_GetBaseArmorClass(oItem);
             // Light armors
-            if (nAC == 1) nASFMod = 9;
-            else if (nAC == 2) nASFMod = 8;
-            else if (nAC == 3) nASFMod = 7;
+            if(nAC == 1) nASFMod = 9;
+            else if(nAC == 2) nASFMod = 8;
+            else if(nAC == 3) nASFMod = 7;
             // Medium armors
-            else if (nAC == 4) nASFMod = 6;
-            else if (nAC == 5) nASFMod = 4;
-        }
-        if (nASFMod > 0)
-        {
-            // Check the item to see if it already has ASF. If so adjust the
-            // amount we are adding to see if we still need to add some.
-            itemproperty ipASF = HasProperty (oItem, ITEM_PROPERTY_ARCANE_SPELL_FAILURE);
-            int nASFCTMod;
-            if (GetIsItemPropertyValid (ipASF)) nASFCTMod = 10 - GetItemPropertyCostTableValue (ipASF);
-            nASFMod = nASFMod + nASFCTMod;
-            // If there is still some arcane spell failure needed then add it.
-            if (nASFMod < 10)
-            {
-                AddCostReductionItemProperty (oItem, "0_ASF_EQUIP");
-                itemproperty ipProperty = ItemPropertyArcaneSpellFailure (nASFMod);
-                ipProperty = TagItemProperty (ipProperty, "0_ASF_EQUIP");
-                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oItem);
-            }
+            else if(nAC == 4) nASFMod = 6;
+            else if(nAC == 5) nASFMod = 4;
         }
     }
-    else if (GetHasFeat (1524/*FEAT_ARMORED_MAGE_LIGHT*/, oCreature))
+    else if(GetHasFeat (1524/*FEAT_ARMORED_MAGE_LIGHT*/, oCreature))
     {
-        int nASFMod;
-        if (GetBaseItemType (oItem) == BASE_ITEM_SMALLSHIELD) nASFMod = 9;
-        else
+        int nBaseItemType = GetBaseItemType(oItem);
+        if(nBaseItemType == BASE_ITEM_SMALLSHIELD) nASFMod = 9;
+        else if(nBaseItemType == BASE_ITEM_ARMOR)
         {
-            int nAC = NWNX_Item_GetBaseArmorClass (oItem);
+            int nAC = NWNX_Item_GetBaseArmorClass(oItem);
             // Light armors.
-            if (nAC == 1) nASFMod = 9;
-            else if (nAC == 2) nASFMod = 8;
-            else if (nAC == 3) nASFMod = 7;
+            if(nAC == 1) nASFMod = 9;
+            else if(nAC == 2) nASFMod = 8;
+            else if(nAC == 3) nASFMod = 7;
         }
-        if (nASFMod > 0)
+    }
+    if(nASFMod > 0)
+    {
+        // Check the item to see if it already has ASF. If so adjust the
+        // amount we are adding to see if we still need to add some.
+        itemproperty ipASF = HasProperty(oItem, ITEM_PROPERTY_ARCANE_SPELL_FAILURE);
+        int nASFCTMod;
+        if (GetIsItemPropertyValid(ipASF)) nASFCTMod = 10 - GetItemPropertyCostTableValue(ipASF);
+        nASFMod = nASFMod + nASFCTMod;
+        // If there is still some arcane spell failure needed then add it.
+        if(nASFMod < 10)
         {
-            // Check the item to see if it already has ASF. If so adjust the
-            // amount we are adding to see if we still need to add some.
-            itemproperty ipASF = HasProperty (oItem, ITEM_PROPERTY_ARCANE_SPELL_FAILURE);
-            int nASFCTMod;
-            if (GetIsItemPropertyValid (ipASF)) nASFCTMod = 10 - GetItemPropertyCostTableValue (ipASF);
-            nASFMod = nASFMod + nASFCTMod;
-            // If there is still some arcane spell failure needed then add it.
-            if (nASFMod < 10)
-            {
-                AddCostReductionItemProperty (oItem, "0_ASF_EQUIP");
-                itemproperty ipProperty = ItemPropertyArcaneSpellFailure (nASFMod);
-                ipProperty = TagItemProperty (ipProperty, "0_ASF_EQUIP");
-                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oItem);
-            }
+            AddCostReductionItemProperty(oItem, "0_ASF_EQUIP");
+            itemproperty ipProperty = ItemPropertyArcaneSpellFailure(nASFMod);
+            ipProperty = TagItemProperty(ipProperty, "0_ASF_EQUIP");
+            AddItemProperty(DURATION_TYPE_PERMANENT, ipProperty, oItem);
         }
     }
 }
@@ -1872,4 +1977,38 @@ void SetPrecipitation (int nWeather, int bStorm, int nLightningChance)
         AmbientSoundPlay (oArea);
         oPC = GetNextPC ();
     }
+}
+void AdjustAreaTextures(object oArea)
+{
+    // SpecialEvent Texture overrides.
+    /*/ Changes grass to snow covered for the winter event.
+    SetTextureOverride("ttr01_grass02", "tts01_grass02");
+    SetTextureOverride("ttr01_grass03", "tts01_grass03");
+    SetTextureOverride("ttr01_grassrim01", "tts01_grassrim01");
+    // Changes dirt to snow covered.
+    SetTextureOverride("ttr01_dirt03", "tts01_dirt03");
+    SetTextureOverride("ttr01_dirt06", "tts01_grass03");
+    // Bridge surfaces to snow covered.
+    SetTextureOverride("ttr01_bridge01", "tts01_bridge01");
+    SetTextureOverride("ttr01_bridge02", "tts01_bridge02");
+    // Roof tops
+    SetTextureOverride("lok_shingles1", "tts01_roof02");
+    SetTextureOverride("ttr01_roof02", "tts01_roof02");
+    // Trees.
+    SetTextureOverride("ttr01_treefol01", "tts01_treefol01");
+    SetTextureOverride("ttr01_treefol02", "tts01_treefol02");
+    SetTextureOverride("ttr01_treefol03", "tts01_treefol03");
+    SetTextureOverride("ttr01_bark01", "tts01_bark01");
+    // Roads
+    //SetTextureOverride("ttr01_road01", "");
+    //SetTextureOverride("ttr01_road02", "");
+    //SetTextureOverride("ttr01_road03", "");
+    // Stone walls.
+    SetTextureOverride("ttr01_wall01", "tts01_wall01a");
+    SetTextureOverride("ttr01_brick02", "tts01_brick03");
+    SetTextureOverride("ttr01_stone05", "tts01_stone05");
+    // Wood fence
+    SetTextureOverride("ttr01_wdfence", "tts01_wdfence");
+    SetTextureOverride("ttr01_wood01b", "tts01_wood01b");
+    */
 }

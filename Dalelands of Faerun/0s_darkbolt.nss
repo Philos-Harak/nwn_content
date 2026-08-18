@@ -60,6 +60,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     // Link effects
     effect eLink = EffectLinkEffects (eDazed, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Get Number of beams.
     iBeams = Spell.iCasterLevel / 2;
     if (iBeams < 1) iBeams = 1;
@@ -96,6 +97,7 @@ void main()
             if (Spell.iResult > 0)
             {
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply the VFX impact and damage effect
                 DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));

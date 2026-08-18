@@ -122,7 +122,7 @@ void ai_OnAssociateSpawn(object oCreature)
     SetLocalInt(oCreature, AI_ONSPAWN_EVENT, TRUE);
     // If this module is Tortured Hearts I or II set the associate scripts.
     string sModuleName = GetStringLeft(GetModuleName(), 16);
-    if(sModuleName == " Tortured Hearts"|| sModuleName == "Tortured Hearts ")
+    if(sModuleName == " Tortured Hearts" || sModuleName == "Tortured Hearts ")
     {
         ai_SetTorturedHeartsAssociateEventScripts(oCreature);
     }
@@ -307,6 +307,8 @@ int ai_ChangeMonster(object oCreature, object oModule)
     // Did any of the Monster mods get used? These are done in independent mod scripts.
     if(GetLocalInt(oModule, AI_MONSTER_CHANGED))
     {
+        // Remove the ScriptSpawn script so they don't run their OnSpawn event script again.
+        //jCreature = JsonObjectSet(jCreature, "ScriptSpawn", JsonString(""));
         SetIsDestroyable(TRUE, FALSE, FALSE, oCreature);
         location lLocation = GetLocation(oCreature);
         if(AI_DEBUG) ai_Debug("0i_module", "299", "Destroying: " + GetName(oCreature));

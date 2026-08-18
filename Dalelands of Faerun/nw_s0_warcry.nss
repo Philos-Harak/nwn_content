@@ -61,9 +61,12 @@ void main()
     effect eDur2 = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eAttack, eDamage);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     eLink = EffectLinkEffects(eLink, eDur2);
     eLink = EffectLinkEffects (eLink, eDur);
     effect eLink2 = EffectLinkEffects (eVisFear, eFear);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+    eLink2 = SetEffectCasterLevel(eLink2, Spell.iCasterLevel);
     //Apply Point effects.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, ePoint, Spell.lTarget);
     //Get the spells target(s).
@@ -83,7 +86,7 @@ void main()
         Spell = GetSpellTarget (Spell);
     }
     //Apply bonus and VFX effects to bard.
-    RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oCaster);
+    RemoveSpellEffects (Spell.iSpellID, Spell.oCaster);
     ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oCaster);
     DelayCommand (0.01, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oCaster, Spell.fDuration));
     SignalEvent (Spell.oCaster, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));

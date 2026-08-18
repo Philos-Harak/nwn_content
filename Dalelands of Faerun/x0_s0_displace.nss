@@ -29,6 +29,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_GLAMER;
     Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "raindrop_dust";
+    Spell.iCompAmount = 4; // 100 gold worth of raindrop dust.
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iDurationType = DURATION_TYPE_ROUNDS;
     Spell.iDuration = 1;
@@ -44,6 +46,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += 10;
     // Create effect.
     effect eDisplace = EffectConcealment (Spell.iResult);
     // Create visual effects.
@@ -51,6 +54,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects(eDisplace, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid(Spell.oAreaTarget))

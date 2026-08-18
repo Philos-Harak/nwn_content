@@ -42,6 +42,7 @@ void main()
     // *******************************************************************
     // Create effect.
     effect eAOE = EffectAreaOfEffect (AOE_PER_INVIS_SPHERE);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     // Create an instance of the AOE Object using the Apply Effect function
     DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eAOE, Spell.oCaster, Spell.fDuration));
     CleanUpSpell (Spell);

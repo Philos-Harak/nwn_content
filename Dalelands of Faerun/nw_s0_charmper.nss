@@ -12,7 +12,7 @@ Duration:   1 hour/level
 Saving Throw:   Will negates
 Spell Resistance:   Yes
 This charm makes a humanoid creature regard you as its trusted friend and ally
-(treat the target’s attitude as friendly). If the creature is currently being
+(treat the targetï¿½s attitude as friendly). If the creature is currently being
 threatened or attacked by you or your allies, however, it receives a +5 bonus
 on its saving throw.
 /*///////////////////////////////////////////////
@@ -58,6 +58,7 @@ void main()
     //Link effects
     effect eLink = EffectLinkEffects (eMind, eDuration);
     eLink = EffectLinkEffects (eLink, eCharm);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))

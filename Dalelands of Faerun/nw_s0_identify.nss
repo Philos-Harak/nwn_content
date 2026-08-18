@@ -15,7 +15,7 @@ Spell Resistance:   No
 The spell determines all magic properties of all magic items, including how
 to activate those functions (if appropriate), and how many charges are left (if any) on the caster.
 
-Identify does not function when used on an relics or artifacts.
+Identify does not function when used on any relics or artifacts.
 
 Material Component: A pearl of at least 100 gp value, crushed into dust and
 stirred into wine with an owl feather; the infusion must be drunk prior to spellcasting.
@@ -29,8 +29,8 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
-    Spell.sArcaneComponent = "0_pearl_dust";
-    Spell.iCompAmount = 100;
+    Spell.sArcaneComponent = "pearl_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Pearl Dust.
     Spell.iDivineFocus = TRUE;
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;

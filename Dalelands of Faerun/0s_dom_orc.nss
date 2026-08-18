@@ -53,6 +53,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_MIND_AFFECTING_DOMINATED);
     effect eLink = EffectLinkEffects (eDuration, eDomination);
     eLink = ExtraordinaryEffect (eLink);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))

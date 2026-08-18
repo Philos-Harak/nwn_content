@@ -53,6 +53,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (AOE_PER_FOGSTINK);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create visual effect.
         effect eCenter = EffectVisualEffect (259);
         // Apply visual effect at the center of the effect area.

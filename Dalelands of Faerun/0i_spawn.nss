@@ -180,7 +180,7 @@ void CreateCreature (object oWaypoint, object oPC, int nLevel)
                 // Make iRow the level & Check to see if the waypoint is adjusting the CR.
                 nLevel += GetLocalInt (oWaypoint, "0_CR_Increase");
                 if(nLevel < 1) nLevel = 1;
-                else if(nLevel > 20) nLevel = 20;
+                else if(nLevel > 40) nLevel = 40;
                 // Calculate row in the 2da (each level gets 5 entries thus ((ilevel - 1) * 5) + Random (5) + 1)
                 iRow = ((nLevel - 1) * 5) + Random (5) + 1;
                 //Debug ("0i_spawn", "175", "iRow: " + IntToString (iRow) + " nLevel: " + IntToString (nLevel));
@@ -270,7 +270,7 @@ void CreateVillain (object oWaypoint, object oPC, int nLevel, int bRandom = FALS
     // Check for CR increase.
     nLevel = nLevel + GetLocalInt (oWaypoint, "0_CR_Increase") + 2;
     if(nLevel < 1) nLevel = 1;
-    else if(nLevel > 20) nLevel = 20;
+    else if(nLevel > 40) nLevel = 40;
     // Lets find out if there is a specific creature.
     string sEncounter, sResRef = GetLocalString (oWaypoint, "0_Resref");
     // If there is no Resref then generate one from the encounter list.
@@ -299,16 +299,15 @@ void CreateVillain (object oWaypoint, object oPC, int nLevel, int bRandom = FALS
     // Check to see if we need to change the creatures name.
     string sName = GetLocalString (oWaypoint, "0_Name");
     // No name then randomize one!
-    if (sName == "") sName = GetRandomName (0, 0, FloatToInt (GetChallengeRating (oCreature)), GetName (oCreature));
+    int nAlign = GetAlignmentGoodEvil(oCreature);
+    if (sName == "") sName = GetRandomName(0, 0, nAlign, FloatToInt(GetChallengeRating(oCreature)), GetName(oCreature));
     // Color name based on creature CR.
-    sName = ColorVillainName (oCreature, sName);
+    //sName = ColorVillainName(oCreature, sName);
     // Set the name.
-    SetName (oCreature, sName);
+    SetName(oCreature, sName);
     GiveVillianSpecialPower (oCreature);
     // Set all bosses to use battlecries.
     SetLocalInt (oCreature, "0_Battlecry", TRUE);
-    // Give villians a base set of items.
-    GiveMagicalEquipment (oCreature, FloatToInt (GetChallengeRating (oCreature)));
     if (bRandom || GetLocalInt(oWaypoint, "0_Power"))
     {
         // Slightly increase the size of the boss.
@@ -316,6 +315,8 @@ void CreateVillain (object oWaypoint, object oPC, int nLevel, int bRandom = FALS
         // Random Villains drop a maxamized magic item.
         SetLocalInt (oCreature, "0_MaxNumOfPowers", TRUE);
     }
+    // Give villians a base set of items.
+    GiveMagicalEquipment (oCreature, FloatToInt (GetChallengeRating (oCreature)));
     SetupCreature (oCreature, oWaypoint, oPC, TRUE);
    // Check for summons effects.
    CheckforSummonsEffect(oWaypoint, lLocation, oCreature);

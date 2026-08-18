@@ -45,6 +45,37 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    int nEnhancedAC;
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack;
+        int nMoonbarDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nMoonbarDust && GetTag(oItem) == "moonbar_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nMoonbarDust = TRUE;
+                    nEnhancedAC += 2;    
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nEnhancedAC)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the natural AC by +" + IntToString(nEnhancedAC) + "!", COLOR_GREEN, oObject);
+        }
+    }
     // Get the casters summons selected summons or select a default.
     // Casters can select a summons via the Players Handbook.
     int iNumToSummon = 1, iCounter;
@@ -76,15 +107,15 @@ void main()
         }
     }
     // Select the varied component cost based on undead to summon.
-    // 2 onyx gems is equal to 50gp value we need 2 or 50gp per HD of the undead.
-    if (sResRef == "ghoul") Spell.iCompAmount = 100; // HD 2
-    else if (sResRef == "ghast") Spell.iCompAmount = 200; // HD 4
-    else if (sResRef == "mummy") Spell.iCompAmount = 400; // HD 8
-    else if (sResRef == "mohrg") Spell.iCompAmount = 700; // HD 14
-    else if (sResRef == "m_vampire") Spell.iCompAmount = 250; // HD 5
-    else if (sResRef == "NW_S_DOOMKGHT") Spell.iCompAmount = 450; // HD 9
-    else if (sResRef == "NW_S_LICH") Spell.iCompAmount = 600; // HD 12
-    else if (sResRef == "NW_S_MUMCLERIC") Spell.iCompAmount = 800; // HD 16
+    // 1 onyx gem is equal to 50gp value we need 1 or 50gp per HD of the undead.
+    if (sResRef == "ghoul") Spell.iCompAmount = 2; // HD 2
+    else if (sResRef == "ghast") Spell.iCompAmount = 4; // HD 4
+    else if (sResRef == "mummy") Spell.iCompAmount = 8; // HD 8
+    else if (sResRef == "mohrg") Spell.iCompAmount = 14; // HD 14
+    else if (sResRef == "m_vampire") Spell.iCompAmount = 5; // HD 5
+    else if (sResRef == "NW_S_DOOMKGHT") Spell.iCompAmount = 9; // HD 9
+    else if (sResRef == "NW_S_LICH") Spell.iCompAmount = 12; // HD 12
+    else if (sResRef == "NW_S_MUMCLERIC") Spell.iCompAmount = 16; // HD 16
     effect eImpact = EffectVisualEffect (VFX_FNF_SUMMON_UNDEAD);
     // Setup the spell.
     Spell = SetSpell (Spell);
@@ -100,7 +131,8 @@ void main()
         {
             // Create the undead.
             oCreature = CreateObject (OBJECT_TYPE_CREATURE, sResRef, Spell.lTarget);
-            ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oCreature);
+            ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, oCreature);
+            if(nEnhancedAC) ApplyEffectToObject(DURATION_TYPE_PERMANENT, EffectACIncrease(nEnhancedAC, AC_NATURAL_BONUS), oCreature);
             if(IncreaseUndeadControlledHitDice(Spell.oCaster, oCreature, "TURNED_UNDEAD", nTotalHD))
             {
                 AddHenchman (Spell.oCaster, oCreature);

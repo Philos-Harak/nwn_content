@@ -179,18 +179,21 @@ void main()
                     if(GetLocalInt(oPC, "AI_PORTRAIT_ID_SET"))
                     {
                         DeleteLocalInt(oPC, "AI_PORTRAIT_ID_SET");
-                        //nID = JsonGetInt(NuiGetUserData(oPC, nToken));
-                        //SetPortraitId(oHenchman, nID);
                     }
                     else NuiSetUserData(oPC, nToken, JsonInt(-1));
-                    sResRef = JsonGetString (NuiGetBind(oPC, nToken, "port_name"));
+                    sResRef = JsonGetString(NuiGetBind(oPC, nToken, "port_name"));
                     if(ResManGetAliasFor(sResRef + "l", RESTYPE_TGA) == "" &&
-                       ResManGetAliasFor(sResRef + "l", RESTYPE_DDS) == "")
+                       ResManGetAliasFor(sResRef + "l", RESTYPE_DDS) == "" &&
+                       ResManGetAliasFor(sResRef, RESTYPE_TGA) == "" &&
+                       ResManGetAliasFor(sResRef, RESTYPE_DDS) == "")
                     {
                         if(GetGender(oHenchman)) sResRef = "po_hu_f_99_";
                         else sResRef = "po_hu_m_99_";
                     }
-                    NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "l"));
+                    if(ResManGetAliasFor(sResRef, RESTYPE_TGA) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef));
+                    else if(ResManGetAliasFor(sResRef, RESTYPE_DDS) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef));
+                    else if(ResManGetAliasFor(sResRef + "l", RESTYPE_TGA) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "l"));
+                    else if(ResManGetAliasFor(sResRef + "l", RESTYPE_DDS) != "") NuiSetBind (oPC, nToken, "port_resref_image", JsonString (sResRef + "l"));
                 }
                 else if(sElem == "cmb_class_selected")
                 {
@@ -200,7 +203,7 @@ void main()
                     SetLocalInt(oHenchman, "CLASS_SELECTED_" + IntToString(nPosition), nClass);
                     SetLocalInt(oHenchman, "PACKAGE_SELECTED_" + IntToString(nPosition), nClass);
                     NuiDestroy(oPC, nToken);
-                    DelayCommand(0.1, CreateCharacterEditGUIPanel(oPC, oHenchman));
+                    CreateCharacterEditGUIPanel(oPC, oHenchman);
                 }
                 else if(sElem == "cmb_package_selected")
                 {
@@ -218,15 +221,15 @@ void main()
                     string sResRef = GetStringLowerCase(Get2DAString("soundset", "RESREF", nSoundSet));
                     if(GetStringLeft(sResRef, 4) == "vs_f")
                     {
-                        DelayCommand(0.1, HaveCreatureSpeak(oHenchman, 11, ":1:2:3:22:34:35:41:42:44:45:46:"));
+                        DelayCommand(0.5, HaveCreatureSpeak(oHenchman, 11, ":1:2:3:22:34:35:41:42:44:45:46:"));
                     }
                     else if(GetStringLeft(sResRef, 4) == "vs_n")
                     {
-                        DelayCommand(0.1, HaveCreatureSpeak(oHenchman, 10, ":1:2:3:34:35:36:40:42:44:45:"));
+                        DelayCommand(0.5, HaveCreatureSpeak(oHenchman, 10, ":1:2:3:34:35:36:40:42:44:45:"));
                     }
                     else
                     {
-                        DelayCommand(0.1, HaveCreatureSpeak(oHenchman, 7, ":1:2:3:11:12:13:33:"));
+                        DelayCommand(0.5, HaveCreatureSpeak(oHenchman, 7, ":1:2:3:11:12:13:33:"));
                     }
                 }
             }
@@ -265,7 +268,8 @@ void main()
                     }
                     string sLevel = IntToString(GetLevelByClass(nClass, oHenchman) + 1);
                     json jHenchman = ObjectToJson(oHenchman, TRUE);
-                    //WriteTimestampedLogEntry("pe_party, 318, jHenchman: " + JsonDump(jHenchman, 4));
+                    //WriteTimestampedLogEntry("pe_party, 271, Level: " + IntToString(GetHitDice(oHenchman))+ 
+                    //                          " jHenchman: " + JsonDump(jHenchman, 4));
                     // Check to see if this character has a LvlStatList that is required to level.
                     json jLvlStatList = JsonObjectGet(jHenchman, "LvlStatList");
                     //WriteTimestampedLogEntry("pe_party, 321, jLvlStatList: " + JsonDump(jLvlStatList, 4));
@@ -299,7 +303,6 @@ void main()
                         SetHenchmanDbString(oPC, "image", IntToString(nIndex - 1), sParty);
                     }
                     int nLeveled = LevelUpHenchman(oHenchman, nClass, TRUE, nPackage);
-                    //WriteTimestampedLogEntry("pe_party, 302, jHench: " + JsonDump(ObjectToJson(oHenchman), 2));
                     //SendMessageToPC(oPC, "pe_party, 282, nClass: " + IntToString(nClass) +
                     //             " nPackage: " + IntToString(nPackage) + " nPosition: " + IntToString(nPosition) +
                     //             " nLeveled: " + IntToString(nLeveled));
@@ -351,12 +354,14 @@ void main()
                     {
                         sResRef = JsonGetString (NuiGetBind (oPC, nToken, "port_name"));
                         if(ResManGetAliasFor(sResRef + "l", RESTYPE_TGA) == "" &&
-                           ResManGetAliasFor(sResRef + "l", RESTYPE_DDS) == "")
+                           ResManGetAliasFor(sResRef + "l", RESTYPE_DDS) == "" &&
+                           ResManGetAliasFor(sResRef, RESTYPE_TGA) == "" &&
+                           ResManGetAliasFor(sResRef, RESTYPE_DDS) == "")
                         {
                             if(GetGender(oHenchman)) sResRef = "po_hu_f_99_";
                             else sResRef = "po_hu_m_99_";
-                            SetPortraitResRef(oHenchman, sResRef);
                         }
+                        SetPortraitResRef(oHenchman, sResRef);
                     }
                     int nHenchToken = NuiFindWindow(oPC, "party_nui");
                     if(nHenchToken)
@@ -372,7 +377,7 @@ void main()
                     if(nID > 5000) nID = 1;
                     if(nID < 0) nID = 5000;
                     int nGender = GetGender(oHenchman);
-                    int nRace = GetRacialType(oHenchman);
+                    int nRace = GetTrueRacialType(oHenchman);
                     string sPRace = Get2DAString("portraits", "Race", nID);
                     if(sPRace != "") nPRace = StringToInt(sPRace);
                     else nPRace = -1;
@@ -423,7 +428,7 @@ void main()
                     int nPosition = JsonGetInt(NuiGetBind(oPC, nToken, "opt_classes_value"));
                     SetLocalInt(oHenchman, "CLASS_OPTION_POSITION", nPosition);
                     NuiDestroy(oPC, nToken);
-                    DelayCommand(0.1, CreateCharacterEditGUIPanel(oPC, oHenchman));
+                    CreateCharacterEditGUIPanel(oPC, oHenchman);
                     return;
                 }
                 if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)

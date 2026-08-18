@@ -52,6 +52,7 @@ void main()
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eLink = EffectLinkEffects (eImm1, eVis);
     eLink = EffectLinkEffects (eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     effect eSearch, eDmg;
     int iValid, iDamage;
     //Get the spells target(s).
@@ -83,11 +84,12 @@ void main()
         if (iDamage > 0)
         {
             eDmg = EffectDamage (iDamage, DAMAGE_TYPE_NEGATIVE);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
         }
         //After effects are removed we apply the immunity to mind spells to the target
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);

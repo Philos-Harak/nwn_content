@@ -104,4 +104,7 @@ void main ()
 {
     DoActions ();
     ActionDoCommand (CheckCombatMovement ());
+}*/
+void main()
+{
 }

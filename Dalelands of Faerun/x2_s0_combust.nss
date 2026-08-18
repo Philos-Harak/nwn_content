@@ -81,6 +81,7 @@ void main()
         {
             //Set damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             //Apply damage effect
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
             // Check to see if they are already burning. Only one burn effect per creature.

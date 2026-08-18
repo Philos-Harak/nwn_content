@@ -60,10 +60,11 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eSummon = EffectSummonCreature ("X2_S_FAERIE001", VFX_FNF_SUMMON_MONSTER_1);
+    eSummon = SetEffectCasterLevel(eSummon, Spell.iCasterLevel);
     AdjustCurrentSummonedCreatures (Spell.oCaster, Spell.iSpellID);
     ApplyEffectAtLocation (DURATION_TYPE_TEMPORARY, eSummon, Spell.lTarget, Spell.fDuration);
-    MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID);
-    DelayCommand (1.0, spellsCreateItemForSummoned (Spell.oCaster, Spell.fDuration));
+    DelayCommand(0.1, MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID));
+    DelayCommand(1.0, spellsCreateItemForSummoned (Spell.oCaster, Spell.fDuration));
     CleanUpSpell (Spell);
 }
 

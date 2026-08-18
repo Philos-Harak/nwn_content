@@ -19,7 +19,7 @@ points of Constitution damage on your turn each round while in the cloud).
 
 A living creature with 6 or more HD takes 1d4 points of Constitution damage on
 your turn each round while in the cloud (a successful Fortitude save halves
-this damage). Holding one’s breath doesn’t help, but creatures immune to poison
+this damage). Holding oneï¿½s breath doesnï¿½t help, but creatures immune to poison
 are unaffected by the spell.
 /*///////////////////////////////////////////////
 #include "0i_spells"
@@ -53,6 +53,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (AOE_PER_FOGKILL);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create visual effect.
         effect eCenter = EffectVisualEffect (258);
         // Apply visual effect at the center of the effect area.

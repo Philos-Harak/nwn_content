@@ -390,6 +390,11 @@ int IP_BaneRacial(object oItem, int iType, int iSubType, int iModifier, int iSub
 // If not then creates the property on the item.
 int IP_Haste(object oItem);
 
+// Gives oItem the property set in jProperty.
+// jProperty {Item property index, Property Type, SubPropertyType,
+//            CostTable Value, Param1 Value, Item window fX, Item window fY}
+void AddRawItemProperty(object oPC, object oItem, json jProperty);
+
 // Gets the first item property of oItem.
 // Where nItemPropertyType is equal to the first itemproperty.
 // Returns -1 if the item does not have that itemproperty.
@@ -505,6 +510,7 @@ void RemoveAllItemProperties (object oItem, int iDuration = DURATION_TYPE_TEMPOR
         if (GetItemPropertyDurationType (ip) == iDuration &&
             GetItemPropertyType (ip) != 86/*Quality*/)
         {
+            object oPossessor = GetItemPossessor (oItem);
             RemoveItemProperty (oItem, ip);
         }
         ip = GetNextItemProperty (oItem);
@@ -1225,6 +1231,542 @@ int IP_Haste (object oItem)
     else return FALSE;
     return TRUE;
 }
-
+// Gives oItem the property set in jProperty.
+// jProperty {Item property index, Property Type, SubPropertyType,
+//            CostTable Value, Param1 Value, Item window fX, Item window fY}
+void AddRawItemProperty(object oPC, object oItem, json jProperty)
+{
+    int nPropertyType = JsonGetInt(JsonArrayGet(jProperty, 1));
+    int nSubType = JsonGetInt(JsonArrayGet(jProperty, 2));
+    int nCostTableValue = JsonGetInt(JsonArrayGet(jProperty, 3));
+    int nParamValue = JsonGetInt(JsonArrayGet(jProperty, 4));
+    switch(nPropertyType)
+    {
+        case 0 :
+        {
+            itemproperty ip = ItemPropertyAbilityBonus(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 1 :
+        {
+            itemproperty ip = ItemPropertyACBonus(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 2 :
+        {
+            itemproperty ip = ItemPropertyACBonusVsAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 3 :
+        {
+            itemproperty ip = ItemPropertyACBonusVsDmgType(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 4 :
+        {
+            itemproperty ip = ItemPropertyACBonusVsRace(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 5 :
+        {
+            itemproperty ip = ItemPropertyACBonusVsSAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 6 :
+        {
+            itemproperty ip = ItemPropertyEnhancementBonus(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 7 :
+        {
+            itemproperty ip = ItemPropertyEnhancementBonusVsAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 8 :
+        {
+            itemproperty ip = ItemPropertyEnhancementBonusVsRace(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 9 :
+        {
+            itemproperty ip = ItemPropertyEnhancementBonusVsSAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 10 :
+        {
+            itemproperty ip = ItemPropertyAttackPenalty(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 11 :
+        {
+            itemproperty ip = ItemPropertyWeightReduction(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 12 :
+        {
+            itemproperty ip = ItemPropertyBonusFeat(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 13 :
+        {
+            itemproperty ip = ItemPropertyBonusLevelSpell(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        //case 14 :
+        case 15 :
+        {
+            itemproperty ip = ItemPropertyCastSpell(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 16 :
+        {
+            itemproperty ip = ItemPropertyDamageBonus(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 17 :
+        {
+            itemproperty ip = ItemPropertyDamageBonusVsAlign(nSubType, nParamValue, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 18 :
+        {
+            itemproperty ip = ItemPropertyDamageBonusVsRace(nSubType, nParamValue, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 19 :
+        {
+            itemproperty ip = ItemPropertyDamageBonusVsSAlign(nSubType, nParamValue, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 20 :
+        {
+            itemproperty ip = ItemPropertyDamageImmunity(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 21 :
+        {
+            itemproperty ip = ItemPropertyDamagePenalty(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 22 :
+        {
+            itemproperty ip = ItemPropertyDamageReduction(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 23 :
+        {
+            itemproperty ip = ItemPropertyDamageResistance(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 24 :
+        {
+            itemproperty ip = ItemPropertyDamageVulnerability(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 25 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 26 :
+        {
+            itemproperty ip = ItemPropertyDarkvision();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 27 :
+        {
+            itemproperty ip = ItemPropertyDecreaseAbility(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 28 :
+        {
+            itemproperty ip = ItemPropertyDecreaseAC(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 29 :
+        {
+            itemproperty ip = ItemPropertyDecreaseSkill(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 30 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        //case 31 :
+        case 32 :
+        {
+            if(GetHasInventory(oItem))
+            {
+                itemproperty ip = ItemPropertyWeightReduction(nCostTableValue);
+                AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            }
+            else SendMessages("This must be a container to get this property!", COLOR_RED, oPC);
+            break;
+        }
+        case 33 :
+        {
+            itemproperty ip = ItemPropertyExtraMeleeDamageType(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 34 :
+        {
+            itemproperty ip = ItemPropertyExtraRangeDamageType(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 35 :
+        {
+            itemproperty ip = ItemPropertyHaste();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 36 :
+        {
+            if(GetIsMeleeWeapon(oItem))
+            {
+                itemproperty ip = ItemPropertyHolyAvenger();
+                AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            }
+            else SendMessages("This must be a melee weapon to get this property!", COLOR_RED, oPC);
+            break;
+        }
+        case 37 :
+        {
+            itemproperty ip = ItemPropertyImmunityMisc(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 38 :
+        {
+            itemproperty ip = ItemPropertyImprovedEvasion();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 39 :
+        {
+            itemproperty ip = ItemPropertyBonusSpellResistance(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 40 :
+        {
+            itemproperty ip = ItemPropertyBonusSavingThrow(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 41 :
+        {
+            itemproperty ip = ItemPropertyBonusSavingThrowVsX(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 42 :
+        {
+            SendMessages("This property will need extra code to work!", COLOR_RED, oPC);
+            break;
+        }
+        case 43 :
+        {
+            itemproperty ip = ItemPropertyKeen();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 44 :
+        {
+            itemproperty ip = ItemPropertyLight(nCostTableValue, nParamValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 45 :
+        {
+            itemproperty ip = ItemPropertyMaxRangeStrengthMod(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 46 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 47 :
+        {
+            itemproperty ip = ItemPropertyNoDamage();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 48 :
+        {
+            itemproperty ip = ItemPropertyOnHitProps(nSubType, nCostTableValue, 0);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            SendMessages("This property will need special code to allow all options!", COLOR_RED, oPC);
+            break;
+        }
+        case 49 :
+        {
+            itemproperty ip = ItemPropertyReducedSavingThrow(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 50 :
+        {
+            itemproperty ip = ItemPropertyReducedSavingThrowVsX(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 51 :
+        {
+            itemproperty ip = ItemPropertyRegeneration(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 52 :
+        {
+            itemproperty ip = ItemPropertySkillBonus(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 53 :
+        {
+            itemproperty ip = ItemPropertySpellImmunitySpecific(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 54 :
+        {
+            itemproperty ip = ItemPropertySpellImmunitySchool(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 55 :
+        {
+            itemproperty ip = ItemPropertyThievesTools(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 56 :
+        {
+            itemproperty ip = ItemPropertyAttackBonus(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 57 :
+        {
+            itemproperty ip = ItemPropertyAttackBonusVsAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 58 :
+        {
+            itemproperty ip = ItemPropertyAttackBonusVsRace(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 59 :
+        {
+            itemproperty ip = ItemPropertyAttackBonusVsSAlign(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 60 :
+        {
+            itemproperty ip = ItemPropertyAttackPenalty(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 61 :
+        {
+            itemproperty ip = ItemPropertyUnlimitedAmmo(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 62 :
+        {
+            itemproperty ip = ItemPropertyLimitUseByAlign(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 63 :
+        {
+            itemproperty ip = ItemPropertyLimitUseByClass(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 64 :
+        {
+            itemproperty ip = ItemPropertyLimitUseByRace(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 65 :
+        {
+            itemproperty ip = ItemPropertyLimitUseBySAlign(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 66 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 67 :
+        {
+            itemproperty ip = ItemPropertyVampiricRegeneration(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 68 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 69 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 70 :
+        {
+            itemproperty ip = ItemPropertyTrap(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 71 :
+        {
+            itemproperty ip = ItemPropertyTrueSeeing();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 72 :
+        {
+            itemproperty ip = ItemPropertyOnMonsterHitProperties(nSubType);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            SendMessages("This property will need special code to allow all options!", COLOR_RED, oPC);
+            break;
+        }
+        case 73 :
+        {
+            itemproperty ip = ItemPropertyTurnResistance(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 74 :
+        {
+            itemproperty ip = ItemPropertyMassiveCritical(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 75 :
+        {
+            itemproperty ip = ItemPropertyFreeAction();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 76 :
+        {
+            SendMessages("This property does not work!", COLOR_RED, oPC);
+            break;
+        }
+        case 77 :
+        {
+            itemproperty ip = ItemPropertyMonsterDamage(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 78 :
+        {
+            itemproperty ip = ItemPropertyImmunityToSpellLevel(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 79 :
+        {
+            itemproperty ip = ItemPropertySpecialWalk();
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 80 :
+        {
+            itemproperty ip = ItemPropertyHealersKit(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 81 :
+        {
+            itemproperty ip = ItemPropertyWeightIncrease(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 82 :
+        {
+            itemproperty ip = ItemPropertyOnHitCastSpell(nSubType, nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 83 :
+        {
+            if(GetIsMeleeWeapon(oItem))
+            {
+                itemproperty ip = ItemPropertyVisualEffect(nSubType);
+                AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            }
+            else SendMessages("This must be a melee weapon to get this property!", COLOR_RED, oPC);
+            break;
+        }
+        case 84 :
+        {
+            itemproperty ip = ItemPropertyArcaneSpellFailure(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 85 :
+        {
+            itemproperty ip = ItemPropertyMaterial(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 86 :
+        {
+            itemproperty ip = ItemPropertyQuality(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+        case 87 :
+        {
+            itemproperty ip = ItemPropertyAdditional(nCostTableValue);
+            AddItemProperty(DURATION_TYPE_PERMANENT, ip, oItem);
+            break;
+        }
+    }
+}
 
 

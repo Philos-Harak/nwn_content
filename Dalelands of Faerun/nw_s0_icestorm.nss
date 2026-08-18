@@ -93,7 +93,9 @@ void main()
             iElementalDmg = iElementalDmg + Spell.iResult;
             // Set the damage effect
             eBludgeonDmg = EffectDamage (iBludgeonDmg, DAMAGE_TYPE_BLUDGEONING);
+            eBludgeonDmg = SetEffectCasterLevel(eBludgeonDmg, Spell.iCasterLevel);
             eElementalDmg = EffectDamage (iElementalDmg, Spell.iDamageType);
+            eElementalDmg = SetEffectCasterLevel(eElementalDmg, Spell.iCasterLevel);
             // Apply effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eBludgeonDmg, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eElementalDmg, Spell.oAreaTarget));

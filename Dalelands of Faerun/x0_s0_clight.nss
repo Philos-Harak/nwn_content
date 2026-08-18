@@ -14,7 +14,7 @@ Saving Throw:   None
 Spell Resistance:   No
 
 A flame, equivalent in brightness to a torch, springs forth from an object that you touch.
-The effect looks like a regular flame, but it creates no heat and doesn’t use oxygen.
+The effect looks like a regular flame, but it creates no heat and doesnï¿½t use oxygen.
 A continual flame can be covered and hidden but not smothered or quenched.
 
 Material component: You sprinkle ruby dust (worth 50 gp) on the item that is to carry the flame.
@@ -31,9 +31,9 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_LIGHT;
-    Spell.sArcaneComponent = "0_ruby_dust";
-    Spell.sDivineComponent = "0_ruby_dust";
-    Spell.iCompAmount = 50;
+    Spell.sArcaneComponent = "ruby_dust";
+    Spell.sDivineComponent = "ruby_dust";
+    Spell.iCompAmount = 2; // 50 gp worth of ruby dust.
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iLineOfSight = TRUE;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;

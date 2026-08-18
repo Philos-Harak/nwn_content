@@ -24,8 +24,7 @@ The creature is stunned for 1 + 1d4 rounds.
 
 Material Component: A pinch each of powder or sand that is colored red, yellow, and blue.
 /*///////////////////////////////////////////////
-
-#include "0i_Spells"
+#include "0i_spells"
 
 void main()
 {
@@ -65,9 +64,11 @@ void main()
     effect eMind = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_NEGATIVE);
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
     effect eLSleep = EffectLinkEffects(eSleep, eMind);
+    eLSleep = SetEffectCasterLevel(eLSleep, Spell.iCasterLevel);
     effect eLStun = EffectLinkEffects(eStun, eMind);
-    eLStun = EffectLinkEffects(eLStun, eDur);
+    eLStun = SetEffectCasterLevel(eLStun, Spell.iCasterLevel);
     effect eLBlind = EffectLinkEffects(eBlind, eMind);
+    eLBlind = SetEffectCasterLevel(eLBlind, Spell.iCasterLevel);
     effect eImpSleep = EffectVisualEffect(VFX_IMP_SLEEP);
     effect eImpStun = EffectVisualEffect(VFX_IMP_STUN);
     effect eImpBlind = EffectVisualEffect(VFX_IMP_BLIND_DEAF_M);

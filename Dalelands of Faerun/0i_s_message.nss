@@ -64,6 +64,10 @@ void SendMessageAfterPlayerLoad(string sMessage,object oPC, string sTextColor, i
 // Broadcasts a message based on GetLocalInt (oPC, "0_Broadcast").
 // They are color coded: DM - grey, Local - white, Party - green, Global - yellow.
 void SendBroadcastMessage(object oPC, string sMessage);
+// Starts a counter to track microseconds in code. Used for debugging.
+void Counter_Start();
+// Ends a counter and outputs the time in seconds and microseconds. Used for debugging.
+void Counter_End(string sMessage = "");
 
 void SetModuleError(string sErrorType, string sScriptName, string sLineNumber, string sError)
 {
@@ -95,7 +99,7 @@ void Debug(string sScriptName, string sLineNumber, string sMessage)
         // Create the message.
         sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
         StripColorCodes(sMessage);
-        if(DEBUG_FIRST_PC) SendMessageToPC(GetFirstPC(), AddColorToText (sMessage, COLOR_WHITE));
+        if(DEBUG_FIRST_PC) SendMessages(sMessage, COLOR_WHITE, GetFirstPC());
         WriteTimestampedLogEntry(sMessage);
     }
 }
@@ -192,4 +196,16 @@ void SendBroadcastMessage(object oPC, string sMessage)
             oPlayer = GetNextPC ();
         }
     }
+}
+void Counter_Start()
+{
+    SetLocalInt(GetModule(), "0_MSCounter", GetMicrosecondCounter());
+}
+void Counter_End(string sMessage = "")
+{
+    int nTime = GetMicrosecondCounter();
+    nTime = nTime - GetLocalInt(GetModule(), "0_MSCounter");
+    float fTime = nTime / 1000000.0;
+    if(DEBUG_MODE) Debug("MICROSECOND_COUNTER", "", "Seconds: " + FloatToString(fTime, 0, 10) +
+             " Microseconds: " + IntToString(nTime) + " " + sMessage);
 }

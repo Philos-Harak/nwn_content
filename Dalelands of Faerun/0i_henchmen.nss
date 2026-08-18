@@ -9,7 +9,7 @@
 #include "0i_creature"
 #include "0i_quest"
 // RETURNS TRUE if the player has the maximum number of henchmen.
-int HasMaxNumberOfHenchman(object oPC);
+int HasMaxNumberOfHenchman(object oPC, int bSuppressMessage = FALSE);
 // Use to fire the PC's current henchman, NPC.
 void FireHenchman(object oPC, object oHench=OBJECT_SELF);
 void LevelUpCurrentHenchman(object oPC);
@@ -35,11 +35,14 @@ void RecallHenchman(object oPC, object oPlaceable, int bSendMessages = TRUE);
 // bDestroyAssociate will destroy all henchmen and/or NPC's for the player. Used for OnClientLeave.
 void SaveAssociatesToDatabase(object oPC, int bDestroyAssociate);
 
-int HasMaxNumberOfHenchman(object oPC)
+int HasMaxNumberOfHenchman(object oPC, int bSuppressMessage = FALSE)
 {
     if(GetServerDatabaseString(oPC, OBJECT_TABLE, "objecttag", "henchman10") != "")
     {
-        SendMessages("You have the maximum number of saved henchman! You can only have up to 10 henchman in your database.", COLOR_RED, oPC);
+        if(!bSuppressMessage)
+        {
+            SendMessages("You have the maximum number of saved henchman! You can only have up to 10 henchman in your database.", COLOR_RED, oPC);
+        }
         return TRUE;
     }
     int nHenchmen, nIndex = 1;
@@ -51,8 +54,11 @@ int HasMaxNumberOfHenchman(object oPC)
     }
     if(nHenchmen >= MAX_NUMBER_OF_HENCHMEN)
     {
-        SendMessages ("You already have maximum number of henchman! You can only have " +
-                      IntToString(MAX_NUMBER_OF_HENCHMEN) + " henchman in game at one time.", COLOR_RED, oPC);
+        if(!bSuppressMessage)
+        {
+            SendMessages ("You already have maximum number of henchman! You can only have " +
+                          IntToString(MAX_NUMBER_OF_HENCHMEN) + " henchman in game at one time.", COLOR_RED, oPC);
+        }
         return TRUE;
     }
     return FALSE;
@@ -137,10 +143,15 @@ void SetUpHenchman(object oPC, object oHenchman, int bFirstSetup = TRUE)
     {
         SetEventScript (oHenchman, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT, "nw_ch_ac1");
     }
+    SetLocalObject(oHenchman, "0_Master", oPC);
     SetLocalString(oHenchman, "AI_ON_DEATH", "nw_ch_ac7");
     SetLocalInt(oHenchman, PC_ASSOCIATE_TYPE, ASSOCIATE_TYPE_HENCHMAN);
     // Set to not disappear when dead, not be resurrectable, and selectable.
     SetIsDestroyable(FALSE, FALSE, TRUE, oHenchman);
+    SetCharacterEffectsToSkin(oHenchman);
+    SetCreatureAuras(oHenchman);
+    SetCharacterEffects(oHenchman);
+    CheckForFeatsToAdd(oHenchman);
     // AI setting used to define how far away from the player they can go.
     DelayCommand(12.0, SetLocalFloat(oHenchman, "AI_ASSOC_PERCEPTION_DISTANCE", 35.0));
 }

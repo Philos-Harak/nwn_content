@@ -523,7 +523,7 @@ void TriggerSpellTrap (int nSpell, object oCaster, object oTarget)
     int nLevel = GetLocalInt (oCaster, "0_CasterLevel");
     if (nLevel == 0) nLevel = GetLocalInt (GetArea (oCaster), "0_Area_Level");
     if (nLevel < 1) nLevel = 1;
-    else if (nLevel > 20) nLevel = 20;
+    else if (nLevel > 40) nLevel = 40;
     // Save the caster level to the placeable to pass to the spell.
     SetLocalInt (oCaster, "0_CasterLevel", nLevel);
     // If random spell then check level and randomize spell.

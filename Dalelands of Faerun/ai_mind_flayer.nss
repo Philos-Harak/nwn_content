@@ -145,9 +145,9 @@ void CheckMindFlayerMovement ()
             }
         }
     }
-}
+} */
 void main ()
 {
-    DoActions ();
-    ActionDoCommand (CheckMindFlayerMovement ());
+    //DoActions ();
+    //ActionDoCommand (CheckMindFlayerMovement ());
 }

@@ -45,6 +45,7 @@ void main()
     int nStrCheck;
     Spell.lTarget = GetLocation (Spell.oCaster);
     effect eTrip = EffectKnockdown ();
+    eTrip = SetEffectCasterLevel(eTrip, Spell.iCasterLevel);
     effect eExplode = EffectVisualEffect (VFX_FNF_HOWL_WAR_CRY);
     effect eVis = EffectVisualEffect (VFX_IMP_HEAD_NATURE);
     effect eShake = EffectVisualEffect (VFX_FNF_SCREEN_BUMP);

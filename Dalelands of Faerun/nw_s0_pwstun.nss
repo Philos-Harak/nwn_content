@@ -14,7 +14,7 @@ Spell Resistance:	Yes
 
 You utter a single word of power that instantly causes one creature of your choice
 to become stunned, whether the creature can hear the word or not. The duration
-of the spell depends on the target’s current hit point total. Any creature that
+of the spell depends on the targetï¿½s current hit point total. Any creature that
 currently has 151 or more hit points is unaffected by power word stun.
 
 Hit Points    	Duration
@@ -59,6 +59,7 @@ void main()
     effect eStun = EffectStunned();
     // Link effects.
     effect eLink = EffectLinkEffects (eMind, eStun);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply the VFX center
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).

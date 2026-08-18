@@ -38,10 +38,12 @@ void main()
     else nVisual = VFX_FNF_SUMMON_UNDEAD;
     //Set the summoned shadow to the appropriate template based on the caster level
     effect eSummon = EffectSummonCreature ("0s_shadow_" + sLevel, nVisual);
+    eSummon = SetEffectCasterLevel(eSummon, Spell.iCasterLevel);
     //Apply VFX impact and summon effect
     AdjustCurrentSummonedCreatures (Spell.oCaster, Spell.iSpellID);
     ApplyEffectAtLocation (Spell.iDurationType, eSummon, Spell.lTarget, Spell.fDuration);
-    MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID);
+    // MarkSummonedCreatures also runs CheckForSummonsBuffs to apply any buffs the caster has to the summons.
+    DelayCommand(0.1, MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID, TRUE));
     CleanUpSpell (Spell);
 }
 

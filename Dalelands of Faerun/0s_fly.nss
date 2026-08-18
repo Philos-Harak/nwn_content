@@ -44,6 +44,7 @@ void main()
     object oItem;
     // Create visual effects.
     effect eImpact = EffectVisualEffect (Spell.iImpact);
+    eImpact = SetEffectCasterLevel(eImpact, Spell.iCasterLevel);
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);

@@ -22,6 +22,6 @@ int StartingConditional()
     // DM's get all the levels.
     if (GetIsDungeonMaster (OBJECT_SELF)) nCasterLevel = 20;
     // Check to see if we can show this level.
-    if (nCasterLevel > nLevel) return TRUE;
+    if (nCasterLevel >= nLevel) return TRUE;
     return FALSE;
 }

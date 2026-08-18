@@ -16,8 +16,8 @@ gales of manic laughter, falling prone. The subject can take no actions while
 laughing, but is not considered helpless. After the spell ends, it can act normally.
 
 A creature with an Intelligence score of 2 or lower is not affected. A creature
-whose type is different from the caster’s receives a +4 bonus on its saving
-throw, because humor doesn’t “translate” well.
+whose type is different from the caster's receives a +4 bonus on its saving
+throw, because humor doesn't translate well.
 
 Material Component
 Tiny tarts that are thrown at the target and a feather that is waved in the air.
@@ -52,6 +52,7 @@ void main()
     effect eVis = EffectVisualEffect (VFX_IMP_WILL_SAVING_THROW_USE);
     effect eDur = EffectVisualEffect (VFX_DUR_MIND_AFFECTING_DISABLED);
     effect eLaugh = EffectKnockdown();
+    eLaugh = SetEffectCasterLevel(eLaugh, Spell.iCasterLevel);
     int nModifier = 0;
     // * creatures of different race find different things funny
     if (GetRacialType (Spell.oAreaTarget) != GetRacialType (OBJECT_SELF)) Spell.iSaveDC - 4;

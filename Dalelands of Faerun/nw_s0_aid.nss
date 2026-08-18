@@ -59,6 +59,7 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eAttack, eSave);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s), sets Spell.fDuration.
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -66,7 +67,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt(Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eLink, Spell.oAreaTarget, Spell.fDuration));

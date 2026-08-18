@@ -121,9 +121,9 @@ void DoActions ()
         SetLastAction (LAST_ACTION_MELEE_ATK);
         ActionAttack (oTarget);
     }
-}
+} */
 void main ()
 {
-    DoActions ();
-    ActionDoCommand (CheckCombatMovement ());
+    //DoActions ();
+    //ActionDoCommand (CheckCombatMovement ());
 }

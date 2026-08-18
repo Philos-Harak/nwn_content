@@ -33,7 +33,7 @@ void main ()
     int nLevel = GetCharacterLevels (oPC);
     // Create henchman cost: 50 * PC's Level ^2 in gold.
     int nCost = 50 * (nLevel * nLevel);
-    if(HasMaxNumberOfHenchman(oPC))
+    if(HasMaxNumberOfHenchman(oPC, TRUE))
     {
         SendMessages ("You do not have room in your party for this henchman!", COLOR_RED, oPC);
         return;

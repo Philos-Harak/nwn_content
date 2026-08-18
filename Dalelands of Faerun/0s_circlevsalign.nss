@@ -79,6 +79,80 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    int nSaveBonus, nACBonus;
+    // Do a special check for enhancing components in one inventory pass.
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        int nEnhancedAmount, nEnhancedLimit, nStack;
+        int nAlestoneDust, nCarnelianDust, nCrownOfSilverDust, nJasmalDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nAlestoneDust && GetTag(oItem) == "alestone_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nAlestoneDust = TRUE;
+                fEnhancedDuration += 0.5;    
+            }
+            else if(!nCarnelianDust && GetTag(oItem) == "carnelian_dust" && 
+                    Spell.iSpellID == SPELL_PROTECTION_FROM_EVIL)
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nCarnelianDust = TRUE;
+                nACBonus += 1;
+                nSaveBonus += 1;    
+            }
+            else if(!nCrownOfSilverDust && GetTag(oItem) == "crown_of_silver_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nCrownOfSilverDust = TRUE;
+                fEnhancedDuration += 0.5;    
+            }
+            else if(!nJasmalDust && GetTag(oItem) == "jasmal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nJasmalDust = TRUE;
+                nACBonus += 1;
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nACBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase AC by +" + IntToString(nACBonus) + "!", COLOR_GREEN, oObject);
+        }
+        if(nSaveBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase saving throws by +" + IntToString(nSaveBonus) + "!", COLOR_GREEN, oObject);
+        }
+        if(fEnhancedDuration > 0.0)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the duration by +" + FloatToString(fEnhancedDuration * 100.0) + "%!", COLOR_GREEN, oObject);
+            Spell.fDuration *= (1.0 + fEnhancedDuration);
+        }
+    }
+    nACBonus += Spell.iResult;
+    nSaveBonus += Spell.iResult;
+    SetLocalInt(Spell.oCaster, "0_PROT_AC_BONUS", nACBonus);
+    SetLocalInt(Spell.oCaster, "0_PROT_SAVE_BONUS", nSaveBonus);
     // Create area effect.
     effect eAOE = EffectAreaOfEffect (iAOE);
     // Create visual effect.
@@ -88,7 +162,8 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eAOE, eVisual);
     eLink = EffectLinkEffects (eLink, eDuration);
-    //Get the spells target(s).
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid (Spell.oAreaTarget))
     {

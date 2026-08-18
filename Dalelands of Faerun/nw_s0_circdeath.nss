@@ -16,7 +16,7 @@ instantly.
 
 The spell slays 1d4 HD worth of living creatures per caster level (maximum 20d4).
 Creatures with the fewest HD are affected first; among creatures with equal HD,
-those who are closest to the burst’s point of origin are affected first.
+those who are closest to the burst's point of origin are affected first.
 No creature of 9 or more HD can be affected, and Hit Dice that are not sufficient
 to affect a creature are wasted.
 
@@ -33,9 +33,9 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_DEATH;
-    Spell.sArcaneComponent = "0_pearl_dust";
-    Spell.sDivineComponent = "0_pearl_dust";
-    Spell.iCompAmount = 500;
+    Spell.sArcaneComponent = "pearl_dust";
+    Spell.sDivineComponent = "pearl_dust";
+    Spell.iCompAmount = 20; // 500gp worth of crushed pearl dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 40.0f;
     Spell.iLineOfSight = FALSE;
@@ -62,6 +62,7 @@ void main()
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eCircle = EffectVisualEffect (VFX_FNF_LOS_EVIL_20);
     effect eDeath =  EffectDeath ();
+    eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
     // Used to tell the script we have hit this creature already.
     string sSpellLocal = "SPELL_CIRCLE_DEATH_" + StripColorCodes (GetName (Spell.oCaster));
     // Get the result for the effect, sets Spell.iResult.

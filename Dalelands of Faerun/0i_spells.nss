@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
  Include scripts for base spells.
 
- Variables on creaters that affect spells.
+ Variables on creatures that affect spells.
  int   0_SpellCasterLvlMod - Adjust the casters level for the cast spell.
  int   0_SpellDCMod - Adjust the casters spell DC.
  int   0_SpellDmgMod - Adjust a spells total damage.
@@ -30,7 +30,7 @@ spell affects that target (the primary target) normally, then
 arcs to a number of secondary targets equal to your caster
 level.
 * Sculpt Spell - You can modify an area spell by changing the
-area’s shape. The new area must be chosen from the following
+area's shape. The new area must be chosen from the following
 list: cylinder (10-foot radius, 30 feet high), 40-foot
 cone, four 10-foot cubes, or a ball (20-foot-radius spread).
 * Split Ray - You can split spells that specify a single target
@@ -70,6 +70,7 @@ AOE spells - need reworked.
 Storm of Vengence - needs to be reworked to closer to the book version.
 Black Blade of Disaster - needs to be reworked as its too close to mordenkainen's sword.
 */////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "0i_server_const"
 #include "0i_win_layout_pc"
 #include "0i_effects"
 #include "0i_crafting"
@@ -99,7 +100,10 @@ struct stSpell GetDuration(struct stSpell Spell, int bItemEnchantment = FALSE);
 // Roll dice for either damage or modifiers.
 // Returns the value in Spell.iResult
 // Spell is the spell struct.
-struct stSpell GetModifier(struct stSpell Spell);
+// bCalculateBonus if TRUE calculate bonus damage for the spell from sources
+//       such as Warmage Edge. If FALSE then don't calculate as this bonus
+//       has alreay been added to this spell.
+struct stSpell GetModifier(struct stSpell Spell, int bCalculateBonus = TRUE);
 
 // Get the level of the spell being cast based on casting class.
 // Spell is the spell structure.
@@ -121,7 +125,9 @@ struct stSpell GetSaveDC(struct stSpell Spell);
 // Returns on Resist: 1 - Resisted, 2 - Magic Immunity, 3 - Spell absorption.
 // Returns on Save: 4 - Save Negates, 2 - Target is immune to the save type.
 // stSpell is the spell struct.
-struct stSpell ResistAndSave(struct stSpell Spell);
+// bResist is FALSE then we skip the resist check.
+// bSave is FALSE then we skip the save check.
+struct stSpell ResistAndSave(struct stSpell Spell, int bResist = TRUE, int bSave = TRUE);
 
 // Checks all classes to get total caster level
 // for the last spell cast and special abilities.
@@ -159,7 +165,7 @@ struct stSpell GetSpellTarget(struct stSpell Spell);
 void CleanUpSpell(struct stSpell Spell);
 
 // Checks for Sudden Feats and adjusts for them.
-struct stSpell CheckForSuddenFeats(struct stSpell Spell);
+struct stSpell CheckForSpellFeats(struct stSpell Spell);
 
 // Will setup a spell to fire again on the next round.
 // Spell is the spell's variables.
@@ -169,7 +175,10 @@ void FireSpellAgain(struct stSpell Spell);
 void AdjustCurrentSummonedCreatures(object oCaster, int iSpellID);
 
 // Mark just summoned creatures, use is the summon spell.
-void MarkSummonedCreatures(object oCaster, int nSpellID);
+void MarkSummonedCreatures(object oCaster, int nSpellID, int bBuffSummons = FALSE);
+
+// Check to see if the Caster has any buffs that should be applied to the summons and apply them.
+void CheckForSummonsBuffs(object oCaster, object oSummons);
 
 // Cast an Arcane Blast.
 // Spell is the original spells variables.
@@ -193,7 +202,8 @@ void InflictSpell(struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal);
 // iMIRV is the vfx_imp_* defaults to VFX_IMP_MIRV
 // bOneHit tells the script to only do one missle per enemy maximum.
 // bOneTarget tells the script to put all missles into one target.
-void MissileStorm(struct stSpell Spell, int iNumOfMissiles, int iMIRV = VFX_IMP_MIRV, int bOneHit = FALSE, int bOneTarget = FALSE);
+// bReflex if TRUE will allow a reflex to save for half per missle.
+void MissileStorm(struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP_MIRV, int bOneHit = FALSE, int bOneTarget = FALSE, int bReflex = FALSE);
 
 // Removes mental spell effects from target and protects against new effects.
 // Spell is the spells data from the original spell.
@@ -266,9 +276,6 @@ void DispelAoEEffect(object oTargetAoE, object oCaster, int nCasterLevel);
 // Removes temporary hit points so that they will not stack.
 void RemoveTempHitPoints ();
 
-// Saves spells to autobuff for a caster.
-void SaveSpellToAutoBuff(struct stSpell Spell);
-
 // Will check and make sure the spell is memorized.
 // nSpell is the spell to find.
 // nClass that cast the spell.
@@ -338,7 +345,6 @@ struct stSpell SetSpell (struct stSpell Spell)
         Spell.oTarget = GetSpellTargetObject();
         Spell.lTarget = GetSpellTargetLocation ();
         Spell.iMetaMagic = GetMetaMagicFeat ();
-        Spell = CheckForSuddenFeats (Spell);
         // This will make a spell cast twice!
         // Any use of this ability must be done within this else grouping.
         // if (GetLocalInt (OBJECT_SELF, "0_Fired_Spell_Again") == 0) DelayCommand (5.0, FireSpellAgain (Spell));
@@ -347,51 +353,51 @@ struct stSpell SetSpell (struct stSpell Spell)
     // *********************************************************************
     // *********************** Cast by an Item *****************************
     // *********************************************************************
-    object oItem = GetSpellCastItem ();
+    object oItem = GetSpellCastItem();
     // Check to see if the spell was cast by an item.
-    if (GetIsObjectValid (oItem))
+    if(GetIsObjectValid(oItem))
     {
         // Check to see if the item has a caster level.
-        int iItemLevel = GetLocalInt (oItem, "0_Caster_Level");
+        int nItemLevel = GetLocalInt(oItem, "0_Caster_Level");
         // Use the set caster level.
-        if (iItemLevel > 0) Spell.iCasterLevel = iItemLevel;
+        if(nItemLevel > 0) Spell.iCasterLevel = nItemLevel;
         // Use the power level of the item i.e. minimum level to equip. if not.
-        else Spell.iCasterLevel = NWNX_Item_GetMinEquipLevel (oItem);
+        else Spell.iCasterLevel = NWNX_Item_GetMinEquipLevel(oItem);
         // Must be at least 1st level.
-        if (Spell.iCasterLevel < 0) Spell.iCasterLevel = 1;
+        if(Spell.iCasterLevel < 0) Spell.iCasterLevel = 1;
     }
     // *********************************************************************
     // ************************ Caster Level *******************************
     // *********************************************************************
-    // Get the level of the caster using all classes that can use the spell.
-    else Spell = GetCasterTotalLevel (Spell);
+    // Get the level of the caster using all classes.
+    else Spell = GetCasterTotalLevel(Spell);
     // *********************************************************************
     // ************************ Feat Changes ****************************
     // *********************************************************************
     // Check for Elemental Transferance - Change the energy of an elemental spell.
-    if (GetLocalInt (Spell.oCaster, "0_Elem_Transferance"))
+    if(GetLocalInt(Spell.oCaster, "0_Elem_Transferance"))
     {
         // Check to see if the spell has an elemental descriptor.
-        if (Spell.iDescriptor == DESC_ACID || Spell.iDescriptor == DESC_COLD ||
+        if(Spell.iDescriptor == DESC_ACID || Spell.iDescriptor == DESC_COLD ||
             Spell.iDescriptor == DESC_ELECTRICITY || Spell.iDescriptor == DESC_FIRE)
         {
             // Check for spell transferance feat.
-            if (GetHasFeat (1338, Spell.oCaster))
+            if(GetHasFeat(1338, Spell.oCaster))
             {
                 Spell.iSaveType = SAVING_THROW_TYPE_ELECTRICITY;
                 Spell.iDamageType = DAMAGE_TYPE_ELECTRICAL;
             }
-            if (GetHasFeat (1392, Spell.oCaster))
+            else if(GetHasFeat(1392, Spell.oCaster))
             {
                 Spell.iSaveType = SAVING_THROW_TYPE_FIRE;
                 Spell.iDamageType = DAMAGE_TYPE_FIRE;
             }
-            if (GetHasFeat (1397, Spell.oCaster))
+            else if(GetHasFeat(1397, Spell.oCaster))
             {
                 Spell.iSaveType = SAVING_THROW_TYPE_COLD;
                 Spell.iDamageType = DAMAGE_TYPE_COLD;
             }
-            if (GetHasFeat (1402, Spell.oCaster))
+            else if(GetHasFeat(1402, Spell.oCaster))
             {
                 Spell.iSaveType = SAVING_THROW_TYPE_ACID;
                 Spell.iDamageType = DAMAGE_TYPE_ACID;
@@ -402,49 +408,47 @@ struct stSpell SetSpell (struct stSpell Spell)
     // ****************** Check for area spell changes *************************
     // *************************************************************************
     // Get the area as these fuctions use the area to save the variables.
-    object oArea = GetArea (Spell.oCaster);
-    // Check for Wild magic zone.
-    if (GetLocalInt (oArea, "0_Spell_State") == 2) Spell = WildMagic (Spell);
-    // Check for dead magic zone, or Anti-magic effect on caster (Beholder).
-    else if (GetLocalInt (oArea, "0_Spell_State") == 1 || GetLocalInt (Spell.oCaster, "0_Anti_Magic"))
+    object oArea = GetArea(Spell.oCaster);
+    // Check for Wild magic zone: Spell state 2.
+    if(GetLocalInt(oArea, "0_Spell_State") == 2) Spell = WildMagic(Spell);
+    // Check for dead magic zone: Spell state 1, or Anti-magic effect on caster (Beholder).
+    else if(GetLocalInt(oArea, "0_Spell_State") == 1 || GetLocalInt(Spell.oCaster, "0_Anti_Magic"))
     {
-        // Send message.
-        if (GetIsObjectValid (oItem))
+        if(GetIsObjectValid(oItem))
         {
-            SendMessages ("Your item does not work! Magic seems absent here.", COLOR_RED, Spell.oCaster);
+            SendMessages("Your item does not work! Magic seems absent here.", COLOR_RED, Spell.oCaster);
         }
-        else SendMessages ("Your spell fizzles! Magic seems absent here.", COLOR_RED, Spell.oCaster);
-        // Stop the spell.
+        else SendMessages("Your spell fizzles! Magic seems absent here.", COLOR_RED, Spell.oCaster);
         Spell.iSpellID = STOP_SPELL;
         return Spell;
     }
-    // Check for Altered magic zone.
-    else if (GetLocalInt (oArea, "0_Spell_State") == 3)
+    // Check for Altered magic zone: Spell state 3.
+    else if(GetLocalInt(oArea, "0_Spell_State") == 3)
     {
-        int iValue;
+        int nValue;
         // Set Caster Level.
-        iValue = GetLocalInt (oArea, "0_Caster_Level");
-        if (iValue > 0) Spell.iCasterLevel = iValue;
+        nValue = GetLocalInt(oArea, "0_Caster_Level");
+        if(nValue > 0) Spell.iCasterLevel = nValue;
         // Set Damage / Modifier dice.
-        iValue = GetLocalInt (oArea, "0_Spell_Mod_Dice");
-        if (iValue > 0) Spell.iModNumOfDice = iValue;
+        nValue = GetLocalInt(oArea, "0_Spell_Mod_Dice");
+        if(nValue > 0) Spell.iModNumOfDice = nValue;
         // Set Damage / Modifier die.
-        iValue = GetLocalInt (oArea, "0_Spell_Mod_Die");
-        if (iValue > 0) Spell.iModifierDie = iValue;
+        nValue = GetLocalInt(oArea, "0_Spell_Mod_Die");
+        if(nValue > 0) Spell.iModifierDie = nValue;
         // Set Damage / Modifier dice per level.
-        iValue = GetLocalInt (oArea, "0_Spell_Mod_Dice_Per_Lvl");
-        if (iValue > 0) Spell.iModDicePerLvl = iValue;
+        nValue = GetLocalInt(oArea, "0_Spell_Mod_Dice_Per_Lvl");
+        if(nValue > 0) Spell.iModDicePerLvl = nValue;
         // Set Damage / Modifier.
-        iValue = GetLocalInt (oArea, "0_Spell_Mod");
-        if (iValue > 0) Spell.iModifier = iValue;
+        nValue = GetLocalInt(oArea, "0_Spell_Mod");
+        if(nValue > 0) Spell.iModifier = nValue;
         // Set Damage / Modifier per level.
-        iValue = GetLocalInt (oArea, "0_Spell_Mod_Per_Lvl");
-        if (iValue > 0) Spell.iModPerLvl = iValue;
+        nValue = GetLocalInt(oArea, "0_Spell_Mod_Per_Lvl");
+        if(nValue > 0) Spell.iModPerLvl = nValue;
         // Check for damage type.
-        iValue = GetLocalInt (oArea, "0_Spell_Dmg_Type");
-        if (iValue > 0 && Spell.iDamageType > 0) Spell = ChangeDamageType (Spell, iValue);
+        nValue = GetLocalInt(oArea, "0_Spell_Dmg_Type");
+        if(nValue > 0 && Spell.iDamageType > 0) Spell = ChangeDamageType(Spell, nValue);
         // Check for Spell area shape.
-        if (GetLocalInt (oArea, "0_Spell.Area_Shape_Changed"))
+        if(GetLocalInt(oArea, "0_Spell.Area_Shape_Changed"))
         {
             Spell.iLineOfSight = TRUE;
             Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
@@ -452,7 +456,7 @@ struct stSpell SetSpell (struct stSpell Spell)
         }
         // Check for Spell area size.
         float fValue = GetLocalFloat (oArea, "0_Spell_Area_Size");
-        if (fValue > 0.0f) Spell.fAreaSize = fValue;
+        if(fValue > 0.0f) Spell.fAreaSize = fValue;
     }
     else if(GetLocalInt(oArea, NO_PORTALING))
     {
@@ -467,52 +471,56 @@ struct stSpell SetSpell (struct stSpell Spell)
             return Spell;
         }
     }
-    // Check for widening special effects.
-    if (GetLocalFloat (Spell.oCaster, "0_SpellWidthMod") > 0.0f) Spell.fAreaSize *= GetLocalFloat (Spell.oCaster, "0_SpellWidthMod");
+    // Check for area size special effects.
+    if(Spell.fAreaSize > 0.0f)
+    {
+        // Check for Widen Spell feat.
+        if(GetLocalInt(Spell.oCaster, "0_Widen_Spell")) Spell.fAreaSize *= 2.0f;
+        if(GetLocalFloat(Spell.oCaster, "0_SpellWidthMod") > 0.0f) Spell.fAreaSize *= GetLocalFloat(Spell.oCaster, "0_SpellWidthMod");
+    }
     // ***************************************************
     // ******************* RAGE **************************
     // ***************************************************
-    // Check for 0_Cannot_Cast.
     // Used to lock spells for Barbarian rage, Tensors Transformation, etc.
-    if (GetLocalInt (Spell.oCaster, "0_Cannot_Cast"))
+    if(GetLocalInt(Spell.oCaster, "0_Cannot_Cast"))
     {
         // Make sure this is a magical effect.
-        if (Spell.iSubType == SUBTYPE_MAGICAL)
+        if(Spell.iSubType == SUBTYPE_MAGICAL)
         {
             // The spell was cast from an item.
-            if (GetIsObjectValid (oItem))
+            if(GetIsObjectValid(oItem))
             {
-                int iBaseType = GetBaseItemType (oItem);
+                int iBaseType = GetBaseItemType(oItem);
                 // Check for scrolls.
-                if (iBaseType == BASE_ITEM_BLANK_SCROLL || iBaseType == BASE_ITEM_ENCHANTED_SCROLL ||
-                    iBaseType == BASE_ITEM_SCROLL || iBaseType == BASE_ITEM_SPELLSCROLL)
+                if(iBaseType == BASE_ITEM_BLANK_SCROLL || iBaseType == BASE_ITEM_ENCHANTED_SCROLL ||
+                   iBaseType == BASE_ITEM_SCROLL || iBaseType == BASE_ITEM_SPELLSCROLL)
                 {
-                    SendMessages ("Your mind is clouded and you cannot use scrolls.", COLOR_RED, OBJECT_SELF);
+                    SendMessages("Your mind is clouded and you cannot use scrolls.", COLOR_RED, OBJECT_SELF);
                     Spell.iSpellID = STOP_SPELL;
                     return Spell;
                 }
                 // Check for wands.
-                if (iBaseType == BASE_ITEM_BLANK_WAND || iBaseType == BASE_ITEM_ENCHANTED_WAND ||
+                if(iBaseType == BASE_ITEM_BLANK_WAND || iBaseType == BASE_ITEM_ENCHANTED_WAND ||
                     iBaseType == BASE_ITEM_MAGICWAND)
                 {
                     // Send message.
-                    SendMessages ("Your mind is clouded and you cannot use wands.", COLOR_RED, OBJECT_SELF);
+                    SendMessages("Your mind is clouded and you cannot use wands.", COLOR_RED, OBJECT_SELF);
                     Spell.iSpellID = STOP_SPELL;
                     return Spell;
                 }
                 // Check for Staves.
-                if (iBaseType == BASE_ITEM_MAGICSTAFF)
+                if(iBaseType == BASE_ITEM_MAGICSTAFF)
                 {
                     // Send message.
-                    SendMessages ("Your mind is clouded and you cannot use staves.", COLOR_RED, OBJECT_SELF);
+                    SendMessages("Your mind is clouded and you cannot use staves.", COLOR_RED, OBJECT_SELF);
                     Spell.iSpellID = STOP_SPELL;
                     return Spell;
                 }
                 // Check for Staves.
-                if (iBaseType == BASE_ITEM_MAGICROD)
+                if(iBaseType == BASE_ITEM_MAGICROD)
                 {
                     // Send message.
-                    SendMessages ("Your mind is clouded and you cannot use rods.", COLOR_RED, OBJECT_SELF);
+                    SendMessages("Your mind is clouded and you cannot use rods.", COLOR_RED, OBJECT_SELF);
                     Spell.iSpellID = STOP_SPELL;
                     return Spell;
                 }
@@ -521,7 +529,7 @@ struct stSpell SetSpell (struct stSpell Spell)
             else
             {
                 // Send message.
-                SendMessages ("Your mind is clouded and you cannot use spells.", COLOR_RED, OBJECT_SELF);
+                SendMessages("Your mind is clouded and you cannot use spells.", COLOR_RED, OBJECT_SELF);
                 Spell.iSpellID = STOP_SPELL;
                 return Spell;
             }
@@ -530,21 +538,17 @@ struct stSpell SetSpell (struct stSpell Spell)
     // *************************************************************************
     // ****************************** A Cast Spell *****************************
     // *************************************************************************
-    // The spell was not cast from an item and its subtype is magical then its a spell.
-    if (!GetIsObjectValid (oItem) && Spell.iSubType == SUBTYPE_MAGICAL)
+    // The spell was not cast from an item and its subtype is magical then its a normal spell.
+    if(!GetIsObjectValid(oItem) && GetObjectType(Spell.oCaster) == OBJECT_TYPE_CREATURE &&
+       Spell.iSubType == SUBTYPE_MAGICAL)
     {
-        // *********************************************************************
-        // *************** Check to see if we are saving a Buff ****************
-        // *********************************************************************
-        //if (GetLocalInt (Spell.oCaster, "0_SAVE_BUFF_SPELL")) SaveSpellToAutoBuff (Spell);
         // *********************************************************************
         // ************************* Arcane Blast ******************************
         // *********************************************************************
-        if (GetLocalInt (Spell.oCaster, "0_Arcane_Blast"))
+        if(GetLocalInt(Spell.oCaster, "0_Arcane_Blast"))
         {
             // Make sure the target is an enemy and valid.
-            if (GetIsSpellTargetValid (Spell.oTarget, TARGET_TYPE_ENEMIES, Spell.oCaster)) CastArcaneBlast (Spell);
-            // Stop the original spell.
+            if(GetIsSpellTargetValid(Spell.oTarget, TARGET_TYPE_ENEMIES, Spell.oCaster)) CastArcaneBlast(Spell);
             Spell.iSpellID = STOP_SPELL;
             return Spell;
         }
@@ -552,239 +556,403 @@ struct stSpell SetSpell (struct stSpell Spell)
         // *********** 20% spell failure if deaf and divine ********************
         // *********************************************************************
         // This is a core fix where arcane only gets a 20% failure if deaf so lets do it for divine as well.
-        if (GetHasEffect (EFFECT_TYPE_DEAF, Spell.oCaster))
+        if(GetHasEffect(EFFECT_TYPE_DEAF, Spell.oCaster))
         {
             // Must be a non arcane i.e. a divine spell.
-            if (Get2DAString ("classes", "Arcane", Spell.iClass) != "1")
+            if(Get2DAString("classes", "Arcane", Spell.iClass) != "1")
             {
                 // Is the spell verbal.
-                string sVS = Get2DAString ("spells", "VS", Spell.iSpellID);
-                if (sVS == "vs" || sVS == "v" && d100() < 20)
+                string sVS = Get2DAString("spells", "VS", Spell.iSpellID);
+                if(sVS == "vs" || sVS == "v" && d100() < 21)
                 {
                    Spell.iSpellID = STOP_SPELL;
                    return Spell;
                 }
             }
         }
-        // *********************************************************************
-        // ************* Components / Divine Focus / Enhancing *****************
-        // *********************************************************************
-        // Components are only for PC's.
-        object oMaster = GetMaster(Spell.oCaster);
-        if(GetIsCharacter(Spell.oCaster) || GetIsCharacter(oMaster))
+        // These should only work on real spells.
+        Spell = CheckForSpellFeats(Spell);
+        // These options are only for PC's and henchman.
+        // Enchanting temporary and permanent items.
+        // Requiring spell components.
+        if(GetIsPC(Spell.oCaster) || GetLocalInt(Spell.oCaster, PC_ASSOCIATE_TYPE) == ASSOCIATE_TYPE_HENCHMAN)
         {
-            if(Spell.sArcaneComponent != "")
+            // ***************************************************
+            // ************** Cast on an item ********************
+            // ***************************************************
+            // Check to see if the spell works on items.
+            if(GetObjectType(Spell.oTarget) == OBJECT_TYPE_ITEM)
             {
-                // Check to see if the caster is using an arcane spell.
-                if (Spell.iClass == CLASS_TYPE_BARD || Spell.iClass == CLASS_TYPE_SORCERER ||
-                    Spell.iClass == CLASS_TYPE_WIZARD || Spell.iClass == 48/*War Mage*/)
+                // *********************************************************************
+                // ************************ Enchanting Items ***************************
+                // *********************************************************************
+                string sTargetTag = GetTag(Spell.oTarget);
+                // Check to see if we are crafting a disposable item (Scroll, Potion, Wand).
+                if(sTargetTag == "0_craft_item")
                 {
-                    // Check to see if the caster has the component.
-                    object oComponent = GetCreatureHasItem (Spell.oCaster, Spell.sArcaneComponent);
-                    // Has the component.
-                    if (GetIsObjectValid (oComponent))
-                    {
-                        // Do we remove the component?
-                        if (Spell.iCompAmount != 0 && GetTag (oComponent) != COMPONENT_POUCH)
-                        {
-                            int iAmount;
-                            if (Spell.iCompAmount < 1) iAmount = 1;
-                            else
-                            {
-                                iAmount = Spell.iCompAmount / (GetGoldPieceValue (oComponent) / GetItemStackSize(oComponent));
-                                if (iAmount < 1) iAmount = 1;
-                            }
-                            if (!RemoveItemStack (Spell.oCaster, Spell.sArcaneComponent, iAmount))
-                            {
-                                // Send message.
-                                if(oMaster != OBJECT_INVALID)
-                                {
-                                    SendMessages(GetName(Spell.oCaster) + " does not have the required components to cast this spell.", COLOR_RED, oMaster);
-                                }
-                                else SendMessages ("You do not have the required components to cast this spell.", COLOR_RED, OBJECT_SELF);
-                                Spell.iSpellID = STOP_SPELL;
-                                return Spell;
-                            }
-                        }
-                    }
-                    // Does not have the component.
-                    else
-                    {
-                        // Send message.
-                        if(oMaster != OBJECT_INVALID)
-                        {
-                            SendMessages(GetName(Spell.oCaster) + " does not have the required component to cast this spell.", COLOR_RED, oMaster);
-                        }
-                        else SendMessages("You not have the required component to cast this spell.", COLOR_RED, OBJECT_SELF);
-                        Spell.iSpellID = STOP_SPELL;
-                        return Spell;
-                    }
+                    if(!GetIsObjectValid(oItem)) CraftDisposableItem(Spell);
+                    else SendMessages("You cannot use spells from items to create disposable items.", COLOR_RED, Spell.oCaster);
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
+                }
+                // Check to see if we are enchanting an item in an enchanting box.
+                if (sTargetTag == "enchant_box")
+                {
+                    if(!GetIsObjectValid(oItem)) CraftPermanentItem(Spell, GetSpellLevel(Spell));
+                    else SendMessages("You cannot use spells from items to create permanent magic items.", COLOR_RED, Spell.oCaster);
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
+                }
+                // To enchant items with an inventory the caster cannot put them into an enchanting box.
+                if (sTargetTag == "bag" || sTargetTag == COMPONENT_POUCH)
+                {
+                    if(!GetIsObjectValid(oItem)) CraftPermanentItem(Spell, GetSpellLevel(Spell), Spell.oTarget);
+                    else SendMessages("You cannot use spells from items to create permanent magic items.", COLOR_RED, Spell.oCaster);
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
+                }
+                // To allow a spell to do its effect in the enchant_table.2da set the "Cast_On_Item" column to 1.
+                if(!StringToInt(Get2DAString ("enchant_table", "Cast_On_Item", Spell.iSpellID)))
+                {
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
                 }
             }
-            if (Spell.sDivineComponent != "")
+            // ***************************************************
+            // ********** Arcane Spell Components ****************
+            // ***************************************************
+            // Check to see if the caster is using an arcane spell.
+            if(GetIsDungeonMaster(Spell.oCaster))
             {
-                // Check to see if the caster is using a divine spell.
-                if (Spell.iClass == CLASS_TYPE_CLERIC || Spell.iClass == CLASS_TYPE_DRUID ||
-                    Spell.iClass == 47/*Favored Soul*/)
+                Spell.fAreaSize = Spell.fAreaSize * 0.3048f;
+                return Spell;                
+            }
+            object oComponentPouch = GetLocalObject(Spell.oCaster, COMPONENT_POUCH);
+            // Blood Component affects all spells even those without a component.
+            if(GetLocalInt(Spell.oCaster, "0_BLOOD_COMPONENT"))
+            {
+                if(Spell.iSubSchool != SUBSCHOOL_HEALING)
                 {
-                    // Check to see if the caster has the component.
-                    object oComponent = GetCreatureHasItem (Spell.oCaster, Spell.sDivineComponent);
-                    // Has the component.
-                    if (GetIsObjectValid (oComponent))
+                    object oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, Spell.oCaster);
+                    if(GetIsSlashingWeapon(oWeapon) || GetIsPiercingWeapon(oWeapon))
                     {
-                        // Do we remove the component?
-                        if (Spell.iCompAmount != 0 && GetTag (oComponent) != COMPONENT_POUCH)
+                        if(oComponentPouch == OBJECT_INVALID) oComponentPouch = Spell.oCaster;
+                        Spell.iCasterLevel++;
+                        int nHp = GetCurrentHitPoints(Spell.oCaster) - 1;
+                        if(nHp < 1)
                         {
-                            int iAmount;
-                            if (Spell.iCompAmount < 1) iAmount = 1;
+                            effect eDamage = EffectDamage(1);
+                            ApplyEffectToObject(DURATION_TYPE_INSTANT, eDamage, Spell.oCaster);
+                        }
+                        else SetCurrentHitPoints(Spell.oCaster, nHp);
+                        object oMaster = GetPlayerMaster(Spell.oCaster);
+                        if(oMaster == Spell.oCaster) SendMessages("You slice yourself for 1 damage to add your blood as a component.", COLOR_RED, oMaster);
+                        else SendMessages(GetName(Spell.oCaster) + "slices themselves for 1 damage to add their blood as a component.", COLOR_RED, oMaster);
+                    }
+                    else SendMessages("You must have a piercing or slashing weapon equiped!", COLOR_RED, Spell.oCaster);
+                }
+                else SendMessages("Healing spells cannot be invoked with blood as a component!", COLOR_RED, Spell.oCaster);
+            }
+            if(Spell.sArcaneComponent != "" && Get2DAString("classes", "Arcane", Spell.iClass) == "1")
+            {
+                // If they have Eschew Materials and no pouch then we check the caster for the component.
+                if(oComponentPouch == OBJECT_INVALID && GetHasFeat(1306/*Eschew Materials*/, Spell.oCaster)) oComponentPouch = Spell.oCaster;
+                if(oComponentPouch == OBJECT_INVALID )
+                {
+                    if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have a component pouch to cast this spell.", COLOR_RED, Spell.oCaster);
+                    else SendMessages(GetName(Spell.oCaster) + " does not have a component pouch to cast this spell.", COLOR_RED, GetMaster(Spell.oCaster));
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
+                }
+                else 
+                {
+                    if(Spell.sArcaneComponent != COMPONENT_POUCH)
+                    {
+                        int nAmount;
+                        if(!RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, Spell.sArcaneComponent, nAmount))
+                        {
+                            // Change the text based on if they are using a pouch or not.
+                            if(Spell.oCaster == oComponentPouch)
+                            {
+                                if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have the required components to cast this spell.", COLOR_RED, Spell.oCaster);
+                                else SendMessages(GetName(Spell.oCaster) + " does not have the required components to cast this spell.", COLOR_RED, GetMaster(Spell.oCaster));
+                            }
                             else
                             {
-                                iAmount = Spell.iCompAmount / (GetGoldPieceValue (oComponent) / GetItemStackSize(oComponent));
-                                if (iAmount < 1) iAmount = 1;
+                                if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have the required components to cast this spell in your component pouch.", COLOR_RED, Spell.oCaster);
+                                else SendMessages(GetName(Spell.oCaster) + " does not have the required components to cast this spell in your component pouch.", COLOR_RED, GetMaster(Spell.oCaster));
                             }
-                            if (!RemoveItemStack (Spell.oCaster, Spell.sDivineComponent, iAmount))
-                            {
-                                // Send message.
-                                if(oMaster != OBJECT_INVALID)
-                                {
-                                    SendMessages (GetName(Spell.oCaster) + " does not have the required components to cast this spell.", COLOR_RED, oMaster);
-                                }
-                                else SendMessages ("You do not have the required components to cast this spell.", COLOR_RED, OBJECT_SELF);
-                                Spell.iSpellID = STOP_SPELL;
-                                return Spell;
-                            }
-                        }
-                    }
-                    // Does not have the component.
-                    else
-                    {
-                        // Send message.
-                        if(oMaster != OBJECT_INVALID)
-                        {
-                            SendMessages(GetName(Spell.oCaster) + " does not have the required component to cast this spell.", COLOR_RED, oMaster);
-                        }
-                        else SendMessages("You not have the required component to cast this spell.", COLOR_RED, OBJECT_SELF);
-                        Spell.iSpellID = STOP_SPELL;
-                        return Spell;
-                    }
-                }
-            }
-            if (Spell.iDivineFocus)
-            {
-                // Check to see if the caster is using a divine spell from Cleric or Favored Soul.
-                if (Spell.iClass == CLASS_TYPE_CLERIC || Spell.iClass == 47/*Favored Soul*/)
-                {
-                    // Check to see if the caster has a holy symbol.
-                    object oItem = GetCreatureHasItem (Spell.oCaster, CLERIC_HOLY_SYMBOL);
-                    // Does not have the Divine Focus.
-                    if (!GetIsObjectValid (oItem))
-                    {
-                        if(oMaster != OBJECT_INVALID)
-                        {
-                            SendMessages(GetName(Spell.oCaster) + " does not have a holy symbol to cast this spell!", COLOR_RED, oMaster);
-                        }
-                        else SendMessages ("You do not have a holy symbol to cast this spell!", COLOR_RED, OBJECT_SELF);
-                        Spell.iSpellID = STOP_SPELL;
-                        return Spell;
-                    }
-                }
-                else
-                {
-                    // Check Druids for holly or mistletoe.
-                    if (Spell.iClass == CLASS_TYPE_DRUID)
-                    {
-                        // Check to see if the caster has holly or mistltoe.
-                        object oItem = GetCreatureHasItem (Spell.oCaster, DRUID_HOLY_SYMBOL);
-                        // Does not have the Divine Focus.
-                        if (!GetIsObjectValid (oItem))
-                        {
-                            if(oMaster != OBJECT_INVALID)
-                            {
-                                SendMessages(GetName(Spell.oCaster) + " does not have a Holly or Mistletoe to cast this spell!", COLOR_RED, oMaster);
-                            }
-                            else SendMessages ("You do not have a Holly or Mistletoe to cast this spell!", COLOR_RED, OBJECT_SELF);
                             Spell.iSpellID = STOP_SPELL;
                             return Spell;
                         }
                     }
                 }
             }
-            // Make sure we are not using enhancing components while crafting.
-            string sTargetTag = GetTag (Spell.oTarget);
-            if (Spell.sEnhancingComp != "" && GetLocalInt (Spell.oCaster, "0_Use_Enhancing_Component") &&
-                sTargetTag != "0_craft_item" && sTargetTag != "enchant_box" && sTargetTag != "bag" &&
-                sTargetTag != "0_comp_pouch")
+            else if(Spell.sDivineComponent != "" && Get2DAString("classes", "Arcane", Spell.iClass) != "1")
             {
-                // Check to see if the caster has the component.
-                object oItem = GetCreatureHasItem (Spell.oCaster, Spell.sEnhancingComp);
-                // Get the number of enhancing components needed. We assume each is 25gp worth.
-                // The spell should have set how much gp worth is needed. Defaults to 25gp or 1.
-                int iAmount = Spell.iCompAmount / 25;
-                if (iAmount < 1) iAmount = 1;
-                int iStack = GetItemStackSize (oItem);
-                // Has the component.
-                if (GetIsObjectValid (oItem) && iStack >= iAmount)
+                // If they have Eschew Materials and no pouch then we check the caster for the component.
+                if(oComponentPouch == OBJECT_INVALID && GetHasFeat(1306/*Eschew Materials*/, Spell.oCaster)) oComponentPouch = Spell.oCaster;
+                if(oComponentPouch == OBJECT_INVALID)
                 {
-                    // Remove the component?
-                    if (iStack - 1 > iAmount) SetItemStackSize (oItem, iStack - iAmount);
-                    else DestroyObject (oItem);
-                    // Has the enhancing component and we have consumed it.
-                    // Return back "TRUE".
-                    Spell.sEnhancingComp = "TRUE";
-                    // Tell the caster they are enhancing the spell!
-                    string sSpellName = GetStringByStrRef (StringToInt (Get2DAString ("Spells", "Name", Spell.iSpellID)));
-                    SendMessages (sSpellName + " has been enhanced!", COLOR_GREEN, Spell.oCaster);
+                    if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have a component pouch to cast this spell.", COLOR_RED, Spell.oCaster);
+                    else SendMessages(GetName(Spell.oCaster) + " does not have a component pouch to cast this spell.", COLOR_RED, GetMaster(Spell.oCaster));
+                    Spell.iSpellID = STOP_SPELL;
+                    return Spell;
                 }
-                // Does not have the component, return back "FALSE".
-                else Spell.sEnhancingComp = "FALSE";
+                else
+                {
+                    if(Spell.sDivineComponent != COMPONENT_POUCH)
+                    {
+                        int nAmount;
+                        if(!RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, Spell.sDivineComponent, nAmount))
+                        {
+                            // Change the text based on if they are using a pouch or not.
+                            if(Spell.oCaster == oComponentPouch)
+                            {
+                                if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have the required components to cast this spell.", COLOR_RED, Spell.oCaster);
+                                else SendMessages(GetName(Spell.oCaster) + " does not have the required components to cast this spell.", COLOR_RED, GetMaster(Spell.oCaster));
+                            }
+                            else
+                            {
+                                if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have the required components to cast this spell in your component pouch.", COLOR_RED, Spell.oCaster);
+                                else SendMessages(GetName(Spell.oCaster) + " does not have the required components to cast this spell in your component pouch.", COLOR_RED, GetMaster(Spell.oCaster));
+                            }
+                            Spell.iSpellID = STOP_SPELL;
+                            return Spell;
+                        }
+                    }
+                }
             }
-        }
-    }
-    // ***************************************************
-    // ************** Cast on an item ********************
-    // ***************************************************
-    // Check to see if the spell works on items.
-    if (GetObjectType (Spell.oTarget) == OBJECT_TYPE_ITEM)
-    {
-        // *********************************************************************
-        // ************************ Enchanting Items ***************************
-        // *********************************************************************
-        // Check to see if we are crafting a disposable item (Scroll, Potion, Wand).
-        // Use else if so we don't craft items with items!
-        string sTargetTag = GetTag (Spell.oTarget);
-        if (sTargetTag == "0_craft_item")
-        {
-            if (!GetIsObjectValid (oItem))
+            else if(Spell.iDivineFocus && Get2DAString("classes", "Arcane", Spell.iClass) != "1")
             {
-                CraftDisposableItem (Spell);
-                // Stop the spell.
-                Spell.iSpellID = STOP_SPELL;
-                return Spell;
+                // Check to see if the caster is using a divine spell from Cleric or Favored Soul.
+                if(Spell.iClass == CLASS_TYPE_CLERIC || Spell.iClass == 47/*Favored Soul*/)
+                {
+                    // Check to see if the caster has a holy symbol.
+                    object oItem = GetLocalObject(Spell.oCaster, CLERIC_HOLY_SYMBOL);
+                    // Does not have the Divine Focus.
+                    if(!GetIsObjectValid(oItem))
+                    {
+                        if(GetIsCharacter(Spell.oCaster)) SendMessages ("You do not have a holy symbol to cast this spell!", COLOR_RED, OBJECT_SELF);
+                        else SendMessages(GetName(Spell.oCaster) + " does not have a holy symbol to cast this spell!", COLOR_RED, GetMaster(Spell.oCaster));
+                        Spell.iSpellID = STOP_SPELL;
+                        return Spell;
+                    }
+                }
+                // Check Druids for holly or mistletoe.
+                else if(Spell.iClass == CLASS_TYPE_DRUID)
+                {
+                    // Check to see if the caster has holly or mistltoe.
+                    object oItem = GetLocalObject(Spell.oCaster, DRUID_HOLY_SYMBOL);
+                    // Does not have the Divine Focus.
+                    if(!GetIsObjectValid(oItem))
+                    {
+                        if(GetIsCharacter(Spell.oCaster)) SendMessages("You do not have a Holly or Mistletoe to cast this spell!", COLOR_RED, OBJECT_SELF);
+                        else SendMessages(GetName(Spell.oCaster) + " does not have a Holly or Mistletoe to cast this spell!", COLOR_RED, GetMaster(Spell.oCaster));
+                        Spell.iSpellID = STOP_SPELL;
+                        return Spell;
+                    }
+                }
             }
-            else SendMessages ("You cannot use item spells to create disposable items.", COLOR_RED, Spell.oCaster);
-        }
-        // Check to see if we are enchanting an item in an enchanting box.
-        if (sTargetTag == "enchant_box")
-        {
-            CraftPermanentItem (Spell);
-            // Stop the spell.
-            Spell.iSpellID = STOP_SPELL;
-            return Spell;
-        }
-        else if (sTargetTag == "bag" || sTargetTag == "0_comp_pouch")
-        {
-            CraftPermanentItem (Spell, Spell.oTarget);
-            // Stop the spell.
-            Spell.iSpellID = STOP_SPELL;
-            return Spell;
-        }
-        // To allow a spell to do its effect in the enchant_table.2da set
-        // the "Cast_On_Item" column to 1.
-        if (!StringToInt (Get2DAString ("enchant_table", "Cast_On_Item", Spell.iSpellID)))
-        {
-            // Stop the spell.
-            Spell.iSpellID = STOP_SPELL;
-            return Spell;
+            // ***** Does the player/henchman have enhancing components turned on? *****
+            if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+            {
+                object oComponentPouch = GetLocalObject(Spell.oCaster, COMPONENT_POUCH);
+                // If they have Eschew Materials and no pouch then we check the caster for the component.
+                if(oComponentPouch == OBJECT_INVALID && GetHasFeat(1306/*Eschew Materials*/, Spell.oCaster)) oComponentPouch = Spell.oCaster;
+                if(oComponentPouch != OBJECT_INVALID)
+                {
+                    object oObject;
+                    // Special enhancing component checks for group spells.
+                    // Electrical damage based spells.
+                    if(Spell.iDamageType == DAMAGE_TYPE_ELECTRICAL)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "amber_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with a larger area of effect!", COLOR_GREEN, oObject);
+                            Spell.fAreaSize *= 1.5;
+                        }
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "beljuril_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "waterstar_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                    }
+                    // Fire damage based spells.
+                    else if(Spell.iDamageType == DAMAGE_TYPE_FIRE)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "fire_opal_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with a larger area of effect!", COLOR_GREEN, oObject);
+                            Spell.fAreaSize *= 1.5;
+                        }
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "black_fire_opal_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                    }
+                    // Cold damage based spells.
+                    else if(Spell.iDamageType == DAMAGE_TYPE_COLD)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "black_pearl_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                    }
+                    // Sonic damage based spells.
+                    else if(Spell.iDamageType == DAMAGE_TYPE_SONIC)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "konerupine_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                    }
+                    // Divine Light based spells.
+                    else if(Spell.iDescriptor == DESC_LIGHT && Spell.iDamageType == DAMAGE_TYPE_DIVINE)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "heliodor_dust", 4))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                            Spell.iModPerDieBonus += 1;
+                        }
+                    }
+                    // Necromancy based spells.
+                    if(Get2DAString("Spells", "School", Spell.iSpellID) == "N")
+                    {
+                        if(Spell.iDamageType == DAMAGE_TYPE_NEGATIVE)
+                        {
+                            if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "heliodor_dust", 4))
+                            {
+                                string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                                if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                                else oObject = GetMaster(Spell.oCaster);
+                                SendMessages(sSpellName + " has been enhanced with +1 damage per die!", COLOR_GREEN, oObject);
+                                Spell.iModPerDieBonus += 1;
+                            }
+                        }
+                        else if(Spell.iDuration > 0)
+                        {
+                            if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "lynx_eye_dust", 1))
+                            {
+                                string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                                if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                                else oObject = GetMaster(Spell.oCaster);
+                                SendMessages(sSpellName + " has been enhanced with a 50% increased duration!", COLOR_GREEN, oObject);
+                                Spell.iDuration += Spell.iDuration / 2;
+                            }
+                        }
+                    }
+                    // Divination based spells.
+                    else if(Get2DAString("Spells", "School", Spell.iSpellID) == "D")
+                    {
+                        if(Spell.iDuration > 0)
+                        {
+                            if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "chrysoberyl_dust", 1))
+                            {
+                                string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                                if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                                else oObject = GetMaster(Spell.oCaster);
+                                SendMessages(sSpellName + " has been enhanced with a 50% increased duration!", COLOR_GREEN, oObject);
+                                Spell.iDuration += Spell.iDuration / 2;
+                            }
+                        }
+                    }
+                    // Abjuration based spells.
+                    else if(Get2DAString("Spells", "School", Spell.iSpellID) == "A")
+                    {
+                        if(Spell.iDuration > 0)
+                        {
+                            if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "moonstone_dust", 4))
+                            {
+                                string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                                if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                                else oObject = GetMaster(Spell.oCaster);
+                                SendMessages(sSpellName + " has been enhanced with a 50% increased duration!", COLOR_GREEN, oObject);
+                                Spell.iDuration += Spell.iDuration / 2;
+                            }
+                        }
+                    }
+                    // Illusion based spells.
+                    else if(Get2DAString("Spells", "School", Spell.iSpellID) == "I")
+                    {
+                        if(Spell.iDuration > 0)
+                        {
+                            if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "zarbrina_dust", 1))
+                            {
+                                string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                                if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                                else oObject = GetMaster(Spell.oCaster);
+                                SendMessages(sSpellName + " has been enhanced with a 50% increased duration!", COLOR_GREEN, oObject);
+                                Spell.iDuration += Spell.iDuration / 2;
+                            }
+                        }
+                    }
+                    if(Spell.fAreaSize > 0.0)
+                    {
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, "sharpstone_dust", 1))
+                        {
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced with a larger area of effect!", COLOR_GREEN, oObject);
+                            Spell.fAreaSize *= 1.25;
+                        }
+                    }
+                    // Does the spell have an enhancing component?
+                    if(Spell.sEnhancingComp != "")
+                    {
+                        // Get the number of enhancing components needed. We assume each is 25gp worth.
+                        // The spell should have set how much gp worth is needed. Defaults to 25gp or 1.
+                        int nAmount = Spell.iCompAmount / 25;
+                        if(nAmount < 1) nAmount = 1;
+                        // Has the component.
+                        if(RemoveItemStackFromContainer(Spell.oCaster, oComponentPouch, Spell.sEnhancingComp, nAmount))
+                        {
+                            // Has the enhancing component and we have consumed it then Return back "TRUE".
+                            Spell.sEnhancingComp = "TRUE";
+                            // Tell the caster they are enhancing the spell!
+                            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+                            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+                            else oObject = GetMaster(Spell.oCaster);
+                            SendMessages(sSpellName + " has been enhanced!", COLOR_GREEN, oObject);
+                        }
+                        // Does not have the component, return back "FALSE".
+                        else Spell.sEnhancingComp = "FALSE";
+                    }
+                }
+            }
         }
     }
     // *********************************************************************
@@ -866,7 +1034,7 @@ struct stSpell GetDuration (struct stSpell Spell, int bItemEnchantment = FALSE)
     iDuration = iRoll + iDuration;
     //Debug ("0i_spells", "514", "Duration: " + sDebug + " = " + IntToString (iDuration));
     // Extend the duration.
-    if (Spell.iMetaMagic == METAMAGIC_EXTEND) iDuration = iDuration * 2;
+    if (Spell.iMetaMagic & METAMAGIC_EXTEND) iDuration = iDuration * 2;
     // If casting class Sorcerer, has Extend MetaMagic feat, has Bloodline III feat, then extend duration spells automatically.
     else if (Spell.iClass == CLASS_TYPE_SORCERER && GetHasFeat (FEAT_EXTEND_SPELL, Spell.oCaster) &&
              GetHasFeat (1322, Spell.oCaster))
@@ -911,7 +1079,10 @@ struct stSpell GetDuration (struct stSpell Spell, int bItemEnchantment = FALSE)
 // Roll dice for either damage or modifiers.
 // Returns the value in Spell.iResult.
 // Spell is the spell struct.
-struct stSpell GetModifier (struct stSpell Spell)
+// bCalculateBonus if TRUE calculate bonus damage for the spell from sources
+//       such as Warmage Edge. If FALSE then don't calculate as this bonus
+//       has alreay been added to this spell.
+struct stSpell GetModifier(struct stSpell Spell, int bCalculateBonus = TRUE)
 {
     int iRoll, iCount, iNumOfDice, iModifier, iBonusMod;
     // If we have a number of dice then get the roll.
@@ -924,18 +1095,32 @@ struct stSpell GetModifier (struct stSpell Spell)
         {
             iNumOfDice = (Spell.iCasterLevel + Spell.iModDicePerLvl - 1) / Spell.iModDicePerLvl;
             // Check the maximum modifier dice the spell can have.
+            if(GetHasFeat(1578/*FEAT_ENHANCED_SPELL_I*/, Spell.oCaster))
+            {
+                int nEnhancement = 10;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_II*/, Spell.oCaster)) { nEnhancement = 20;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_III*/, Spell.oCaster)) { nEnhancement = 30;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_IV*/, Spell.oCaster)) { nEnhancement = 40;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_V*/, Spell.oCaster)) { nEnhancement = 50;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_VI*/, Spell.oCaster)) { nEnhancement = 60;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_VII*/, Spell.oCaster)) { nEnhancement = 70;
+                if(GetHasFeat(1579/*FEAT_ENHANCED_SPELL_VII*/, Spell.oCaster)) { nEnhancement = 80; }}}}}}}
+                Spell.iMaxModNumOfDice += nEnhancement / Spell.iModDicePerLvl;
+            }
             if (Spell.iMaxModNumOfDice > 0 && Spell.iMaxModNumOfDice < iNumOfDice) iNumOfDice = Spell.iMaxModNumOfDice;
         }
         // Minimum dice is 1.
         if (iNumOfDice < 1) iNumOfDice = 1;
+        // Get any +1 damage per die bonuses from enhancing components or feats.
+        iBonusMod = Spell.iModPerDieBonus * iNumOfDice;
         // Since we have dice lets check for Elemental Bloodline II damage increase.
         // Elemental spells gain +1 per die.
-        if (GetHasFeat (1336, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_ELECTRICAL) iBonusMod = iNumOfDice;
-        else if (GetHasFeat (1390, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_FIRE) iBonusMod = iNumOfDice;
-        else if (GetHasFeat (1395, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_COLD) iBonusMod = iNumOfDice;
-        else if (GetHasFeat (1400, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_ACID) iBonusMod = iNumOfDice;
-        // If Maximized then just calculate the maximum roll.
-        if (Spell.iMetaMagic == METAMAGIC_MAXIMIZE) iRoll = Spell.iModifierDie * iNumOfDice;
+        if (GetHasFeat (1336, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_ELECTRICAL) iBonusMod += iNumOfDice;
+        else if (GetHasFeat (1390, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_FIRE) iBonusMod += iNumOfDice;
+        else if (GetHasFeat (1395, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_COLD) iBonusMod += iNumOfDice;
+        else if (GetHasFeat (1400, Spell.oCaster) && Spell.iDamageType == DAMAGE_TYPE_ACID) iBonusMod += iNumOfDice;
+        // If Maximized then just calculate the maximum roll unless they have the Widen Spell metamagic activated.
+        if (Spell.iMetaMagic & METAMAGIC_MAXIMIZE && !GetLocalInt(Spell.oCaster, "0_Widen_Spell")) iRoll = Spell.iModifierDie * iNumOfDice;
         // Roll the dice for the modifier.
         else
         {
@@ -976,20 +1161,20 @@ struct stSpell GetModifier (struct stSpell Spell)
     //Debug ("0i_spells", "905", sDebug + " = " + IntToString (Spell.iResult));
     // Empower the result only if the result uses dice.
     // Check for Empower feat on spell.
-    if (Spell.iMetaMagic == METAMAGIC_EMPOWER && Spell.iModNumOfDice > 0)
+    if(Spell.iMetaMagic & METAMAGIC_EMPOWER && Spell.iModNumOfDice > 0)
     {
         Spell.iResult = Spell.iResult + (Spell.iResult / 2);
     }
     // If casting class Sorcerer, has Empower MetaMagic feat, has Bloodline V feat, then empower spells automatically.
     else if (Spell.iClass == CLASS_TYPE_SORCERER && GetHasFeat (FEAT_EMPOWER_SPELL, Spell.oCaster) &&
              GetHasFeat (1324, Spell.oCaster) && Spell.iModNumOfDice > 0) Spell.iResult = Spell.iResult + (Spell.iResult / 2);
-    if (GetHasFeat (1522/*FEAT_WARMAGE_EDGE*/, Spell.oCaster) && Spell.iClass == CLASS_TYPE_WARMAGE)
+    if(bCalculateBonus && Spell.iClass == CLASS_TYPE_WARMAGE && GetHasFeat(1522/*FEAT_WARMAGE_EDGE*/, Spell.oCaster))
     {
-        Spell.iResult += GetAbilityModifier (ABILITY_INTELLIGENCE, Spell.oCaster);
-    }
-    if (GetHasFeat (1523/*FEAT_EXTRA_EDGE*/, Spell.oCaster) && Spell.iClass == CLASS_TYPE_WARMAGE)
-    {
-        Spell.iResult += 1 + (Spell.iCasterLevel / 4);
+        Spell.iResult += GetAbilityModifier (ABILITY_CHARISMA, Spell.oCaster);
+        if(GetHasFeat (1523/*FEAT_EXTRA_EDGE*/, Spell.oCaster) && Spell.iClass == CLASS_TYPE_WARMAGE)
+        {
+            Spell.iResult += GetLevelByClass(CLASS_TYPE_WARMAGE, Spell.oCaster) / 2;
+        }
     }
     // Add additional spell damage from effects using variable: 0_SpellDmgMod.
     Spell.iResult += GetLocalInt (Spell.oCaster, "0_SpellDmgMod");
@@ -999,18 +1184,18 @@ struct stSpell GetModifier (struct stSpell Spell)
 
 // Get the level of the spell being cast based on casting class.
 // Spell is the spell structure.
-int GetSpellLevel (struct stSpell Spell)
+int GetSpellLevel(struct stSpell Spell)
 {
     string sColumn;
     // Get the casting class.
-    sColumn = Get2DAString ("classes", "SpellTableColumn", Spell.iClass);
+    sColumn = Get2DAString("classes", "SpellTableColumn", Spell.iClass);
     // If wizard or Sorcerer we need to change the column label to Wiz_Sorc.
-    if (sColumn == "") sColumn = "Innate";
+    if(sColumn == "") sColumn = "Innate";
     // Use spell.2da to get level based on class casting.
-    int iSpellLevel = StringToInt (Get2DAString ("Spells", sColumn, Spell.iSpellID));
+    int iSpellLevel = StringToInt(Get2DAString("spells", sColumn, Spell.iSpellID));
     // Check spells level if it is 0 then get the innate level instead incase its a feat only spell.
-    if (iSpellLevel == 0) StringToInt (Get2DAString ("Spells", "Innate", Spell.iSpellID));
-    //Debug ("0i_spells", "954", "Spell Level: " + IntToString (iSpellLevel) + " (Class: " + sColumn + ")");
+    if(iSpellLevel == 0) iSpellLevel = StringToInt(Get2DAString("spells", "Innate", Spell.iSpellID));
+    //Debug ("0i_spells", "954", "Spell Level: " + IntToString(iSpellLevel) + " (Class: " + sColumn + ")");
     return iSpellLevel;
 }
 
@@ -1059,7 +1244,10 @@ struct stSpell GetSaveDC (struct stSpell Spell)
         iModifier = iModifier + 10 + GetSpellLevel (Spell);
     }
     // Check caster for bonus spell DC effects.
-    iModifier = iModifier + GetLocalInt (Spell.oCaster, "0_SpellDCMod");
+    iModifier = iModifier + GetLocalInt (Spell.oCaster, "0_Spell_DC_Mod");
+    // This is used for a one time spell DC modifier for the next spell cast.
+    iModifier += GetLocalInt (Spell.oCaster, "0_Temp_Spell_DC_Mod");
+    DeleteLocalInt(Spell.oCaster, "0_Temp_Spell_DC_Mod");
     // Check feats for bonus to spell DC.
     // Spell focus feats.
     iSchool = GetSpellSchool (Spell.iSpellID);
@@ -1182,17 +1370,27 @@ int ResistSpellWithEffects (object oCaster, object oTarget, float fDelay = 0.0)
 // Returns on Resist: 1 - Resisted, 2 - Magic Immunity, 3 - Spell absorption.
 // Returns on Save: 4 - Save Negates/Half, 2 - Target is immune to the save type.
 // stSpell is the spell struct.
-struct stSpell ResistAndSave (struct stSpell Spell)
+// bResist is FALSE then we skip the resist check.
+// bSave is FALSE then we skip the save check.
+struct stSpell ResistAndSave(struct stSpell Spell, int bResist = TRUE, int bSave = TRUE)
 {
     //Debug ("0i_spells", "919", "(" + GetName (Spell.oAreaTarget) + ") Start Result: " + IntToString (Spell.iResult));
     // Is the spell stopped by SpellResistance?
-    if (Spell.iSpellResistance)
+    if(Spell.iSpellResistance && bResist)
     {
         // Make a Resistance check 0 Failed, 1 Resisted, 2 Immune, 3 Spell absorption.
-        Spell.iSaveResult = ResistSpellWithEffects (Spell.oCaster, Spell.oAreaTarget, Spell.fDelay);
+        Spell.iSaveResult = ResistSpellWithEffects(Spell.oCaster, Spell.oAreaTarget, Spell.fDelay);
         // Check Sorcerer Arcane bloodline II to see if we need to reroll this Resistance check.
-        if (Spell.iClass == CLASS_TYPE_SORCERER && GetHasFeat (1321, Spell.oCaster) && Spell.iSaveResult > 0)
+        if (Spell.iClass == CLASS_TYPE_SORCERER && GetHasFeat(1321, Spell.oCaster) && Spell.iSaveResult > 0)
         {
+            if(GetIsCharacter(Spell.oCaster))
+            {
+                SendMessages(GetName(Spell.oAreaTarget) + " resists the spell but Arcane Bloodline II allows a reroll!", COLOR_YELLOW, Spell.oCaster);
+            }
+            if(GetIsCharacter(Spell.oAreaTarget))
+            {
+                SendMessages(GetName(Spell.oAreaTarget) + " resists the spell but Arcane Bloodline II allows a reroll!", COLOR_YELLOW, Spell.oAreaTarget);
+            }
             Spell.iSaveResult = ResistSpellWithEffects (Spell.oCaster, Spell.oAreaTarget, Spell.fDelay);
         }
         // If the spell does not affect them then return the result.
@@ -1204,7 +1402,7 @@ struct stSpell ResistAndSave (struct stSpell Spell)
         }
     }
     // Does the creature get a save?
-    if (Spell.iSave > 0)
+    if (Spell.iSave > 0 && bSave)
     {
         // Get the save DC.
         if (Spell.iSaveDC == 0) Spell = GetSaveDC (Spell);
@@ -1234,7 +1432,7 @@ struct stSpell ResistAndSave (struct stSpell Spell)
             return Spell;
         }
         // Check to see if we save to take half damage
-        else if (Spell.iSaveHalf)
+        else if(Spell.iSaveHalf)
         {
             // Save successful.
             if (Spell.iSaveResult == 4)
@@ -1330,6 +1528,14 @@ int GetCasterLevelByClass(object oCreature, int nClass)
     if(GetIsDungeonMaster(oCreature)) return 40;
     // Check for monster caster level set at monster level.
     else if(nClass == 255) return GetCasterLevel(oCreature);
+    // Check for Practiced Spellcaster feats.
+    else if(nClass == CLASS_TYPE_BARD && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_BARD, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_CLERIC && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_CLERIC, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_DRUID && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_DRUID, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_FAVORED_SOUL && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_FAVORED_SOUL, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_SORCERER && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_SORCERER, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_WARMAGE && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_WARMAGE, oCreature)) return GetCharacterLevels(oCreature);
+    else if(nClass == CLASS_TYPE_WIZARD && GetHasFeat(FEAT_PRACTICED_SPELLCASTER_WIZARD, oCreature)) return GetCharacterLevels(oCreature);
     else
     {
         nCasterLevel = GetLevelByClass(nClass, oCreature);
@@ -1353,12 +1559,12 @@ int GetCasterLevelByClass(object oCreature, int nClass)
                 nCasterLevel += GetLevelByClass(CLASS_TYPE_MYSTIC_THEURGE, oCreature);
                 break;
             }
-            case CLASS_TYPE_PALE_MASTER :
-            {
-                nCasterLevel = (nCasterLevel + 1) / 2;
-                nClass = GetHighestArcaneCasterClass(oCreature, CLASS_TYPE_PALE_MASTER);
-                nCasterLevel += GetLevelByClass(nClass, oCreature);
-            }
+            //case CLASS_TYPE_PALE_MASTER :
+            //{
+            //    nCasterLevel = (nCasterLevel + 1) / 2;
+            //    nClass = GetHighestArcaneCasterClass(oCreature, CLASS_TYPE_PALE_MASTER);
+            //    nCasterLevel += GetLevelByClass(nClass, oCreature);
+            //}
         }
     }
     return nCasterLevel;
@@ -1602,28 +1808,106 @@ void CleanUpSpell (struct stSpell Spell)
 }
 
 // Checks for the Sudden Feats and adjusts.
-struct stSpell CheckForSuddenFeats (struct stSpell Spell)
+struct stSpell CheckForSpellFeats(struct stSpell Spell)
 {
     // Check for Sudden Feats.
-    if (GetLocalInt (Spell.oCaster, "0_SUDDEN_MAXIMIZE"))
+    string sHexMetaMagic = Get2DAString("spells", "MetaMagic", Spell.iSpellID);
+    int nMetaMagic = HexStringToInt(sHexMetaMagic);
+    if(GetLocalInt(Spell.oCaster, "0_SUDDEN_MAXIMIZE") && (METAMAGIC_MAXIMIZE & nMetaMagic))
     {
-        DeleteLocalInt (Spell.oCaster, "0_SUDDEN_MAXIMIZE");
-        Spell.iMetaMagic = METAMAGIC_MAXIMIZE;
+        DecrementRemainingFeatUses(Spell.oCaster, 1528/*FEAT_SUDDEN_MAXIMIZE*/);
+        if(!GetFeatRemainingUses(1528/*FEAT_SUDDEN_MAXIMIZE*/, Spell.oCaster)) DeleteLocalInt (Spell.oCaster, "0_SUDDEN_MAXIMIZE");
+        Spell.iMetaMagic = Spell.iMetaMagic | METAMAGIC_MAXIMIZE;
+        object oMaster = GetPlayerMaster(Spell.oCaster);
+        if(oMaster == Spell.oCaster) SendMessages("You have maximized this spell.", COLOR_GREEN, oMaster);
+        else SendMessages(GetName(Spell.oCaster) + " has maximized this spell.", COLOR_GREEN, oMaster);
     }
-    else if (GetLocalInt (Spell.oCaster, "0_SUDDEN_WIDEN"))
+    if(GetLocalInt(Spell.oCaster, "0_SUDDEN_WIDEN") && (METAMAGIC_MAXIMIZE & nMetaMagic))
     {
-        DeleteLocalInt (Spell.oCaster, "0_SUDDEN_WIDEN");
+        DecrementRemainingFeatUses(Spell.oCaster, 1527/*FEAT_SUDDEN_WIDEN*/);
+        if(!GetFeatRemainingUses(1527/*FEAT_SUDDEN_WIDEN*/, Spell.oCaster)) DeleteLocalInt (Spell.oCaster, "0_SUDDEN_WIDEN");
         Spell.fAreaSize = Spell.fAreaSize * 2;
+        object oMaster = GetPlayerMaster(Spell.oCaster);
+        if(oMaster == Spell.oCaster) SendMessages("You have widened this spell.", COLOR_GREEN, oMaster);
+        else SendMessages(GetName(Spell.oCaster) + " has widened this spell.", COLOR_GREEN, oMaster);
     }
-    else if (GetLocalInt (Spell.oCaster, "0_SUDDEN_EMPOWER"))
+    if(GetLocalInt(Spell.oCaster, "0_SUDDEN_EMPOWER") && (METAMAGIC_EMPOWER & nMetaMagic))
     {
-        DeleteLocalInt (Spell.oCaster, "0_SUDDEN_EMPOWER");
-        Spell.iMetaMagic = METAMAGIC_EMPOWER;
+        DecrementRemainingFeatUses(Spell.oCaster, 1526/*FEAT_SUDDEN_EMPOWER*/);
+        if(!GetFeatRemainingUses(1526/*FEAT_SUDDEN_EMPOWER*/, Spell.oCaster)) DeleteLocalInt (Spell.oCaster, "0_SUDDEN_EMPOWER");
+        Spell.iMetaMagic = Spell.iMetaMagic | METAMAGIC_EMPOWER;
+        object oMaster = GetPlayerMaster(Spell.oCaster);
+        if(oMaster == Spell.oCaster) SendMessages("You have empowered this spell.", COLOR_GREEN, oMaster);
+        else SendMessages(GetName(Spell.oCaster) + " has empowered this spell.", COLOR_GREEN, oMaster);
     }
-    else if (GetLocalInt (Spell.oCaster, "0_SUDDEN_EXTEND"))
+    if(GetLocalInt(Spell.oCaster, "0_SUDDEN_EXTEND") && (METAMAGIC_EXTEND & nMetaMagic))
     {
-        DeleteLocalInt (Spell.oCaster, "0_SUDDEN_EXTEND");
-        Spell.iMetaMagic = METAMAGIC_EXTEND;
+        DecrementRemainingFeatUses(Spell.oCaster, 1561/*FEAT_SUDDEN_EXTEND*/);
+        if(!GetFeatRemainingUses(1561/*FEAT_SUDDEN_EXTEND*/, Spell.oCaster)) DeleteLocalInt (Spell.oCaster, "0_SUDDEN_EXTEND");
+        Spell.iMetaMagic = Spell.iMetaMagic | METAMAGIC_EXTEND;
+        object oMaster = GetPlayerMaster(Spell.oCaster);
+        if(oMaster == Spell.oCaster) SendMessages("You have extended this spell.", COLOR_GREEN, oMaster);
+        else SendMessages(GetName(Spell.oCaster) + " has extended this spell.", COLOR_GREEN, oMaster);
+    }
+    if(GetLocalInt(Spell.oCaster, "0_BLOOD_MAGIC") )
+    {
+        if(Spell.iSubSchool != SUBSCHOOL_HEALING)
+        {
+            object oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, Spell.oCaster);
+            if(GetIsSlashingWeapon(oWeapon) || GetIsPiercingWeapon(oWeapon))
+            {
+                int nSpellLevel = GetLastSpellLevel();
+                int nMetaMagic = GetMetaMagicFeat();
+                if(nMetaMagic = METAMAGIC_EMPOWER) nSpellLevel += 2;
+                else if(nMetaMagic = METAMAGIC_EXTEND) nSpellLevel += 1;
+                else if(nMetaMagic = METAMAGIC_MAXIMIZE) nSpellLevel += 3;
+                else if(nMetaMagic = METAMAGIC_SILENT) nSpellLevel += 1;
+                else if(nMetaMagic = METAMAGIC_STILL) nSpellLevel += 1;
+                else if(nMetaMagic = METAMAGIC_QUICKEN) nSpellLevel += 4;
+                if(Get2DAString("classes", "MemorizesSpells", Spell.iClass) == "1")
+                {
+                    int nMaxSlots = GetMemorizedSpellCountByLevel(Spell.oCaster, Spell.iClass, nSpellLevel);
+                    int nIndex, nHitDie, bBleed;
+                    while(nIndex < nMaxSlots)
+                    {
+                        if(Spell.iSpellID == GetMemorizedSpellId(Spell.oCaster, Spell.iClass, nSpellLevel, nIndex))
+                        {
+                            if(!GetMemorizedSpellReady(Spell.oCaster, Spell.iClass, nSpellLevel, nIndex))
+                            {
+                                SetMemorizedSpellReady(Spell.oCaster, Spell.iClass, nSpellLevel, nIndex, TRUE);
+                                break;
+                            }
+                        }
+                        nIndex++;
+                    }
+                }
+                else ReadySpellLevel(Spell.oCaster, nSpellLevel, Spell.iClass, 1);
+                string sDice;
+                if(nSpellLevel < 1)
+                {
+                    int nDie = StringToInt(Get2DAString("classes", "HitDie", Spell.iClass));
+                    sDice = "1d" + IntToString(nDie / 2);
+                }
+                else
+                {
+                    sDice = IntToString(nSpellLevel) + "d";
+                    sDice += Get2DAString("classes", "HitDie", Spell.iClass);
+                }
+                int nDamage = RollDiceString(sDice);
+                int nHp = GetCurrentHitPoints(Spell.oCaster) - nDamage;
+                if(nHp < 1)
+                {
+                    effect eDamage = EffectDamage(RollDiceString(sDice));
+                    ApplyEffectToObject(DURATION_TYPE_INSTANT, eDamage, Spell.oCaster);
+                }
+                else SetCurrentHitPoints(Spell.oCaster, nHp);
+                object oMaster = GetPlayerMaster(Spell.oCaster);
+                if(oMaster == Spell.oCaster) SendMessages("You sliced yourself for " + IntToString(nDamage) + " damage to maintain your spell.", COLOR_RED, oMaster);
+                else SendMessages(GetName(Spell.oCaster) + " sliced themselves for " + IntToString(nDamage) + " damage to maintain their spell.", COLOR_RED, oMaster);
+            }
+            else SendMessages("You must have a piercing or slashing weapon equiped!", COLOR_RED, Spell.oCaster);
+        }
+        else SendMessages("Healing spells cannot be invoked with blood to keep them!", COLOR_RED, Spell.oCaster);
     }
     return Spell;
 }
@@ -1708,18 +1992,32 @@ void AdjustCurrentSummonedCreatures (object oCaster, int nSpellID)
 }
 
 // Mark just summoned creatures, used in multi-summon spells.
-void MarkSummonedCreatures(object oCaster, int nSpellID)
+void MarkSummonedCreatures(object oCaster, int nSpellID, int bBuffSummons = FALSE)
 {
     int nIndex = 1, nSummonID;
     object oSummons = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oCaster, nIndex);
     while(oSummons != OBJECT_INVALID)
     {
         nSummonID = GetLocalInt (oSummons, "0_Summon_ID");
-        if(nSummonID == 0) SetLocalInt(oSummons, "0_Summon_ID", nSpellID);
+        if(nSummonID == 0)
+        {
+            SetLocalInt(oSummons, "0_Summon_ID", nSpellID);
+            if(bBuffSummons) CheckForSummonsBuffs(oCaster, oSummons);
+        }
         oSummons = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oCaster, ++nIndex);
     }
 }
 
+void CheckForSummonsBuffs(object oCaster, object oSummons)
+{
+    if(GetHasFeat(FEAT_AUGMENT_SUMMONING, oCaster))
+    {
+        effect eBuff = EffectAbilityIncrease(ABILITY_STRENGTH, 4);
+        eBuff = EffectLinkEffects(eBuff, EffectAbilityIncrease (ABILITY_CONSTITUTION, 4));
+        ApplyEffectToObject(DURATION_TYPE_PERMANENT, eBuff, oSummons);
+        SendMessages(GetName(oCaster) + "'s " +GetName(oSummons) + " has been augmented by the Augment Summoning feat.", COLOR_YELLOW, oCaster);
+    }
+}
 // Cast an Arcane Blast.
 // Spell is the original spells variables.
 void CastArcaneBlast (struct stSpell Spell)
@@ -1796,6 +2094,7 @@ void CureSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
                 if (!Spell.iSaveResult)
                 {
                     eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                     //Apply the VFX impact and effects
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
                     eImpact = EffectVisualEffect (iVFX_ImpDmg);
@@ -1814,6 +2113,8 @@ void CureSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
                 SetLocalInt (Spell.oAreaTarget, "0_Hitpoints", nNPCHp);
                 SendMessages (GetName (Spell.oAreaTarget) + " : " + "Healed " + IntToString (Spell.iResult) + " hit points.", COLOR_YELLOW, Spell.oCaster, FALSE, FALSE);
                 //Apply heal effect and VFX impact
+                eHeal = EffectHeal (Spell.iResult);
+                eHeal = SetEffectCasterLevel(eHeal, Spell.iCasterLevel);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eHeal, Spell.oAreaTarget));
                 eImpact = EffectVisualEffect (iVFX_ImpHeal);
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
@@ -1824,6 +2125,7 @@ void CureSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
             {
                 //Set the heal effect
                 eHeal = EffectHeal (Spell.iResult);
+                eHeal = SetEffectCasterLevel(eHeal, Spell.iCasterLevel);
                 //Apply heal effect and VFX impact
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eHeal, Spell.oAreaTarget));
                 eImpact = EffectVisualEffect (iVFX_ImpHeal);
@@ -1841,7 +2143,7 @@ void CureSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
 // Spell is the spell structure.
 // iVFX_ImpDmg is the vfx for doing damage to undead.
 // iVFX_ImpHeal is the vfx for healing a creature.
-void InflictSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
+void InflictSpell(struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
 {
     int iHit;
     effect eHeal, eDmg, eImp;
@@ -1856,6 +2158,7 @@ void InflictSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
         {
             //Set the heal effect
             eHeal = EffectHeal (Spell.iResult);
+            eHeal = SetEffectCasterLevel(eHeal, Spell.iCasterLevel);
             //Apply heal effect and VFX impact
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eHeal, Spell.oAreaTarget));
             eImp = EffectVisualEffect (iVFX_ImpHeal);
@@ -1885,6 +2188,7 @@ void InflictSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
                         if (Spell.iResult >= nHitPoints) Spell.iResult = nHitPoints - 1;
                     }
                     eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                     //Apply the VFX impact and effects
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
                     eImp = EffectVisualEffect (iVFX_ImpDmg);
@@ -1903,11 +2207,13 @@ void InflictSpell (struct stSpell Spell, int iVFX_ImpDmg, int iVFX_ImpHeal)
 // iMIRV is the vfx_imp_* defaults to VFX_IMP_MIRV
 // bOneHit tells the script to only do one missle per enemy maximum.
 // bOneTarget tells the script to put all missles into one target.
-void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP_MIRV, int bOneHit = FALSE, int bOneTarget = FALSE)
+// bReflex if TRUE will allow a reflex to save for half per missle.
+void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP_MIRV, int bOneHit = FALSE, int bOneTarget = FALSE, int bReflex = FALSE)
 {
     effect eDmg;
     object oTarget = OBJECT_INVALID;
     int nCnt, nTargets = 0, nMissilesPerTarget, nRemainderMissiles, nExtraMissile;
+    int bCalculateBonus = TRUE;
     effect eMissile = EffectVisualEffect (nMIRV);
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     float fDistance;
@@ -1968,8 +2274,6 @@ void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP
         //     not one check per missile, which would rip spell mantels apart.
         //     We have a main per target loop then a missle loop to fix this.
         //--------------------------------------------------------------
-        // Make resistance and save check per target.
-        Spell = ResistAndSave (Spell);
         // Count each remainder missle.
         if (nRemainderMissiles > 0)
         {
@@ -1977,23 +2281,32 @@ void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP
             nRemainderMissiles--;
         }
         else nExtraMissile = 0;
-        if (!Spell.iSaveResult)
+        // Make resistance check per target.
+        Spell = ResistAndSave(Spell, TRUE, FALSE);
+        if(!Spell.iSaveResult)
         {
             // Loop for each missle that should hit them.
             for (nCnt= 1; nCnt <= nMissilesPerTarget + nExtraMissile; nCnt++)
             {
                 // Roll damage and set delays.
-                Spell = GetModifier (Spell);
-                fTime = fDelay;
-                fDelay2 += 0.1;
-                fTime += fDelay2;
-                // Set damage effect
-                eDmg = EffectDamage(Spell.iResult, Spell.iDamageType);
-                // Apply the MIRV and damage effect
-                DelayCommand (fTime, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eImpact, Spell.oAreaTarget));
-                DelayCommand (fDelay2, ApplyEffectToObject (DURATION_TYPE_INSTANT, eMissile, Spell.oAreaTarget));
-                DelayCommand (fTime, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
-                //Debug ("0i_spells", "1912", GetName (Spell.oAreaTarget) + ": Spell.iResult: " + IntToString (Spell.iResult));
+                Spell = GetModifier(Spell, bCalculateBonus);
+                bCalculateBonus = FALSE;
+                // Make a save check.
+                if(bReflex) Spell = ResistAndSave(Spell, FALSE, TRUE);
+                if(Spell.iResult > 0)
+                {
+                    fTime = fDelay;
+                    fDelay2 += 0.1;
+                    fTime += fDelay2;
+                    // Set damage effect
+                    eDmg = EffectDamage(Spell.iResult, Spell.iDamageType);
+                    eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
+                    // Apply the MIRV and damage effect
+                    DelayCommand (fTime, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eImpact, Spell.oAreaTarget));
+                    DelayCommand (fDelay2, ApplyEffectToObject (DURATION_TYPE_INSTANT, eMissile, Spell.oAreaTarget));
+                    DelayCommand (fTime, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
+                    //Debug ("0i_spells", "1912", GetName (Spell.oAreaTarget) + ": Spell.iResult: " + IntToString (Spell.iResult));
+                }
             }
         }
         else
@@ -2005,8 +2318,9 @@ void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP
         }
         // Reduce number of targets till we have hit them all.
         if (--nTargets < 1) return;
+        // Turn off the Warmage bonus damage for the other missles.
         // Get the spells target(s).
-        if (!bOneTarget) Spell = GetSpellTarget (Spell);
+        if(!bOneTarget) Spell = GetSpellTarget (Spell);
     }
 }
 
@@ -2014,6 +2328,11 @@ void MissileStorm (struct stSpell Spell, int nTotalMissiles, int nMIRV = VFX_IMP
 // Spell is the spells data from the original spell.
 void ApplyMindBlank (struct stSpell Spell)
 {
+    if (Spell.sEnhancingComp == "TRUE")
+    {
+        Spell.iAreaShape = SHAPE_SPHERE;
+        Spell.fAreaSize = 10.0f;
+    }
     // Create visual effects.
     effect eImmunity = EffectImmunity (IMMUNITY_TYPE_MIND_SPELLS);
     effect eVisual = EffectVisualEffect (VFX_DUR_MIND_AFFECTING_POSITIVE);
@@ -2021,36 +2340,33 @@ void ApplyMindBlank (struct stSpell Spell)
     // Link effects.
     effect eLink = EffectLinkEffects (eImmunity, eVisual);
     eLink = EffectLinkEffects (eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     effect eSearch = GetFirstEffect(Spell.oAreaTarget);
-    int iValid;
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         // Fire cast spell at event for the specified target
-        SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
+        SignalEvent(Spell.oAreaTarget, EventSpellCastAt(Spell.oCaster, Spell.iSpellID, FALSE));
         // Search through effects
         while (GetIsEffectValid (eSearch))
         {
-            iValid = FALSE;
             //Check to see if the effect matches a particular type defined below
-            if (GetEffectType(eSearch) == EFFECT_TYPE_DAZED) iValid = TRUE;
-            else if (GetEffectType (eSearch) == EFFECT_TYPE_CHARMED) iValid = TRUE;
-            else if (GetEffectType (eSearch) == EFFECT_TYPE_SLEEP) iValid = TRUE;
-            else if (GetEffectType (eSearch) == EFFECT_TYPE_CONFUSED) iValid = TRUE;
-            else if(GetEffectType(eSearch) == EFFECT_TYPE_STUNNED) iValid = TRUE;
-            else if(GetEffectType(eSearch) == EFFECT_TYPE_DOMINATED) iValid = TRUE;
+            if(GetEffectType(eSearch) == EFFECT_TYPE_DAZED) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectType (eSearch) == EFFECT_TYPE_CHARMED) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectType (eSearch) == EFFECT_TYPE_SLEEP) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectType (eSearch) == EFFECT_TYPE_CONFUSED) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectType(eSearch) == EFFECT_TYPE_STUNNED) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectType(eSearch) == EFFECT_TYPE_DOMINATED) RemoveEffect(Spell.oAreaTarget, eSearch);
             // * Remove any feeblemind originating effects
-            else if (GetEffectSpellId(eSearch) == SPELL_FEEBLEMIND) iValid = TRUE;
-            else if (GetEffectSpellId(eSearch) == SPELL_BANE) iValid = TRUE;
-            // Remove effect if the effect is a match
-            if (iValid == TRUE) RemoveEffect (Spell.oAreaTarget, eSearch);
+            else if(GetEffectSpellId(eSearch) == SPELL_FEEBLEMIND) RemoveEffect(Spell.oAreaTarget, eSearch);
+            else if(GetEffectSpellId(eSearch) == SPELL_BANE) RemoveEffect(Spell.oAreaTarget, eSearch);
             eSearch = GetNextEffect (Spell.oAreaTarget);
         }
         // After effects are removed we apply the immunity to mind spells to the target
-        DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+        DelayCommand(Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).
-        Spell = GetSpellTarget (Spell);
+        Spell = GetSpellTarget(Spell);
     }
 }
 
@@ -2063,6 +2379,7 @@ void ApplyPetrificationEffect(struct stSpell Spell)
     effect ePetrify = EffectPetrify();
     effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
     effect eLink = EffectLinkEffects(eDuration, ePetrify);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // If a PC then display Death panel.
     if(GetIsCharacter(Spell.oAreaTarget)) DelayCommand(2.75, PopUpDeathPanel(Spell.oAreaTarget));
     ApplyEffectToObject(DURATION_TYPE_PERMANENT, eLink, Spell.oAreaTarget);
@@ -2079,6 +2396,7 @@ void ApplyInsanityEffect (struct stSpell Spell)
 {
     effect eImpact = EffectVisualEffect (VFX_IMP_HEAD_MIND);
     effect eInsanity = EffectConfused ();
+    eInsanity = SetEffectCasterLevel(eInsanity, Spell.iCasterLevel);
     if (GetIsPC (Spell.oAreaTarget))
     {
         Spell.iDurationType = DURATION_TYPE_MINUTES;
@@ -2458,7 +2776,7 @@ int GetDelayedSpellEffectsExpired (int nSpell_ID, object oTarget, object oCaster
     // If the caster is dead or no longer there, cancel the spell, as it is directed.
     if (oCaster == OBJECT_INVALID || GetIsDead (oCaster))
     {
-        RemoveSpellEffects (nSpell_ID, oCaster, oTarget);
+        RemoveSpellEffects (nSpell_ID, oTarget, oCaster);
         DeleteLocalInt (oTarget, "XP2_L_SPELL_SAVE_DC_" + IntToString (nSpell_ID));
         return TRUE;
     }
@@ -2672,7 +2990,6 @@ void DispelAoEEffect (object oTargetAoE, object oCaster, int nCasterLevel)
     }
     else FloatingTextStrRefOnCreature(100930,oCaster); // "AoE not dispelled"
 }
-
 // Removes temporary hit points so that they will not stack.
 void RemoveTempHitPoints ()
 {
@@ -2686,48 +3003,6 @@ void RemoveTempHitPoints ()
       eProtection = GetNextEffect (OBJECT_SELF);
     }
 }
-
-// Saves spells to autobuff for a caster.
-void SaveSpellToAutoBuff (struct stSpell Spell)
-{
-    // Check to make sure this spell is being cast on an ally! i.e. Buff spell.
-    if (GetIsFriend (Spell.oTarget, Spell.oCaster))
-    {
-        int nSpell, nDomain, nLevel = GetLastSpellLevel ();
-        string sName = GetStringByStrRef (StringToInt (Get2DAString ("spells", "Name", Spell.iSpellID)));
-        if (Spell.iMetaMagic > 0)
-        {
-            // We must add the level of the metamagic to the spells level to get the spells correct level.
-            if (Spell.iMetaMagic == METAMAGIC_EMPOWER) { sName += " (Empowered)"; nLevel += 2; }
-            else if (Spell.iMetaMagic == METAMAGIC_EXTEND) { sName += " (Extended)"; nLevel += 1; }
-            else if (Spell.iMetaMagic == METAMAGIC_MAXIMIZE) { sName += " (Maximized)"; nLevel += 3; }
-            else if (Spell.iMetaMagic == METAMAGIC_QUICKEN) { sName += " (Quickened)"; nLevel += 4; }
-            else if (Spell.iMetaMagic == METAMAGIC_SILENT) { sName += " (Silent)"; nLevel += 1; }
-            else if (Spell.iMetaMagic == METAMAGIC_STILL) { sName += " (Still)"; nLevel += 1; }
-        }
-        nDomain = NWNX_Object_GetLastSpellCastDomainLevel (Spell.oCaster);
-        if (nDomain > 0)
-        {
-            sName += " (Domain)";
-        }
-        string sList = "list" + GetServerDatabaseString (Spell.oCaster, BUFF_TABLE, "spells", "list");
-        json jSpells = GetServerDatabaseJson (Spell.oCaster, BUFF_TABLE, "spells", sList);
-        json jSpell = JsonArray ();
-        jSpell = JsonArrayInsert (jSpell, JsonInt (Spell.iSpellID));
-        jSpell = JsonArrayInsert (jSpell, JsonInt (Spell.iClass));
-        jSpell = JsonArrayInsert (jSpell, JsonInt (nLevel));
-        jSpell = JsonArrayInsert (jSpell, JsonInt (Spell.iMetaMagic));
-        jSpell = JsonArrayInsert (jSpell, JsonInt (nDomain));
-        string sTargetName = StripColorCodes (GetName (Spell.oTarget));
-        jSpell = JsonArrayInsert (jSpell, JsonString (sTargetName));
-        jSpells = JsonArrayInsert (jSpells, jSpell);
-        CheckServerDataAndInitialize (Spell.oCaster, BUFF_TABLE, sList);
-        SetServerDatabaseJson (Spell.oCaster, BUFF_TABLE, "spells", jSpells, sList);
-        SendMessages (sName + " has been saved for fast buffing on " + sTargetName + ".", COLOR_GREEN, Spell.oCaster);
-        ExecuteScript ("0e_updatebuff", Spell.oCaster);
-    }
-}
-
 // Will check and make sure the spell is memorized and/or ready.
 // Returns TRUE if memorized and ready, FALSE if memorized but not ready,
 // and -1 if not memorized for classes that memorize.
@@ -2874,7 +3149,7 @@ float GetSpellRange (int nSpell)
     if (sRange == "S") return SHORT_DISTANCE;
     else if (sRange == "M") return MEDIUM_DISTANCE;
     else if (sRange == "L") return LONG_DISTANCE;
-    else if (sRange == "T") return RANGE_MELEE;
+    else if (sRange == "T") return 5.0f;
     return 0.1;
 }
 
@@ -2955,8 +3230,8 @@ int IncreaseUndeadControlledHitDice(object oCaster, object oCreature, string sSp
         {
             if(oMaster == oCaster) sText = "You";
             else sText = GetName(oCaster);
-            SendMessageToPC(oMaster, sText + " cannot control " + GetName(oCreature) + " with " + IntToString(nCreatureHD) +
-                " Hit Dice from a total of " + IntToString(nTotalHD - nTotalHDControlled) + " Hit Dice left to control.");
+            SendMessages(sText + " cannot control " + GetName(oCreature) + " with " + IntToString(nCreatureHD) +
+                " Hit Dice from a total of " + IntToString(nTotalHD - nTotalHDControlled) + " Hit Dice left to control.", COLOR_YELLOW, oMaster);
         }
         return FALSE;
     }
@@ -2965,8 +3240,8 @@ int IncreaseUndeadControlledHitDice(object oCaster, object oCreature, string sSp
     {
         if(oMaster == oCaster) sText = "You are";
         else sText = GetName(oCaster) + " is";
-        SendMessageToPC(oMaster, sText + " now in control of " + GetName(oCreature) + " with " + IntToString(nCreatureHD) +
-            " Hit Dice from a total of " + IntToString(nTotalHD - nTotalHDControlled - nCreatureHD) + " Hit Dice left to control.");
+        SendMessages(sText + " now in control of " + GetName(oCreature) + " with " + IntToString(nCreatureHD) +
+            " Hit Dice from a total of " + IntToString(nTotalHD - nTotalHDControlled - nCreatureHD) + " Hit Dice left to control.", COLOR_YELLOW, oMaster);
     }
     return TRUE;
 }
@@ -2977,9 +3252,7 @@ void DecreaseUndeadControlledHitDice(object oCaster, object oCreature, string sS
     int nTotalHDControlled = GetLocalInt(oCaster, sSpellTag);
     int nCreatureHD = GetHitDice(oCreature);
     SetLocalInt(oCaster, sSpellTag, nTotalHDControlled - nCreatureHD);
-    SendMessageToPC(oCaster, sSpellTag + ": nTotalHDControlled: " + IntToString(nTotalHDControlled - nCreatureHD));
 }
-
 /* Copy to a new spell to setup the paramaters of the spell.
     // ***********************************************************
     // *************** Set Spell Structure ***********************

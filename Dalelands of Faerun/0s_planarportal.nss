@@ -121,25 +121,26 @@ void main()
     object oSummons = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, Spell.oCaster, nCount);
     while (oSummons != OBJECT_INVALID)
     {
-        nSpell = GetLocalInt (oSummons, "0_Summon_ID");
+        nSpell = GetLocalInt(oSummons, "0_Summon_ID");
         if (nSpell == Spell.iSpellID) bCanSummon = FALSE;
-        nCount ++;
-        oSummons = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, Spell.oCaster, nCount);
+        nCount++;
+        oSummons = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, Spell.oCaster, nCount);
     }
     if (bCanSummon)
     {
         oCreature = CreateObject (OBJECT_TYPE_CREATURE, sSummons, lTempSpawnLocation);
+        CheckForSummonsBuffs(Spell.oCaster, oCreature);
         if (!SavingThrowWithEffects (SAVING_THROW_WILL, oCreature, Spell.iSaveDC, SAVING_THROW_TYPE_NONE, Spell.oCaster))
         {
             SendMessages (GetName (oCreature) + " has heard your call!", COLOR_GREEN, Spell.oCaster);
             DelayCommand (Spell.fDelay + fDelayCreature, AssignCommand (oCreature, JumpToLocation (Spell.lTarget)));
             DelayCommand (Spell.fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eVisual, Spell.lTarget));
             // Make resistance check.
-            if (!ResistSpell (Spell.oCaster, oCreature))
+            if(!ResistSpell(Spell.oCaster, oCreature))
             {
-                AddHenchman (Spell.oCaster, oCreature);
+                AddHenchman(Spell.oCaster, oCreature);
                 // Mark the summons with the variable "0_Summon_ID" linked with the spell ID.
-                SetLocalInt (oCreature, "0_Summon_ID", Spell.iSpellID);
+                SetLocalInt(oCreature, "0_Summon_ID", Spell.iSpellID);
             }
             else
             {

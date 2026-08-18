@@ -37,7 +37,7 @@ void main()
     // *******************************************************************
     int iNumOfMissles = Spell.iCasterLevel;
     if (iNumOfMissles > 20) iNumOfMissles = 20;
-    MissileStorm (Spell, iNumOfMissles);
-    CleanUpSpell (Spell);
+    MissileStorm(Spell, iNumOfMissles);
+    CleanUpSpell(Spell);
 }
 

@@ -34,6 +34,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eAOE = EffectAreaOfEffect (52/*VFX_PER_FAMILY_PROTECTION*/);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     effect eCenter = EffectVisualEffect (VFX_FNF_LOS_NORMAL_10);
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     ApplyEffectAtLocation (Spell.iDurationType, eAOE, Spell.lTarget, Spell.fDuration);

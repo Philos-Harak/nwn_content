@@ -25,525 +25,563 @@
     options: 0) Get Alerts 1) Alert Discord 2)
  Quest data is saved onto the character object with QUEST_TABLE.
  Pin data is saved onto the character object with PIN_Table.
-*/////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include "0i_master"
+#include "0i_s_message"
+// Used to fix any database changes on characters/players.
 #include "0i_server_const"
 #include "nwnx_object"
 #include "nwnx_rename"
-#include "0i_s_message"
-// Used to fix any database changes on characters/players.
-void FixCharacterDatabase (object oPC);
 
-void IncreaseServerDatabaseCounter (object oPlayer, string sTableName, string sDataField);
-
-void IncreaseObjectDatabaseCounter (object oPlayer, string sTableName, string sDataField);
-
-void DecreaseServerDatabaseCounter (object oPlayer, string sTableName, string sDataField);
-
-void DecreaseObjectDatabaseCounter (object oPlayer, string sTableName, string sDataField);
-
+void FixCharacterDatabase(object oPC);
+void IncreaseServerDatabaseCounter(object oPlayer, string sTableName, string sDataField);
+void IncreaseObjectDatabaseCounter(object oPlayer, string sTableName, string sDataField);
+void DecreaseServerDatabaseCounter(object oPlayer, string sTableName, string sDataField);
+void DecreaseObjectDatabaseCounter(object oPlayer, string sTableName, string sDataField);
 // Defined sTableName constants: *_TABLE.
-void CheckServerDataTableAndCreateTable (string sTableName);
-
+void CheckServerDataTableAndCreateTable(string sTableName);
 // Defined sTableName constants: *_TABLE.
 // Returns TRUE if data is initialized, false if the data alread exists.
 int CheckServerDataAndInitialize(object oObject, string sTableName, string sTag = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for that table.
 // iData is the integer data to be saved.
 void SetServerDatabaseInt(object oObject, string sTableName, string sDataField, int nData, string sTag = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a integer of the data stored.
 int GetServerDatabaseInt(object oObject, string sTableName, string sDataField, string sTag = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // fData is the float data to be saved.
 void SetServerDatabaseFloat(object oObject, string sTableName, string sDataField, float fData, string sTag = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a integer of the data stored.
 float GetServerDatabaseFloat(object oObject, string sTableName, string sDataField, string sTag = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for that table.
 // sData is the string data to be saved.
 void SetServerDatabaseString(object oObject, string sTableName, string sDataField, string sData, string sTag = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a string of the data stored.
 string GetServerDatabaseString(object oObject, string sTableName, string sDataField, string sTag = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // jData is the json data to be saved.
 void SetServerDatabaseJson(object oObject, string sTableName, string sDataField, json jData, string sTag = "");
-
 // oObject is the character/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a string of the data stored.
 json GetServerDatabaseJson(object oObject, string sTableName, string sDataField, string sTag = "");
-
 // oObject is the character/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE, OBJECT_TABLE.
 // sTag is the tag to define this object in the database for this player npc1, chest1, etc.
 // oData is the object data to be saved.
 void SetServerDatabaseObject(object oObject, string sTableName, object oData, string sTag);
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sTag is the tag to define this object in the database for this player npc1, chest1, etc.
 // lLocationToSpawn will spawn the object at that location.
 // oInventory will spawn the object in that objects inventory.
-object GetServerDatabaseObject(object oObject, string sTableName, location lLocationToSpawn, object oInventory = OBJECT_INVALID, string sTag = "");
-
+object GetServerDatabaseObject( object oObject, string sTableName, location lLocationToSpawn, object oInventory = OBJECT_INVALID, string sTag = "");
 // Returns the Status of oPC based on the CDKey being used.
 int GetServerDatabaseStatusByCDKey(object oPC);
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sTag is the tag to define this object in the database for this player npc1, chest1, etc.
 void DeleteServerDatabaseObject(object oObject, string sTableName, string sTag);
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE, OBJECT_TABLE, DM_TABLE, NPC_TABLE.
 void DeleteServerDatabase(object oObject, string sTableName);
-
 // Object must be a player character.
 // Defined sTableName constants: *_TABLE.
 void CheckObjectDataTableAndCreateTable(object oObject, string sTableName);
-
 // Defined sTableName constants: *_TABLE.
 // Must add a quest name if initializing a quest table.
 void CheckObjectDataAndInitialize(object oObject, string sTableName, string sDataName = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for that table.
 // iData is the integer data to be saved.
 // sDataName is the name of the quest if we are saveing a quest.
 void SetObjectDatabaseInt(object oObject, string sTableName, string sDataField, int iData, string sDataName = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a integer of the data stored.
 int GetObjectDatabaseInt(object oObject, string sTableName, string sDataField, string sDataName = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for that table.
 // sData is the string data to be saved.
 // sDataName is the name of the quest if we are saveing a quest.
 void SetObjectDatabaseString(object oObject, string sTableName, string sDataField, string sData, string sDataName = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a string of the data stored.
 string GetObjectDatabaseString(object oObject, string sTableName, string sDataField, string sDataName = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: CHARACTER_TABLE.
 // sDataField should be one of the data fields for that table.
 // sDataName is the name of the quest if we are saveing a quest.
 // jData is the json data to be saved.
 void SetObjectDatabaseJson(object oObject, string sTableName, string sDataField, json jData, string sDataName = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: CHARACTER_TABLE.
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns the json of the data stored.
 json GetObjectDatabaseJson(object oObject, string sTableName, string sDataField, string sDataName = "");
-
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for that table.
 // sData is the float data to be saved.
 // sDataName is the name of the quest if we are saveing a quest.
 void SetObjectDatabaseFloat(object oObject, string sTableName, string sDataField, float fData, string sDataName = "");
-
 // oObject is the player/module the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a float of the data stored.
 float GetObjectDatabaseFloat(object oObject, string sTableName, string sDataField, string sDataName = "");
-
 // Saves a characters pin to the character (object) database.
-void SavePinData(object oPC, string sTableName, string sDataName, string sentry, float fxpos, float fypos, string sareatag);
-
+void SavePinData( object oPC, string sTableName, string sDataName, string sentry, float fxpos, float fypos, string sareatag);
 // oObject is the player the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataName is the name of the data to delete.
 void DeleteObjectDatabaseName(object oObject, string sTableName, string sDataName = "");
-
+// oObject is the player the data is for.
+// sTable is the table to be deleted.
+void DeleteObjectTable(object oObject, string sTableName);
 // oObject is the player the data is for.
 // sTable is the table to use: *_TABLE.
 // sDataName is the name of the quest if we are saveing a quest.
 void DeleteObjectDatabase(object oObject, string sTableName);
-
 // Used to fix any database changes on characters/players.
 void FixCharacterDatabase(object oPC)
 {
-    // Fix Player database "teleport" change from my text arrays to json.
-    // so we can add locations to it. 06/13/23
-    json jTeleportArray = GetObjectDatabaseJson (oPC, CHARACTER_TABLE, "teleport");
-    if (JsonGetType (jTeleportArray) == JSON_TYPE_NULL)
+    // Fix adding mapquests and dmquest counter to character database.
+    int nDate = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "creationdate");
+    // Creation date on player is used to define the last date of the database change. Year/Month/Day
+    if(nDate < 20260730)
     {
-        string sTArray = GetObjectDatabaseString (oPC, CHARACTER_TABLE, "teleport");
-        string sWP = GetStringArray (sTArray, 0);
-        json jTArray = CreateJsonArrayWithString ("", 21);
-        jTArray = JsonArraySet (jTArray, 0, JsonString (sWP));
-        SetObjectDatabaseJson (oPC, CHARACTER_TABLE, "teleport", jTArray);
+        string sName = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "name");   
+        string sPlayerName = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "playername");   
+        int sStatus = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "status");
+        string sLocation = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "location");
+        int nFame = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "fame");
+        int nInfamy = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "infamy");
+        int nHP = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "hitpoints");
+        int nLuck = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "luck");
+        float fRacialXP = GetObjectDatabaseFloat(oPC, CHARACTER_TABLE, "racialxp");
+        int nLastRested = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "lastrested");
+        int nLanguageUsing = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "languageusing");
+        int nDeity = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "deity");
+        string sPolymorph = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "polymorph");
+        string sSummons = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "summons");
+        string sTeleport = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "teleport");
+        string sAppearance = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "appearance");
+        int nRests = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "rests");
+        int nBleeds = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "bleeds");
+        int nRespawns = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "respawns");
+        int nDeaths = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "deaths");
+        int nKills = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "kills");
+        int nSidequests = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "sidequests");
+        int nMainquests = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "mainquests");
+        int nLastLogin = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, "lastlogin");
+        DeleteObjectTable(oPC, CHARACTER_TABLE);
+        CheckObjectDataAndInitialize(oPC, CHARACTER_TABLE);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "name", sName);   
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "playername", sPlayerName);   
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "status", sStatus);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "location", sLocation);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "fame", nFame);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "infamy", nInfamy);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "hitpoints", nHP);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "luck", nLuck);
+        SetObjectDatabaseFloat(oPC, CHARACTER_TABLE, "racialxp", fRacialXP);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "lastrested", nLastRested);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "languageusing", nLanguageUsing);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "deity", nDeity);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "polymorph", sPolymorph);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "summons", sSummons);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "teleport", sTeleport);
+        SetObjectDatabaseString(oPC, CHARACTER_TABLE, "appearance", sAppearance);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "rests", nRests);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "bleeds", nBleeds);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "respawns", nRespawns);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "deaths", nDeaths);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "kills", nKills);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "sidequests", nSidequests);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "mainquests", nMainquests);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "lastlogin", nLastLogin);
+        SetObjectDatabaseInt(oPC, CHARACTER_TABLE, "creationdate", 20260730);
+        string sNewDBName = GetObjectDatabaseString(oPC, CHARACTER_TABLE, "name");
     }
 }
-
-void IncreaseServerDatabaseCounter (object oPlayer, string sTableName, string sDataField)
+void IncreaseServerDatabaseCounter(object oPlayer, string sTableName, string sDataField)
 {
-    int iData = GetServerDatabaseInt (oPlayer, sTableName, sDataField);
-    iData ++;
-    SetServerDatabaseInt (oPlayer, sTableName, sDataField, iData);
+    int nData = GetServerDatabaseInt(oPlayer, sTableName, sDataField);
+    if(nData = -1)
+    nData++;
+    SetServerDatabaseInt(oPlayer, sTableName, sDataField, nData);
 }
 
-void IncreaseObjectDatabaseCounter (object oPlayer, string sTableName, string sDataField)
+void IncreaseObjectDatabaseCounter(object oPlayer, string sTableName, string sDataField)
 {
-    int iData = GetObjectDatabaseInt (oPlayer, sTableName, sDataField);
-    iData ++;
-    SetObjectDatabaseInt (oPlayer, sTableName, sDataField, iData);
+    int nData = GetObjectDatabaseInt(oPlayer, sTableName, sDataField);
+    nData++;
+    SetObjectDatabaseInt(oPlayer, sTableName, sDataField, nData);
 }
 
-void DecreaseServerDatabaseCounter (object oPlayer, string sTableName, string sDataField)
+void DecreaseServerDatabaseCounter(object oPlayer, string sTableName, string sDataField)
 {
-    int iData = GetServerDatabaseInt (oPlayer, sTableName, sDataField);
-    iData --;
-    SetServerDatabaseInt (oPlayer, sTableName, sDataField, iData);
+    int iData = GetServerDatabaseInt(oPlayer, sTableName, sDataField);
+    iData--;
+    SetServerDatabaseInt(oPlayer, sTableName, sDataField, iData);
 }
 
-void DecreaseObjectDatabaseCounter (object oPlayer, string sTableName, string sDataField)
+void DecreaseObjectDatabaseCounter(object oPlayer, string sTableName, string sDataField)
 {
-    int iData = GetObjectDatabaseInt (oPlayer, sTableName, sDataField);
-    iData --;
-    SetObjectDatabaseInt (oPlayer, sTableName, sDataField, iData);
+    int iData = GetObjectDatabaseInt(oPlayer, sTableName, sDataField);
+    iData--;
+    SetObjectDatabaseInt(oPlayer, sTableName, sDataField, iData);
 }
 
 // Defined sTableName constants: *_TABLE.
-void CreateServerDataTable (string sTableName)
+void CreateServerDataTable(string sTableName)
 {
     if (sTableName == SERVER_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT, " +
-            "tag            TEXT, " +
-            "year           INTEGER, " +
-            "month          INTEGER, " +
-            "day            INTEGER, " +
-            "hour           INTEGER, " +
-            "password       INTEGER, " +
-            "startlevel     INTEGER, " +
-            "restrictrest   INTEGER, " +
-            "xpslider       INTEGER, " +
-            "treasureslider INTEGER, " +
-            "villainchance  INTEGER, " +
-            "uniquechance   INTEGER, " +
-            "temperature    INTEGER, " +
-            "precipitation  INTEGER, " +
-            "storm          INTEGER, " +
-            "windx          FLOAT, " +
-            "windy          FLOAT, " +
-            "windz          FLOAT, " +
-            "windmagnitude  FLOAT, " +
-            "windyaw        FLOAT, " +
-            "windpitch      FLOAT, " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT, " +
+                "tag            TEXT, " +
+                "year           INTEGER, " +
+                "month          INTEGER, " +
+                "day            INTEGER, " +
+                "hour           INTEGER, " +
+                "password       INTEGER, " +
+                "startlevel     INTEGER, " +
+                "restrictrest   INTEGER, " +
+                "xpslider       INTEGER, " +
+                "treasureslider INTEGER, " +
+                "villainchance  INTEGER, " +
+                "uniquechance   INTEGER, " +
+                "temperature    INTEGER, " +
+                "precipitation  INTEGER, " +
+                "storm          INTEGER, " +
+                "windx          FLOAT, " +
+                "windy          FLOAT, " +
+                "windz          FLOAT, " +
+                "windmagnitude  FLOAT, " +
+                "windyaw        FLOAT, " +
+                "windpitch      FLOAT, " +
+                "PRIMARY KEY(name, tag));");
+        SqlStep(sql);
     }
     else if (sTableName == PLAYER_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name            TEXT, " +
-            "password        TEXT, " +
-            "status          INTEGER,  " +
-            "watched         INTEGER,  " +
-            "characters      INTEGER,  " +
-            "highestlevel    INTEGER,  " +
-            "rests           INTEGER,  " +
-            "bleeds          INTEGER,  " +
-            "respawns        INTEGER,  " +
-            "deaths          INTEGER,  " +
-            "kills           INTEGER,  " +
-            "henchmenkills   INTEGER,  " +
-            "familiarkills   INTEGER,  " +
-            "companionkills  INTEGER,  " +
-            "summonskills    INTEGER,  " +
-            "sidequests      INTEGER,  " +
-            "mainquests      INTEGER,  " +
-            "cynosurejumps   INTEGER,  " +
-            "dmlogins        INTEGER,  " +
-            "logins          INTEGER,  " +
-            "lastlogin       INTEGER, " +
-            "plcreditwin     TEXT, " +
-            "pldicewin       TEXT, " +
-            "plbugwin        TEXT, " +
-            "plcraftwin      TEXT, " +
-            "playerwindows   TEXT, " +
-            "ploptionwin     TEXT, " +
-            "plstatswin      TEXT, " +
-            "pcdescwin       TEXT, " +
-            "pcmagicwin      TEXT, " +
-            "pclangwin       TEXT, " +
-            "dmserverwin     TEXT, " +
-            "dmadventurewin  TEXT, " +
-            "dmareawin       TEXT, " +
-            "dmobjectwin     TEXT, " +
-            "dmcreaturewin   TEXT, " +
-            "dmnpcwin        TEXT, " +
-            "dminventorywin  TEXT, " +
-            "dmmainquestswin TEXT, " +
-            "dmquestswin     TEXT, " +
-            "widgetbuffwin   TEXT, " +
-            "creationdate    INTEGER, " +
-            "publiccdkey     TEXT, " +
-            "lastipaddress   TEXT, " +
-            "PRIMARY KEY(name, publiccdkey));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name            TEXT, " +
+                "password        TEXT, " +
+                "status          INTEGER,  " +
+                "watched         INTEGER,  " +
+                "characters      INTEGER,  " +
+                "highestlevel    INTEGER,  " +
+                "rests           INTEGER,  " +
+                "bleeds          INTEGER,  " +
+                "respawns        INTEGER,  " +
+                "deaths          INTEGER,  " +
+                "kills           INTEGER,  " +
+                "henchmenkills   INTEGER,  " +
+                "familiarkills   INTEGER,  " +
+                "companionkills  INTEGER,  " +
+                "summonskills    INTEGER,  " +
+                "sidequests      INTEGER,  " +
+                "mainquests      INTEGER,  " +
+                "cynosurejumps   INTEGER,  " +
+                "dmlogins        INTEGER,  " +
+                "logins          INTEGER,  " +
+                "lastlogin       INTEGER, " +
+                "plcreditwin     TEXT, " +
+                "pldicewin       TEXT, " +
+                "plbugwin        TEXT, " +
+                "plcraftwin      TEXT, " +
+                "playerwindows   TEXT, " +
+                "ploptionwin     TEXT, " +
+                "plstatswin      TEXT, " +
+                "pcdescwin       TEXT, " +
+                "pcmagicwin      TEXT, " +
+                "pclangwin       TEXT, " +
+                "dmserverwin     TEXT, " +
+                "dmadventurewin  TEXT, " +
+                "dmareawin       TEXT, " +
+                "dmobjectwin     TEXT, " +
+                "dmcreaturewin   TEXT, " +
+                "dmnpcwin        TEXT, " +
+                "dminventorywin  TEXT, " +
+                "dmmainquestswin TEXT, " +
+                "dmquestswin     TEXT, " +
+                "widgetbuffwin   TEXT, " +
+                "creationdate    INTEGER, " +
+                "publiccdkey     TEXT, " +
+                "lastipaddress   TEXT, " +
+                "PRIMARY KEY(name, publiccdkey));");
+        SqlStep(sql);
     }
     else if (sTableName == OBJECT_TABLE || sTableName == ADV_OBJ_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name          TEXT, " +
-            "playername    TEXT, " +
-            "tag           TEXT, " +
-            "location      TEXT, " +
-            "object        TEXT, " +
-            "objecttag     TEXT, " +
-            "vartype0      INTEGER, " +
-            "varname0      TEXT, " +
-            "var0          TEXT, " +
-            "vartype1      INTEGER, " +
-            "varname1      TEXT, " +
-            "var1          TEXT, " +
-            "vartype2      INTEGER, " +
-            "varname2      TEXT, " +
-            "var2          TEXT, " +
-            "vartype3      INTEGER, " +
-            "varname3      TEXT, " +
-            "var3          TEXT, " +
-            "vartype4      INTEGER, " +
-            "varname4      TEXT, " +
-            "var4          TEXT, " +
-            "vartype5      INTEGER, " +
-            "varname5      TEXT, " +
-            "var5         TEXT, " +
-            "vartype6      INTEGER, " +
-            "varname6      TEXT, " +
-            "var6          TEXT, " +
-            "vartype7      INTEGER, " +
-            "varname7      TEXT, " +
-            "var7          TEXT, " +
-            "vartype8      INTEGER, " +
-            "varname8      TEXT, " +
-            "var8          TEXT, " +
-            "vartype9      INTEGER, " +
-            "varname9      TEXT, " +
-            "var9          TEXT, " +
-            "creationdate  INTEGER, " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name          TEXT, " +
+                "playername    TEXT, " +
+                "tag           TEXT, " +
+                "location      TEXT, " +
+                "object        TEXT, " +
+                "objecttag     TEXT, " +
+                "vartype0      INTEGER, " +
+                "varname0      TEXT, " +
+                "var0          TEXT, " +
+                "vartype1      INTEGER, " +
+                "varname1      TEXT, " +
+                "var1          TEXT, " +
+                "vartype2      INTEGER, " +
+                "varname2      TEXT, " +
+                "var2          TEXT, " +
+                "vartype3      INTEGER, " +
+                "varname3      TEXT, " +
+                "var3          TEXT, " +
+                "vartype4      INTEGER, " +
+                "varname4      TEXT, " +
+                "var4          TEXT, " +
+                "vartype5      INTEGER, " +
+                "varname5      TEXT, " +
+                "var5         TEXT, " +
+                "vartype6      INTEGER, " +
+                "varname6      TEXT, " +
+                "var6          TEXT, " +
+                "vartype7      INTEGER, " +
+                "varname7      TEXT, " +
+                "var7          TEXT, " +
+                "vartype8      INTEGER, " +
+                "varname8      TEXT, " +
+                "var8          TEXT, " +
+                "vartype9      INTEGER, " +
+                "varname9      TEXT, " +
+                "var9          TEXT, " +
+                "creationdate  INTEGER, " +
+                "PRIMARY KEY(name, tag));");
+        SqlStep(sql);
     }
     else if (sTableName == DM_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name            TEXT, " +
-            "location        TEXT,  " +
-            "options         TEXT,  " +
-            "languageusing   INTEGER,  " +
-            "slot1           TEXT,  " +
-            "slot2           TEXT,  " +
-            "slot3           TEXT,  " +
-            "slot4           TEXT,  " +
-            "slot5           TEXT,  " +
-            "slot6           TEXT,  " +
-            "slot7           TEXT,  " +
-            "slot8           TEXT,  " +
-            "slot9           TEXT,  " +
-            "slot10          TEXT,  " +
-            "PRIMARY KEY(name));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name            TEXT, " +
+                "location        TEXT,  " +
+                "options         TEXT,  " +
+                "languageusing   INTEGER,  " +
+                "slot1           TEXT,  " +
+                "slot2           TEXT,  " +
+                "slot3           TEXT,  " +
+                "slot4           TEXT,  " +
+                "slot5           TEXT,  " +
+                "slot6           TEXT,  " +
+                "slot7           TEXT,  " +
+                "slot8           TEXT,  " +
+                "slot9           TEXT,  " +
+                "slot10          TEXT,  " +
+                "PRIMARY KEY(name));");
+        SqlStep(sql);
     }
     else if (sTableName == ADVENTURE_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT,  " +
-            "tag            TEXT,  " +
-            "startlevel     TEXT,  " +
-            "restrictrest   INTEGER, " +
-            "xpslider       INTEGER, " +
-            "treasureslider INTEGER, " +
-            "temperature    INTEGER, " +
-            "precipitation  INTEGER, " +
-            "storm          INTEGER, " +
-            "windx          FLOAT, " +
-            "windy          FLOAT, " +
-            "windz          FLOAT, " +
-            "windmagnitude  FLOAT, " +
-            "windyaw        FLOAT, " +
-            "windpitch      FLOAT, " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT,  " +
+                "tag            TEXT,  " +
+                "startlevel     TEXT,  " +
+                "restrictrest   INTEGER, " +
+                "xpslider       INTEGER, " +
+                "treasureslider INTEGER, " +
+                "temperature    INTEGER, " +
+                "precipitation  INTEGER, " +
+                "storm          INTEGER, " +
+                "windx          FLOAT, " +
+                "windy          FLOAT, " +
+                "windz          FLOAT, " +
+                "windmagnitude  FLOAT, " +
+                "windyaw        FLOAT, " +
+                "windpitch      FLOAT, " +
+                "PRIMARY KEY(name, tag));");
+        SqlStep(sql);
     }
     else if (sTableName == AREA_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT,  " +
-            "tag            TEXT,  " +
-            "resref         TEXT,  " +
-            "areaname       TEXT,  " +
-            "areatag        TEXT,  " +
-            "level          INTEGER,  " +
-            "lootstate      INTEGER,  " +
-            "xpstate        INTEGER,  " +
-            "spellstate     INTEGER,  " +
-            "areastate      INTEGER,  " +
-            "populatestate  INTEGER,  " +
-            "cleanstate     INTEGER,  " +
-            "reststate      INTEGER,  " +
-            "encchance      INTEGER,  " +
-            "enctable       TEXT,  " +
-            "animations     INTEGER,  " +
-            "mainlight1     INTEGER,  " +
-            "mainlight2     INTEGER,  " +
-            "sourcelight1   INTEGER,  " +
-            "sourcelight2   INTEGER,  " +
-            "moonambient    INTEGER,  " +
-            "moondiffuse    INTEGER,  " +
-            "sunambient     INTEGER,  " +
-            "sundiffuse     INTEGER,  " +
-            "fogmooncolor   INTEGER,  " +
-            "fogsuncolor    INTEGER,  " +
-            "fogdistance    FLOAT,  " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT,  " +
+                "tag            TEXT,  " +
+                "resref         TEXT,  " +
+                "areaname       TEXT,  " +
+                "areatag        TEXT,  " +
+                "level          INTEGER,  " +
+                "lootstate      INTEGER,  " +
+                "xpstate        INTEGER,  " +
+                "spellstate     INTEGER,  " +
+                "areastate      INTEGER,  " +
+                "populatestate  INTEGER,  " +
+                "cleanstate     INTEGER,  " +
+                "reststate      INTEGER,  " +
+                "encchance      INTEGER,  " +
+                "enctable       TEXT,  " +
+                "animations     INTEGER,  " +
+                "mainlight1     INTEGER,  " +
+                "mainlight2     INTEGER,  " +
+                "sourcelight1   INTEGER,  " +
+                "sourcelight2   INTEGER,  " +
+                "moonambient    INTEGER,  " +
+                "moondiffuse    INTEGER,  " +
+                "sunambient     INTEGER,  " +
+                "sundiffuse     INTEGER,  " +
+                "fogmooncolor   INTEGER,  " +
+                "fogsuncolor    INTEGER,  " +
+                "fogdistance    FLOAT,  " +
+                "PRIMARY KEY(name, tag));");
+        SqlStep(sql);
     }
     else if (sTableName == QUEST_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT,  " +
-            "playername     TEXT,  " +
-            "tag            TEXT,  " +
-            "description    TEXT,  " +
-            "quest          TEXT,  " +
-            "strref         TEXT,  " +
-            "plot           TEXT,  " +
-            "start          TEXT,  " +
-            "giver          TEXT,  " +
-            "area           TEXT,  " +
-            "npc            TEXT,  " +
-            "villain        TEXT,  " +
-            "creatures      TEXT,  " +
-            "allies         TEXT,  " +
-            "followers      TEXT,  " +
-            "enemies        TEXT,  " +
-            "giveitem       TEXT,  " +
-            "item           TEXT,  " +
-            "placeable      TEXT,  " +
-            "fplaceable     TEXT,  " +
-            "finish         TEXT,  " +
-            "finisher       TEXT,  " +
-            "rewards        TEXT,  " +
-            "state          TEXT,  " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
-    }
-    else if (sTableName == BUFF_TABLE)
-    {
-        sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT,  " +
-            "tag            TEXT, " +
-            "spells        TEXT, " +
-            "PRIMARY KEY(name, tag));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryCampaign(
+            SERVER_DATABASE,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT,  " +
+                "playername     TEXT,  " +
+                "tag            TEXT,  " +
+                "description    TEXT,  " +
+                "quest          TEXT,  " +
+                "strref         TEXT,  " +
+                "plot           TEXT,  " +
+                "start          TEXT,  " +
+                "giver          TEXT,  " +
+                "area           TEXT,  " +
+                "npc            TEXT,  " +
+                "villain        TEXT,  " +
+                "creatures      TEXT,  " +
+                "allies         TEXT,  " +
+                "followers      TEXT,  " +
+                "enemies        TEXT,  " +
+                "giveitem       TEXT,  " +
+                "item           TEXT,  " +
+                "placeable      TEXT,  " +
+                "fplaceable     TEXT,  " +
+                "finish         TEXT,  " +
+                "finisher       TEXT,  " +
+                "rewards        TEXT,  " +
+                "state          TEXT,  " +
+                "PRIMARY KEY(name, tag));");
+        SqlStep(sql);
     }
 }
 
 // Defined sTableName constants: *_TABLE.
-void CheckServerDataTableAndCreateTable (string sTableName)
+void CheckServerDataTableAndCreateTable(string sTableName)
 {
     string sQuery = "SELECT name FROM sqlite_master WHERE type ='table' AND name=@tableName;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@tableName", sTableName);
-    if (!SqlStep (sql)) CreateServerDataTable (sTableName);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@tableName", sTableName);
+    if (!SqlStep(sql))
+    {
+        CreateServerDataTable(sTableName);
+    }
 }
 
-void InitializeServerData (string sTableName)
+void InitializeServerData(string sTableName)
 {
-    object oModule = GetModule ();
-    string sName = GetName (oModule);
-    string sTag = GetTag (oModule);
-    string sQuery = "INSERT INTO " + sTableName + " (name, tag, year, month, day, " +
+    object oModule = GetModule();
+    string sName = GetName(oModule);
+    string sTag = GetTag(oModule);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        " (name, tag, year, month, day, " +
         "hour, password, startlevel, restrictrest, xpslider, treasureslider, villainchance, " +
         "uniquechance, temperature, precipitation, storm, windx, windy, windz, " +
         "windmagnitude, windyaw, windpitch) " +
         "VALUES (@name, @tag, @year, @month, @day, @hour, @password, @startlevel, @restrictrest, " +
         "@xpslider, @treasureslider, @villainchance, @uniquechance, @temperature, " +
         "@precipitation, @storm, @windx, @windy, @windz, @windmagnitude, @windyaw, @windpitch);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindInt (sql, "@year", STARTING_YEAR);
-    SqlBindInt (sql, "@month", 1);
-    SqlBindInt (sql, "@day", 1);
-    SqlBindInt (sql, "@hour", 18);
-    SqlBindInt (sql, "@password", 0);
-    SqlBindInt (sql, "@startlevel", STARTING_CHARACTER_LEVEL);
-    SqlBindInt (sql, "@restrictrest", RESTRICT_REST);
-    SqlBindInt (sql, "@xpslider", STARTING_EXPERIENCE_SLIDER);
-    SqlBindInt (sql, "@treasureslider", STARTING_TREASURE_SLIDER);
-    SqlBindInt (sql, "@villainchance", STARTING_VILLAIN_CHANCE);
-    SqlBindInt (sql, "@uniquechance", STARTING_UNIQUE_CHANCE);
-    SqlBindInt (sql, "@temperature", 80);
-    SqlBindInt (sql, "@precipitation", 0);
-    SqlBindInt (sql, "@storm", 0);
-    SqlBindFloat (sql, "@windx", 0.0f);
-    SqlBindFloat (sql, "@windy", 0.0f);
-    SqlBindFloat (sql, "@windz", 0.0f);
-    SqlBindFloat (sql, "@windmagnitude", 0.0f);
-    SqlBindFloat (sql, "@windyaw", 0.0f);
-    SqlBindFloat (sql, "@windpitch", 0.0f);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindInt(sql, "@year", STARTING_YEAR);
+    SqlBindInt(sql, "@month", 1);
+    SqlBindInt(sql, "@day", 1);
+    SqlBindInt(sql, "@hour", 18);
+    SqlBindInt(sql, "@password", 0);
+    SqlBindInt(sql, "@startlevel", STARTING_CHARACTER_LEVEL);
+    SqlBindInt(sql, "@restrictrest", RESTRICT_REST);
+    SqlBindInt(sql, "@xpslider", STARTING_EXPERIENCE_SLIDER);
+    SqlBindInt(sql, "@treasureslider", STARTING_TREASURE_SLIDER);
+    SqlBindInt(sql, "@villainchance", STARTING_VILLAIN_CHANCE);
+    SqlBindInt(sql, "@uniquechance", STARTING_UNIQUE_CHANCE);
+    SqlBindInt(sql, "@temperature", 80);
+    SqlBindInt(sql, "@precipitation", 0);
+    SqlBindInt(sql, "@storm", 0);
+    SqlBindFloat(sql, "@windx", 0.0f);
+    SqlBindFloat(sql, "@windy", 0.0f);
+    SqlBindFloat(sql, "@windz", 0.0f);
+    SqlBindFloat(sql, "@windmagnitude", 0.0f);
+    SqlBindFloat(sql, "@windyaw", 0.0f);
+    SqlBindFloat(sql, "@windpitch", 0.0f);
+    SqlStep(sql);
 }
 
-void InitializePlayerData (object oPlayer, string sTableName)
+void InitializePlayerData(object oPlayer, string sTableName)
 {
-    string sName = GetPCPlayerName (oPlayer);
-    string sQuery = "INSERT INTO " + sTableName + "(name, password, status, watched, " +
+    string sName = GetPCPlayerName(oPlayer);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, password, status, watched, " +
         "characters, highestlevel, rests, bleeds, respawns, deaths, kills, " +
         "henchmenkills, familiarkills, companionkills, summonskills, " +
-        "sidequests, mainquests, cynosurejumps, dmlogins, logins, lastlogin, " +
+        "sidequests, mainquests, mapquests, dmquests, cynosurejumps, dmlogins, logins, lastlogin, " +
         "plcreditwin, pldicewin, plbugwin, plcraftwin, playerwindows, ploptionwin, " +
         "plstatswin, pcdescwin, pcmagicwin, pclangwin, dmserverwin, dmadventurewin, " +
         "dmareawin, dmobjectwin, dmcreaturewin, dmnpcwin, dminventorywin, " +
@@ -557,75 +595,81 @@ void InitializePlayerData (object oPlayer, string sTableName)
         "@dmadventurewin, @dmareawin, @dmobjectwin, @dmcreaturewin, @dmnpcwin, " +
         "@dminventorywin, @dmmainquestswin, @dmquestswin, @widgetbuffwin, " +
         "@creationdate, @publiccdkey, @lastipaddress);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@password", "");
-    SqlBindInt (sql, "@status", 0);
-    SqlBindInt (sql, "@watched", 0);
-    SqlBindInt (sql, "@characters", 0);
-    SqlBindInt (sql, "@highestlevel", 1);
-    SqlBindInt (sql, "@rests", 0);
-    SqlBindInt (sql, "@bleeds", 0);
-    SqlBindInt (sql, "@respawns", 0);
-    SqlBindInt (sql, "@deaths", 0);
-    SqlBindInt (sql, "@kills", 0);
-    SqlBindInt (sql, "@henchmenkills", 0);
-    SqlBindInt (sql, "@familiarkills", 0);
-    SqlBindInt (sql, "@companionkills", 0);
-    SqlBindInt (sql, "@summonskills", 0);
-    SqlBindInt (sql, "@sidequests", 0);
-    SqlBindInt (sql, "@mainquests", 0);
-    SqlBindInt (sql, "@cynosurejumps", 0);
-    SqlBindInt (sql, "@dmlogins", 0);
-    SqlBindInt (sql, "@logins", 0);
-    SqlBindInt (sql, "@lastlogin", 0);
-    SqlBindString (sql, "@plcreditwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@pldicewin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@plbugwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@plcraftwin", ":0:-1.0:0.0:");
-    SqlBindJson (sql, "@playerwindows", JsonObject());
-    SqlBindString (sql, "@ploptionwin", ":0:-1.0:0.0:0:0:");
-    SqlBindString (sql, "@plstatswin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@pcdescwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@pcmagicwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@pclangwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmserverwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmadventurewin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmareawin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmobjectwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmcreaturewin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmnpcwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dminventorywin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmmainquestswin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@dmquestswin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@widgetbuffwin", ":0:-1.0:0.0:");
-    SqlBindString (sql, "@creationdate", "strftime('%m-%d-%Y (%H:%M)','now', '-5 hours')");
-    SqlBindString (sql, "@publiccdkey", GetPCPublicCDKey (oPlayer));
-    SqlBindString (sql, "@lastipaddress", "");
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@password", "");
+    SqlBindInt(sql, "@status", 0);
+    SqlBindInt(sql, "@watched", 0);
+    SqlBindInt(sql, "@characters", 0);
+    SqlBindInt(sql, "@highestlevel", 1);
+    SqlBindInt(sql, "@rests", 0);
+    SqlBindInt(sql, "@bleeds", 0);
+    SqlBindInt(sql, "@respawns", 0);
+    SqlBindInt(sql, "@deaths", 0);
+    SqlBindInt(sql, "@kills", 0);
+    SqlBindInt(sql, "@henchmenkills", 0);
+    SqlBindInt(sql, "@familiarkills", 0);
+    SqlBindInt(sql, "@companionkills", 0);
+    SqlBindInt(sql, "@summonskills", 0);
+    SqlBindInt(sql, "@sidequests", 0);
+    SqlBindInt(sql, "@mainquests", 0);
+    SqlBindInt(sql, "@mapquests", 0);
+    SqlBindInt(sql, "@dmquests", 0);
+    SqlBindInt(sql, "@cynosurejumps", 0);
+    SqlBindInt(sql, "@dmlogins", 0);
+    SqlBindInt(sql, "@logins", 0);
+    SqlBindInt(sql, "@lastlogin", 0);
+    SqlBindString(sql, "@plcreditwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@pldicewin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@plbugwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@plcraftwin", ":0:-1.0:0.0:");
+    SqlBindJson(sql, "@playerwindows", JsonObject());
+    SqlBindString(sql, "@ploptionwin", ":0:-1.0:0.0:0:0:");
+    SqlBindString(sql, "@plstatswin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@pcdescwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@pcmagicwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@pclangwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmserverwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmadventurewin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmareawin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmobjectwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmcreaturewin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmnpcwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dminventorywin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmmainquestswin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@dmquestswin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@widgetbuffwin", ":0:-1.0:0.0:");
+    SqlBindString(sql, "@creationdate", "strftime('%m-%d-%Y (%H:%M)','now', '-5 hours')");
+    SqlBindString(sql, "@publiccdkey", GetPCPublicCDKey(oPlayer));
+    SqlBindString(sql, "@lastipaddress", "");
+    SqlStep(sql);
 }
 
-void InitializeObjectData (object oPlayer, string sTableName, string sTag)
+void InitializeObjectData(object oPlayer, string sTableName, string sTag)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sPlayerName = GetPCPlayerName (oPlayer);
-    string sQuery = "INSERT INTO " + sTableName + "(name, playername, tag, location, " +
+    string sName = GetName(oPlayer, TRUE);
+    string sPlayerName = GetPCPlayerName(oPlayer);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, playername, tag, location, " +
         "object, creationdate) VALUES (@name, @playername, @tag, @location, @object, " +
         "strftime('%m-%d-%Y (%H:%M)','now', '-5 hours'));";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@playername", sPlayerName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindString (sql, "@location", "");
-    SqlBindString (sql, "@object", "");
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@playername", sPlayerName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindString(sql, "@location", "");
+    SqlBindString(sql, "@object", "");
+    SqlStep(sql);
 }
 
-void InitializeAdventureObjectData (object oPlayer, string sTableName, string sTag)
+void InitializeAdventureObjectData(object oPlayer, string sTableName, string sTag)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sPlayerName = GetPCPlayerName (oPlayer);
-    string sQuery = "INSERT INTO " + sTableName + "(name, playername, tag, location, " +
+    string sName = GetName(oPlayer, TRUE);
+    string sPlayerName = GetPCPlayerName(oPlayer);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, playername, tag, location, " +
         "object, objecttag, vartype0, varname0, var0, vartype1, varname1, var1, vartype2, " +
         "varname2, var2, vartype3, varname3, var3, vartype4, varname4, var4, vartype5, " +
         "varname5, var5, vartype6, varname6, var6, vartype7, varname7, var7, vartype8, " +
@@ -635,104 +679,110 @@ void InitializeAdventureObjectData (object oPlayer, string sTableName, string sT
         "@varname3, @var3, @vartype4, @varname4, @var4, @vartype5, @varname5, @var5, " +
         "@vartype6, @varname6, @var6, @vartype7, @varname7, @var7, @vartype8, @varname8, " +
         "@var8, @vartype9, @varname9, @var9, strftime('%m-%d-%Y (%H:%M)','now', '-5 hours'));";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@playername", sPlayerName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindString (sql, "@location", "");
-    SqlBindString (sql, "@object", "");
-    SqlBindString (sql, "@objecttag", "");
-    SqlBindInt (sql, "@vartype0", 0);
-    SqlBindString (sql, "@varname0", "");
-    SqlBindString (sql, "@var0", "");
-    SqlBindInt (sql, "@vartype1", 0);
-    SqlBindString (sql, "@varname1", "");
-    SqlBindString (sql, "@var1", "");
-    SqlBindInt (sql, "@vartype2", 0);
-    SqlBindString (sql, "@varname2", "");
-    SqlBindString (sql, "@var2", "");
-    SqlBindInt (sql, "@vartype3", 0);
-    SqlBindString (sql, "@varname3", "");
-    SqlBindString (sql, "@var3", "");
-    SqlBindInt (sql, "@vartype4", 0);
-    SqlBindString (sql, "@varname4", "");
-    SqlBindString (sql, "@var4", "");
-    SqlBindInt (sql, "@vartype5", 0);
-    SqlBindString (sql, "@varname5", "");
-    SqlBindString (sql, "@var5", "");
-    SqlBindInt (sql, "@vartype6", 0);
-    SqlBindString (sql, "@varname6", "");
-    SqlBindString (sql, "@var6", "");
-    SqlBindInt (sql, "@vartype7", 0);
-    SqlBindString (sql, "@varname7", "");
-    SqlBindString (sql, "@var7", "");
-    SqlBindInt (sql, "@vartype8", 0);
-    SqlBindString (sql, "@varname8", "");
-    SqlBindString (sql, "@var8", "");
-    SqlBindInt (sql, "@vartype9", 0);
-    SqlBindString (sql, "@varname9", "");
-    SqlBindString (sql, "@var9", "");
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@playername", sPlayerName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindString(sql, "@location", "");
+    SqlBindString(sql, "@object", "");
+    SqlBindString(sql, "@objecttag", "");
+    SqlBindInt(sql, "@vartype0", 0);
+    SqlBindString(sql, "@varname0", "");
+    SqlBindString(sql, "@var0", "");
+    SqlBindInt(sql, "@vartype1", 0);
+    SqlBindString(sql, "@varname1", "");
+    SqlBindString(sql, "@var1", "");
+    SqlBindInt(sql, "@vartype2", 0);
+    SqlBindString(sql, "@varname2", "");
+    SqlBindString(sql, "@var2", "");
+    SqlBindInt(sql, "@vartype3", 0);
+    SqlBindString(sql, "@varname3", "");
+    SqlBindString(sql, "@var3", "");
+    SqlBindInt(sql, "@vartype4", 0);
+    SqlBindString(sql, "@varname4", "");
+    SqlBindString(sql, "@var4", "");
+    SqlBindInt(sql, "@vartype5", 0);
+    SqlBindString(sql, "@varname5", "");
+    SqlBindString(sql, "@var5", "");
+    SqlBindInt(sql, "@vartype6", 0);
+    SqlBindString(sql, "@varname6", "");
+    SqlBindString(sql, "@var6", "");
+    SqlBindInt(sql, "@vartype7", 0);
+    SqlBindString(sql, "@varname7", "");
+    SqlBindString(sql, "@var7", "");
+    SqlBindInt(sql, "@vartype8", 0);
+    SqlBindString(sql, "@varname8", "");
+    SqlBindString(sql, "@var8", "");
+    SqlBindInt(sql, "@vartype9", 0);
+    SqlBindString(sql, "@varname9", "");
+    SqlBindString(sql, "@var9", "");
+    SqlStep(sql);
 }
 
-void InitializeDMData (object oPlayer, string sTableName)
+void InitializeDMData(object oPlayer, string sTableName)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sQuery = "INSERT INTO " + sTableName + "(name, location, options, " +
+    string sName = GetName(oPlayer, TRUE);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, location, options, " +
         "languageusing, slot1, slot2, slot3, slot4, slot5, slot6, slot7, slot8, " +
         "slot9, slot10) VALUES (@name, @location, @options, @languageusing, " +
         "@slot1, @slot2, @slot3, @slot4, @slot5, @slot6, @slot7, @slot8, " +
         "@slot9, @slot10);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@location", "");
-    SqlBindString (sql, "@options", ":0:0:0:0:");
-    SqlBindInt (sql, "@languageusing", 0);
-    SqlBindString (sql, "@slot1", "Empty");
-    SqlBindString (sql, "@slot2", "Empty");
-    SqlBindString (sql, "@slot3", "Empty");
-    SqlBindString (sql, "@slot4", "Empty");
-    SqlBindString (sql, "@slot5", "Empty");
-    SqlBindString (sql, "@slot6", "Empty");
-    SqlBindString (sql, "@slot7", "Empty");
-    SqlBindString (sql, "@slot8", "Empty");
-    SqlBindString (sql, "@slot9", "Empty");
-    SqlBindString (sql, "@slot10", "Empty");
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@location", "");
+    SqlBindString(sql, "@options", ":0:0:0:0:");
+    SqlBindInt(sql, "@languageusing", 0);
+    SqlBindString(sql, "@slot1", "Empty");
+    SqlBindString(sql, "@slot2", "Empty");
+    SqlBindString(sql, "@slot3", "Empty");
+    SqlBindString(sql, "@slot4", "Empty");
+    SqlBindString(sql, "@slot5", "Empty");
+    SqlBindString(sql, "@slot6", "Empty");
+    SqlBindString(sql, "@slot7", "Empty");
+    SqlBindString(sql, "@slot8", "Empty");
+    SqlBindString(sql, "@slot9", "Empty");
+    SqlBindString(sql, "@slot10", "Empty");
+    SqlStep(sql);
 }
 
-void InitializeAdventureData (object oDM, string sTableName, string sTag)
+void InitializeAdventureData(object oDM, string sTableName, string sTag)
 {
-    string sName = GetName (oDM, TRUE);
-    string sQuery = "INSERT INTO " + sTableName + " (name, tag, startlevel, " +
+    string sName = GetName(oDM, TRUE);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        " (name, tag, startlevel, " +
         "restrictrest, xpslider, treasureslider, temperature, precipitation, storm, " +
         "windx, windy, windz, windmagnitude, windyaw, windpitch) " +
         "VALUES (@name, @tag, @startlevel, @restrictrest, @xpslider, " +
         "@treasureslider, @temperature, @precipitation, @storm, @windx, " +
         "@windy, @windz, @windmagnitude, @windyaw, @windpitch);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindInt (sql, "@startlevel", STARTING_CHARACTER_LEVEL);
-    SqlBindInt (sql, "@restrictrest", RESTRICT_REST);
-    SqlBindInt (sql, "@xpslider", STARTING_EXPERIENCE_SLIDER);
-    SqlBindInt (sql, "@treasureslider", STARTING_TREASURE_SLIDER);
-    SqlBindInt (sql, "@temperature", 80);
-    SqlBindInt (sql, "@precipitation", 0);
-    SqlBindInt (sql, "@storm", 0);
-    SqlBindFloat (sql, "@windx", 0.0f);
-    SqlBindFloat (sql, "@windy", 0.0f);
-    SqlBindFloat (sql, "@windz", 0.0f);
-    SqlBindFloat (sql, "@windmagnitude", 0.0f);
-    SqlBindFloat (sql, "@windyaw", 0.0f);
-    SqlBindFloat (sql, "@windpitch", 0.0f);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindInt(sql, "@startlevel", STARTING_CHARACTER_LEVEL);
+    SqlBindInt(sql, "@restrictrest", RESTRICT_REST);
+    SqlBindInt(sql, "@xpslider", STARTING_EXPERIENCE_SLIDER);
+    SqlBindInt(sql, "@treasureslider", STARTING_TREASURE_SLIDER);
+    SqlBindInt(sql, "@temperature", 80);
+    SqlBindInt(sql, "@precipitation", 0);
+    SqlBindInt(sql, "@storm", 0);
+    SqlBindFloat(sql, "@windx", 0.0f);
+    SqlBindFloat(sql, "@windy", 0.0f);
+    SqlBindFloat(sql, "@windz", 0.0f);
+    SqlBindFloat(sql, "@windmagnitude", 0.0f);
+    SqlBindFloat(sql, "@windyaw", 0.0f);
+    SqlBindFloat(sql, "@windpitch", 0.0f);
+    SqlStep(sql);
 }
 
-void InitializeAreaData (object oPlayer, string sTableName, string sTag)
+void InitializeAreaData(object oPlayer, string sTableName, string sTag)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sQuery = "INSERT INTO " + AREA_TABLE + "(name, tag, resref, areaname, " +
+    string sName = GetName(oPlayer, TRUE);
+    string sQuery = "INSERT INTO " +
+        AREA_TABLE +
+        "(name, tag, resref, areaname, " +
         "areatag, level, lootstate, xpstate, spellstate, areastate, populatestate, cleanstate, " +
         "reststate, encchance, enctable, animations, mainlight1, mainlight2, sourcelight1, " +
         "sourcelight2, moonambient, moondiffuse, sunambient, sundiffuse, fogmooncolor, " +
@@ -741,96 +791,99 @@ void InitializeAreaData (object oPlayer, string sTableName, string sTag)
         "@reststate, @encchance, @enctable, @animations, @mainlight1, @mainlight2, @sourcelight1, " +
         "@sourcelight2, @moonambient, @moondiffuse, @sunambient, @sundiffuse, " +
         "@fogmooncolor, @fogsuncolor, @fogdistance);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindString (sql, "@resref", "");
-    SqlBindString (sql, "@areaname", "");
-    SqlBindString (sql, "@areatag", "");
-    SqlBindInt (sql, "@level", 0);
-    SqlBindInt (sql, "@lootstate", 0);
-    SqlBindInt (sql, "@xpstate", 0);
-    SqlBindInt (sql, "@spellstate", 0);
-    SqlBindInt (sql, "@areastate", 0);
-    SqlBindInt (sql, "@populatestate", 0);
-    SqlBindInt (sql, "@cleanstate", 0);
-    SqlBindInt (sql, "@reststate", 0);
-    SqlBindInt (sql, "@encchance", 0);
-    SqlBindString (sql, "@enctable", "");
-    SqlBindInt (sql, "@animations", 0);
-    SqlBindInt (sql, "@mainlight1", 0);
-    SqlBindInt (sql, "@mainlight2", 0);
-    SqlBindInt (sql, "@sourcelight1", 0);
-    SqlBindInt (sql, "@sourcelight2", 0);
-    SqlBindInt (sql, "@moonambient", 0);
-    SqlBindInt (sql, "@moondiffuse", 0);
-    SqlBindInt (sql, "@sunambient", 0);
-    SqlBindInt (sql, "@sundiffuse", 0);
-    SqlBindInt (sql, "@fogmooncolor", 0);
-    SqlBindInt (sql, "@fogsuncolor", 0);
-    SqlBindFloat (sql, "@fogdistance", 90.0f);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindString(sql, "@resref", "");
+    SqlBindString(sql, "@areaname", "");
+    SqlBindString(sql, "@areatag", "");
+    SqlBindInt(sql, "@level", 0);
+    SqlBindInt(sql, "@lootstate", 0);
+    SqlBindInt(sql, "@xpstate", 0);
+    SqlBindInt(sql, "@spellstate", 0);
+    SqlBindInt(sql, "@areastate", 0);
+    SqlBindInt(sql, "@populatestate", 0);
+    SqlBindInt(sql, "@cleanstate", 0);
+    SqlBindInt(sql, "@reststate", 0);
+    SqlBindInt(sql, "@encchance", 0);
+    SqlBindString(sql, "@enctable", "");
+    SqlBindInt(sql, "@animations", 0);
+    SqlBindInt(sql, "@mainlight1", 0);
+    SqlBindInt(sql, "@mainlight2", 0);
+    SqlBindInt(sql, "@sourcelight1", 0);
+    SqlBindInt(sql, "@sourcelight2", 0);
+    SqlBindInt(sql, "@moonambient", 0);
+    SqlBindInt(sql, "@moondiffuse", 0);
+    SqlBindInt(sql, "@sunambient", 0);
+    SqlBindInt(sql, "@sundiffuse", 0);
+    SqlBindInt(sql, "@fogmooncolor", 0);
+    SqlBindInt(sql, "@fogsuncolor", 0);
+    SqlBindFloat(sql, "@fogdistance", 90.0f);
+    SqlStep(sql);
 }
 
 void InitializeQuestData(object oPlayer, string sTableName, string sID)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sPlayerName = GetPCPlayerName (oPlayer);
-    string sQuery = "INSERT INTO " + sTableName + "(name, playername, tag, " +
+    string sName = GetName(oPlayer, TRUE);
+    string sPlayerName = GetPCPlayerName(oPlayer);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, playername, tag, " +
         "description, quest, strref, plot, start, giver, area, npc, villain, " +
         "creatures, allies, followers, enemies, giveitem, item, placeable, " +
         "fplaceable, finish, finisher, rewards, state) VALUES (@name, @playername, " +
         "@tag, @description, @quest, @strref, @plot, @start, @giver, @area, @npc, " +
         "@villain, @creatures, @allies, @followers, @enemies, @giveitem, @item, " +
         "@placeable, @fplaceable, @finish, @finisher, @rewards, @state);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@playername", sPlayerName);
-    SqlBindString (sql, "@tag", sID);
-    SqlBindString (sql, "@description", "");
-    SqlBindString (sql, "@quest", "");
-    SqlBindString (sql, "@strref", "");
-    SqlBindString (sql, "@plot", "");
-    SqlBindString (sql, "@start", "");
-    SqlBindString (sql, "@giver", "");
-    SqlBindString (sql, "@area", "");
-    SqlBindString (sql, "@npc", "");
-    SqlBindString (sql, "@villain", "");
-    SqlBindString (sql, "@creatures", "");
-    SqlBindString (sql, "@allies", "");
-    SqlBindString (sql, "@followers", "");
-    SqlBindString (sql, "@enemies", "");
-    SqlBindString (sql, "@giveitem", "");
-    SqlBindString (sql, "@item", "");
-    SqlBindString (sql, "@placeable", "");
-    SqlBindString (sql, "@fplaceable", "");
-    SqlBindString (sql, "@finish", "");
-    SqlBindString (sql, "@finisher", "");
-    SqlBindString (sql, "@rewards", "");
-    SqlBindString (sql, "@state", "");
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@playername", sPlayerName);
+    SqlBindString(sql, "@tag", sID);
+    SqlBindString(sql, "@description", "");
+    SqlBindString(sql, "@quest", "");
+    SqlBindString(sql, "@strref", "");
+    SqlBindString(sql, "@plot", "");
+    SqlBindString(sql, "@start", "");
+    SqlBindString(sql, "@giver", "");
+    SqlBindString(sql, "@area", "");
+    SqlBindString(sql, "@npc", "");
+    SqlBindString(sql, "@villain", "");
+    SqlBindString(sql, "@creatures", "");
+    SqlBindString(sql, "@allies", "");
+    SqlBindString(sql, "@followers", "");
+    SqlBindString(sql, "@enemies", "");
+    SqlBindString(sql, "@giveitem", "");
+    SqlBindString(sql, "@item", "");
+    SqlBindString(sql, "@placeable", "");
+    SqlBindString(sql, "@fplaceable", "");
+    SqlBindString(sql, "@finish", "");
+    SqlBindString(sql, "@finisher", "");
+    SqlBindString(sql, "@rewards", "");
+    SqlBindString(sql, "@state", "");
+    SqlStep(sql);
 }
 
-void InitializeSpellData (object oPlayer, string sTableName, string sTag)
+void InitializeSpellData(object oPlayer, string sTableName, string sTag)
 {
-    string sName = GetName (oPlayer, TRUE);
-    string sPlayerName = GetPCPlayerName (oPlayer);
+    string sName = GetName(oPlayer, TRUE);
+    string sPlayerName = GetPCPlayerName(oPlayer);
     string sQuery = "INSERT INTO " + sTableName + "(name, tag, spells) VALUES (@name, @tag, @spells);";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlBindJson (sql, "@spells", JsonArray ());
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlBindJson(sql, "@spells", JsonArray());
+    SqlStep(sql);
 }
 
 int CheckServerDataAndInitialize(object oObject, string sTableName, string sTag = "")
 {
-    if(!GetIsObjectValid(oObject)) return FALSE;
-    string sQuery, sName;
+    if (!GetIsObjectValid(oObject)) return FALSE;
+    string sQuery;
+    string sName;
     sqlquery sql;
-    if(sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
-    else sName = GetName (oObject, TRUE);
-    if(sTag != "")
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
+    if (sTag != "")
     {
         sQuery = "SELECT name FROM " + sTableName + " Where name = @name AND tag = @tag;";
         sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
@@ -843,17 +896,16 @@ int CheckServerDataAndInitialize(object oObject, string sTableName, string sTag 
         sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
         SqlBindString(sql, "@name", sName);
     }
-    if(!SqlStep(sql))
+    if (!SqlStep(sql))
     {
-        if(sTableName == SERVER_TABLE) InitializeServerData(sTableName);
-        else if(sTableName == PLAYER_TABLE) InitializePlayerData(oObject, sTableName);
-        else if(sTableName == OBJECT_TABLE) InitializeObjectData(oObject, sTableName, sTag);
-        else if(sTableName == QUEST_TABLE) InitializeQuestData(oObject, sTableName, sTag);
-        else if(sTableName == DM_TABLE) InitializeDMData(oObject, sTableName);
-        else if(sTableName == ADVENTURE_TABLE) InitializeAdventureData(oObject, sTableName, sTag);
-        else if(sTableName == AREA_TABLE) InitializeAreaData(oObject, sTableName, sTag);
-        else if(sTableName == ADV_OBJ_TABLE) InitializeAdventureObjectData(oObject, sTableName, sTag);
-        else if(sTableName == BUFF_TABLE) InitializeSpellData(oObject, sTableName, sTag);
+        if (sTableName == SERVER_TABLE) InitializeServerData(sTableName);
+        else if (sTableName == PLAYER_TABLE) InitializePlayerData(oObject, sTableName);
+        else if (sTableName == OBJECT_TABLE) InitializeObjectData(oObject, sTableName, sTag);
+        else if (sTableName == QUEST_TABLE) InitializeQuestData(oObject, sTableName, sTag);
+        else if (sTableName == DM_TABLE) InitializeDMData(oObject, sTableName);
+        else if (sTableName == ADVENTURE_TABLE) InitializeAdventureData(oObject, sTableName, sTag);
+        else if (sTableName == AREA_TABLE) InitializeAreaData(oObject, sTableName, sTag);
+        else if (sTableName == ADV_OBJ_TABLE) InitializeAdventureObjectData(oObject, sTableName, sTag);
         //else if(sTableName == DMPIN_TABLE) InitializeDMPinData(oObject, sTableName);
         return TRUE;
     }
@@ -864,75 +916,75 @@ int CheckServerDataAndInitialize(object oObject, string sTableName, string sTag 
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // iData is the integer data to be saved.
-void SetServerDatabaseInt (object oObject, string sTableName, string sDataField, int nData, string sTag = "")
+void SetServerDatabaseInt(object oObject, string sTableName, string sDataField, int nData, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name AND tag = @tag;";
     else sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindInt (sql, "@data", nData);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindInt(sql, "@data", nData);
+    SqlBindString(sql, "@name", sName);
+    if(sTag != "") SqlBindString(sql, "@tag", sTag);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a integer of the data stored.
-int GetServerDatabaseInt (object oObject, string sTableName, string sDataField, string sTag = "")
+int GetServerDatabaseInt(object oObject, string sTableName, string sDataField, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
     else sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    if (SqlStep (sql)) return SqlGetInt (sql, 0);
-    else return 0;
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    if (SqlStep(sql)) return SqlGetInt(sql, 0);
+    else return -1;
 }
 
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // fData is the float data to be saved.
-void SetServerDatabaseFloat (object oObject, string sTableName, string sDataField, float fData, string sTag = "")
+void SetServerDatabaseFloat(object oObject, string sTableName, string sDataField, float fData, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name AND tag = @tag;";
     else sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindFloat (sql, "@data", fData);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindFloat(sql, "@data", fData);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a integer of the data stored.
-float GetServerDatabaseFloat (object oObject, string sTableName, string sDataField, string sTag = "")
+float GetServerDatabaseFloat(object oObject, string sTableName, string sDataField, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
     else sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    if (SqlStep (sql)) return SqlGetFloat (sql, 0);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    if (SqlStep(sql))  return SqlGetFloat(sql, 0);
     else return 0.0f;
 }
 
@@ -940,37 +992,37 @@ float GetServerDatabaseFloat (object oObject, string sTableName, string sDataFie
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // sData is the string data to be saved.
-void SetServerDatabaseString (object oObject, string sTableName, string sDataField, string sData, string sTag = "")
+void SetServerDatabaseString(object oObject, string sTableName, string sDataField, string sData, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name AND tag = @tag;";
     else sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@data", sData);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@data", sData);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    SqlStep(sql);
 }
 
 // oObject is the character/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a string of the data stored.
-string GetServerDatabaseString (object oObject, string sTableName, string sDataField, string sTag = "")
+string GetServerDatabaseString(object oObject, string sTableName, string sDataField, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
-    if (sTag != "") sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
+    if(sTag != "") sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
     else sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    if (SqlStep (sql)) return SqlGetString (sql, 0);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    if (SqlStep(sql)) return SqlGetString(sql, 0);
     else return "";
 }
 
@@ -978,53 +1030,53 @@ string GetServerDatabaseString (object oObject, string sTableName, string sDataF
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // jData is the json data to be saved.
-void SetServerDatabaseJson (object oObject, string sTableName, string sDataField, json jData, string sTag = "")
+void SetServerDatabaseJson(object oObject, string sTableName, string sDataField, json jData, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name AND tag = @tag;";
     else sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindJson (sql, "@data", jData);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindJson(sql, "@data", jData);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    SqlStep(sql);
 }
 
 // oObject is the character/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for the table.
 // Returns a string of the data stored.
-json GetServerDatabaseJson (object oObject, string sTableName, string sDataField, string sTag = "")
+json GetServerDatabaseJson(object oObject, string sTableName, string sDataField, string sTag = "")
 {
     string sName;
-    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName (oObject);
-    else sName = GetName (oObject, TRUE);
+    if (sTableName == PLAYER_TABLE) sName = GetPCPlayerName(oObject);
+    else sName = GetName(oObject, TRUE);
     string sQuery;
     if (sTag != "") sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
     else sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (sTag != "") SqlBindString (sql, "@tag", sTag);
-    if (SqlStep (sql)) return SqlGetJson (sql, 0);
-    else return JsonArray ();
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (sTag != "") SqlBindString(sql, "@tag", sTag);
+    if (SqlStep(sql)) return SqlGetJson(sql, 0);
+    else return JsonArray();
 }
 
 // oObject is the character/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE, OBJECT_TABLE.
 // sTag is the tag to define this object in the database for this player npc1, chest1, etc.
 // oData is the object data to be saved.
-void SetServerDatabaseObject (object oObject, string sTableName, object oData, string sTag)
+void SetServerDatabaseObject(object oObject, string sTableName, object oData, string sTag)
 {
-    string sName = GetName (oObject, TRUE);
+    string sName = GetName(oObject, TRUE);
     string sQuery = "UPDATE " + sTableName + " SET object = @data WHERE name = @name AND tag = @tag;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindObject (sql, "@data", oData, TRUE);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@tag", sTag);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindObject(sql, "@data", oData, TRUE);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@tag", sTag);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
@@ -1032,14 +1084,22 @@ void SetServerDatabaseObject (object oObject, string sTableName, object oData, s
 // sTag is the tag to define this object in the database for this player npc1, chest1, etc.
 // lLocationToSpawn will spawn the object at that location.
 // oInventory will spawn the object in that objects inventory.
-object GetServerDatabaseObject(object oObject, string sTableName, location lLocationToSpawn, object oInventory = OBJECT_INVALID, string sTag = "")
+object GetServerDatabaseObject(
+    object oObject,
+    string sTableName,
+    location lLocationToSpawn,
+    object oInventory = OBJECT_INVALID,
+    string sTag = "")
 {
     string sName = GetName(oObject, TRUE);
     string sQuery = "SELECT object FROM " + sTableName + " WHERE name = @name AND tag = @tag;";
     sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
     SqlBindString(sql, "@name", sName);
     SqlBindString(sql, "@tag", sTag);
-    if(SqlStep(sql)) return SqlGetObject(sql, 0, lLocationToSpawn, oInventory);
+    if (SqlStep(sql))
+    {
+        return SqlGetObject(sql, 0, lLocationToSpawn, oInventory);
+    }
     return OBJECT_INVALID;
 }
 
@@ -1048,7 +1108,10 @@ int GetServerDatabaseStatusByCDKey(object oPC)
     string sQuery = "SELECT status FROM " + PLAYER_TABLE + " WHERE publiccdkey = @publiccdkey;";
     sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
     SqlBindString(sql, "@publiccdkey", GetPCPublicCDKey(oPC));
-    if(SqlStep(sql)) return SqlGetInt(sql, 0);
+    if (SqlStep(sql))
+    {
+        return SqlGetInt(sql, 0);
+    }
     return 0;
 }
 
@@ -1067,175 +1130,204 @@ void DeleteServerDatabaseObject(object oObject, string sTableName, string sTag)
 
 // oObject is the player/module the data is for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE, OBJECT_TABLE, DM_TABLE, NPC_TABLE.
-void DeleteServerDatabase (object oObject, string sTableName)
+void DeleteServerDatabase(object oObject, string sTableName)
 {
-    string sName = GetName (oObject, TRUE);
+    string sName = GetName(oObject, TRUE);
     string sQuery = "DELETE FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is being saved for.
 // sTable is the table to use: SERVER_TABLE, PLAYER_TABLE.
 // sDataField should be one of the data fields for that table.
 // iData is the integer data to be saved.
-void SetServerDatabaseTime (object oObject, string sTableName, string sDataField)
+void SetServerDatabaseTime(object oObject, string sTableName, string sDataField)
 {
     string sName;
-    if (sTableName == SERVER_TABLE) sName = GetName (oObject, TRUE);
-    else sName = GetPCPlayerName (oObject);
-    string sQuery = "UPDATE " + sTableName + " SET " +
-           sDataField + " = strftime('%m-%d-%Y (%H:%M)','now', '-5 hours') WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryCampaign (SERVER_DATABASE, sQuery);
+    if (sTableName == SERVER_TABLE)
+    {
+        sName = GetName(oObject, TRUE);
+    }
+    else
+    {
+        sName = GetPCPlayerName(oObject);
+    }
+    string sQuery = "UPDATE " +
+        sTableName +
+        " SET " +
+        sDataField +
+        " = strftime('%m-%d-%Y (%H:%M)','now', '-5 hours') WHERE name = @name;";
+    sqlquery sql = SqlPrepareQueryCampaign(SERVER_DATABASE, sQuery);
     //SqlBindInt (sql, "@data", iData);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // Object must be a player character.
 // Defined sTableName constants: CHARACTER_TABLE, QUEST_TABLE, PIN_TABLE.
-void CreateObjectDataTable (object oObject, string sTableName)
+void CreateObjectDataTable(object oObject, string sTableName)
 {
     if (sTableName == CHARACTER_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryObject (oObject,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT, " +
-            "playername     TEXT, " +
-            "status         INTEGER, " +
-            "location       TEXT, " +
-            "fame           INTEGER, " +
-            "infamy         INTEGER, " +
-            "hitpoints      INTEGER, " +
-            "luck           INTEGER, " +
-            "racialxp       FLOAT,  " +
-            "lastrested     INTEGER, " +
-            "languageusing  INTEGER, " +
-            "deity          INTEGER, " +
-            "polymorph      TEXT, " +
-            "summons        TEXT, " +
-            "teleport       TEXT, " +
-            "appearance     TEXT, " +
-            "rests          INTEGER, " +
-            "bleeds         INTEGER, " +
-            "respawns       INTEGER, " +
-            "deaths         INTEGER, " +
-            "kills          INTEGER, " +
-            "sidequests     INTEGER, " +
-            "mainquests     INTEGER, " +
-            "cynosurejumps  INTEGER, " +
-            "lastlogin      INTEGER, " +
-            "creationdate   INTEGER, " +
-            "PRIMARY KEY(name, playername));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryObject(
+            oObject,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT, " +
+                "playername     TEXT, " +
+                "status         INTEGER, " +
+                "location       TEXT, " +
+                "fame           INTEGER, " +
+                "infamy         INTEGER, " +
+                "hitpoints      INTEGER, " +
+                "luck           INTEGER, " +
+                "racialxp       FLOAT,  " +
+                "lastrested     INTEGER, " +
+                "languageusing  INTEGER, " +
+                "deity          INTEGER, " +
+                "polymorph      TEXT, " +
+                "summons        TEXT, " +
+                "teleport       TEXT, " +
+                "appearance     TEXT, " +
+                "rests          INTEGER, " +
+                "bleeds         INTEGER, " +
+                "respawns       INTEGER, " +
+                "deaths         INTEGER, " +
+                "kills          INTEGER, " +
+                "sidequests     INTEGER, " +
+                "mainquests     INTEGER, " +
+                "mapquests      INTEGER, " +
+                "dmquests       INTEGER, " +
+                "cynosurejumps  INTEGER, " +
+                "lastlogin      INTEGER, " +
+                "creationdate   INTEGER, " +
+                "PRIMARY KEY(name, playername));");
+        SqlStep(sql);
     }
     else if (sTableName == QUEST_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryObject (oObject,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT , " +
-            "questpointer   INTEGER,  " +
-            "journalid      INTEGER,  " +
-            "PRIMARY KEY(name));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryObject(
+            oObject,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT , " +
+                "questpointer   INTEGER,  " +
+                "journalid      INTEGER,  " +
+                "PRIMARY KEY(name));");
+        SqlStep(sql);
     }
     else if (sTableName == PIN_TABLE)
     {
-        sqlquery sql = SqlPrepareQueryObject (oObject,
-            "CREATE TABLE IF NOT EXISTS " + sTableName + " (" +
-            "name           TEXT , " +
-            "areatag        TEXT,  " +
-            "xpos           FLOAT,  " +
-            "ypos           FLOAT,  " +
-            "entry          TEXT,  " +
-            "PRIMARY KEY(name));");
-        SqlStep (sql);
+        sqlquery sql = SqlPrepareQueryObject(
+            oObject,
+            "CREATE TABLE IF NOT EXISTS " +
+                sTableName +
+                " (" +
+                "name           TEXT , " +
+                "areatag        TEXT,  " +
+                "xpos           FLOAT,  " +
+                "ypos           FLOAT,  " +
+                "entry          TEXT,  " +
+                "PRIMARY KEY(name));");
+        SqlStep(sql);
     }
 }
 
 // Object must be a player character.
 // Defined sTableName constants: *_TABLE.
-void CheckObjectDataTableAndCreateTable (object oObject, string sTableName)
+void CheckObjectDataTableAndCreateTable(object oObject, string sTableName)
 {
     string sQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name=@tableName;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@tableName", sTableName);
-    if (!SqlStep (sql)) CreateObjectDataTable (oObject, sTableName);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@tableName", sTableName);
+    if (!SqlStep(sql))
+    {
+        CreateObjectDataTable(oObject, sTableName);
+    }
 }
 
-void InitializeCharacterData (object oPC, string sTableName)
+void InitializeCharacterData(object oPC, string sTableName)
 {
-    string sName = GetName (oPC, TRUE);
-    string sPlayerName = GetPCPlayerName (oPC);
-    string sQuery = "INSERT INTO " + sTableName + "(name, playername, status, " +
+    string sName = GetName(oPC, TRUE);
+    string sPlayerName = GetPCPlayerName(oPC);
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, playername, status, " +
         "location, fame, infamy, hitpoints, luck, racialxp, lastrested, " +
         "languageusing, deity, polymorph, summons, teleport, appearance, " +
         "rests, bleeds, respawns, deaths, kills, " +
-        "sidequests, mainquests, cynosurejumps, lastlogin, creationdate) " +
+        "sidequests, mainquests, mapquests, dmquests, cynosurejumps, lastlogin, creationdate) " +
         "VALUES (@name, @playername, @status, @location, @fame, @infamy, " +
         "@hitpoints, @luck, @racialxp, @lastrested, @languageusing, @deity, " +
         "@polymorph, @summons, @teleport, @appearance, @rests, @bleeds, " +
-        "@respawns, @deaths, @kills, @sidequests, @mainquests, @cynosurejumps, " +
+        "@respawns, @deaths, @kills, @sidequests, @mainquests, @mapquests, @dmquests, @cynosurejumps, " +
         "@lastlogin, strftime('%m-%d-%Y (%H:%M)','now', '-5 hours'));";
-    sqlquery sql = SqlPrepareQueryObject (oPC, sQuery);
-    SqlBindString (sql, "@name", sName);
-    SqlBindString (sql, "@playername", sPlayerName);
-    SqlBindInt (sql, "@status", 1);
-    SqlBindString (sql, "@location", "");
-    SqlBindInt (sql, "@fame", 0);
-    SqlBindInt (sql, "@infamy", 0);
-    SqlBindInt (sql, "@hitpoints", 0);
-    SqlBindInt (sql, "@luck", 0);
-    SqlBindFloat (sql, "@racialxp", 0.0);
-    SqlBindString (sql, "@lastrested", "");
-    SqlBindInt (sql, "@languageusing", 0);
-    SqlBindInt (sql, "@deity", 0);
-    SqlBindString (sql, "@polymorph", "::::::::::::::::::::::");
-    SqlBindString (sql, "@summons", ":--0-0-0-0-0-0-0-0-0-0-0-:::::::::::::::::::::");
-    json jTArray = CreateJsonArrayWithString ("", 21);
-    jTArray = JsonArraySet (jTArray, 0, JsonString ("WP_Default_Respawn"));
-    SqlBindJson (sql, "@teleport", jTArray);
-    SqlBindString (sql, "@appearance", "::::::::::::::::::::::");
-    SqlBindInt (sql, "@rests", 0);
-    SqlBindInt (sql, "@bleeds", 0);
-    SqlBindInt (sql, "@respawns", 0);
-    SqlBindInt (sql, "@deaths", 0);
-    SqlBindInt (sql, "@kills", 0);
-    SqlBindInt (sql, "@sidequests", 0);
-    SqlBindInt (sql, "@mainquests", 0);
-    SqlBindInt (sql, "@cynosurejumps", 0);
-    SqlBindInt (sql, "@lastlogin", 0);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oPC, sQuery);
+    SqlBindString(sql, "@name", sName);
+    SqlBindString(sql, "@playername", sPlayerName);
+    SqlBindInt(sql, "@status", 1);
+    SqlBindString(sql, "@location", "");
+    SqlBindInt(sql, "@fame", 0);
+    SqlBindInt(sql, "@infamy", 0);
+    SqlBindInt(sql, "@hitpoints", 0);
+    SqlBindInt(sql, "@luck", 0);
+    SqlBindFloat(sql, "@racialxp", 0.0);
+    SqlBindString(sql, "@lastrested", "");
+    SqlBindInt(sql, "@languageusing", 0);
+    SqlBindInt(sql, "@deity", 0);
+    SqlBindString(sql, "@polymorph", "::::::::::::::::::::::");
+    SqlBindString(sql, "@summons", ":--0-0-0-0-0-0-0-0-0-0-0-:::::::::::::::::::::");
+    json jTArray = CreateJsonArrayWithString("", 21);
+    jTArray = JsonArraySet(jTArray, 0, JsonString("WP_Default_Respawn"));
+    SqlBindJson(sql, "@teleport", jTArray);
+    SqlBindString(sql, "@appearance", "::::::::::::::::::::::");
+    SqlBindInt(sql, "@rests", 0);
+    SqlBindInt(sql, "@bleeds", 0);
+    SqlBindInt(sql, "@respawns", 0);
+    SqlBindInt(sql, "@deaths", 0);
+    SqlBindInt(sql, "@kills", 0);
+    SqlBindInt(sql, "@sidequests", 0);
+    SqlBindInt(sql, "@mainquests", 0);
+    SqlBindInt(sql, "@mapquests", 0);
+    SqlBindInt(sql, "@dmquests", 0);
+    SqlBindInt(sql, "@cynosurejumps", 0);
+    SqlBindInt(sql, "@lastlogin", 0);
+    SqlStep(sql);
 }
 
 // sDataName is the quest name of the quest to save.
-void InitializeJournalData (object oPC, string sTableName, string sDataName)
+void InitializeJournalData(object oPC, string sTableName, string sDataName)
 {
-    string sQuery = "INSERT INTO " + sTableName + "(name, questpointer, journalid) " +
+    string sQuery = "INSERT INTO " +
+        sTableName +
+        "(name, questpointer, journalid) " +
         "VALUES (@name, @questpointer, @journalid);";
-    sqlquery sql = SqlPrepareQueryObject (oPC, sQuery);
-    SqlBindString (sql, "@name", sDataName);
-    SqlBindInt (sql, "@questpointer", 0);
-    SqlBindInt (sql, "@journalid", 0);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oPC, sQuery);
+    SqlBindString(sql, "@name", sDataName);
+    SqlBindInt(sql, "@questpointer", 0);
+    SqlBindInt(sql, "@journalid", 0);
+    SqlStep(sql);
 }
 
 // Defined sTableName constants: *_TABLE.
-void CheckObjectDataAndInitialize (object oObject, string sTableName, string sDataName = "")
+void CheckObjectDataAndInitialize(object oObject, string sTableName, string sDataName = "")
 {
-    CheckObjectDataTableAndCreateTable (oObject, sTableName);
+    CheckObjectDataTableAndCreateTable(oObject, sTableName);
     if (oObject == OBJECT_INVALID) return;
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "SELECT name FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (!SqlStep (sql))
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if(!SqlStep(sql))
     {
-        if (sTableName == CHARACTER_TABLE) InitializeCharacterData (oObject, sTableName);
-        else if (sTableName == QUEST_TABLE) InitializeJournalData (oObject, sTableName, sDataName);
+        if (sTableName == CHARACTER_TABLE) InitializeCharacterData(oObject, sTableName);
+        else if (sTableName == QUEST_TABLE) InitializeJournalData(oObject, sTableName, sDataName);
     }
 }
 
@@ -1244,16 +1336,16 @@ void CheckObjectDataAndInitialize (object oObject, string sTableName, string sDa
 // sDataField should be one of the data fields for that table.
 // iData is the integer data to be saved.
 // sDataName is the name of the quest if we are saveing a quest.
-void SetObjectDatabaseInt (object oObject, string sTableName, string sDataField, int iData, string sDataName = "")
+void SetObjectDatabaseInt(object oObject, string sTableName, string sDataField, int iData, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindInt (sql, "@data", iData);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindInt(sql, "@data", iData);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
@@ -1261,15 +1353,15 @@ void SetObjectDatabaseInt (object oObject, string sTableName, string sDataField,
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a integer of the data stored.
-int GetObjectDatabaseInt (object oObject, string sTableName, string sDataField, string sDataName = "")
+int GetObjectDatabaseInt(object oObject, string sTableName, string sDataField, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (SqlStep (sql)) return SqlGetInt (sql, 0);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (SqlStep(sql)) return SqlGetInt(sql, 0);
     else return 0;
 }
 
@@ -1278,16 +1370,16 @@ int GetObjectDatabaseInt (object oObject, string sTableName, string sDataField, 
 // sDataField should be one of the data fields for that table.
 // sDataName is the name of the quest if we are saveing a quest.
 // fData is the float data to be saved.
-void SetObjectDatabaseFloat (object oObject, string sTableName, string sDataField, float fData, string sDataName = "")
+void SetObjectDatabaseFloat(object oObject, string sTableName, string sDataField, float fData, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindFloat (sql, "@data", fData);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindFloat(sql, "@data", fData);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
@@ -1295,15 +1387,15 @@ void SetObjectDatabaseFloat (object oObject, string sTableName, string sDataFiel
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a float of the data stored.
-float GetObjectDatabaseFloat (object oObject, string sTableName, string sDataField, string sDataName = "")
+float GetObjectDatabaseFloat(object oObject, string sTableName, string sDataField, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (SqlStep (sql)) return SqlGetFloat (sql, 0);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (SqlStep(sql)) return SqlGetFloat(sql, 0);
     else return 0.0f;
 }
 
@@ -1312,16 +1404,16 @@ float GetObjectDatabaseFloat (object oObject, string sTableName, string sDataFie
 // sDataField should be one of the data fields for that table.
 // sDataName is the name of the quest if we are saveing a quest.
 // sData is the string data to be saved.
-void SetObjectDatabaseString (object oObject, string sTableName, string sDataField, string sData, string sDataName = "")
+void SetObjectDatabaseString(object oObject, string sTableName, string sDataField, string sData, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@data", sData);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@data", sData);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
@@ -1329,15 +1421,15 @@ void SetObjectDatabaseString (object oObject, string sTableName, string sDataFie
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns a string of the data stored.
-string GetObjectDatabaseString (object oObject, string sTableName, string sDataField, string sDataName = "")
+string GetObjectDatabaseString(object oObject, string sTableName, string sDataField, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (SqlStep (sql)) return SqlGetString (sql, 0);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (SqlStep(sql)) return SqlGetString(sql, 0);
     else return "";
 }
 
@@ -1346,16 +1438,16 @@ string GetObjectDatabaseString (object oObject, string sTableName, string sDataF
 // sDataField should be one of the data fields for that table.
 // sDataName is the name of the quest if we are saveing a quest.
 // jData is the json data to be saved.
-void SetObjectDatabaseJson (object oObject, string sTableName, string sDataField, json jData, string sDataName = "")
+void SetObjectDatabaseJson(object oObject, string sTableName, string sDataField, json jData, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "UPDATE " + sTableName + " SET " + sDataField + " = @data WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindJson (sql, "@data", jData);
-    SqlBindString (sql, "@name", sName);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindJson(sql, "@data", jData);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
 }
 
 // oObject is the player/module the data is for.
@@ -1363,44 +1455,49 @@ void SetObjectDatabaseJson (object oObject, string sTableName, string sDataField
 // sDataField should be one of the data fields for the table.
 // sDataName is the name of the quest if we are saveing a quest.
 // Returns the json of the data stored.
-json GetObjectDatabaseJson (object oObject, string sTableName, string sDataField, string sDataName = "")
+json GetObjectDatabaseJson(object oObject, string sTableName, string sDataField, string sDataName = "")
 {
     string sName;
-    if (sDataName == "") sName = GetName (oObject, TRUE);
+    if (sDataName == "") sName = GetName(oObject, TRUE);
     else sName = sDataName;
     string sQuery = "SELECT " + sDataField + " FROM " + sTableName + " WHERE name = @name;";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
-    if (SqlStep (sql)) return SqlGetJson (sql, 0);
-    else return JsonNull ();
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlBindString(sql, "@name", sName);
+    if (SqlStep(sql)) return SqlGetJson(sql, 0);
+    else return JsonNull();
 }
 
 void DeleteObjectDatabaseName(object oObject, string sTableName, string sName)
 {
     string sQuery = "DELETE FROM " + sTableName + " WHERE name = @name;";
     sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
-    SqlBindString (sql, "@name", sName);
+    SqlBindString(sql, "@name", sName);
+    SqlStep(sql);
+}
+void DeleteObjectTable(object oObject, string sTableName)
+{
+    string sQuery = "DROP TABLE IF EXISTS " + sTableName + ";";
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
     SqlStep(sql);
 }
 void DeleteObjectDatabase(object oObject, string sTableName)
 {
     string sQuery = "DELETE FROM " + sTableName + ";";
-    sqlquery sql = SqlPrepareQueryObject (oObject, sQuery);
-    SqlStep (sql);
+    sqlquery sql = SqlPrepareQueryObject(oObject, sQuery);
+    SqlStep(sql);
 }
 
 // sDataName is the number of the pin to save.
-void SavePinData (object oPC, string sTableName, string sDataName, string sAreaTag, float fXpos, float fYpos, string sEntry)
+void SavePinData(object oPC, string sTableName, string sDataName, string sAreaTag, float fXpos, float fYpos, string sEntry)
 {
-    string sQuery = "INSERT INTO " + sTableName + "(name, areatag, xpos, ypos, entry) " +
-        "VALUES (@name, @areatag, @xpos, @ypos, @entry);";
-    sqlquery sql = SqlPrepareQueryObject (oPC, sQuery);
-    SqlBindString (sql, "@name", sDataName);
-    SqlBindString (sql, "@areatag", sAreaTag);
-    SqlBindFloat (sql, "@xpos", fXpos);
-    SqlBindFloat (sql, "@ypos", fYpos);
-    SqlBindString (sql, "@entry", sEntry);
-    SqlStep (sql);
+    string sQuery = "INSERT INTO " + sTableName + "(name, areatag, xpos, ypos, entry) " + "VALUES (@name, @areatag, @xpos, @ypos, @entry);";
+    sqlquery sql = SqlPrepareQueryObject(oPC, sQuery);
+    SqlBindString(sql, "@name", sDataName);
+    SqlBindString(sql, "@areatag", sAreaTag);
+    SqlBindFloat(sql, "@xpos", fXpos);
+    SqlBindFloat(sql, "@ypos", fYpos);
+    SqlBindString(sql, "@entry", sEntry);
+    SqlStep(sql);
 }
 
 /*/ Initialize any database tables that do not exist.
@@ -2273,5 +2370,3 @@ int SetHouseData (object oPC, string sAreaTag, string sDataName, string sData)
    }
    return TRUE;
 }               */
-
-

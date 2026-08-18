@@ -27,9 +27,9 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
-    Spell.sArcaneComponent = "0_diamond_dust";
-    Spell.sDivineComponent = "0_diamond_dust";
-    Spell.iCompAmount = 500;
+    Spell.sArcaneComponent = "diamond_dust";
+    Spell.sDivineComponent = "diamond_dust";
+    Spell.iCompAmount = 20; // 500 gp worth of diamond dust
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 40.0f;
     Spell.iLineOfSight = FALSE;
@@ -56,6 +56,7 @@ void main()
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eCircle = EffectVisualEffect (VFX_FNF_STRIKE_HOLY);
     effect eDeath = EffectDeath ();
+    eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
     // Used to tell the script we have hit this creature already.
     string sSpellLocal = "UNDEATH_TO_DEATH_" + GetName (Spell.oCaster);
     // Get the result for the effect, sets Spell.iResult.

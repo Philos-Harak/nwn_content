@@ -30,7 +30,10 @@ void main()
         CraftBaseItem(oPC, oItem, oTarget);
         return;
     }
-    //int nBaseItemType = GetBaseItemType(oItem);
+    int nBaseItemType = GetBaseItemType(oItem);
+    if(nBaseItemType == 179 || nBaseItemType == 180 ||
+       nBaseItemType == 181 || nBaseItemType == 182 ||
+       nBaseItemType == 183) DoAccessoryVisuals(oPC, oItem);
     location lLocal = GetItemActivatedTargetLocation();
     // Set variables to pass the script.
     SetLocalObject(oPC, "0_item", oItem);

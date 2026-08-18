@@ -62,6 +62,7 @@ void main()
             {
                 nDrown = GetCurrentHitPoints (Spell.oAreaTarget) + 10;
                 eDrown = EffectDamage (nDrown, DAMAGE_TYPE_MAGICAL);
+                eDrown = SetEffectCasterLevel(eDrown, Spell.iCasterLevel);
                 //Apply the VFX impact and damage effect
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDrown, Spell.oAreaTarget));

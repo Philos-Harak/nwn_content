@@ -13,9 +13,9 @@ Saving Throw:   Will disbelief (if interacted with), then Fortitude partial; see
 Spell Resistance:   Yes
 
 You create a phantasmal image of the most fearsome creature imaginable to the
-subjects simply by forming the fears of the subject’s subconscious mind into
+subjects simply by forming the fears of the subject's subconscious mind into
 something that its conscious mind can visualize: this most horrible beast.
-Only the spell’s subjects can see the phantasmal killer. You see only a vague
+Only the spell's subjects can see the phantasmal killer. You see only a vague
 shape. The target first gets a Will save to recognize the image as unreal. If
 that save fails, the phantasm touches the subject, and the subject must succeed
 on a Fortitude save or die from fear. Even if the Fortitude save is successful,
@@ -80,6 +80,7 @@ void main()
                      Spell = GetModifier (Spell);
                      //Set the damage property
                      eDmg = EffectDamage (Spell.iResult, DAMAGE_TYPE_MAGICAL);
+                     eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                      // Apply effects
                      DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));
                      DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

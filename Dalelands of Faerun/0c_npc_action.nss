@@ -54,14 +54,16 @@ void main()
                 object oCorpse = GetCreatureHasItem(oPC, "0_corpse");
                 if(oCorpse != OBJECT_INVALID)
                 {
-                    int nRaise = 3;
-                    if(nSpell == SPELL_RAISE_DEAD) nRaise = 1;
-                    else if(nSpell == SPELL_RESURRECTION) nRaise = 2;
+                    int nRaise = 1;
+                    if(nSpell == SPELL_RESURRECTION) nRaise = 2;
+                    else if(nSpell == SPELL_TRUE_RESURRECTION) nRaise = 3;
                     if(GetLocalInt (oCorpse, "0_Raise") <= nRaise)
                     {
-                        if(nGold) TakeGoldFromCreature (nGold, oPC);
-                        ActionCastFakeSpellAtObject (nSpell, oCorpse);
-                        AssignCommand (oPC, ActionCastSpellAtObject (nSpell, oCorpse, 255, TRUE, 0, 0, TRUE));
+                        if(nGold) TakeGoldFromCreature(nGold, oPC);
+                        ActionCastFakeSpellAtObject(nSpell, oCorpse);
+                        // Pass to the Ressurect and Raise Dead script to know the spell is not being cast by the player.
+                        SetLocalInt(oPC, "NPC_SPELL", TRUE);
+                        AssignCommand(oPC, ActionCastSpellAtObject(nSpell, oCorpse, 255, TRUE, 0, 0, TRUE));
                     }
                     else SpeakString("This spell is not strong enought to resurrect this being!");
                 }

@@ -40,10 +40,8 @@ void main()
     }
     else if(sInput == "Track")
     {
-        ActionPlayAnimation (ANIMATION_LOOPING_GET_LOW);
-        SendMessages ("Here is what I see...", COLOR_GREEN, oPC);
-        SetLocalObject (oPC, "0_HENCHMAN_TRACKING", OBJECT_SELF);
-        ExecuteScript ("0s_find_tracks", oPC);
+        ActionPlayAnimation(ANIMATION_LOOPING_GET_LOW);
+        ExecuteScript("0s_find_tracks", oHenchman);
     }
     else if(sInput == "Track_Summons")
     {
@@ -60,8 +58,8 @@ void main()
         int nCreatureHD = GetHitDice(oHenchman);
         int nTotalHD = GetLocalInt(oPC, sSpellTag);
         SetLocalInt(oPC, sSpellTag, nTotalHD - nCreatureHD);
-        SendMessageToPC(oPC, "You have removed control of " + GetName(oHenchman) + " with " + IntToString(nCreatureHD) +
-            " hitdice from a total of " + IntToString(nTotalHD - nCreatureHD) + " hitdice left to control.");
+        SendMessages("You have removed control of " + GetName(oHenchman) + " with " + IntToString(nCreatureHD) +
+            " hitdice from a total of " + IntToString(nTotalHD - nCreatureHD) + " hitdice left to control.", COLOR_YELLOW, oPC);
         // Check and remove an PEPS data from the player.
         string sAIData = GetLocalString(oHenchman, "AI_TAG");
         if(sAIData != "") DelayCommand(2.0, DeleteObjectDatabaseName(oPC, "PEPS_TABLE", sAIData));

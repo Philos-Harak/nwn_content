@@ -61,6 +61,7 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eMind, eConfuse);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     // Get the spells target(s).

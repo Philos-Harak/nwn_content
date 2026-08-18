@@ -42,6 +42,7 @@ void main()
     // *******************************************************************
     // Create effect.
     effect eAOE = EffectAreaOfEffect (AOE_PER_DELAY_BLAST_FIREBALL);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     // Create an instance of the AOE Object using the Apply Effect function
     ApplyEffectAtLocation (Spell.iDurationType, eAOE, Spell.lTarget, Spell.fDuration);
     CleanUpSpell (Spell);

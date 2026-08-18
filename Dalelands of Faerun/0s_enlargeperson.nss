@@ -13,7 +13,7 @@ Saving Throw:   Fortitude negates
 Spell Resistance:   Yes
 
 This spell causes instant growth of a humanoid creature, doubling its height and
-multiplying its weight by 8. This increase changes the creature’s size category
+multiplying its weight by 8. This increase changes the creatureï¿½s size category
 to the next larger one. The target gains a +2 size bonus to Strength, a -2 size
 penalty to Dexterity (to a minimum of 1), and a -1 penalty on attack rolls and
 AC due to its increased size.
@@ -56,6 +56,7 @@ void main()
     effect eLink = EffectLinkEffects(eStr, eDex);
     eLink = EffectLinkEffects (eLink, eAC);
     eLink = EffectLinkEffects (eLink, eAttack);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

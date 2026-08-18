@@ -24,17 +24,15 @@ Spell Resistance:   No
 /*///////////////////////////////////////////////
 #include "0i_spells"
 #include "x2_inc_itemprop"
-
-void AddBlessEffectToWeapon (object oTarget, int iModifier, float fDuration)
+void AddBlessEffectToWeapon (object oTarget, int nModifier, int nDamageDice, float fDuration)
 {
    // If the spell is cast again, any previous enhancement boni are kept
-   IPSafeAddItemProperty (oTarget, ItemPropertyEnhancementBonus (iModifier), fDuration, X2_IP_ADDPROP_POLICY_KEEP_EXISTING, TRUE);
+   IPSafeAddItemProperty (oTarget, ItemPropertyEnhancementBonus(nModifier), fDuration, X2_IP_ADDPROP_POLICY_KEEP_EXISTING, TRUE);
    // Replace existing temporary anti undead boni
-   IPSafeAddItemProperty (oTarget, ItemPropertyDamageBonusVsRace (IP_CONST_RACIALTYPE_UNDEAD, IP_CONST_DAMAGETYPE_DIVINE, IP_CONST_DAMAGEBONUS_2d6), fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING);
+   IPSafeAddItemProperty (oTarget, ItemPropertyDamageBonusVsRace (IP_CONST_RACIALTYPE_UNDEAD, IP_CONST_DAMAGETYPE_DIVINE, nDamageDice), fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING);
    IPSafeAddItemProperty (oTarget, ItemPropertyVisualEffect (ITEM_VISUAL_HOLY), fDuration, X2_IP_ADDPROP_POLICY_REPLACE_EXISTING, FALSE, TRUE);
    return;
 }
-
 void main()
 {
     // ***********************************************************
@@ -62,6 +60,58 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    int nDamageDice = IP_CONST_DAMAGEBONUS_2d6;
+    int nEnhancedBonus, nBaseItemType;
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack, nGarnetDust, nGoldlineDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nGarnetDust && GetTag(oItem) == "garnet_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 1)
+                {
+                    if(nStack > 2) SetItemStackSize(oItem, nStack - 2);
+                    else DestroyObject (oItem);
+                    nGarnetDust = TRUE;
+                    if(nDamageDice == IP_CONST_DAMAGEBONUS_2d6) nDamageDice = IP_CONST_DAMAGEBONUS_2d8;
+                    else if(nDamageDice == IP_CONST_DAMAGEBONUS_2d8) nDamageDice += IP_CONST_DAMAGEBONUS_2d10;
+                    else if(nDamageDice == IP_CONST_DAMAGEBONUS_2d10) nDamageDice += IP_CONST_DAMAGEBONUS_2d12;
+                }
+            }
+            else if(!nGoldlineDust && GetTag(oItem) == "goldline_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 1)
+                {
+                    if(nStack > 2) SetItemStackSize(oItem, nStack - 2);
+                    else DestroyObject (oItem);
+                    nGoldlineDust = TRUE;
+                    nEnhancedBonus += 1;
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nGarnetDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the damage dice by one die!", COLOR_GREEN, oObject);
+        }
+        if(nEnhancedBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced by increasing the Enhancement bonus by +" + IntToString(nEnhancedBonus) + "!", COLOR_GREEN, oObject);
+            Spell.iResult += nEnhancedBonus;
+        }
+    }
     object oPossessor, oMyWeapon;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
@@ -84,13 +134,33 @@ void main()
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         oMyWeapon = GetTargetedOrEquippedWeapon (Spell.oAreaTarget);
-        if (GetIsMeleeWeapon (oMyWeapon))
+        if(oMyWeapon != OBJECT_INVALID)
         {
             oPossessor = GetItemPossessor(oMyWeapon);
             SignalEvent (oPossessor, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
-            DelayCommand (Spell.fDelay, AddBlessEffectToWeapon (oMyWeapon, Spell.iResult, Spell.fDuration));
+            DelayCommand (Spell.fDelay, AddBlessEffectToWeapon (oMyWeapon, Spell.iResult, nDamageDice, Spell.fDuration));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oPossessor));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDur, oPossessor, Spell.fDuration));
+            if(GetObjectType(Spell.oAreaTarget) == OBJECT_TYPE_CREATURE)
+            {
+                nBaseItemType = GetBaseItemType(oMyWeapon);
+                if(nBaseItemType == BASE_ITEM_CSLASHWEAPON ||
+                   nBaseItemType == BASE_ITEM_CPIERCWEAPON ||
+                   nBaseItemType == BASE_ITEM_CBLUDGWEAPON ||
+                   nBaseItemType == BASE_ITEM_CSLSHPRCWEAP)
+                {
+                    oMyWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_L, Spell.oAreaTarget);
+                    DelayCommand (Spell.fDelay, AddBlessEffectToWeapon(oMyWeapon, Spell.iResult, nDamageDice, Spell.fDuration));
+                }
+                else
+                {
+                    oMyWeapon = GetItemInSlot(INVENTORY_SLOT_LEFTHAND, Spell.oAreaTarget);
+                    if(GetIsWeapon(oMyWeapon))
+                    {
+                        DelayCommand (Spell.fDelay, AddBlessEffectToWeapon(oMyWeapon, Spell.iResult, nDamageDice, Spell.fDuration));
+                    }
+                }
+            }
         }
         else DelayCommand (Spell.fDelay, FloatingTextStrRefOnCreature(83615, Spell.oAreaTarget));
         //Get the spells target(s).

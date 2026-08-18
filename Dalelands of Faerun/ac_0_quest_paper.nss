@@ -21,7 +21,6 @@ void main()
     string sAreaArray = GetLocalString (oPaper, "0_Q_AREA");
     string sLocation = GetStringArray(sAreaArray, 1, "-");
     sLocation = GetStringLeft(sLocation, 7);
-    //SendMessageToPC(oPC, "sLocation: " + sLocation);
     int nTreasureMapX = StringToInt(GetStringLeft(sLocation, 3));
     int nTreasureMapY = StringToInt(GetStringRight(sLocation, 3));
     // Get current location x,y coordinates.

@@ -52,19 +52,6 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    // Create effect.
-    effect eFrightened = EffectAttackDecrease(6);
-    eFrightened = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 6), eFrightened);
-    eFrightened = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, 6), eFrightened);
-    effect eShaken = EffectAttackDecrease(2);
-    eShaken = EffectLinkEffects(EffectSavingThrowDecrease (SAVING_THROW_ALL, 2), eShaken);
-    eShaken = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, 2), eShaken);
-    effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
-    effect eVisual = EffectVisualEffect(VFX_DUR_MIND_AFFECTING_FEAR);
-    eShaken = EffectLinkEffects(eDuration, eShaken);
-    eShaken = EffectLinkEffects(eVisual, eShaken);
-    eFrightened = EffectLinkEffects(eDuration, eFrightened);
-    eFrightened = EffectLinkEffects(eVisual, eFrightened);
     // Create visual effects.
     effect eCenter = EffectVisualEffect(VFX_FNF_LOS_NORMAL_20);
     effect eImpact = EffectVisualEffect(Spell.iImpact);
@@ -77,19 +64,19 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt(Spell.oCaster, Spell.iSpellID));
         // Make a resistance and save check.
-        Spell = ResistAndSave (Spell);
+        Spell = ResistAndSave(Spell);
         if(!Spell.iSaveResult)
         {
             //Apply the linked effects and the VFX impact
-            DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-            DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eFrightened, Spell.oAreaTarget, Spell.fDuration));
+            DelayCommand(Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+            DelayCommand(Spell.fDelay, Panicked(Spell.oAreaTarget, Spell.fDuration, Spell.iCasterLevel));
         }
-        // Shaken for one round if they fail the save!
+        // Shaken for one round if they make the save!
         else if(Spell.iSaveResult == 4)
         {
            //Apply the linked effects and the VFX impact for shaken.
            DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-           DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eShaken, Spell.oAreaTarget, 6.0f));
+           DelayCommand(Spell.fDelay, Shaken(Spell.oAreaTarget, 6.0f, Spell.iCasterLevel));
         }
         //Get the spells target(s).
         Spell = GetSpellTarget(Spell);

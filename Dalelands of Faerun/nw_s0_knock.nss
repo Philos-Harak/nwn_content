@@ -26,6 +26,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "spodumene_dust";
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 150.0f;
     Spell.iLineOfSight = FALSE;
@@ -40,6 +41,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fAreaSize *= 1.5;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);

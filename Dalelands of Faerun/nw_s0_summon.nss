@@ -51,6 +51,7 @@ void main()
     string sSummonResRef = GetSummonResRef (Spell.iSpellID);
     int nVisualEffect = GetSummonVisualEffect (Spell.iSpellID);
     effect eSummons = EffectSummonCreature (sSummonResRef, nVisualEffect);
+    eSummons = SetEffectCasterLevel(eSummons, Spell.iCasterLevel);
     effect eVisual = EffectVisualEffect (nVisualEffect);
     // Check to see if we have multiple summons.
     // Sorcerer: Abyssal blood line IV: Summon Fiendish creatures with each summoning spell.
@@ -61,7 +62,8 @@ void main()
     else iSpellID = SPELL_SUMMON_CREATURE_I;
     AdjustCurrentSummonedCreatures (Spell.oCaster, iSpellID);
     ApplyEffectAtLocation (DURATION_TYPE_TEMPORARY, eSummons, Spell.lTarget, Spell.fDuration);
-    MarkSummonedCreatures (Spell.oCaster, iSpellID);
+    // MarkSummonedCreatures also runs CheckForSummonsBuffs to apply any buffs the caster has to the summons.
+    DelayCommand(0.1, MarkSummonedCreatures(Spell.oCaster, iSpellID, TRUE));
     CleanUpSpell (Spell);
 }
 

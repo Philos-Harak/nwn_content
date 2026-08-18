@@ -52,6 +52,7 @@ void main()
         // Create area of effect.
         // * passing dirge script for exit because it is an empty script (i.e., there is no special exit effects)
         effect eAOE = EffectAreaOfEffect (AOE_PER_ENTANGLE, "x0_s0_spikegroEN", "x0_s0_spikegroHB", "x0_s0_dirgeEX");
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         //Create an instance of the AOE Object using the Apply Effect function
         ApplyEffectAtLocation (Spell.iDurationType, eAOE, Spell.lTarget, Spell.fDuration);
         CleanUpSpell (Spell);

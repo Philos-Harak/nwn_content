@@ -48,9 +48,6 @@ void ai_SaveWindowLocation(object oPC, int nToken, string sAssociateType, string
     jWindow = JsonObjectSet(jWindow, "x", JsonFloat(fX));
     jWindow = JsonObjectSet(jWindow, "y", JsonFloat(fY));
     jLocations = JsonObjectSet(jLocations, sWindowID, jWindow);
-    //SendMessageToPC(oPC, "0e_nui, 52, sAssociateType: " + sAssociateType +
-    //                     " sWindowID: " + sWindowID +
-    //                     " jLocations: " + JsonDump(jLocations, 1));
     ai_SetAssociateDbJson(oPC, sAssociateType, "locations", jLocations);
 }
 void ai_ToggleAssociateWidgetOnOff(object oPC, int nToken, object oAssociate, string sAssociateType)
@@ -84,9 +81,6 @@ void main()
     string sElem  = NuiGetEventElement();
     int nIndex = NuiGetEventArrayIndex();
     string sWndId = NuiGetWindowId(oPC, nToken);
-    //SendMessageToPC(oPC, "0e_nui , 64 sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem +
-    //              " nToken: " + IntToString(nToken) + " nIndex: " + IntToString(nIndex) +
-    //             " oPC: " + GetName(oPC));
     // Get if the menu has an associate attached.
     json jData = NuiGetUserData(oPC, nToken);
     object oAssociate = StringToObject(JsonGetString(JsonArrayGet(jData, 0)));
@@ -1292,7 +1286,7 @@ void main()
             }
             else if(sElem == "btn_paste_all_summons")
             {
-                for(nIndex = 1; nIndex < 10; nIndex++)
+                for(nIndex = 1; nIndex <= AI_MAX_SUMMONS; nIndex++)
                 {
                     oAssoc = GetAssociate(ASSOCIATE_TYPE_SUMMONED, oPC, nIndex);
                     if(oAssoc != OBJECT_INVALID)

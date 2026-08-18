@@ -54,6 +54,7 @@ void main()
     // *******************************************************************
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eDeaf = EffectDeaf ();
+    eDeaf = SetEffectCasterLevel(eDeaf, Spell.iCasterLevel);
     effect eDmg;
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
@@ -72,6 +73,7 @@ void main()
         {
             //Set damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             //Apply damage effect
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
             // Check for saving throw now.

@@ -29,7 +29,7 @@ void main()
     Spell.iSubSchool = SUBSCHOOL_CREATION;
     Spell.sArcaneComponent = "m_wood_10";
     Spell.sDivineComponent = "m_wood_10";
-    Spell.iCompAmount = -1;
+    Spell.iCompAmount = 1;
     Spell.iAreaShape = SHAPE_PERSONAL;
     // Setup the spell.
     Spell = SetSpell (Spell);

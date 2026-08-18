@@ -59,6 +59,7 @@ void main()
     effect eLink = EffectLinkEffects(eStr, eDex);
     eLink = EffectLinkEffects(eLink, eCon);
     eLink = EffectLinkEffects(eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -68,7 +69,7 @@ void main()
         // Fire spell cast at event for target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply VFX impact
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         // Apply the effect.

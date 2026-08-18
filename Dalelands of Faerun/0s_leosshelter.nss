@@ -79,7 +79,7 @@ void main()
         return;
     }
     // Remove any other Leomund's secure shelter.
-    RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oCaster);
+    RemoveSpellEffects (Spell.iSpellID, Spell.oCaster);
     string sName = RemoveIllegalCharacters (StripColorCodes (GetName (Spell.oCaster)));
     // Used to anchor the spell to the creature so we can test for it.
     effect eEffect = EffectSpellImmunity (SPELL_HORSE_MOUNT);

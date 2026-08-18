@@ -27,7 +27,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     effect eLink = EffectLinkEffects (eABDecrease, eDuration);
     eLink = EffectLinkEffects (eLink, eIcon);
-    //Make a Fort Save
+   //Make a Fort Save
     if (!FortitudeSave (oTarget, nLevel + 10, SAVING_THROW_TYPE_POISON, GetAreaOfEffectCreator ()))
     {
         float fDelay = GetRandomDelay (0.75, 1.75);

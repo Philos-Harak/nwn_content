@@ -107,6 +107,7 @@ void main()
         if (!Spell.iSaveResult)
         {
             // Apply vulnerablity effect.
+            eVulnerability = SetEffectCasterLevel(eVulnerability, Spell.iCasterLevel);
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eVulnerability, Spell.oAreaTarget, Spell.fDuration));
         }
         // Do damage if the damage is above 0.
@@ -114,6 +115,7 @@ void main()
         {
             //Set the damage effect
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             //Apply the VFX impact and damage effect
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));

@@ -42,6 +42,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect ePoison = EffectPoison(37 /* Poison Spell */);
+    ePoison = SetEffectCasterLevel(ePoison, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

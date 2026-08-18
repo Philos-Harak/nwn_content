@@ -28,6 +28,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.iSubSchool = SUBSCHOOL_HEALING;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.sDivineComponent = COMPONENT_POUCH;
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
@@ -81,9 +82,10 @@ void main()
                 if(iMaxHp < Spell.iResult) Spell.iResult = iMaxHp;
                 eHeal = EffectHeal (Spell.iResult);
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply effects.
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpactDmg, Spell.oAreaTarget));
-                DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpactHeal, Spell.oAreaTarget));
+                DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpactHeal, Spell.oCaster));
             }
         }
         //Get the spells target(s).

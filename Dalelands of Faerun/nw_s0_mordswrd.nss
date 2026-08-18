@@ -17,7 +17,7 @@ within its range. The sword attacks its designated target once each round.
 Its attack bonus is equal to your caster level + your Int bonus or
 your Cha bonus (for wizards or sorcerers, respectively) with an additional +3
 enhancement bonus (maximum of +20). It deals 4d6+3 points of force damage, with a threat
-range of 19-20 and a critical multiplier of ×2.
+range of 19-20 and a critical multiplier of x2.
 
 The sword cannot be harmed by physical attacks, but magical attacks can affect it.
 
@@ -67,28 +67,29 @@ void main()
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;
     // Setup the spell.
-    Spell = SetSpell (Spell);
+    Spell = SetSpell(Spell);
     // Check to see if we should still fire off the spell.
     if (Spell.iSpellID == STOP_SPELL) return;
     // Get the duration of the spell.
-    Spell = GetDuration (Spell);
+    Spell = GetDuration(Spell);
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
     object oSummon;
-    effect eCenter = EffectVisualEffect (VFX_FNF_SUMMON_MONSTER_3);
+    effect eCenter = EffectVisualEffect(VFX_FNF_SUMMON_MONSTER_3);
+    effect eSummons = EffectRunScript("", "0e_removesummons");
     //Apply the VFX impact and summon effect
-    ApplyEffectAtLocation (DURATION_TYPE_TEMPORARY, eCenter, Spell.lTarget);
-    oSummon = CreateObject (OBJECT_TYPE_CREATURE, "0_mordenkainen", Spell.lTarget);
+    ApplyEffectAtLocation(DURATION_TYPE_TEMPORARY, eCenter, Spell.lTarget);
+    oSummon = CreateObject(OBJECT_TYPE_CREATURE, "0_mordenkainen", Spell.lTarget);
+    SetLocalInt(oSummon, "0_Summon_ID", Spell.iSpellID);
     // Fix the base attack to 1 so it only gets 1 attack and we add the attack bonus to the sword.
-    NWNX_Creature_SetBaseAttackBonus (oSummon, 1);
+    NWNX_Creature_SetBaseAttackBonus(oSummon, 1);
     // If cast from a placeable (trap) lets just make them hostile!
-    if (GetObjectType (Spell.oCaster) == OBJECT_TYPE_PLACEABLE) ChangeToStandardFaction (oSummon, STANDARD_FACTION_HOSTILE);
+    if (GetObjectType (Spell.oCaster) == OBJECT_TYPE_PLACEABLE) ChangeToStandardFaction(oSummon, STANDARD_FACTION_HOSTILE);
     // Add so he follows the caster.
-    else AddHenchman (Spell.oCaster, oSummon);
-    // Remove them after the spell ends.
-    DestroyObject (oSummon, Spell.fDuration);
-    DelayCommand (1.0, MordenkainenSummoned (Spell, oSummon));
-    CleanUpSpell (Spell);
+    else AddHenchman(Spell.oCaster, oSummon);
+    ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eSummons, oSummon, Spell.fDuration);
+    DelayCommand(1.0, MordenkainenSummoned (Spell, oSummon));
+    CleanUpSpell(Spell);
 }
 

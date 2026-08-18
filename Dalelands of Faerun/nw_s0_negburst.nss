@@ -32,7 +32,6 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
-    Spell.iDescriptor = DESC_FIRE;
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 20.0f;
     Spell.iLineOfSight = TRUE;
@@ -75,6 +74,7 @@ void main()
     // Link effects.
     effect eLinkStrIncrease = EffectLinkEffects(eStrIncrease, eDurationPositive);
     effect eLinkStrDrain = EffectLinkEffects(eStrDrain, eDurationNegative);
+    eLinkStrDrain = SetEffectCasterLevel(eLinkStrDrain, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -107,11 +107,12 @@ void main()
                 SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID));
                 // Create the damage effect.
                 eEffect = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eEffect = SetEffectCasterLevel(eEffect, Spell.iCasterLevel);
                 // Apply effect.
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eEffect, Spell.oAreaTarget));
                 // Apply visual effects.
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
-                DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_PERMANENT, eLinkStrDrain, Spell.oAreaTarget));
+                DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eLinkStrDrain, Spell.oAreaTarget, HoursToSeconds(24)));
             }
         }
         //Get the spells target(s).

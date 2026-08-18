@@ -94,7 +94,7 @@ void SetupPlayerGUIPanel (object oPC, json jCol, float fWinLength, float fWinHei
     NuiSetBind (oPC, nToken, "btn_bug_report_event", JsonBool (TRUE));
     // Check for special buttons that admins use.
     int nPCStatus = GetServerDatabaseInt (oPC, PLAYER_TABLE, "status");
-    if (nPCStatus == 5)
+    if (nPCStatus > 2)
     {
         //NuiSetBind (oPC, nToken, "btn_cynosure", JsonBool (TRUE));
         //NuiSetBind (oPC, nToken, "btn_dm_mode", JsonBool (FALSE));
@@ -131,7 +131,7 @@ void PopUpPlayerVerGUIPanel (object oPC)
     // Add the row to the column.
     jCol = JsonArrayInsert (jCol, NuiRow (jRow));
     // If we are an admin then create another row of buttons.
-    if (nPCStatus == 5)
+    if (nPCStatus > 2)
     {
         // Row 5 (buttons)****************************************************** 157
         jRow = CreateButton (JsonArray (), "Cynosure", "btn_cynosure", 100.0f, 20.0f);
@@ -513,10 +513,14 @@ void PopUpPlayerStatsGUIPanel (object oPC)
     sText += "\nNumber of deaths: " + IntToString (GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "deaths"));
     nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "kills") + GetLocalInt (oPC, "0_Kills");
     sText += "\nNumber of kills: " + IntToString (nValue);
-    nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "sidequests");
-    sText += "\nCompleted side quests: " + IntToString (nValue);
     nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "mainquests");
-    sText += "\nCompleted main quests: " + IntToString (nValue);
+    sText += "\nCompleted Story quests: " + IntToString (nValue);
+    nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "sidequests");
+    sText += "\nCompleted Side quests: " + IntToString (nValue);
+    nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "mapquests");
+    sText += "\nCompleted Map quests: " + IntToString (nValue);
+    nValue = GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "dmquests");
+    sText += "\nCompleted DM quests: " + IntToString (nValue);
     NuiSetBind (oPC, nToken, "char_text", JsonString (sText));
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
 }
@@ -1032,297 +1036,6 @@ void PopUpCreditsGUIPanel (object oPC)
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
 }
 
-void PopUpCraftingGUIPanel (object oPC)
-{
-    SetLocalInt (oPC, "0_No_Win_Save", TRUE);
-    DelayCommand (0.5f, DeleteLocalInt (oPC, "0_No_Win_Save"));
-    // Row 1 (label)************************************************************ 45
-    json jRow = CreateLabel (JsonArray (), "", "craft_ranks", 140.0f, 10.0f);
-    json jLabel = NuiLabel (NuiBind ("craft_warning_label"), JsonInt (0), JsonInt (0));
-    jLabel = NuiId (jLabel, "craft_warning");
-    jLabel = NuiStyleForegroundColor (jLabel, NuiColor (255, 0, 0, 255));
-    jLabel = NuiWidth (jLabel, 140.0);
-    jRow = JsonArrayInsert (jRow, NuiHeight (jLabel, 10.0));
-    jRow = CreateLabel (jRow, "", "craft_required", 140.0f, 10.0f);
-    // Add the row to the column.
-    json jCol = JsonArrayInsert (JsonArray (), NuiRow (jRow));
-    // Row 2 (button)*********************************************************** 63
-    jRow = CreateButtonSelect (JsonArray (), "Copy", "btn_copy", 140.0f, 25.0f);
-    jRow = CreateButton (jRow, "Paste", "btn_paste", 140.0f, 25.0f);
-    jRow = CreateButton (jRow, "Randomize", "btn_rand", 140.0f, 25.0f);
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 3 (image)************************************************************ 96
-    jRow = CreateButtonImage (JsonArray (), "left_arrow", "btn_prev", 82.0f, 176.0f);
-    jRow = CreateImage (jRow, "", "color_pallet", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER, NUI_VALIGN_TOP, 256.0f, 176.0f);
-    jRow = CreateButtonImage (jRow, "right_arrow", "btn_next", 82.0f, 176.0f);
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 4 (button)*********************************************************** 280
-    jRow = JsonArrayInsert (JsonArray (), NuiSpacer ());
-    jRow = CreateButton (jRow, "Save", "btn_save", 140.0f, 20.0f);
-    jRow = CreateButton (jRow, "", "btn_special", 140.0f, 20.0f);
-    jRow = CreateButton (jRow, "", "btn_cancel", 140.0f, 20.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 5 (text)************************************************************* 308
-    jRow = CreateLabel (JsonArray (), "Item to Craft", "item_title", 140.0f, 10.0f);
-    jRow = CreateLabel (jRow, "Model to craft", "model_title", 140.0f, 10.0f);
-    jRow = CreateLabel (jRow, "Material to color", "material_title", 140.0f, 10.0f);
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 6 (combo box)******************************************************** 326
-    jRow = CreateItemCombo (oPC, JsonArray (), "item_combo");
-    jRow = CreateModelCombo (oPC, jRow, "model_combo");
-    jRow = CreateMaterialCombo (oPC, jRow, "material_combo");
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Set the Layout for column.
-    json jLayout = NuiCol (jCol);
-    // Get the window location to restore it from the database.
-    string sPCWindow;
-    // Check if we are a DM then use our target and DB table.
-    object oTarget;
-    sPCWindow = GetServerDatabaseString (oPC, PLAYER_TABLE, "plcraftwin");
-    if (GetIsDungeonMaster (oPC)) oTarget = GetLocalObject (oPC, "0_DM_Target");
-    else oTarget = oPC;
-    float fX = StringToFloat (GetStringArray (sPCWindow, 1));
-    float fY = StringToFloat (GetStringArray (sPCWindow, 2));
-    int nToken = SetWindow (oPC, jLayout, "plcraftwin", "Crafting",
-                            fX, fY, 452.0, 363.0, FALSE, FALSE, FALSE, FALSE, TRUE);
-    // Set all binds, events, and watches.
-    // Setup the crafting rank labels.
-    int nRanks = GetSkillRank (SKILL_CRAFTING, oPC, TRUE);
-    NuiSetBind (oPC, nToken, "craft_ranks", JsonString ("Craft ranks: " + IntToString (nRanks)));
-    nRanks = GetLocalInt (oPC, "0_RANKS_REQUIRED");
-    NuiSetBind (oPC, nToken, "craft_required", JsonString ("Ranks required: " + IntToString (nRanks)));
-    // Setup the copy, paste, and random buttons.
-    int nSelected = GetLocalInt (oPC, "0_COPY_ITEM");
-    NuiSetBind (oPC, nToken, "btn_copy", JsonBool (nSelected));
-    NuiSetBind (oPC, nToken, "btn_copy_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_paste", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_paste_event", JsonBool (nSelected));
-    NuiSetBind (oPC, nToken, "btn_rand", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_rand_event", JsonBool (TRUE));
-    // Setup the Previous, Collor pallet, and Next buttons.
-    NuiSetBind (oPC, nToken, "btn_prev", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_prev_event", JsonBool (TRUE));
-    string sColorPallet = GetLocalString (oPC, "0_COLOR_PALLET");
-    if (sColorPallet == "") sColorPallet = "cloth_pallet";
-    NuiSetBind (oPC, nToken, "color_pallet_image", JsonString (sColorPallet));
-    NuiSetBind (oPC, nToken, "color_pallet_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_next", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_next_event", JsonBool (TRUE));
-    // Setup the Item selection combo.
-    int nItem = GetLocalInt (oPC, "0_CRAFT_ITEM_SELECTION");
-    object oItem = GetSelectedItem (oTarget, nItem);
-    NuiSetBind (oPC, nToken, "item_combo_selected", JsonInt (nItem));
-    NuiSetBind (oPC, nToken, "item_combo_event", JsonBool (TRUE));
-    NuiSetBindWatch (oPC, nToken, "item_combo_selected", TRUE);
-    // Setup the model selection combo.
-    nSelected = GetLocalInt (oPC, "0_CRAFT_MODEL_SELECTION");
-    NuiSetBind (oPC, nToken, "model_combo_selected", JsonInt (nSelected));
-    NuiSetBind (oPC, nToken, "model_combo_event", JsonBool (TRUE));
-    NuiSetBindWatch (oPC, nToken, "model_combo_selected", TRUE);
-    // Setup the material selection combo.
-    nSelected = GetLocalInt (oPC, "0_CRAFT_MATERIAL_SELECTION");
-    NuiSetBind (oPC, nToken, "material_combo_selected", JsonInt (nSelected));
-    NuiSetBind (oPC, nToken, "material_combo_event", JsonBool (TRUE));
-    NuiSetBindWatch (oPC, nToken, "material_combo_selected", TRUE);
-    // Setup the save button.
-    NuiSetBind (oPC, nToken, "btn_save", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_save_event", JsonBool (FALSE));
-    // Setup the special button.
-    nSelected = GetLocalInt (oPC, "0_MODEL_SPECIAL");
-    NuiSetBind (oPC, nToken, "btn_special", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_special_event", JsonBool (TRUE));
-    if (nItem == 3 || nItem == 4)
-    {
-        NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("****"));
-        NuiSetBind (oPC, nToken, "btn_special", JsonBool (FALSE));
-        NuiSetBind (oPC, nToken, "btn_special_event", JsonBool (FALSE));
-    }
-    else if (nSelected == 0) NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Left/Right Linked"));
-    else if (nSelected == 1) NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Left Model"));
-    else if (nSelected == 2) NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Right Model"));
-    else
-    {
-        nSelected = GetHiddenWhenEquipped (oItem);
-        if (nSelected)
-        {
-            NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Model Hidden"));
-            SetLocalInt (oPC, "0_MODEL_SPECIAL", 4);
-        }
-        else
-        {
-            NuiSetBind (oPC, nToken, "btn_special_label", JsonString ("Model Visible"));
-            SetLocalInt (oPC, "0_MODEL_SPECIAL", 3);
-        }
-    }
-    // Setup the Cancel/Exit button.
-    NuiSetBind (oPC, nToken, "btn_cancel_label", JsonString ("Exit"));
-    NuiSetBind (oPC, nToken, "btn_cancel", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_cancel_event", JsonBool (TRUE));
-    NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
-}
-
-void PopUpBuffGUIPanel (object oPC)
-{
-    // Row 1 (Buttons) ********************************************************* 45
-    json jRow = CreateButtonSelect (JsonArray (), "Save", "btn_save", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButton (jRow, "Clear", "btn_clear", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButton (jRow, "Buff", "btn_buff", 80.0f, 25.0f);
-    // Add the row to the column.
-    json jCol = JsonArrayInsert (JsonArray (), NuiRow (jRow));
-    // Row 2 (Buttons) ********************************************************* 78
-    jRow = JsonArrayInsert (JsonArray (), NuiSpacer ());
-    jRow = CreateButtonSelect (jRow, "List 1", "btn_list1", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButtonSelect (jRow, "List 2", "btn_list2", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButtonSelect (jRow, "List 3", "btn_list3", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButtonSelect (jRow, "List 4", "btn_list4", 80.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 3 (Widget)********************************************************** 111
-    jRow = JsonArrayInsert (JsonArray (), NuiSpacer ());
-    jRow = CreateCheckBox (jRow, "Fast Buff Widget", "buff_widget", 150.0, 20.0f);
-    jRow = CreateCheckBox (jRow, "Lock", "lock_buff_widget", 50.0, 20.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    // Add row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Row 4 (List of Spells) ************************************************** 129
-    // Create the button template for the List.
-    json jButton = NuiId (NuiButton (NuiBind ("btns_spell")), "btn_spell");
-    json jList = JsonArrayInsert (JsonArray (), NuiListTemplateCell (jButton, 300.0, TRUE));
-    // Create the list with the template.
-    jRow = CreateList (JsonArray (), jList, "btns_spell", 25.0, 431.0, 300.0);
-    // Add row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Set the layout of the window.
-    json jLayout = NuiCol (jCol);
-    float fY = GetGUIHeightMiddle (oPC, 257.0);
-    int nToken = SetWindow (oPC, jLayout, "plbuffwin", "Fast Buffing Spells",
-                            0.0, fY, 456.0, 441.0, FALSE, FALSE, TRUE, FALSE, TRUE);
-    // Set the elements to show events to 0e_window.
-    int nSelected = GetLocalInt (oPC, "0_SAVE_BUFF_SPELL");
-    NuiSetBind (oPC, nToken, "btn_save", JsonBool (nSelected));
-    NuiSetBind (oPC, nToken, "btn_save_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_clear", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_clear_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_buff", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_buff_event", JsonBool (TRUE));
-    string sList = GetServerDatabaseString (oPC, BUFF_TABLE, "spells", "list");
-    if (sList == "")
-    {
-        sList = "1";
-        CheckServerDataAndInitialize (oPC, BUFF_TABLE, "list");
-        SetServerDatabaseString (oPC, BUFF_TABLE, "spells", "1", "list");
-    }
-    if (sList == "1") NuiSetBind (oPC, nToken, "btn_list1", JsonBool (TRUE));
-    else NuiSetBind (oPC, nToken, "btn_list1", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "btn_list1_event", JsonBool (TRUE));
-    if (sList == "2") NuiSetBind (oPC, nToken, "btn_list2", JsonBool (TRUE));
-    else NuiSetBind (oPC, nToken, "btn_list2", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "btn_list2_event", JsonBool (TRUE));
-    if (sList == "3") NuiSetBind (oPC, nToken, "btn_list3", JsonBool (TRUE));
-    else NuiSetBind (oPC, nToken, "btn_list3", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "btn_list3_event", JsonBool (TRUE));
-    if (sList == "4") NuiSetBind (oPC, nToken, "btn_list4", JsonBool (TRUE));
-    else NuiSetBind (oPC, nToken, "btn_list4", JsonBool (FALSE));
-    NuiSetBind (oPC, nToken, "btn_list4_event", JsonBool (TRUE));
-    object oPlayersHandbook = GetCreatureHasItem (oPC, "players_book");
-    int nValue = GetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF");
-    NuiSetBind (oPC, nToken, "buff_widget_check", JsonBool (nValue));
-    NuiSetBindWatch (oPC, nToken, "buff_widget_check", TRUE);
-    if (nValue > 0) nValue --;
-    NuiSetBind (oPC, nToken, "lock_buff_widget_check", JsonBool (nValue));
-    NuiSetBindWatch (oPC, nToken, "lock_buff_widget_check", TRUE);
-    // Create buttons with spells listed.
-    json jButtons = JsonArray ();
-    int nSpell, nClass, nLevel, nMetamagic, nDomain, nCntr;
-    string sName;
-    json jSpells, jSpell;
-    sList = "list" + sList;
-    while (nCntr <= 50)
-    {
-        jSpells = GetServerDatabaseJson (oPC, BUFF_TABLE, "spells", sList);
-        jSpell = JsonArrayGet (jSpells, nCntr);
-        if (JsonGetType (jSpell) != JSON_TYPE_NULL)
-        {
-            nSpell = JsonGetInt (JsonArrayGet (jSpell, 0));
-            nClass = JsonGetInt (JsonArrayGet (jSpell, 1));
-            nLevel = JsonGetInt (JsonArrayGet (jSpell, 2));
-            nMetamagic = JsonGetInt (JsonArrayGet (jSpell, 3));
-            nDomain = JsonGetInt (JsonArrayGet (jSpell, 4));
-            string sTargetName = JsonGetString (JsonArrayGet (jSpell, 5));
-            sName = GetStringByStrRef (StringToInt (Get2DAString ("spells", "Name", nSpell)));
-            sName += " (" + GetStringByStrRef (StringToInt (Get2DAString ("classes", "Short", nClass)));
-            sName += " / " + IntToString (nLevel);
-            if (nMetamagic > 0)
-            {
-                if (nMetamagic == METAMAGIC_EMPOWER) sName += " / Empowered";
-                else if (nMetamagic == METAMAGIC_EXTEND) sName += " / Extended";
-                else if (nMetamagic == METAMAGIC_MAXIMIZE) sName += " / Maximized";
-                else if (nMetamagic == METAMAGIC_QUICKEN) sName += " / Quickened";
-                else if (nMetamagic == METAMAGIC_SILENT) sName += " / Silent";
-                else if (nMetamagic == METAMAGIC_STILL) sName += " / Still";
-            }
-            if (nDomain > 0)
-                sName += " / Domain";
-            sName += ") " + sTargetName;
-            jButtons = JsonArrayInsert (jButtons, JsonString (sName));
-        }
-        nCntr ++;
-    }
-    // Add the buttons to the list.
-    NuiSetBind (oPC, nToken, "btns_spell", jButtons);
-}
-
-void PopupWidgetBuffGUIPanel (object oPC)
-{
-    // Set window to not save until it has been created.
-    SetLocalInt (oPC, "0_No_Win_Save", TRUE);
-    DelayCommand (0.5f, DeleteLocalInt (oPC, "0_No_Win_Save"));
-    // Row 1 (buttons)**********************************************************
-    json jRow = CreateButtonImage  (JsonArray (), "ic_fbuff_one", "btn_one", 30.0f, 30.0f);
-    jRow = CreateButtonImage  (jRow, "ic_fbuff_two", "btn_two", 30.0f, 30.0f);
-    jRow = CreateButtonImage  (jRow, "ic_fbuff_three", "btn_three", 30.0f, 30.0f);
-    jRow = CreateButtonImage  (jRow, "ic_fbuff_four", "btn_four", 30.0f, 30.0f);
-    // Add the row to the column.
-    json jCol = JsonArrayInsert (JsonArray (), NuiRow (jRow));
-    // Get the window location to restore it from the database.
-    string sPCWindow;
-    sPCWindow = GetServerDatabaseString (oPC, PLAYER_TABLE, "widgetbuffwin");
-    float fX = StringToFloat (GetStringArray (sPCWindow, 1));
-    float fY = StringToFloat (GetStringArray (sPCWindow, 2));
-    // Set the layout of the window.
-    json jLayout = NuiCol (jCol);
-    int nToken = SetWindow (oPC, jLayout, "widgetbuffwin", "Fast Buff Widget", fX, fY, 136.0, 87.0, FALSE, FALSE, FALSE, TRUE, FALSE);
-    // Set event watches for window inspector and save window location.
-    NuiSetBindWatch (oPC, nToken, "collapsed", TRUE);
-    NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
-    // Get if the widget is locked or not. 1 - not locked, 2 - locked.
-    object oPlayersHandbook = GetCreatureHasItem (oPC, "players_book");
-    int nValue = GetLocalInt (oPlayersHandbook, "0_WIDGET_BUFF");
-    if (nValue == 2) NuiSetBind (oPC, nToken, "window_title", JsonBool (FALSE));
-    // Set the buttons to show events to 0e_window.
-    //NuiSetBind (oPC, nToken, "btn_one", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_one_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_two", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_two_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_three", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_three_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_four", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_four_event", JsonBool (TRUE));
-}
-
-
 /*******************************************************************************
 *  Helper functions for the layouts.                                           *
 *******************************************************************************/
@@ -1803,7 +1516,6 @@ json CreateMaterialCombo (object oPC, json jRow, string sComboBind)
     }
     return CreateCombo (jRow, jCombo, sComboBind, 140.0, 25.0);
 }
-
 void PopUpPasswordGUIPanel (object oPC)
 {
     // Row 1 (title)************************************************************ 45
@@ -1845,28 +1557,6 @@ void PopUpPasswordGUIPanel (object oPC)
     // Set all binds, events, and watches.
     NuiSetBind (oPC, nToken, "btn_ok_event", JsonBool (TRUE));
     SetCommandable (FALSE, oPC);
-}
-void PopUpYesNoPanel (object oPC, string sTitle, string sMessage, float fTextBoxX, float fTextBoxY)
-{
-    // Row 1 (Message)********************************************************** 45
-    json jRow = CreateTextBox (JsonArray (), "message_text", fTextBoxX, fTextBoxY);
-    // Add the row to the column.
-    json jCol = JsonArrayInsert (JsonArray (), NuiRow (jRow));
-    // Row 2 (buttons)********************************************************** 153
-    jRow = JsonArrayInsert (JsonArray(), NuiSpacer ());
-    jRow = CreateButton (jRow, "Yes", "btn_yes", 50.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    jRow = CreateButton (jRow, "No", "btn_no", 50.0f, 25.0f);
-    jRow = JsonArrayInsert (jRow, NuiSpacer ());
-    // Add the row to the column.
-    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
-    // Set the layout of the window.
-    json jLayout = NuiCol (jCol);
-    int nToken = SetWindow (oPC, jLayout, "plyesnowin", sTitle, -1.0, -1.0, fTextBoxX + 24.0, fTextBoxY + 90, FALSE, FALSE, FALSE, FALSE, TRUE);
-    // Set the buttons to show events to 0e_window.
-    NuiSetBind (oPC, nToken, "message_text", JsonString (sMessage));
-    NuiSetBind (oPC, nToken, "btn_yes_event", JsonBool (TRUE));
-    NuiSetBind (oPC, nToken, "btn_no_event", JsonBool (TRUE));
 }
 void PopUpDeathPanel(object oPC)
 {
@@ -2014,6 +1704,39 @@ void PopUpNewsPanel(object oPC)
     if(sText != "") NuiSetBind(oPC, nToken, "lbl_news_5_label", JsonString(sText));
     NuiSetBind(oPC, nToken, "btn_ok_event", JsonBool (TRUE));
     SetLocalInt(oPC, "0_NEWS_SEEN", TRUE);
+}
+void PopUpYesNoPanel (object oPC, string sTitle, string sMessage, float fTextBoxX, float fTextBoxY)
+{
+    // Row 1 (Message)********************************************************** 45
+    json jRow = CreateTextBox (JsonArray (), "message_text", fTextBoxX, fTextBoxY);
+    // Add the row to the column.
+    json jCol = JsonArrayInsert (JsonArray (), NuiRow (jRow));
+    // Row 2 (buttons)********************************************************** 153
+    jRow = JsonArrayInsert (JsonArray(), NuiSpacer ());
+    jRow = CreateButton (jRow, "Yes", "btn_yes", 50.0f, 25.0f);
+    jRow = JsonArrayInsert (jRow, NuiSpacer ());
+    jRow = CreateButton (jRow, "No", "btn_no", 50.0f, 25.0f);
+    jRow = JsonArrayInsert (jRow, NuiSpacer ());
+    // Add the row to the column.
+    jCol = JsonArrayInsert (jCol, NuiRow (jRow));
+    // Set the layout of the window.
+    json jLayout = NuiCol (jCol);
+    int nToken = SetWindow (oPC, jLayout, "plyesnowin", sTitle, -1.0, -1.0, fTextBoxX + 24.0, fTextBoxY + 90, FALSE, FALSE, FALSE, FALSE, TRUE);
+    // Set the buttons to show events to 0e_window.
+    NuiSetBind (oPC, nToken, "message_text", JsonString (sMessage));
+    NuiSetBind (oPC, nToken, "btn_yes_event", JsonBool (TRUE));
+    NuiSetBind (oPC, nToken, "btn_no_event", JsonBool (TRUE));
+}
+void PopUpInformationPanel(object oPC, string sTitle, string sMessage, float fTextBoxX, float fTextBoxY)
+{
+    // Row 1 (Message)********************************************************** 45
+    json jRow = CreateTextBox(JsonArray(), "message_text", fTextBoxX, fTextBoxY);
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
+    // Set the layout of the window.
+    json jLayout = NuiCol(jCol);
+    int nToken = SetWindow(oPC, jLayout, "plInfowin", sTitle, -1.0, -1.0, fTextBoxX + 24.0, fTextBoxY + 90, 
+                 FALSE, FALSE, TRUE, FALSE, TRUE);
+    NuiSetBind(oPC, nToken, "message_text", JsonString(sMessage));
 }
 
 

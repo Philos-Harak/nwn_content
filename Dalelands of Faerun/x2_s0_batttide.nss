@@ -50,6 +50,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (41/*VFX_MOD_BATTLETIDE*/);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create an instance of the AOE Object using the Apply Effect function
         ApplyEffectAtLocation (Spell.iDurationType, eAOE, Spell.lTarget, Spell.fDuration);
         CleanUpSpell (Spell);

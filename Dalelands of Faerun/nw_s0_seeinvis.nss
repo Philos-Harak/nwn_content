@@ -38,9 +38,50 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack, nAventurineDust, nFloursparDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nFloursparDust && GetTag(oItem) == "flourspar_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nFloursparDust = TRUE;
+                fEnhancedDuration += 0.5;
+            }
+            else if(!nAventurineDust && GetTag(oItem) == "aventurine_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 1)
+                {
+                    if(nStack > 2) SetItemStackSize(oItem, nStack - 2);
+                    else DestroyObject (oItem);
+                    nAventurineDust = TRUE;
+                    Spell.iAreaShape = SHAPE_SPHERE;
+                    Spell.fAreaSize = 30.0;
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(fEnhancedDuration > 0.0)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has enhanced the duration by +" + FloatToString(fEnhancedDuration * 100.0) + "%!", COLOR_GREEN, oObject);
+            Spell.fDuration *= (1.0 + fEnhancedDuration);
+        }
+    }
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eSight = EffectSeeInvisible();
     effect eLink = EffectLinkEffects (eDur, eSight);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -48,7 +89,7 @@ void main()
         //Signal spell cast at event to fire.
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

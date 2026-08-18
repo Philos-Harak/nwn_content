@@ -36,8 +36,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_SONIC;
     Spell.sDivineComponent = COMPONENT_POUCH;
-    Spell.sEnhancingComp = "0_diamond_dust";
-    Spell.iCompAmount = 200;
+    Spell.sEnhancingComp = "diamond_dust";
+    Spell.iCompAmount = 8; // 200gp worth of diamond dust.
     Spell.iDurationType = DURATION_TYPE_HOURS;
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;

@@ -61,8 +61,9 @@ struct stSpell
     int iModifierDie;       // Die to be used for damage, penalty, or buff.
     int iModDicePerLvl;     // The number of levels per dice added to roll. 1 is every level, 2 every other level, etc.
     int iMaxModNumOfDice;   // The maximum number of dice that can be rolled for the spell.
+    int iModPerDieBonus;    // The number to be added to each die rolled. Used for enhanced components to add +1 dmg per die.
     int iModifier;          // Number to be added to a dice roll. If no dice then the number to be used.
-    int iModPerLvl;         // The number of times to add iBonus per caster level. 1 is every caster level, 2 every other level, etc.
+    int iModPerLvl;         // The number of times to add iModifier per caster level. 1 is every caster level, 2 every other level, etc.
     int iMaxModifier;       // The maximum modifier the spell can have for a modifier.
     int iResult;            // The result to be used for damage or number with the spell.
     int iImpact;            // The impact graphic of the spell such as VFX_IMP_FLAME_S for a fire spell.
@@ -78,6 +79,8 @@ int GetIsCharacter(object oCreature);
 int GetIsDungeonMaster(object oCreature);
 // Gets the top master and returns them if they are a player.
 object GetPlayerMaster(object oAssociate);
+// Turns a hex into an int.
+int HexStringToInt(string sString);
 // Will return a rolled result from a dice string.
 // example: "1d6" will be 1-6 or "3d6" will be 3-18 or 1d6+5 will be 6-11.
 int RollDiceString(string sDice);
@@ -114,7 +117,6 @@ string GetStringArray(string sText, int iIndex, string sSeperator = ":");
 // sField is the field of characters to replace that index.
 // sSeperator is the character that seperates the array (Usefull for Multiple arrays).
 string SetStringArray(string sText, int iIndex, string sField, string sSeperator = ":");
-
 // Rolls on a 2da table that is set up to work with this script.
 // This is a weighted rolling table (2da) system. If you want an item to have a higher chance
 // then place more than one row of the entry into the 2da file.
@@ -123,35 +125,28 @@ string SetStringArray(string sText, int iIndex, string sField, string sSeperator
 // if a PC is passed then the roll will use the PC's luck.
 // Returns the Row in the 2da it rolled.
 int RollOn2daTable(string s2DA, int iMaxOnRoll = 0, object oPC = OBJECT_INVALID);
-
 // Rolls until it gets a magic item that is within the ilevel passed.
 // s2DAFile is the 2da file name to roll on.
 // iLevel is the CR or area level passed to the treasure scripts.
 // if a PC is passed then the roll will use the PC's luck.
 int RollOn2daTableWithMinItems(string s2DAFile, int iLevel, object oPC = OBJECT_INVALID);
-
 // Returns a integer as a two digit string.
 // Example 1 is returned as 01. Will reduce any number over 99 to 99.
 // iNumber is the integer to change.
 string Get2Digits(int iNumber);
-
 // This uses the character's luck when making rolls.
 // oPC is the PC making the roll.
 int d20LuckRoll(object oPC);
-
 // This uses the character's luck when making rolls.
 // oPC is the PC making the roll.
 int d100LuckRoll(object oPC);
-
 // This uses the character's luck when making rolls.
 // Rolling from 1 to nDie.
 // oPC is the PC making the roll.
 // nDie is the die you want to roll.
 int RandomLuckRoll(object oPC, int nDie);
-
 // Return a number as a string with commas.
 string GetGoldString(int iGold);
-
 // Get a specific object based on the tag in oArea. Indexes with "0_AreaByTag" + sNested.
 // oArea is the area to search.
 // sTag is the tag to search for all objects in the area.
@@ -161,7 +156,6 @@ string GetGoldString(int iGold);
 //   looking at all objects, last object will be an automatic iLastCall.
 // WARNING: Do not create objects while using this function. It will mess up the order.
 object GetObjectInAreaByTag (object oArea, string sTag, int iIndex = 1, int iObjectType = OBJECT_TYPE_ALL, int iLastCall = FALSE);
-
 // Get a specific object type in oArea. Indexes with "0_AreaObject" + sNested.
 // oArea is the area to search.
 // iIndex is the numbered object you are looking for from 1 to number of objects.
@@ -170,15 +164,12 @@ object GetObjectInAreaByTag (object oArea, string sTag, int iIndex = 1, int iObj
 //   looking at all objects, last object will be an automatic iLastCall.
 // WARNING: Do not create objects while using this function. It will mess up the order.
 object GetObjectInArea (object oArea, int iIndex = 1, int iObjectType = OBJECT_TYPE_ALL, int iLastCall = FALSE);
-
 // Removes characters not in the sLegal string.
 string RemoveIllegalCharacters (string sString, string sLegal = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
-
+// Returns a random float between fMinimumTime and MaximumTime. Default is 0.4 to 1.1 seconds.
 float GetRandomDelay(float fMinimumTime = 0.4, float MaximumTime = 1.1);
-
 // Sets up new skill feats.
 void SetNewSkillFeats ();
-
 // Creates a json array with sString up to nIndex.
 json CreateJsonArrayWithString (string sString, int nIndex);
 
@@ -204,7 +195,21 @@ object GetPlayerMaster(object oAssociate)
     else if(oMaster != OBJECT_INVALID) GetPlayerMaster(oMaster);
     return OBJECT_INVALID;
 }
-
+// Turns a hex into an int.
+int HexStringToInt(string sString)
+{
+    sString = GetStringLowerCase(sString);
+    int nInt = 0;
+    int nLength = GetStringLength(sString);
+    int i;
+    for(i = nLength - 1; i >= 0; i--)
+    {
+        int n = FindSubString("0123456789abcdef", GetSubString(sString, i, 1));
+        if(n == -1) return nInt;
+        nInt |= n << ((nLength - i - 1) * 4);
+    }
+    return nInt;
+}
 // Will return a rolled result from a dice string.
 // example: "1d6" will be 1-6 or "3d6" will be 3-18 or 1d6+5 will be 6-11.
 int RollDiceString (string sDice)
@@ -636,65 +641,72 @@ float GetRandomDelay (float fMinimumTime = 0.4, float MaximumTime = 1.1)
     }
 }
 
-// Sets up new skill feats.
+// Sets up new skill (background) feats.
 void SetNewSkillFeats ()
 {
     struct NWNX_SkillRanks_SkillFeat SkillFeat;
-    // Diligent (1294): +2 bonus to Appraise and Decipher Script checks.
-    SkillFeat.iSkill = SKILL_APPRAISE;
-    SkillFeat.iFeat = 1294/*Diligent*/;
+    // Historian (1294): +2 bonus to Appraise and Decipher Script checks.
+    SkillFeat.iFeat = 1294/*FEAT_HISTORIAN*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_APPRAISE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_DECIPHER_SCRIPT;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     // Investigator (1295): +2 bonus to Knowledge and Search checks.
-    SkillFeat.iSkill = SKILL_KNOWLEDGE;
-    SkillFeat.iFeat = 1295/*Investigator*/;
+    SkillFeat.iFeat = 1295/*FEAT_INVESTIGATOR*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_KNOWLEDGE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_SEARCH;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
-    // Magical Aptitude (1296): +2 bonus to Spellcraft and Use Magic Device checks.
-    SkillFeat.iSkill = SKILL_SPELLCRAFT;
-    SkillFeat.iFeat = 1296/*Magical Aptitude*/;
+    // Magical Artisan (1296): +2 bonus to Spellcraft and Use Magic Device checks.
+    SkillFeat.iFeat = 1296/*FEAT_MAGICAL_ARTISAN*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_SPELLCRAFT;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_USE_MAGIC_DEVICE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     // Negotiator (1297): +2 bonus to Persuade and Taunt checks.
-    SkillFeat.iSkill = SKILL_PERSUADE;
-    SkillFeat.iFeat = 1297/*Negotiator*/;
+    SkillFeat.iFeat = 1297/*FEAT_NEGOTIATOR*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_PERSUADE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_TAUNT;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
-    // Nimble Fingers (1298): +2 bonus to Disable Device and Open Locks checks.
-    SkillFeat.iSkill = SKILL_DISABLE_TRAP;
-    SkillFeat.iFeat = 1298/*Nimble Fingers*/;
+    // Nible Fingers (1298): +2 bonus to Disable Device and Open Locks checks.
+    SkillFeat.iFeat = 1298/*FEAT_NIBLE_FINGERS*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_DISABLE_TRAP;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_OPEN_LOCK;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
-    // Self-Sufficient (1299): +2 bonus to Heal and Survival checks.
-    SkillFeat.iSkill = SKILL_HEAL;
-    SkillFeat.iFeat = 1299/*Self-Sufficient*/;
+    // Survivalist (1299): +2 bonus to Heal and Survival checks.
+    SkillFeat.iFeat = 1299/*FEAT_SURVIVALIST*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_HEAL;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_SURVIVAL;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     // Agile (1293): +2 bonus to Acrobatics and Parry checks.
-    SkillFeat.iSkill = SKILL_ACROBATICS;
-    SkillFeat.iFeat = 1293/*Agile*/;
+    SkillFeat.iFeat = 1293/*FEAT_AGILE*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_ACROBATICS;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_PARRY;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
-    // Mercantile Background (1292): +2 bonus to Appraise and Knowledge checks.
-    SkillFeat.iSkill = SKILL_APPRAISE;
-    SkillFeat.iFeat = 1292/*Mercantile Background*/;
+    // Tradesman (1292): +2 bonus to Appraise and Knowledge checks.
+    SkillFeat.iFeat = 1292/*FEAT_TRADESMAN*/;
     SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_APPRAISE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     SkillFeat.iSkill = SKILL_KNOWLEDGE;
+    NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
+    // Animal Trainer (1568): +2 bonus to Handle Animal and Persuade checks.
+    SkillFeat.iFeat = 1568/*FEAT_ANIMAL_TRAINER*/;
+    SkillFeat.iModifier = 2;
+    SkillFeat.iSkill = SKILL_ANIMAL_EMPATHY;
+    NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
+    SkillFeat.iSkill = SKILL_PERSUADE;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     // Skill Affinity (Acrobatics) (1300): +2 bonus to Acrobatics.
     SkillFeat.iSkill = SKILL_ACROBATICS;
@@ -703,7 +715,7 @@ void SetNewSkillFeats ()
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
     // Skill Mastery (Acrobatics) (1301): +4 bonus to Acrobatics.
     SkillFeat.iSkill = SKILL_ACROBATICS;
-    SkillFeat.iFeat = 1301/*Skill Affinity (Acrobatics)*/;
+    SkillFeat.iFeat = 1301/*Skill Mastery (Acrobatics)*/;
     SkillFeat.iModifier = 4;
     NWNX_SkillRanks_SetSkillFeat (SkillFeat, TRUE);
 }
@@ -720,4 +732,3 @@ json CreateJsonArrayWithString (string sString, int nIndex)
     }
     return jArray;
 }
-

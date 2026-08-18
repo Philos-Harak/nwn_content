@@ -13,7 +13,7 @@ Saving Throw: 	Will negates
 Spell Resistance:No
 
 You awaken your animal companion to humanlike sentience.
-To succeed, you must make a Will save (DC 10 + the animal’s current HD).
+To succeed, you must make a Will save (DC 10 + the animal's current HD).
 If successful your companion gains +4 Strength, +4 Constitution, +1d10 Wisdom,
 and +2 to attack rolls for as long as it remains at your side.
 /*///////////////////////////////////////////////
@@ -55,6 +55,7 @@ void main()
     effect eLink = EffectLinkEffects (eStr, eCon);
     eLink = EffectLinkEffects (eLink, eAttack);
     eLink = EffectLinkEffects (eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

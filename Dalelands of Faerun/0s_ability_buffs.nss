@@ -34,11 +34,14 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.iDivineFocus = TRUE;
+    Spell.sEnhancingComp = "ruby_dust";
+    Spell.iCompAmount = 20; // 500gp worth of Ruby Dust.
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALL;
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;
+    int nSpellCheck, nNormalAbilityBoost;
     // Set which spell this is structure variables.
     int iAbility;
     switch (GetSpellId ())
@@ -49,6 +52,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_STRENGTH;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_BULLS_STRENGTH;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_CATS_GRACE :
@@ -57,6 +62,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_DEXTERITY;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_CATS_GRACE;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_ENDURANCE :
@@ -65,6 +72,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_CONSTITUTION;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_ENDURANCE;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_FOXS_CUNNING :
@@ -73,6 +82,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_INTELLIGENCE;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_CATS_GRACE;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_OWLS_WISDOM :
@@ -81,6 +92,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_WISDOM;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_OWLS_WISDOM;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_EAGLE_SPLEDOR :
@@ -89,6 +102,8 @@ void main()
             Spell.iDurationType = DURATION_TYPE_MINUTES;
             iAbility = ABILITY_CHARISMA;
             Spell.iModifier = 4;
+            nSpellCheck = SPELL_GREATER_EAGLE_SPLENDOR;
+            nNormalAbilityBoost = TRUE;
             break;
         }
         case SPELL_GREATER_BULLS_STRENGTH :
@@ -97,6 +112,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_STRENGTH;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_BULLS_STRENGTH;
             break;
         }
         case SPELL_GREATER_CATS_GRACE :
@@ -105,6 +121,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_DEXTERITY;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_CATS_GRACE;
             break;
         }
         case SPELL_GREATER_ENDURANCE :
@@ -113,6 +130,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_CONSTITUTION;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_ENDURANCE;
             break;
         }
         case SPELL_GREATER_FOXS_CUNNING :
@@ -121,6 +139,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_INTELLIGENCE;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_FOXS_CUNNING;
             break;
         }
         case SPELL_GREATER_OWLS_WISDOM :
@@ -129,6 +148,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_WISDOM;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_OWLS_WISDOM;
             break;
         }
         case SPELL_GREATER_EAGLE_SPLENDOR :
@@ -137,6 +157,7 @@ void main()
             Spell.iDurationType = DURATION_TYPE_HOURS;
             iAbility = ABILITY_CHARISMA;
             Spell.iModifier = 6;
+            nSpellCheck = SPELL_EAGLE_SPLEDOR;
             break;
         }
         case 964/*SPELL_CHARM_DOMAIN_POWER*/ :
@@ -174,19 +195,27 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    effect eAbility, eLink;
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += 2;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
+    effect eAbility = EffectAbilityIncrease (iAbility,Spell.iResult);
+    effect eLink = EffectLinkEffects (eAbility, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))
     {
         //Signal the spell cast at event
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
-        eAbility = EffectAbilityIncrease (iAbility,Spell.iResult);
-        eLink = EffectLinkEffects (eAbility, eDur);
-        DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
-        DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+        RemoveSpellEffects(Spell.iSpellID, Spell.oAreaTarget);
+        if(!nNormalAbilityBoost) RemoveSpellEffects(nSpellCheck, Spell.oAreaTarget);
+        // If we are casting a normal ability boost lets not remove the greater one.
+        if(nNormalAbilityBoost && !GetHasSpellEffect(nSpellCheck, Spell.oAreaTarget) ||
+           !nNormalAbilityBoost)
+        {
+            DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
+            DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
+        }
         //Get the spells target(s).
         Spell = GetSpellTarget (Spell);
     }

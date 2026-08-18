@@ -65,6 +65,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     // Link effects
     effect eLink = EffectLinkEffects (eBlind, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area and on the caster.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCaster, Spell.lTarget);
@@ -125,6 +126,7 @@ void main()
             if (Spell.iResult > 0)
             {
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply the VFX impact and damage effect
                 if (sTag == "vampire") DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDeathImpact, Spell.oAreaTarget));
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));

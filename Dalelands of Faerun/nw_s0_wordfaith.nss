@@ -107,6 +107,7 @@ void main()
     effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eDeaf, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply the center vfx effect.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).

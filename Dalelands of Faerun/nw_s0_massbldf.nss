@@ -53,6 +53,7 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eBlind, eDeaf);
     eLink = EffectLinkEffects (eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply vfx at spell target location.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).

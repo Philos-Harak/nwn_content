@@ -30,6 +30,7 @@ void main()
     Spell.iSubSchool = SUBSCHOOL_GLAMER;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.iDivineFocus = TRUE;
+    Spell.sEnhancingComp = "chrysophrase_dust";
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -45,12 +46,14 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if (Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // Create visual effect.
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     // Create effect.
     effect eInvis = EffectInvisibility(INVISIBILITY_TYPE_NORMAL);
     // Link effects.
     effect eLink = EffectLinkEffects(eInvis, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -58,7 +61,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

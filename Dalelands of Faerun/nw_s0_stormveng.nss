@@ -31,6 +31,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_CREATION;
     Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "bloodstone_dust";
     Spell.iDurationType = DURATION_TYPE_ROUNDS;
     Spell.iDuration = 10;
     // Setup the spell.
@@ -39,11 +40,14 @@ void main()
     if (Spell.iSpellID == STOP_SPELL) return;
     // Get the duration of the spell.
     Spell = GetDuration (Spell);
+    // Bloodstone Dust enhancing component adds 50% duration.
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
     // Create effect.
     effect eAOE = EffectAreaOfEffect (AOE_PER_STORM);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     // Create visual effect.
     effect eCenter = EffectVisualEffect (VFX_FNF_STORM);
     // Apply visual effect at the center of the effect area.

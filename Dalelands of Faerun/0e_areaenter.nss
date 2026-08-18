@@ -61,6 +61,7 @@ void main ()
         // Run all code for PC's.
         else if(GetIsCharacter(oCreature))
         {
+            // If a DM has turned off populating the area then don't even populate quests!
             if(!GetLocalInt(oArea, "0_PopulateOFF"))
             {
                 CheckPCQuestIDsByArea(oCreature, oArea);

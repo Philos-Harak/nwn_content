@@ -34,158 +34,121 @@ Programmer: Philos
 // oItem to reduce the cost of.
 // sTag to set the tag so it maybe removed later.
 void AddCostReductionItemProperty(object oItem, string sTag);
-
 // Return either the targets weapon or the weapon that is targeted.
 // oTarget is the target selected.
 object GetTargetedOrEquippedWeapon(object oTarget);
-
 // Return either the targets armor/shield or the armor that is targeted.
 // oTarget is the target selected.
 object GetTargetedOrEquippedArmor(object oTarget);
-
 // See if a creature has an item based on a specific tag.
 // sTag is the tag of the item being looked for.
 // bCheckEquiped will also look through the creatures equiped items.
 // Returns the item if found or OBJECT_INVALID.
 object GetCreatureHasItem(object oCreature, string sTag, int bCheckEquiped = FALSE);
-
 // See if a creature has an item based on a specific resref.
 // sResRef is the sResRef of the item being looked for.
 // bCheckEquiped will also look through the creatures equiped items.
 // Returns the item if found or OBJECT_INVALID.
 object GetCreatureHasItemResRef(object oCreature, string sResRef, int bCheckEquiped = FALSE);
-
 // Return TRUE if oItem is stackable.
 int GetIsItemStackable(object oItem);
-
-// Removes amount of items in any amount of stacks.
+// Removes amount of items in any amount of stacks from a container.
 // If it cannot remove them it returns false.
-// oPC is the PC to remove them from.
+// oPC is the PC to report the removal from if oPC isn't a player then nothing is reported.
+// oContainer is the container to remove the items from this maybe oPC.
 // sItemTag is the tag of the item stacks to remove.
 // iAmountToRemove is the amount of items to remove.
-int RemoveItemStack(object oPC, string sItemTag, int iAmountToRemove);
-
+int RemoveItemStackFromContainer(object oPC, object oContainer, string sItemTag, int nAmountToRemove);
 // Gets a pallet items resref randomly based on a 2da_table.
 string RollBaseItemResRef(string s2da_table, object oPC = OBJECT_INVALID);
-
 // Gets a basic set of armor based on 2da random charts.
 string GetBaseArmor();
-
 // Gets a basic shield based on 2da random charts.
 string GetBasehield();
-
 // Gets a weapon based on 2da random charts.
 string GetBaseWeapon();
-
 // Returns true if the item is a weapon.
 int GetIsWeapon(object oItem);
-
 // Returns true if the weapon is a melee weapon.
 int GetIsMeleeWeapon(object oItem);
-
 // Returns true if the weapon is a slashing weapon.
 int GetIsSlashingWeapon(object oItem);
-
 // Returns true if the weapon is a piercing weapon.
 int GetIsPiercingWeapon(object oItem);
-
 // Returns true if the weapon is a bludgeoning weapon.
 int GetIsBludgeoningWeapon(object oItem);
-
 // Returns true if the weapon is ammo.
 int GetIsAmmo(object oItem);
-
 // Returns true if the weapon is a thrown.
 int GetIsThrownWeapon(object oItem);
-
 // Returns true if the weapon is able to be used single handed by oCreature.
 int GetIsSingleHandedWeapon(object oItem, object oCreature);
-
 // Returns true if the weapon is a twohanded for oCreature.
 int GetIsTwoHandedWeapon(object oItem, object oCreature);
-
 // Returns true if they have ammo of currently equipped range weapon.
 int HasRangedWeaponWithAmmo(object oCreature = OBJECT_SELF);
-
 // Returns true if the weapon is a ranged weapon.
 int GetIsRangeWeapon(object oItem);
-
 // Returns true if the weapon is a finesse weapon.
 int GetIsFinesseWeapon(object oItem);
-
 // Returns true if the item is a shield.
 int GetIsShield(object oItem);
-
 // Returns true if they have an item with regeneration.
 // bIsEquiped requires that the regeneration is working.
 int GetHasRegeneration (object oPC, int bIsEquiped = FALSE);
-
 // Gives appropriate ammo for the weapon given.
 // If it doesn't use ammo then it will exit.
 void GiveAmmoForWeapon(object oWeapon, object oContainer);
-
-// Equips items for the creature.
-// If iDestroyDuplicate is TRUE then it will destroy any items that it unequips.
-// Always give these creatures armor.
-void EquipItems(object oCreature, int iDestroyDuplicate, int iAlwaysArmor = FALSE);
-
+// Equips items for oCreature.
+// If bDestroyDuplicate is TRUE then it destroys any items that it unequips.
+// bAlwaysArmor is TRUE it gives oCreatures armor.
+void EquipItems(object oCreature, int bDestroyDuplicate, int bAlwaysArmor = FALSE);
 // ID's all drops on oTarget.
 void IdDrops(object oTarget, int iIdentified = FALSE);
-
 // Make all items on oTarget Id'ed or not Id'ed
 // iID can be TRUE (Identified) or FALSE (Unidentified).
 // iEquiped will check the creatures equiped items as well.
 void IdAllInventory(object oTarget, int iID = TRUE, int iEquiped = FALSE);
-
+// Returns oArmors armor bonus.
+int GetArmorBonus(object oArmor);
+// Returns the maximum gold value that an item can have to be equiped.
+int GetMaxItemValueThatCanBeEquiped(int nLevel);
+// Returns the minimum level that is required to equip this item.
+int GetMinimumEquipLevel(object oItem);
 // Make all items on oTarget Droppable or not Droppable
 // bDroppable can be TRUE (Droppable) or FALSE (Not Droppable).
 // nEquiped will check the creatures equiped items as well.
 void SetDroppableFlagAllInventory(object oTarget, int bDroppable = TRUE, int nEquiped = FALSE);
-
 // Gives oCreature a simple melee weapon.
 object GiveSimpleMeleeWeapons(object oCreature);
-
 // Gives oCreature a martial melee weapon.
 object GiveMartialMeleeWeapons(object oCreature);
-
 // Gives oCreature a exotic melee weapon.
 object GiveExoticMeleeWeapons(object oCreature);
-
 // Gives oCreature a simple melee weapon.
 object GiveSimpleRangedWeapons(object oCreature);
-
 // Gives oCreature a martial melee weapon.
 object GiveMartialRangedWeapons(object oCreature);
-
 // Gives oCreature a Onehanded and light weapon.
 object GiveTwoWeaponStyleWeapons(object oCreature, int bDroppable);
-
 // Gives oCreature a melee weapon that does d4.
 object Gived4MeleeWeapons(object oCreature);
-
 // Gives oCreature a melee weapon that does d6.
 object Gived6MeleeWeapons(object oCreature);
-
 // Gives oCreature a melee weapon that does d8.
 object Gived8MeleeWeapons(object oCreature);
-
 // Gives oCreature a melee weapon that does d10.
 object Gived10MeleeWeapons(object oCreature);
-
 // Gives oCreature a melee weapon that does d12.
 object Gived12MeleeWeapons(object oCreature);
-
 // Gives creature clothing.
 object GiveClothing(object oCreature, int bDroppable = TRUE);
-
 // Gives oCreature a set of light armor.
 // iType: 0 - light, 1 - medium, 2 - heavy, 3 - light/medium
 // 4 - medium/heavy, 5 - light/medium/heavy.
 object GiveArmor(object oCreature, int iType = 0);
-
 // Returns an items size based on 1-small to 6-large.
 int GetItemSize(object oItem);
-
 // Gives equipment to a creature based on their feats.
 // oCreature is the creature to equip.
 // iDroppable: TRUE will make the items drop, FALSE they will not.
@@ -197,18 +160,15 @@ int GetItemSize(object oItem);
 // BASE_ITEM_SHIELD = 161;
 // iPackage is the package of the NPC class.
 object GiveEquipment(object oCreature, int iDroppable = TRUE, int iItem = -1, int iPackage = PACKAGE_INVALID);
-
 // Checks each item in a container and makes a roll to see if its breaks.
 // Replaced with an appropriate broken item.
 void CheckForBrokenItems(object oContainer);
-
 // Get the items max models and max colors.
 // oItem is the item to check.
 // sPart is the part to get for:
 // TopModel, MiddleModel, BottomModel - Used for weapon models.
 // Color - Used for weapon colors.
 int GetItemsMaxModels(object oItem, string sPart);
-
 // Changes an items appearance this will remove the item sent
 // and the new item put in its place.
 // oContainer is where the original item is.
@@ -216,13 +176,11 @@ int GetItemsMaxModels(object oItem, string sPart);
 // iQuality defines the different levels of item appearances.
 // 1 = Master work, 2 = Exquisite, 3 = Legendary, 4 = Relic, 5 = Artifact.
 object ChangeItemAppearance(object oItem, int iQuality = 0);
-
 // Removes Temporary item properties.
 // Used in set items.
 // A variable named SetItemsTag + "_NumOfProps" holds
 // the number of Temp properties
 void RemoveTempProperties(object oItem, string sSetTag);
-
 // Removes items from a creature or placeable.
 // Will not remove a Players's Handbook, Dungeon Masters Guide, or Creature Skin!
 // iEquiped will remove a creatures equiped items if TRUE.
@@ -231,23 +189,18 @@ void RemoveTempProperties(object oItem, string sSetTag);
 // iEquiped will remove iEquiped items as well.
 // iIgnoreSlot will ignore one slot on the equiped character INVENTORY_SLOT_*.
 void RemoveItems(object oCreature, int iEquiped = FALSE, int iIgnoreSlot = -1);
-
 // Identifies all items on oObject based on the 2da "SkillVsItemCost
 // vs OBJECT_SELF  Knowledge skill.
 // Reports the findings to oPC unless oPC = OBJECT_INVALID
 void IdentifyAllVsKnowledge(object oObject, object oPC = OBJECT_INVALID);
-
 // Attempts to lock the oTarget door by oPC with oItem.
 void AttemptToLockTheDoor(object oPC, object oItem, object oTarget);
-
 // Checks oCreature to see if they have any of Myrkul's set to power up oUndead.
 void MyrkulSetCheck(object oCreature, object oUndead);
-
 // Checks oItem and based on oCreature and any item properties will
 // adjust the items equip level to be correct.
 // oCreature is the creature to base the check on. If OBJECT_INVALID then no creature check.
 void AdjustItemsEquipLevel(object oItem, object oCreature = OBJECT_INVALID);
-
 // oItem to reduce the cost of.
 // sTag to set the tag so it maybe removed later.
 void AddCostReductionItemProperty(object oItem, string sTag)
@@ -267,14 +220,23 @@ void AddCostReductionItemProperty(object oItem, string sTag)
 // oTarget is the target selected.
 object GetTargetedOrEquippedWeapon (object oTarget)
 {
-  object oWeapon;
-  // if the object is a weapon then return it.
-  if (GetIsWeapon (oTarget)) return oTarget;
-  // The target was not a weapon so  get the right hand weapon of the target.
-  oWeapon = GetItemInSlot (INVENTORY_SLOT_RIGHTHAND, oTarget);
-  if (GetIsWeapon (oWeapon)) return oWeapon;
-  // If the right hand didn't have a weapon, check the left hand weapon of the target.
-  oWeapon = GetItemInSlot (INVENTORY_SLOT_LEFTHAND, oTarget);
+    object oWeapon;
+    // if the object is a weapon then return it.
+    if(GetIsWeapon(oTarget)) return oTarget;
+    // The target was not a weapon get the right hand weapon of the target.
+    if(GetObjectType(oTarget) == OBJECT_TYPE_CREATURE)
+    {
+        oWeapon = GetItemInSlot(INVENTORY_SLOT_RIGHTHAND, oTarget);
+        if(GetIsWeapon(oWeapon)) return oWeapon;
+        // If the right hand didn't have a weapon, check the left hand weapon of the target.
+        oWeapon = GetItemInSlot(INVENTORY_SLOT_LEFTHAND, oTarget);
+        if(GetIsWeapon(oWeapon)) return oWeapon;
+        // Does not have a weapon in their hand. Do they have claws?
+        oWeapon = GetItemInSlot(INVENTORY_SLOT_CWEAPON_R, oTarget);
+        if(oWeapon != OBJECT_INVALID) return oWeapon;
+        oWeapon = GetItemInSlot(INVENTORY_SLOT_ARMS, oTarget);
+        return oWeapon;
+    }
   // Does not have a weapon!
   return OBJECT_INVALID;
 }
@@ -312,42 +274,36 @@ object GetCreatureHasItem (object oCreature, string sTag, int bCheckEquiped = FA
 {
     int nSlot = 0, nCount, nCasterLevel;
     string sItemTag;
-    object oItem, oFoundItem = OBJECT_INVALID;
-    // Cycle through the creatures unequiped items.
-    oItem = GetFirstItemInInventory (oCreature);
-    while (oItem != OBJECT_INVALID)
-    {
-        sItemTag = GetTag (oItem);
-        // Magic scrolls, wands, and potions put the caster level at the end of the tag.
-        // Check for those.
-        nCasterLevel = GetLocalInt (oItem, "0_Caster_Level");
-        if (nCasterLevel > 0)
-        {
-            if (nCasterLevel < 10) nCount = GetStringLength (sItemTag) - 1;
-            else nCount = GetStringLength (sItemTag) - 2;
-            sItemTag = GetStringLeft (sItemTag, nCount);
-        }
-        if (sItemTag == sTag ) oFoundItem = oItem;
-        oItem = GetNextItemInInventory (oCreature);
-    }
+    object oItem;
     // Should we check the creatures equiped items.
-    // If we have already found it then stop looking.
-    if (bCheckEquiped || oFoundItem == OBJECT_INVALID)
+    if(bCheckEquiped)
     {
        // Check all of the creatures slots (0 - 17).
-       while (nSlot <= 17)
+       while(nSlot <= 17)
        {
-            oItem = GetItemInSlot (nSlot, oCreature);
-            if (GetTag (oItem) == sTag)
-            {
-                // Stop checking.
-                nSlot == 17;
-                oFoundItem = oItem;
-            }
-            nSlot ++;
+            oItem = GetItemInSlot(nSlot, oCreature);
+            if(GetTag(oItem) == sTag) return oItem;
+            nSlot++;
        }
     }
-    return oFoundItem;
+    // Cycle through the creatures unequiped items.
+    oItem = GetFirstItemInInventory(oCreature);
+    while(oItem != OBJECT_INVALID)
+    {
+        sItemTag = GetTag(oItem);
+        // Magic scrolls, wands, and potions put the caster level at the end of the tag.
+        // Check for those.
+        nCasterLevel = GetLocalInt(oItem, "0_Caster_Level");
+        if(nCasterLevel > 0)
+        {
+            if(nCasterLevel < 10) nCount = GetStringLength(sItemTag) - 1;
+            else nCount = GetStringLength(sItemTag) - 2;
+            sItemTag = GetStringLeft(sItemTag, nCount);
+        }
+        if(sItemTag == sTag ) return oItem;
+        oItem = GetNextItemInInventory(oCreature);
+    }
+    return OBJECT_INVALID;
 }
 
 // See if a creature has an item based on a specific resref.
@@ -398,15 +354,23 @@ int GetIsItemStackable (object oItem)
     return FALSE;
 }
 
-// Removes amount of items in any amount of stacks.
+// Removes amount of items in any amount of stacks from a container.
 // If it cannot remove them it returns false.
-// oPC is the PC to remove them from.
+// oPC is the PC to report the removal from if oPC isn't a player then nothing is reported.
+// oContainer is the container to remove the items from this maybe oPC.
 // sItemTag is the tag of the item stacks to remove.
 // iAmountToRemove is the amount of items to remove.
-int RemoveItemStack(object oCaster, string sItemTag, int nAmountToRemove)
+int RemoveItemStackFromContainer(object oPC, object oContainer, string sItemTag, int nAmountToRemove)
 {
+    // First lets check for focuses that we don't want to remove.
+    if(nAmountToRemove < 1)
+    {
+        if(GetCreatureHasItem(oContainer, sItemTag) != OBJECT_INVALID) return TRUE;
+        else return FALSE;
+    }
+    // Now check for the components and remove them.
     int nStack, nOriginalAmount = nAmountToRemove;
-    object oOriginalItem, oItem = GetFirstItemInInventory(oCaster);
+    object oOriginalItem, oItem = GetFirstItemInInventory(oContainer);
     while(nAmountToRemove > 0 && oItem != OBJECT_INVALID)
     {
         if(GetTag(oItem) == sItemTag)
@@ -432,29 +396,29 @@ int RemoveItemStack(object oCaster, string sItemTag, int nAmountToRemove)
                 nAmountToRemove -= nStack;
             }
         }
-        oItem = GetNextItemInInventory (oCaster);
+        oItem = GetNextItemInInventory(oContainer);
     }
     // Since we found enough components to use let us remove them.
     // If we didn't then skip removing them.
     if(nAmountToRemove == 0)
     {
-        if(GetIsCharacter(oCaster)) NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, TRUE, oCaster);
-        oItem = GetFirstItemInInventory (oCaster);
+        if(GetIsCharacter(oPC)) NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, TRUE, oPC);
+        oItem = GetFirstItemInInventory(oContainer);
         while(oItem != OBJECT_INVALID)
         {
             nAmountToRemove = GetLocalInt(oItem, "0_Remove");
-            if(nAmountToRemove == -1) DestroyObject (oItem);
+            if(nAmountToRemove == -1) DestroyObject(oItem);
             else if(nAmountToRemove)
             {
                 DeleteLocalInt(oItem, "0_Remove");
                 SetItemStackSize(oItem, nStack - nAmountToRemove);
             }
-            oItem = GetNextItemInInventory (oCaster);
+            oItem = GetNextItemInInventory(oContainer);
         }
-        if(GetIsCharacter(oCaster))
+        if(GetIsCharacter(oPC))
         {
-            NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, FALSE, oCaster);
-            SendMessages("Lost Item: " + IntToString(nOriginalAmount) + " " + GetName(oOriginalItem), COLOR_YELLOW, oCaster);
+            NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, FALSE, oPC);
+            SendMessages("Lost Item: " + IntToString(nOriginalAmount) + " " + GetName(oOriginalItem), COLOR_YELLOW, oPC);
         }
         return TRUE;
     }
@@ -480,68 +444,10 @@ string RollBaseItemResRef (string s2DAItemTable, object oPC = OBJECT_INVALID)
 // Returns true if the item is a  weapon.
 int GetIsWeapon (object oItem)
 {
-   int iType = GetBaseItemType (oItem);
-   switch (iType)
-   {
-      case BASE_ITEM_LONGSWORD: return TRUE;
-      case BASE_ITEM_LONGBOW: return TRUE;
-      case BASE_ITEM_RAPIER: return TRUE;
-      case BASE_ITEM_DAGGER: return TRUE;
-      case BASE_ITEM_GREATAXE: return TRUE;
-      case BASE_ITEM_SHORTBOW: return TRUE;
-      case BASE_ITEM_GREATSWORD: return TRUE;
-      case BASE_ITEM_SHORTSWORD: return TRUE;
-      case BASE_ITEM_MORNINGSTAR: return TRUE;
-      case BASE_ITEM_LIGHTMACE: return TRUE;
-      case BASE_ITEM_BATTLEAXE: return TRUE;
-      case BASE_ITEM_BASTARDSWORD: return TRUE;
-      case BASE_ITEM_SCIMITAR: return TRUE;
-      case BASE_ITEM_SHORTSPEAR: return TRUE;
-      case BASE_ITEM_QUARTERSTAFF: return TRUE;
-      case BASE_ITEM_WARHAMMER: return TRUE;
-      case BASE_ITEM_HALBERD: return TRUE;
-      case BASE_ITEM_SICKLE: return TRUE;
-      case BASE_ITEM_HANDAXE: return TRUE;
-      case BASE_ITEM_THROWINGAXE: return TRUE;
-      case BASE_ITEM_DWARVENWARAXE: return TRUE;
-      case BASE_ITEM_HEAVYFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTFLAIL: return TRUE;
-      case BASE_ITEM_LIGHTHAMMER: return TRUE;
-      case BASE_ITEM_LIGHTCROSSBOW: return TRUE;
-      case BASE_ITEM_HEAVYCROSSBOW: return TRUE;
-      case BASE_ITEM_SLING: return TRUE;
-      case BASE_ITEM_KATANA: return TRUE;
-      case BASE_ITEM_BOLT: return TRUE;
-      case BASE_ITEM_ARROW: return TRUE;
-      case BASE_ITEM_BULLET: return TRUE;
-      case BASE_ITEM_CLUB: return TRUE;
-      case 31: return TRUE; // Javelin
-      case BASE_ITEM_DOUBLEAXE: return TRUE;
-      case BASE_ITEM_TWOBLADEDSWORD: return TRUE;
-      case BASE_ITEM_DIREMACE: return TRUE;
-      case BASE_ITEM_KAMA: return TRUE;
-      case BASE_ITEM_KUKRI: return TRUE;
-      case BASE_ITEM_SCYTHE: return TRUE;
-      case BASE_ITEM_SHURIKEN: return TRUE;
-      case BASE_ITEM_TRIDENT: return TRUE;
-      case BASE_ITEM_WHIP: return TRUE;
-      case 163: return TRUE; // Falchion
-      case 164: return TRUE; // Heavy Mace
-      case 165: return TRUE; // Maul
-      case 166: return TRUE; // Mercury Longsword
-      case 167: return TRUE; // Mercury greatsword
-      case 168: return TRUE; // Double Scimitar
-      case 169: return TRUE; // Heavy Pick
-      case 170: return TRUE; // Light Pick
-      case 171: return TRUE; // Sai
-      case 172: return TRUE; // Nunchaku
-      case 173: return TRUE; // Wakazashi
-      case 174: return TRUE; // Short spear
-      case 175: return TRUE; // Short staff
-   }
-   return FALSE;
+    int nWeaponType = StringToInt(Get2DAString ("baseitems", "WeaponType", GetBaseItemType (oItem)));
+    if (nWeaponType > 0) return TRUE;
+    return FALSE;
 }
-
 // Returns true if the weapon is a melee weapon.
 int GetIsMeleeWeapon (object oItem)
 {
@@ -643,7 +549,7 @@ int GetIsPiercingWeapon (object oItem)
   int iBaseItemType = GetBaseItemType (oItem);
   int iWeaponType = StringToInt (Get2DAString ("baseitems", "WeaponType", iBaseItemType));
   // Weapon Type in the baseitems.2da is 1 = Piercing, 2 = Bludgeoning, 3 = Slashing.
-  if (iWeaponType == 1) return TRUE;
+  if(iWeaponType == 1) return TRUE;
   return FALSE;
 }
 
@@ -746,9 +652,9 @@ int GetIsRangeWeapon (object oItem)
 }
 
 // Returns true if the weapon is a finesse weapon.
-int GetIsFinesseWeapon (object oItem)
+int GetIsFinesseWeapon(object oItem)
 {
-   switch (GetBaseItemType (oItem))
+   switch(GetBaseItemType(oItem))
    {
       case BASE_ITEM_DAGGER: return TRUE;
       case BASE_ITEM_HANDAXE: return TRUE;
@@ -781,7 +687,6 @@ int GetIsShield (object oItem)
    }
    return FALSE;
  }
-
 // Returns true if they have an item with regeneration.
 // bIsEquiped requires that the regeneration is working.
 int GetHasRegeneration (object oPC, int bIsEquiped = FALSE)
@@ -835,13 +740,12 @@ void GiveAmmoForWeapon (object oWeapon, object oContainer)
        }
    }
 }
-
-int EquipItemBaseOnGoldValue (object oCreature, object oItem, int iSlot, int iDestroyDuplicate = FALSE)
+int EquipItemBaseOnGoldValue (object oCreature, object oItem, int iSlot, int bDestroyDuplicate = FALSE)
 {
    object oEquiped = GetItemInSlot (iSlot, oCreature);
    if (GetGoldPieceValue (oItem) > GetGoldPieceValue (oEquiped))
    {
-      if (oEquiped != OBJECT_INVALID && iDestroyDuplicate)
+      if (oEquiped != OBJECT_INVALID && bDestroyDuplicate)
       {
         DestroyObject (oEquiped);
       }
@@ -849,7 +753,7 @@ int EquipItemBaseOnGoldValue (object oCreature, object oItem, int iSlot, int iDe
       ActionWait (6.0f);
       return TRUE;
    }
-   else if (iDestroyDuplicate)
+   else if (bDestroyDuplicate)
       {
             DestroyObject (oItem);
       }
@@ -873,11 +777,7 @@ void CheckArmor (object oCreature, object oArmor, int bChecked = FALSE)
         }
     }
 }
-
-// Equips a creatures best items.
-// If iDestroyDuplicate is TRUE then it will destroy any items that it unequips.
-// Always give these creatures armor.
-void EquipItems (object oCreature, int iDestroyDuplicate, int iAlwaysArmor = TRUE)
+void EquipItems(object oCreature, int bDestroyDuplicate, int bAlwaysArmor = FALSE)
 {
    object oItem, oItem2, oMeleeWeapon1, oMeleeWeapon2, oShield, oArmor, oArrow;
    object oBelt, oBoots, oCloak, oHelmet, oAmulet, oHands, oBolt, oBullet, oRangedWeapon;
@@ -1063,7 +963,37 @@ void IdAllInventory (object oTarget, int iID = TRUE, int iEquiped = FALSE)
        }
    }
 }
-
+int GetArmorBonus(object oArmor)
+{
+    int nTorsoValue = GetItemAppearance(oArmor, ITEM_APPR_TYPE_ARMOR_MODEL, ITEM_APPR_ARMOR_MODEL_TORSO);
+    //ai_Debug("0i_items", "444", "Armor Bonus: " + Get2DAString("parts_chest.2da", "ACBONUS", nTorsoValue));
+    return StringToInt(Get2DAString("parts_chest", "ACBONUS", nTorsoValue));
+}
+int GetMaxItemValueThatCanBeEquiped(int nLevel)
+{
+    return StringToInt(Get2DAString("itemvalue", "MAXSINGLEITEMVALUE", nLevel - 1));
+}
+int GetMinimumEquipLevel(object oItem)
+{
+    int nIndex, nUnIdentified;
+    if(!GetIdentified(oItem))
+    {
+        nUnIdentified = TRUE;
+        SetIdentified(oItem, TRUE);
+    }
+    int nGoldValue = GetGoldPieceValue(oItem);
+    if(nUnIdentified) SetIdentified(oItem, FALSE);
+    int n2daMaxRow = Get2DARowCount("itemvalue");
+    while(nIndex < n2daMaxRow)
+    {
+        if(nGoldValue <= StringToInt(Get2DAString("itemvalue", "MAXSINGLEITEMVALUE", nIndex)))
+        {
+            return nIndex + 1;
+        }
+        nIndex++;
+    }
+    return nIndex;
+}
 // Make all items on oTarget Droppable or not Droppable
 // bDroppable can be TRUE (Droppable) or FALSE (Not Droppable).
 // nEquiped will check the creatures equiped items as well.
@@ -1268,7 +1198,7 @@ object GiveMartialRangedWeapons (object oCreature)
 }
 
 // Gives oCreature a Onehanded and light weapon.
-void GiveTwoWeaponStyleWeapons (object oCreature, int bDroppable)
+object GiveTwoWeaponStyleWeapons(object oCreature, int bDroppable)
 {
     int iRoll;
     string sResRef;
@@ -1329,6 +1259,7 @@ void GiveTwoWeaponStyleWeapons (object oCreature, int bDroppable)
     oItem = CreateItemOnObject (sResRef, oCreature);
     if (oItem  == OBJECT_INVALID) SetModuleError ("RESREF", "0i_items", "1216", "Created invalid resref: " + sResRef);
     else SetDroppableFlag (oItem, bDroppable);
+    return oItem;
 }
 
 // Gives oCreature a melee weapon that does d4.
@@ -1441,12 +1372,12 @@ object GiveClothing (object oCreature, int bDroppable = TRUE)
 // Gives oCreature a set of light armor.
 // iType: 0 - light, 1 - medium, 2 - heavy, 3 - light/medium
 // 4 - medium/heavy, 5 - light/medium/heavy.
-object GiveArmor (object oCreature, int iType = 5)
+object GiveArmor(object oCreature, int nType = 0)
 {
    string sResRef = "";
    object oItem, oItem2, oItem3, oTempChest;
    int iRoll = d100();
-   switch (iType)
+   switch (nType)
    {
       case 0 :
       {
@@ -2159,55 +2090,55 @@ int IdentifyItemVsKnowledge (object oObject, object oItem, object oPC = OBJECT_I
 }
 
 //  Smart Bags by Clobber adjusted for our PW by Philos.
-void CheckSmartContainers (object oItem, object oPC)
+void CheckSmartContainers(object oItem, object oPC)
 {
-    object oContainer;
-    int nBaseItemType = GetBaseItemType (oItem);
+    string sContainerTag;
+    int nBaseItemType = GetBaseItemType(oItem);
     // Check to see if the item type matches any of the PC's smart containters.
-    if (nBaseItemType == BASE_ITEM_GEM)
+    if(nBaseItemType == BASE_ITEM_GEM) sContainerTag = "0_gem_pouch";
+    else if(nBaseItemType == BASE_ITEM_KEY) sContainerTag = "0_key_ring";
+    else if(nBaseItemType == BASE_ITEM_POTIONS) sContainerTag = "0_potion_box";
+    else if(nBaseItemType == BASE_ITEM_SPELLSCROLL) sContainerTag = "0_scroll_case";
+    else if(nBaseItemType == BASE_ITEM_ARROW ||
+            nBaseItemType == BASE_ITEM_BOLT ||
+            nBaseItemType == BASE_ITEM_BULLET) sContainerTag = "0_quiver";
+    else if(nBaseItemType == BASE_ITEM_MAGICWAND ||
+            nBaseItemType == BASE_ITEM_MAGICROD) sContainerTag = "0_wand_case";
+    else if(nBaseItemType == BASE_ITEM_RING ||
+            nBaseItemType == BASE_ITEM_AMULET) sContainerTag = "0_jewelry_box";
+    // Lets not put food in the component pouch.
+    else if(nBaseItemType == BASE_ITEM_SMALL_STACKING_ITEM &&
+             GetTag(oItem) != "0_rations") sContainerTag = "0_comp_pouch";
+    // Quest items.
+    else if(nBaseItemType == 178) sContainerTag = "0_quest_book";
+    if(sContainerTag != "")
     {
-        oContainer = GetItemPossessedBy (oPC, "0_gem_pouch");
+        object oContainer;
+        object oInventoryObject = GetFirstItemInInventory(oPC);
+        while(oInventoryObject != OBJECT_INVALID)
+        {
+            if(GetTag(oInventoryObject) == sContainerTag)
+            {
+                if(GetBaseItemFitsInInventory(nBaseItemType, oInventoryObject))
+                {
+                    oContainer = oInventoryObject;
+                    break;
+                }
+            }
+            oInventoryObject = GetNextItemInInventory(oPC);
+        }
+        if(oContainer != OBJECT_INVALID)
+        {
+            // Hide lost and gain item message for the swap.
+            NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_LOST, TRUE, oPC);
+            DelayCommand (0.2, NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_LOST, FALSE, oPC));
+            NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, TRUE, oPC);
+            DelayCommand (0.2, NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, FALSE, oPC));
+            // By now, we've either returned an appropriate smart bag to place the item into, or oBag will be OBJECT_INVALID.
+            // If we've returned a smart bag, we now place the item into it.
+            AssignCommand(oPC, ActionGiveItem(oItem, oContainer));
+        }
     }
-    else if (nBaseItemType == BASE_ITEM_KEY)
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_key_ring");
-    }
-    else if (nBaseItemType == BASE_ITEM_POTIONS)
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_potion_box");
-    }
-    else if (nBaseItemType == BASE_ITEM_SPELLSCROLL)
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_scroll_case");
-    }
-    else if ((nBaseItemType == BASE_ITEM_ARROW) ||
-             (nBaseItemType == BASE_ITEM_BOLT) ||
-             (nBaseItemType == BASE_ITEM_BULLET))
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_quiver");
-    }
-    else if ((nBaseItemType == BASE_ITEM_MAGICWAND) ||
-             (nBaseItemType == BASE_ITEM_MAGICROD))
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_wand_case");
-    }
-    else if ((nBaseItemType == BASE_ITEM_SMALL_STACKING_ITEM))
-    {
-        // Lets not put food in the component pouch.
-        if (GetTag (oItem) != "0_rations") oContainer = GetItemPossessedBy (oPC, "0_comp_pouch");
-    }
-    else if (nBaseItemType == 178) // Quest items.
-    {
-        oContainer = GetItemPossessedBy (oPC, "0_quest_book");
-    }
-    // Hide lost and gain item message for the swap.
-    NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_LOST, TRUE, oPC);
-    DelayCommand (0.2, NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_LOST, FALSE, oPC));
-    NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, TRUE, oPC);
-    DelayCommand (0.2, NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, FALSE, oPC));
-    // By now, we've either returned an appropriate smart bag to place the item into, or oBag will be OBJECT_INVALID.
-    // If we've returned a smart bag, we now place the item into it.
-    if (oContainer != OBJECT_INVALID) AssignCommand (oPC, ActionGiveItem (oItem, oContainer));
 }
 // Equip item script for Myrkul's necromancy set.
 // Used to add bonuses to controlled undead.

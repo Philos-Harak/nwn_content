@@ -46,8 +46,11 @@ void main ()
         // Remove any armor bonus from spells.
         DeleteLocalInt(oPC, "0_Armor_Bonus");
         // Save character information to the database regardless of time.
-        SaveCharacterData(oPC, TRUE);
-        SaveAssociatesToDatabase(oPC, TRUE);
+        if(!GetLocalInt(oPC, "0_CHAR_DELETED"))
+        {
+            SaveCharacterData(oPC, TRUE);
+            SaveAssociatesToDatabase(oPC, TRUE);
+        }
     }
     else if(GetIsDM(oPC))
     {

@@ -30,6 +30,8 @@ void main()
     Spell.iDescriptor = DESC_FIRE;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.sDivineComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "aventurine_dust";
+    Spell.iCompAmount = 2; // 50 gold worth of components.
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -53,6 +55,13 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects(eVisual, eSight);
     eLink = EffectLinkEffects(eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+    // Aventurine dust allows all allies within 30' to gain the spell.
+    if(Spell.sEnhancingComp == "TRUE")
+    {
+        Spell.iAreaShape = SHAPE_SPHERE;
+        Spell.fAreaSize = 30.0;
+    }
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -60,7 +69,7 @@ void main()
         //Signal spell cast at event
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply effects.
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

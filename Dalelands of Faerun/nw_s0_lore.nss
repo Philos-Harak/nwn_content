@@ -34,7 +34,7 @@ void main()
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.sDivineComponent = COMPONENT_POUCH;
     Spell.sEnhancingComp = "0_incense";
-    Spell.iCompAmount = 250;
+    Spell.iCompAmount = 10; // 250gp worth of Incense.
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -66,6 +66,7 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eLore, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -73,14 +74,13 @@ void main()
         //Fire spell cast at event for target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply VFX impact and bonus effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         // If we are enhancing the spell then Identify all magic items.
         if (Spell.sEnhancingComp == "TRUE")
         {
-            // Identify all items that are of legendary quality or less.
             oItem = GetFirstItemInInventory (Spell.oAreaTarget);
             while (GetIsObjectValid (oItem))
             {

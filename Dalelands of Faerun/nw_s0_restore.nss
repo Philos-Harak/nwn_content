@@ -25,7 +25,7 @@ drained). It also eliminates any fatigue or exhaustion suffered by the target.
 
 Material Component: Diamond dust worth 100 gp that is sprinkled over the target.
 
-× Removes all negative effects unless they come from Poison, Disease or Curses.
+ï¿½ Removes all negative effects unless they come from Poison, Disease or Curses.
 /*///////////////////////////////////////////////
 #include "0i_spells"
 
@@ -41,8 +41,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_HEALING;
     Spell.iDescriptor = DESC_FIRE;
-    Spell.sDivineComponent = "0_diamond_dust";
-    Spell.iCompAmount = 100;
+    Spell.sDivineComponent = "diamond_dust";
+    Spell.iCompAmount = 4; // 100 gp worth of diamond dust
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iLineOfSight = TRUE;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;

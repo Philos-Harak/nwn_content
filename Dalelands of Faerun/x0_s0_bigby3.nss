@@ -15,7 +15,7 @@ Spell Resistance: Yes
 The grasping hand gets one grapple attack per round.
 Its attack bonus to make contact equals your caster level + your Intelligence,
 Wisdom, or Charisma modifier (for wizards, clerics, and sorcerers, respectively),
-+10 for the hand’s Strength score (31), -1 for being Large. Its grapple bonus is
++10 for the hand's Strength score (31), -1 for being Large. Its grapple bonus is
 this same figure, except with a +4 modifier for being Large instead of -1. The
 hand holds but does not harm creatures it grapples.
 
@@ -95,6 +95,7 @@ void GraspingHand (struct stSpell Spell, object oTarget)
     effect eHeld = EffectParalyze ();
     // Link effects.
     effect eLink = EffectLinkEffects (eDuration, eVisual);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Make attack.
     iCasterAtkMod = GetCasterAbilityModifier (Spell.oCaster) + Spell.iCasterLevel + 10 - 1;
     iCasterAtkRoll = d20();

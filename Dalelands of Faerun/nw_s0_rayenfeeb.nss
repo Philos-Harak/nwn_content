@@ -14,7 +14,7 @@ Spell Resistance:   Yes
 A coruscating ray springs from your hand. You must succeed on a ranged touch
 attack to strike a target. The subject takes a penalty to Strength equal to
 1d6+1 per two caster levels (maximum 1d6+5).
-The subject’s Strength score cannot drop below 3.
+The subjectï¿½s Strength score cannot drop below 3.
 /*///////////////////////////////////////////////
 
 #include "0i_spells"
@@ -77,6 +77,7 @@ void main()
                 // Create effects.
                 eFeeble = EffectAbilityDecrease (ABILITY_STRENGTH, Spell.iResult);
                 eLink = EffectLinkEffects(eFeeble, eDuration);
+                eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
                 //Apply the ability damage effect and VFX impact
                 DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
                 DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eImpact, Spell.oAreaTarget));

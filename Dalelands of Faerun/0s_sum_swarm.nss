@@ -63,6 +63,7 @@ void main()
     eEffect = RemoveEffectIcon (eEffect);
     // Link the effects
     effect eLink = EffectLinkEffects (eEffect, eVisual);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     if (GetHasFeat (1033/*FEAT_SPIDER_DOMAIN_POWER*/, Spell.oCaster)) iSwarm = 2;
     else iSwarm = Random (3);
     if (iSwarm == 0)
@@ -122,7 +123,7 @@ void Swarm (struct stSpell Spell, string sSwarm, object oTarget, effect eSpecial
             if (GetIsSpellTargetValid (oNewTarget, Spell.iTargetType, Spell.oCaster) &&
                 GetDistanceBetween (oTarget, oNewTarget) <= 30.0f)
             {
-                RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, oTarget);
+                RemoveSpellEffects (Spell.iSpellID, oNewTarget);
                 // We found a new enemy so attack next round and exit this.
                 SignalEvent(oNewTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID));
                 effect eVisual = EffectVisualEffect (VFX_DUR_FLIES);

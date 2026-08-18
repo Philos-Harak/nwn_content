@@ -1,7 +1,7 @@
 /*////////////////////////////////////////////////////////////////////////////////////////////////////
 // Script Name: 0i_quest
 //////////////////////////////////////////////////////////////////////////////////////////////////////
- Include scripts for use with quests.
+Include scripts for use with quests.
  Note Predefining variables on NPC's:
  0_Required_Reputation - Int - minimum reputation to get this NPC's quest.
  0_Required_Quest - Int - The number of the request needed to get this NPC's quest.
@@ -27,7 +27,9 @@
             Sound_Effect - The sound file to play when the quest is taken. "as_fanfare_intro" is default.
             Leave_Method - The Giver will leave when quest is taken. "TELEPORT", FAREXIT, NEAREXIT".
  STRREF(Str) Quests String Reference in the Tlk file of the quest description.
- ID(Str) The unique id of this quest: Side quests = DATETIME+STRREF, Main quests/Town quests = UNIQUE.
+ ID(Str) The unique id of this quest: Side quests = Side_Quest_ID + DATETIME,
+                                      Main quests = Main_Quest_ID 
+                                      Location quests = Loc_Quest_ID.
  PLOT(Str) Quest Plot:
          1 - Destroy Object         5 - Kill villain only            9 - Talk to NPC
          2 - Deliver item           6 - Deliver creature to area     10 - Do X special tasks
@@ -59,7 +61,7 @@
         Item Array:(-Name-BaseName-BaseItemType-ResRef-ID-Container_tag-Max_properties-)
  PLACEABLE(Str/Array "-") Placeable in the quest that spawns in the AREA location.
         Array:(-Name-ResRef-ID-Waypoint spawn)
- 0_Q_FPLACEABLE(Str/Array "-") Placeable in the quest that spawns in the FINISH location.
+ FPLACEABLE(Str/Array "-") Placeable in the quest that spawns in the FINISH location.
         Array:(-Name-ResRef-ID-Waypoint spawn)
  FINISH(Str/Array "-") Quest finishing location.
         Finish Array:(-Area_Name-Area_Tag-)
@@ -85,16 +87,16 @@
          5 - NPC Picked up.            10 - Finished X number of tasks.
 
  Quest pointer information on the player: It is saved by the Quest Name.
-    It can be any number in the sequence of the quest parts. 1 is thus part 1.
+    It can be any number in the sequence of the quest parts See quest_list.2da. 1 is thus column 1 in quest_list.2da.
     When finished it will be -1 to denote the quest is done.
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 // Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //#include "0i_treasure"
+#include "0i_character"
 #include "0i_spawn"
 #include "0i_npc"
 #include "0i_area"
-
 // Returns TRUE if oPC is in sQuestID's finish area.
 int GetIsInQuestFinishArea(object oPC, string sQuestID);
 // Returns TRUE if oPC has sQuestID Plot Item in their inventory or equiped.
@@ -138,6 +140,8 @@ int CheckNPCHasQuestReady(object oPC, object oCreature, string sQuestID = "");
 // Sends a message of what direction oPC should go for any quests succesfully checked.
 // oHenchman is the henchman checking for oPC. OBJECT_INVALID makes the player check.
 int TrackQuests(object oPC, object oHenchman, int bFoundTracks = FALSE);
+// Return quest paper on oPC for sQuestID.
+object GetQuestPaper(object oPC, string sQuestID);
 // Find quest paper on oPC for sQuestID then save to "0_QUEST_PAPER" object variable.
 void SaveQuestPaperToPC(object oPC, string sQuestID);
 // RETURNS TRUE if oPC has MAX_QUESTS.
@@ -209,13 +213,13 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC);
 // These scripts are used for setting a quest array upon an area so we know
 // what quests are active in the area. We use the quests ID to make each quest
 // in the area unique.
-// Quest ID for Story Quests are UNIQUE_## where ## is the Quest number.
-// Quest ID for Side Quests = GetDateTimeToString() + IntToString(nQuestStrRef);
+// Quest ID for Story Quests are Story_Quest_ID (MAIN_## is the Quest number).
+// Quest ID for Location Quests are Loc_Quest_ID (LOC_## is the Quest number) + GetDateTimeString().
+// Quest ID for Side Quests are Side_Quest_ID (SIDE_## is the Quest number) + GetDateTimeToString().;
 
 // Checks oPC's database for quests in oArea then saves them to the area.
 // These are used in other scripts to pull quests linked to the area.
 void CheckPCQuestIDsByArea(object oPC, object oArea);
-
 // Checks to see if the area has any quests setup for sQuestID.
 // An area can have up to 10 quest active.
 // sPCName is the TRUE PC name.
@@ -225,12 +229,17 @@ void CheckPCQuestIDsByArea(object oPC, object oArea);
 //           then sets the PC as having been here.
 //         2 if quest found and PC has been here.
 int CheckandSaveAreaQuestArray(string sPCName, object oArea, string sQuestID);
-
-
+// Returns TRUE if sQuestID has been finished by oPC.
 int GetIsQuestDone(object oPC, string sQuestID);
+// Returns sQuestText with text for the giver moving to a new location, only if it is a side quest.
 string CheckIsGiverMoving(object oPC, object oPaper, string sQuestText);
+// Based upon sLeave Method oNPC will leave the area.
+// sLeaveMethod can be one of the following:
+// TELEPORT - oNPC teleports away.
+// FAREXIT - oNPC walks to and opens if it is a door the farthest exit in the area and disappears.
+// NEAREXIT - oNPC walks to and opens if it is a door the nearest exit in the area and disappears.
+// Tag of an object - oNPC walks to and disappears next to the nearest object with sLeaveMethod as its tag.
 void MakeNPCLeave(object oPC, object oNPC, string sLeaveMethod);
-
 // STATE(Str/Array "-") Quest State: What the PC has done in the quest.
 //         Each array is usually either 1 - TRUE, or 0 - FALSE. 10 - can any number.
 //         1 - Object Destroyed.         6 - Area found.
@@ -240,7 +249,6 @@ void MakeNPCLeave(object oPC, object oNPC, string sLeaveMethod);
 //         5 - NPC Picked up.            10 - Finished X number of tasks.
 // nValue is usually 0, 1, 2 not used, or x number for a task.
 int GetQuestState(object oPC, string sQuestID, int nState);
-
 // STATE(Str/Array "-") Quest State: What the PC has done in the quest.
 //         Each array is usually either 1 - TRUE, or 0 - FALSE. 10 - can any number.
 //         1 - Object Destroyed.         6 - Area found.
@@ -250,30 +258,25 @@ int GetQuestState(object oPC, string sQuestID, int nState);
 //         5 - NPC Picked up.            10 - Finished X number of tasks.
 // nValue is usually 0, 1, 2 not used, or x number for a task.
 void SetQuestState(object oPC, string sQuestID, int nState, int nValue);
-
 // Returns the next quest pointer based on the QuestID.
 // -1 is the end of the quest.
 // -2 means clear the quest.
 // All other numbers point to the quest_list.2da line.
 int GetNextQuestPointer(object oPC, string sQuestID, string sQuestArray);
-
 // Removes the quest oNPC from oPC as a henchman.
 void RemoveQuestNPC(object oPC, object oNPC);
-
 // Checks the oPaper for an NPC and makes them a henchman for oPC.
 void GiveQuestNPC(object oPC, string sQuestID, string sNPCArray, string sQuestArray);
-
 // Checks the area for an NPC from the NPCArray.
 // Sets them with the Quest ID and returns the NPC or OBJECT_INVALID.
 object CheckForNPC(object oPC, object oArea, string sNPCArray);
-
 //******************************************************************************
 //**********                     Get Quest StrRef                      *********
 //******************************************************************************
-int GetQuestStrRef (object oPC, object oNPC);
+
+int GetLocationQuestStrRef (object oPC, object oNPC);
 int GetStoryQuestStrRef (object oPC, object oNPC);
 int GetSideQuestStrRef (object oPC, object oNPC);
-
 //******************************************************************************
 //**********              Area Quest Population System                 *********
 //******************************************************************************
@@ -296,16 +299,19 @@ string GenerateItemArray(string sItemArray, int nQuestLevel, object oPaper, obje
 string GeneratePlaceableArray(string sPlaceableArray, location lLocation, object oPaper);
 // Returns a unique ID for each SIDE_QUEST = Time + StrRef of the quest.
 // or Returns a specific ID for STORY_QUESTS & QUESTS - UNIQUE_ + [ID:]
-string SaveQuestID(int nQuestStrRef, int nQuestType, int nQuestPointer);
+string SaveQuestID(int nQuestType, int nQuestPointer);
 // 0_Q_QUEST array -Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks-Quest_Type-Journal_ID-Start_Effect-Leave_Method-
 string SaveQuestDataToArray(string sQuestText, int nQuestType, object oPC, object oArea);
 int SavePlot(string sQuestText);
 // 0_Q_START array -StartName-StartTag-Town_Area-
 string SaveStartingAreaToArray(object oArea, object oTarget, string sQuestText);
-// 0_Q_GIVER array -Name-ResRef-Tag-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint_spawn-Items-
-string SaveGiverToArray(string sQuestText, object oGiver, int nQuestType, object oPC, object oPaper);
-// 0_Q_FINISHER array -Name-ResRef-Tag-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint_spawn-Items-
-string SaveFinisherToArray(string sQuestText, int nQuestLevel, location lLocation, object oPaper, object oPC);
+// Returns the NPC Array for a quest based on sNPCArray value, oNPC, and nNPCType.
+// sNPCArray will default to "-----------4--2--".
+// oNPC the NPC to generate the NPCArray from.
+// nNPCType defines what type of quest NPC they are; 0 - Generic 1 - Giver, 2 - Quest, 3 - Finisher.
+// nNPCLevel is the level to generate a generic NPC - Only used with nNPCType 3.
+// NPCArray -Name-ResRef-Tag-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint_spawn-Items-
+string SaveNPCToArray(string sNPCArray, object oNPC, int nNPCType, object oPC, object oPaper, int nQuestLevel = 0);
 // 0_Q_REWARDS array -Fame-Infamy-Xp-Gold-KEEP-Journal ID-Reward_Effect-
 string SaveRewardsToArray(string sQuestText);
 string SaveFinishToArray(string sQuestText, int nPlot, int nQuestType, string sTownArea, object oPaper);
@@ -319,6 +325,7 @@ string CheckForPlaceableToArray(string sQuestText, location lLocation, object oP
 string CheckForFPlaceableToArray(string sQuestText, location lLocation, object oPaper);
 string GetRandomTown(string sTownArea);
 string GetRandomArea(string sTownArea);
+object CreateBlankQuest(object oPC, object oTarget);
 // Creates a quest for oPC and puts it on oTarget.
 // nQuestType is the type of quest STORY_QUESTS, SIDE_QUESTS.
 // nQuestStrRef is the TLK line that holds the quest.
@@ -451,14 +458,6 @@ void QuestUpdate(object oPC, string sQuestID, string sMessage = "", int bUpdateD
 void CheckQuestKill(object oKilled, object oKiller, string sQuestID)
 {
     // Get all of our information to populate the area
-    string sPlot;
-    string sPCName = GetName(oKiller, TRUE);
-    string sQueryPlot = "SELECT plot, villain, state FROM QuestTable WHERE name = @name AND tag = @tag;";
-    sqlquery sqlplot = SqlPrepareQueryCampaign(SERVER_DATABASE, sQueryPlot);
-    SqlBindString(sqlplot, "@name", sPCName);
-    SqlBindString(sqlplot, "@tag", sQuestID);
-    if(SqlStep(sqlplot)) sPlot = SqlGetString(sqlplot, 0);
-    else return;
     object oArea = GetArea(oKilled);
     // Check all creatures incase this is a plot 8 quest.
     // Must split up the GetObjectInArea calls.
@@ -478,25 +477,31 @@ void CheckQuestKill(object oKilled, object oKiller, string sQuestID)
         oCreature = GetObjectInArea(oArea, ++nCount, OBJECT_TYPE_CREATURE);
     }
     // If the killer is an NPC then increase the radius to the map(so PC's get quest credit).
-    float fRadius, fDistance;
-    if(GetIsCharacter(oKiller)) fRadius = XP_PARTY_RADIUS;
-    else fRadius = 120.0f;
-    // Get the quest state.
-    string sPCPlot, sStateArray = SqlGetString(sqlplot, 2);
-    int nVillainState = StringToInt(GetStringArray(sStateArray, 2, "-"));
-    int nCreatureState = StringToInt(GetStringArray(sStateArray, 3, "-"));
-    int nClearState = StringToInt(GetStringArray(sStateArray, 8, "-"));
+    float fDistance;
     // Now check to see if any quest player(s) are near the killed creature.
     nCount = 1;
+    int nVillainState, nCreatureState, nClearState;
+    string sPlot, sPCName, sQueryPlot, sStateArray;
+    sqlquery sqlplot;
     object oPC = GetFirstPC();
     while(oPC != OBJECT_INVALID)
     {
-        sPCPlot = GetServerDatabaseString(oPC, QUEST_TABLE, "plot", sQuestID);
-        if(sPCPlot != "")
+        fDistance = GetDistanceBetween(oPC, oKilled);
+        if(fDistance <= 120.0 && fDistance != 0.0)
         {
-            fDistance = GetDistanceBetween(oPC, oKilled);
-            if(fDistance <= fRadius && fDistance != 0.0)
+            sPCName = GetName(oPC, TRUE);
+            sQueryPlot = "SELECT plot, state FROM QuestTable WHERE name = @name AND tag = @tag;";
+            sqlplot = SqlPrepareQueryCampaign(SERVER_DATABASE, sQueryPlot);
+            SqlBindString(sqlplot, "@name", sPCName);
+            SqlBindString(sqlplot, "@tag", sQuestID);
+            if(SqlStep(sqlplot))
             {
+                // Get the quest state.
+                sPlot = SqlGetString(sqlplot, 0);
+                sStateArray = SqlGetString(sqlplot, 1);
+                nVillainState = StringToInt(GetStringArray(sStateArray, 2, "-"));
+                nCreatureState = StringToInt(GetStringArray(sStateArray, 3, "-"));
+                nClearState = StringToInt(GetStringArray(sStateArray, 8, "-"));
                 // If this is a villain and the quest state is 0 then set the quest state.
                 if(GetLocalInt(oKilled, "0_VILLAIN") && !nVillainState)
                 {
@@ -536,7 +541,7 @@ void CheckQuestKill(object oKilled, object oKiller, string sQuestID)
                         QuestUpdate(oPC, sQuestID, GetName(oArea) + " has been cleared!", TRUE);
                     }
                 }
-            }
+            }    
         }
         nCount++;
         oPC = GetNextPC();
@@ -584,9 +589,9 @@ int CheckNPCHasQuestReady(object oPC, object oCreature, string sQuestID = "")
     {
         nQuestType = GetLocalInt(oCreature, "0_Quest_Type");
         sQuestName = GetLocalString(oCreature, "0_Quest_Name");
-        // if no quest name, quest name is for main quests only.
-        // and not side quest then there is no quest.
-        if(nQuestType != SIDE_QUESTS && sQuestName != "") return TRUE;
+        // if no quest name, quest name is for story quests and location questsonly.
+        // and not side quest or dm quest then there is no quest.
+        if(nQuestType != SIDE_QUESTS && nQuestType != DM_QUESTS && sQuestName != "") return TRUE;
     }
     // Get the last quest data from the player since we are continuing a quest.
     else
@@ -599,7 +604,7 @@ int CheckNPCHasQuestReady(object oPC, object oCreature, string sQuestID = "")
     }
     // If this is a side quest NPC then make sure PC has not done this quest already.
     // We Set a variable 0_(PC's Name) to TRUE on the NPC if the quest has been completed
-    if(nQuestType == SIDE_QUESTS)
+    if(nQuestType == SIDE_QUESTS || nQuestType == DM_QUESTS)
     {
         string sPCName = StripColorCodes(RemoveIllegalCharacters(GetName(oPC)));
         if(!GetLocalInt(oCreature, "0_" + sPCName)) return TRUE;
@@ -846,6 +851,17 @@ int TrackQuests(object oUser, object oHenchman, int bFoundTracks = FALSE)
     }
     return bFoundTracks;
 }
+object GetQuestPaper(object oPC, string sQuestID)
+{
+    // Find the quest paper on oPC for sQuestID.
+    object oPaper = GetFirstItemInInventory(oPC);
+    while(oPaper != OBJECT_INVALID)
+    {
+        if(sQuestID == GetLocalString(oPaper, "0_Q_ID")) return oPaper;
+        oPaper = GetNextItemInInventory(oPC);
+    }
+    return OBJECT_INVALID;
+}
 void SaveQuestPaperToPC(object oPC, string sQuestID)
 {
     // Find the quest paper on oPC for sQuestID.
@@ -969,6 +985,7 @@ void CheckForQuestNPCsOnLoad(object oPC)
                 SetUpNPC(oQuestNPC, FALSE);
                 // Make them a henchman.
                 AddHenchman(oPC, oQuestNPC);
+                SetLocalInt(oQuestNPC, "AI_LIMIT_HENCHMAN_MENUS", TRUE);
                 // Set the quest tag of NPC, used to match the quest NPC to the PC on the quest.
                 SetLocalString(oQuestNPC, "0_QUEST_ID", GetStringArray(sNPCArray, 2, "-"));
                 SetLocalInt(oQuestNPC, PC_ASSOCIATE_TYPE, ASSOCIATE_TYPE_NPC);
@@ -984,8 +1001,8 @@ int GetQuestPointerFromDataBase(object oPC, string sQuestName, int nQuestType = 
     string s2daQuestName, sQuestColumn;
     // Get the column from the quest_list.2da based on quest type.
     if(nQuestType == STORY_QUESTS) sQuestColumn = "Story_Quest_Name";
-    else if(nQuestType == SIDE_QUESTS) sQuestColumn = "Side_Quest_Type";
-    else if(nQuestType == QUESTS) sQuestColumn = "Quest_Name";
+    else if(nQuestType == SIDE_QUESTS) sQuestColumn = "Side_Quest_Name";
+    else if(nQuestType == LOCATION_QUESTS) sQuestColumn = "Loc_Quest_Name";
     else return 0;
     // Check the pointer for this quest from the database.
     nPointer = GetObjectDatabaseInt(oPC, QUEST_TABLE, "questpointer", sQuestName);
@@ -1617,7 +1634,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cà¨>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xE2\xAA\x20>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     // Check for colors [YELLOW/
     nStart = FindSubString(sText, "[YELLOW/");
@@ -1626,7 +1643,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþþ>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\xFF\x20>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
     }
     // Check for colors [RED/
     nStart = FindSubString(sText, "[RED/");
@@ -1635,7 +1652,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþ>" + GetSubString(sText, nStart + 5, nEnd - nStart - 5) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\x20\x20>" + GetSubString(sText, nStart + 5, nEnd - nStart - 5) + "</c>" + sSuffix;
     }
     // Check for colors [PURPLE/
     nStart = FindSubString(sText, "[PURPLE/");
@@ -1644,7 +1661,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþþ>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\x20\xFF>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
     }
     // Check for colors [GREEN/
     nStart = FindSubString(sText, "[GREEN/");
@@ -1653,7 +1670,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþ>" + GetSubString(sText, nStart + 7, nEnd - nStart - 7) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\x20\xFF\x20>" + GetSubString(sText, nStart + 7, nEnd - nStart - 7) + "</c>" + sSuffix;
     }
     // Check for colors [BLUE/
     nStart = FindSubString (sText, "[BLUE/");
@@ -1662,7 +1679,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<ce?ÿ>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\x20\x55\xFF>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     // Check for colors [GRAY/
     nStart = FindSubString(sText, "[GRAY/");
@@ -1671,7 +1688,7 @@ string ParseQuestTextByPaper(string sText, object oPaper, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<c¨¨¨>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xAA\xAA\xAA>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     return sText;
 }
@@ -2126,7 +2143,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cà¨>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xE2\xAA\x20>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     // Check for colors [YELLOW/
     nStart = FindSubString(sText, "[YELLOW/");
@@ -2135,7 +2152,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþþ>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\xFF\x20>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
     }
     // Check for colors [RED/
     nStart = FindSubString(sText, "[RED/");
@@ -2144,7 +2161,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþ>" + GetSubString(sText, nStart + 5, nEnd - nStart - 5) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\x20\x20>" + GetSubString(sText, nStart + 5, nEnd - nStart - 5) + "</c>" + sSuffix;
     }
     // Check for colors [PURPLE/
     nStart = FindSubString(sText, "[PURPLE/");
@@ -2153,7 +2170,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<cþþ>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xFF\x20\xFF>" + GetSubString(sText, nStart + 8, nEnd - nStart - 8) + "</c>" + sSuffix;
     }
     // Check for colors [GREEN/
     nStart = FindSubString(sText, "[GREEN/");
@@ -2164,7 +2181,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
         //Debug("0i_quest", "1536", " iStart: " + IntToString(nStart) + " nEnd: " + IntToString(nEnd) +
         //       " length: " + IntToString(GetStringLength(sText) - nEnd - 1) + " sPrefix: " + sPrefix + " sSuffix: " + sSuffix);
-        sText = sPrefix + "<cþ>" + GetSubString(sText, nStart + 7, nEnd - nStart - 7) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\x20\xFF\x20>" + GetSubString(sText, nStart + 7, nEnd - nStart - 7) + "</c>" + sSuffix;
     }
     // Check for colors [BLUE/
     nStart = FindSubString(sText, "[BLUE/");
@@ -2173,7 +2190,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<ce?ÿ>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\x20\x55\xFF>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     // Check for colors [GRAY/
     nStart = FindSubString(sText, "[GRAY/");
@@ -2182,7 +2199,7 @@ string ParseQuestTextByDatabase(string sText, string sQuestID, object oPC)
         nEnd = FindSubString(sText, "]", nStart);
         sPrefix = GetStringLeft(sText, nStart);
         sSuffix = GetStringRight(sText, GetStringLength(sText) - nEnd - 1);
-        sText = sPrefix + "<c¨¨¨>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
+        sText = sPrefix + "<c\xAA\xAA\xAA>" + GetSubString(sText, nStart + 6, nEnd - nStart - 6) + "</c>" + sSuffix;
     }
     return sText;
 }
@@ -2227,7 +2244,7 @@ void CheckPCQuestIDsByArea(object oPC, object oArea)
             }
             if(!CheckandSaveAreaQuestArray(sPCName, oArea, sQuestID)) PopulateFinishQuestArea(oPC, oArea, sQuestID);
         }
-        else
+        else // The quest area. Were all the action happens!
         {
             sAreaDBTag = GetStringArray(SqlGetString(sql, 2), 1, "-");
             //Debug("0i_quest", "1940", " sAreaDBTag: " + sAreaDBTag);
@@ -2404,7 +2421,7 @@ int GetIsQuestDone(object oPC, string sQuestID)
         while(oItem != OBJECT_INVALID)
         {
             if(GetLocalString(oItem, "0_QUEST_ID") == sID &&
-              (GetName(oItem) == sName) || sName == "NORMAL")
+              (GetName(oItem) == sName || sName == "NORMAL"))
             {
                 // Saved so the item can be removed later.
                 SetLocalObject(oPC, "0_QUEST_ITEM", oItem);
@@ -2416,7 +2433,8 @@ int GetIsQuestDone(object oPC, string sQuestID)
         oItem = GetItemInSlot(iSlot, oPC);
         while(iSlot < 18)
         {
-            if(GetLocalString(oItem, "0_QUEST_ID") == sID &&(GetName(oItem) == sName || sName == "NORMAL"))
+            if(GetLocalString(oItem, "0_QUEST_ID") == sID &&
+              (GetName(oItem) == sName || sName == "NORMAL"))
             {
                 // Saved so the item can be removed later.
                 SetLocalObject(oPC, "0_QUEST_ITEM", oItem);
@@ -2659,9 +2677,9 @@ void RemoveQuestNPC(object oPC, object oNPC)
     ClearAllActions(FALSE, oNPC);
     ChangeToStandardFaction(oNPC, STANDARD_FACTION_DEFENDER);
     RemoveHenchmanFromDatabase(oPC, oNPC);
-    AssignCommand(oNPC, ClearAllActions());
     SetCommandable(TRUE, oNPC);
-}
+    AssignCommand(oNPC, ClearAllActions());
+ }
 
 // Checks the oPaper for an NPC and makes them a henchman for oPC.
 void GiveQuestNPC(object oPC, string sQuestID, string sNPCArray, string sQuestArray)
@@ -2685,10 +2703,27 @@ void GiveQuestNPC(object oPC, string sQuestID, string sNPCArray, string sQuestAr
         sNPCName = AddColorToText(sNPCName, sColor);
         SetName(oNPC, sNPCName);
     }
+    // Let's make sure we are firing our OnDeath script after the AI.
+    SetLocalString(oNPC, "AI_ON_DEATH", "nw_ch_ac7");
+    // Save the NPC to the database and get the database tag.
     string sDatabaseTag = SaveAssociateToDatabase(oPC, oNPC);
     sNPCArray = SetStringArray(sNPCArray, 14, sDatabaseTag, "-");
     SetServerDatabaseString(oPC, QUEST_TABLE, "npc", sNPCArray, sQuestID);
     AddHenchman(oPC, oNPC);
+    // Initialized NPC's AI data, Must be done after AddHenchman function.
+    //ai_SetupAssociateData(oPC, oNPC);
+    // Lock the NPC's widget.
+    SetLocalInt(oNPC, "AI_LIMIT_HENCHMAN_MENUS", TRUE);
+    // Set the NPC's widget buttons with
+    // Follow (8), Hold(16), Normal(32), Action(1024), Toggle AI(4096).
+    SetLocalInt(oNPC, "ASSOCIATE_WIDGET_BUTTONS", 5176);
+    //SetLocalInt(oNPC, "ASSOCIATE_WIDGET_BUTTONS", 2102328); Spell Widget(2097152)
+    // Add Feats to the NPC's widget buttons, must be done after AddHenchman function.
+    //ai_SetFeattoAssociateWidget(oPC, oNPC, 1110, 834, GetClassByPosition(1, oNPC));
+    //ai_SetFeattoAssociateWidget(oPC, oNPC, 1107, 830, GetClassByPosition(1, oNPC));
+    //ai_SetSpelltoAssociateWidget(oPC, oNPC, 107, 10, 1); // Magic Missle
+    //oItem = CreateItemOnObject("0_neck_fireball3", oNPC, 1);
+    //ai_SetItemtoAssociateWidget(oPC, oNPC, oItem);
     // Set State 5 to TRUE(NPC Picked up).
     SetQuestState(oPC, sQuestID, 5, 1);
     SetLocalString(oNPC, "0_QUEST_ID", sQuestID);
@@ -2723,13 +2758,13 @@ object CheckForNPC(object oPC, object oArea, string sNPCArray)
 //******************************************************************************
 //**********                     Get Quest StrRef                      *********
 //******************************************************************************
-int GetQuestStrRef (object oPC, object oNPC)
+int GetLocationQuestStrRef (object oPC, object oNPC)
 {
     string sQuestName = GetLocalString (oNPC, "0_Quest_Name");
     // If the npc has the quest pointer then use it.
     int nPointer = GetLocalInt(oNPC, "0_Quest_Pointer");
     // If not then pull the pointer from the database.
-    if (nPointer == 0) nPointer = GetQuestPointerFromDataBase (oPC, sQuestName, QUESTS);
+    if (nPointer == 0) nPointer = GetQuestPointerFromDataBase (oPC, sQuestName, LOCATION_QUESTS);
     else DeleteLocalInt(oNPC, "0_Quest_Pointer");
     return StringToInt (Get2DAString ("quest_list", "Quest_StrRef", nPointer));
 }
@@ -2752,33 +2787,35 @@ int GetStoryQuestStrRef (object oPC, object oNPC)
 int GetSideQuestStrRef (object oPC, object oNPC)
 {
     int nPointer;
-    // Check to see if they are just starting with this character.
+    // Check to see if they are just starting with this character only creates them for levels 1-3.
     // The first 3 quests are close to town and easier so they can be eased into the quest system.
     // Check the NPC for the town area first then default to current area.
     string sTownArea = GetLocalString (oNPC, "0_TOWN_AREA");
-    if (sTownArea == "")
+    if(sTownArea == "")
     {
         object oWaypoint = GetObjectInAreaByTag (GetArea (oNPC), "ip_area_level", 1, OBJECT_TYPE_WAYPOINT, TRUE);
         sTownArea = GetLocalString (oWaypoint, "0_Town_Area");
     }
-    if (GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "sidequests") < 3 && sTownArea == "Essembra")
+    if(sTownArea == "Essembra" && GetCharacterLevels(oPC) < 4 && GetObjectDatabaseInt (oPC, CHARACTER_TABLE, "sidequests") < 3)
     {
         // Save which quest the player is on from the 8 "easy quests" use the Players Handbook.
-        nPointer = GetLocalInt (GetCreatureHasItem (oPC, "players_book"), "0_SideQuest_Num");
+        object oBook = GetCreatureHasItem (oPC, "players_book");
+        nPointer = GetLocalInt (oBook, "0_SideQuest_Num");
         // If we have been given a quest then go to the next easy quest 1 - 8.
-        if (nPointer > 0)
+        if(nPointer > 0)
         {
             nPointer ++;
-            if (nPointer > 8) nPointer = 1;
+            if(nPointer > 8) nPointer = 1;
         }
         // We have not done an easy quest so lets get one at random.
         else nPointer = d8();
+        SetLocalInt(oBook, "0_SideQuest_Num", nPointer);
     }
     else
     {
         // Roll for the quest pointer get the number of side quest to roll from.
         // There are 8 starter quests that we skip.
-        nPointer = StringToInt (Get2DAString ("quest_list", "Side_Quest_Type", 0)) - 8;
+        nPointer = StringToInt (Get2DAString ("quest_list", "Side_Quest_Desc", 0)) - 8;
         nPointer = Random (nPointer) + 9;
     }
     // Now set the NPC with the quest so they don't change later.
@@ -2804,12 +2841,12 @@ void CreateQuestPlaceable(string sPlaceableArray, location lLocation)
 
 // This must be delayed if used in a loop.
 // nType Adds things based on the type of creature: 0 - NPC, 1 - Villain, 2 - Giver.
-void CreateQuestNPC(object oPC, string sQuestArray, string sNPCArray, location lLocation, int nType = 0)
+void CreateQuestNPC(object oPC, string sQuestArray, string sNPCArray, object oWaypoint, int nType = 0)
 {
     if(sNPCArray != "")
     {
         //Debug("0i_quest", "2440", "sNPCArray: " + sNPCArray + " lLocation: " + LocationToStringArray(lLocation));
-        object oNPC = CreateNPC(lLocation, sNPCArray);
+        object oNPC = CreateNPC(GetLocation(oWaypoint), sNPCArray);
         string sQuestName = GetStringArray(sQuestArray, 0, "-");
         string sID = GetStringArray(sNPCArray, 2, "-");
         int nQuestType = StringToInt(GetStringArray(sQuestArray, 5, "-"));
@@ -2832,7 +2869,9 @@ void CreateQuestNPC(object oPC, string sQuestArray, string sNPCArray, location l
             SetLocalInt(oNPC, "0_VILLAIN", TRUE);
             // Set all bosses to use battlecries.
             SetLocalInt(oNPC, "0_Battlecry", TRUE);
-            SetupCreature(oNPC);
+            // If they are defined as a Villain then give them Villain powers.
+            SetupCreature(oNPC, oWaypoint);
+            if(GetLocalInt(oWaypoint, "0_Villain")) GiveVillianSpecialPower(oNPC);
         }
         // Creating a quest GIVER
         else if(nType == 2)
@@ -3114,7 +3153,7 @@ void PopulateStartQuestArea(object oPC, object oArea, string sQuestID)
             sWPTag = GetTag(oWaypoint);
             if(sGiverResRef == GetLocalString(oWaypoint, "0_Resref") || sGiverWPTag == sWPTag)
             {
-                DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sGiverArray, GetLocation(oWaypoint), 2));
+                DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sGiverArray, oWaypoint, 2));
                 bGiverSpawned = TRUE;
                 break;
             }
@@ -3128,7 +3167,7 @@ void PopulateStartQuestArea(object oPC, object oArea, string sQuestID)
             oWaypoint = GetObjectInAreaByTag(oArea, "ip_encounter", nRoll, OBJECT_TYPE_WAYPOINT, TRUE);
             //Debug("0i_quest", "2727", "nRoll: " + IntToString(nRoll) + " nNumOfEncWP: " + IntToString(nNumOfEncWP));
             ClearWaypointSpawning(oWaypoint);
-            CreateQuestNPC(oPC, sQuestArray, sGiverArray, GetLocation(oWaypoint), 2);
+            CreateQuestNPC(oPC, sQuestArray, sGiverArray, oWaypoint, 2);
         }
     }
 }
@@ -3225,14 +3264,14 @@ void PopulateAreaQuestArea(object oPC, object oArea, string sQuestID)
             // We need to clear them so they don't get too villain bosses!
             ClearWaypointSpawning(GetNearestObjectByTag("ip_encounter", oWaypoint));
             ClearWaypointSpawning(oWaypoint);
-            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sVillainArray, lWPLocation, 1));
+            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sVillainArray, oWaypoint, 1));
             bVillainSpawned = TRUE;
         }
         if(!bCreaturesGone) PopulateQuestCreatures(oPC, oWaypoint, sCreaturesArray, 0);
         if(!bNPCSpawned && !bNPCGone && (sNPCResRef == GetLocalString(oWaypoint, "0_Resref") || sNPCWPTag == sWPTag))
         {
             ClearWaypointSpawning(oWaypoint);
-            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sNPCArray, lWPLocation));
+            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sNPCArray, oWaypoint));
             bNPCSpawned = TRUE;
         }
         if(!bAlliesGone) PopulateQuestCreatures(oPC, oWaypoint, sAlliesArray, 3);
@@ -3245,13 +3284,13 @@ void PopulateAreaQuestArea(object oPC, object oArea, string sQuestID)
     lWPLocation = GetLocation(oWaypoint);
     //Debug("0i_quest", "2800", "nRoll: " + IntToString(nRoll) + " nNumOfEncWP: " + IntToString(nNumOfEncWP));
     if(!bPlaceableDestroyed && sPlaceableWPTag == "") PopulatePlaceables(sPlaceableArray, sItemArray, lWPLocation);
-    if(!bVillainGone && !bVillainSpawned) CreateQuestNPC(oPC, sQuestArray, sVillainArray, lWPLocation, 1);
+    if(!bVillainGone && !bVillainSpawned) CreateQuestNPC(oPC, sQuestArray, sVillainArray, oWaypoint, 1);
     if(!bCreaturesGone && sCreaturesWPTag == "")
     {
         ClearWaypointSpawning(oWaypoint);
         CreateQuestCreatures(oPC, sCreaturesArray, lWPLocation, 0);
     }
-    if(!bNPCGone && !bNPCSpawned) CreateQuestNPC(oPC, sQuestArray, sNPCArray, lWPLocation);
+    if(!bNPCGone && !bNPCSpawned) CreateQuestNPC(oPC, sQuestArray, sNPCArray, oWaypoint);
     if(!bAlliesGone && sAlliesWPTag == "")
     {
         ClearWaypointSpawning(oWaypoint);
@@ -3323,7 +3362,7 @@ void PopulateFinishQuestArea(object oPC, object oArea, string sQuestID)
         if(!bFinisherSpawned && (sFinisherResRef == GetLocalString(oWaypoint, "0_Resref") || sFinisherWPTag == sWPTag))
         {
             ClearWaypointSpawning(oWaypoint);
-            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sFinisherArray, GetLocation(oWaypoint)));
+            DelayCommand(0.1, CreateQuestNPC(oPC, sQuestArray, sFinisherArray, oWaypoint));
             bFinisherSpawned = TRUE;
         }
         if(!bFPlaceableGone && sFPlaceableWPTag == sWPTag) DelayCommand(0.1, PopulatePlaceables(sFPlaceableArray, "", GetLocation(oWaypoint)));
@@ -3337,7 +3376,7 @@ void PopulateFinishQuestArea(object oPC, object oArea, string sQuestID)
     oWaypoint = GetObjectInAreaByTag (oArea, "ip_encounter", nRoll, OBJECT_TYPE_WAYPOINT, TRUE);
     location lWPLocation = GetLocation(oWaypoint);
     //Debug("0i_quest", "2871", "nRoll: " + IntToString(nRoll) + " nNumOfEncWP: " + IntToString(nNumOfEncWP));
-    if(!bFinisherSpawned) CreateQuestNPC(oPC, sQuestArray, sFinisherArray, lWPLocation);
+    if(!bFinisherSpawned) CreateQuestNPC(oPC, sQuestArray, sFinisherArray, oWaypoint);
     if(!bFollowersGone && sFollowersWPTag == "")
     {
         ClearWaypointSpawning(oWaypoint);
@@ -3618,8 +3657,8 @@ string GenerateItemArray(string sItemArray, int nQuestLevel, object oPaper, obje
         else if(sTag == "dress") nBaseItemType = 152;
     }
     // Set the items name.
-    if(sName == "") sName = "<cÿÿ>" + GetName(OBJECT_SELF) + "'s " + GetName(oItem, TRUE) + "</c>";
-    else if(sName == "BASE_NAME") sName = "<cÿÿ>" + GetName(oItem, TRUE) + "</c>";
+    if(sName == "") sName = "<cï¿½ï¿½>" + GetName(OBJECT_SELF) + "'s " + GetName(oItem, TRUE) + "</c>";
+    else if(sName == "BASE_NAME") sName = "<cï¿½ï¿½>" + GetName(oItem, TRUE) + "</c>";
     else if(sName == "ORIGINAL") sName = GetName(oItem);
     sItemArray = "";
     sItemArray = SetStringArray(sItemArray, 0, sName, "-");
@@ -3692,12 +3731,21 @@ string GeneratePlaceableArray(string sPlaceableArray, location lLocation, object
 
 // Returns a unique ID for each SIDE_QUEST - Time + StrRef of the quest.
 // or Returns a specific ID for STORY_QUESTS & QUESTS - UNIQUE_ + [ID:]
-string SaveQuestID(int nQuestStrRef, int nQuestType, int nQuestPointer)
+string SaveQuestID(int nQuestType, int nQuestPointer)
 {
-    if(nQuestType == SIDE_QUESTS) return GetDateTimeToString() + IntToString(nQuestStrRef);
-    string sQuestIDColumn = "QuestID";
-    if(nQuestType == STORY_QUESTS) sQuestIDColumn = "Main_QuestID";
-    return "UNIQUE_" + Get2DAString("quest_list", sQuestIDColumn, nQuestPointer);
+    if(nQuestType == STORY_QUESTS) 
+    {
+        return "UNIQUE_" + Get2DAString("quest_list", "Story_Quest_ID", nQuestPointer);
+    }
+    if(nQuestType == SIDE_QUESTS) 
+    {
+        return Get2DAString("quest_list", "Side_Quest_ID", nQuestPointer) + GetDateTimeToString();
+    }
+    if(nQuestType == LOCATION_QUESTS) 
+    {
+        return Get2DAString("quest_list", "Loc_Quest_ID", nQuestPointer);
+    }
+    return "";
 }
 
 // 0_Q_QUEST array -Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks-Quest_Type-Journal_ID-Start_Effect-ID-
@@ -3710,10 +3758,12 @@ string SaveQuestDataToArray(string sQuestText, int nQuestType, object oPC, objec
     if(StringToInt(GetStringArray(sQuestArray, 1, "-")) == 0)
     {
         int nQuestLevel = GetCharacterLevels(oPC);
-        object oWaypoint = GetObjectInAreaByTag(oArea, "ip_area_level", 1, OBJECT_TYPE_WAYPOINT, TRUE);
-        if(oWaypoint == OBJECT_INVALID) nMaxLevel = 20;
-        else nMaxLevel = GetLocalInt(oWaypoint, "0_Max_Level") + 5;
-        if(nQuestLevel > nMaxLevel) nQuestLevel = nMaxLevel;
+        // This code limited the quests to the Town level + 5.
+        // For example Essembra would do a max of 8th level quests.
+        //object oWaypoint = GetObjectInAreaByTag(oArea, "ip_area_level", 1, OBJECT_TYPE_WAYPOINT, TRUE);
+        //if(oWaypoint == OBJECT_INVALID) nMaxLevel = 20;
+        //else nMaxLevel = GetLocalInt(oWaypoint, "0_Max_Level") + 5;
+        //if(nQuestLevel > nMaxLevel) nQuestLevel = nMaxLevel;
         sQuestArray = SetStringArray(sQuestArray, 1, IntToString(nQuestLevel), "-");
     }
     sQuestArray = SetStringArray(sQuestArray, 5, IntToString(nQuestType), "-");
@@ -3732,12 +3782,7 @@ string SaveStartingAreaToArray(object oArea, object oTarget, string sQuestText)
     string sArray, sTownArea;
     // Check to see if the quest has a starting area. If not then use the current.
     int i = FindSubString(sQuestText, "[STARTAREA:");
-    if(i != -1)
-    {
-        sArray = GetQuestData(sQuestText, i + 11);
-        oArea = GetObjectByTag(GetStringArray(sArray, 1, "-"));
-        sTownArea = GetStringArray(sArray, 2, "-");
-    }
+    if(i != -1) return GetQuestData(sQuestText, i + 11);
     else
     {
         // Check the NPC for the town area first then default to current area.
@@ -3753,48 +3798,61 @@ string SaveStartingAreaToArray(object oArea, object oTarget, string sQuestText)
     return SetStringArray(sArray, 2, sTownArea, "-");
 }
 
-// Giver array -Name-ResRef-ID-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint_spawn-Items-
-string SaveGiverToArray(string sQuestText, object oGiver, int nQuestType, object oPC, object oPaper)
+// Giver array -Name-ResRef-ID-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint_spawn-Items-Wounded%-
+string SaveNPCToArray(string sNPCArray, object oNPC, int nNPCType, object oPC, object oPaper, int nQuestLevel = 0)
 {
-    string sArray;
-    int i = FindSubString(sQuestText, "[GIVER:");
-    string sGiverName = StripColorCodes(GetName(oGiver));
-    if(i != -1) sArray = GetQuestData(sQuestText, i + 7);
+    if(nNPCType == 3)
+    {
+        if(sNPCArray != "")
+        {
+            string sResRef = GetStringArray(sNPCArray, 1, "-");
+            if(sResRef != "") 
+            {
+                location lLocation = GetLocation(GetWaypointByTag(WP_CREATURE_SPAWN));
+                sNPCArray = GenerateNPCWithResRefAndSetName(sResRef, sNPCArray, lLocation);
+            }
+            else sNPCArray = GenerateNPCArrayAndSetName(sNPCArray, nQuestLevel, oPC);
+            sNPCArray = SetStringArray(sNPCArray, 2, GetLocalString(oPaper, "0_Q_ID"), "-");
+            return sNPCArray;
+        }
+        // Default to the Giver as the finisher unless plot 6 in that case the NPC is the finisher.
+        if(GetLocalString(oPaper, "0_Q_PLOT") == "6") return "";
+        return GetLocalString(oPaper, "0_Q_GIVER");
+    }
+    string sNPCName = StripColorCodes(GetName(oNPC));
+    if(sNPCArray == "") sNPCArray = "-----------4--2--";
+    if(GetLocalInt(oNPC, "0_Generated_NPC"))
+    {
+        sNPCArray = SetStringArray(sNPCArray, 0, sNPCName, "-");
+        //(1) ResRef is not set for randoms.
+        //(2) Tag is set below.
+        sNPCArray = SetStringArray(sNPCArray, 3, IntToString(GetGender(oNPC)), "-");
+        sNPCArray = SetStringArray(sNPCArray, 4, IntToString(GetNPCRaceType(oNPC)), "-");
+        sNPCArray = SetStringArray(sNPCArray, 5, IntToString(GetClassByPosition(1, oNPC)), "-");
+        // Package is set to the class for default level up.
+        sNPCArray = SetStringArray(sNPCArray, 6, IntToString(GetClassByPosition(1, oNPC)), "-");
+        sNPCArray = SetStringArray(sNPCArray, 7, IntToString(GetCharacterLevels(oNPC)), "-");
+        sNPCArray = SetStringArray(sNPCArray, 8, IntToString(GetAlignmentLawChaos(oNPC)), "-");
+        sNPCArray = SetStringArray(sNPCArray, 9, IntToString(GetAlignmentGoodEvil(oNPC)), "-");
+        //(10) This is set to 4 for .
+        //(11) Waypoint spawn is not set for randoms.
+        //(12) Items is set to 2 for normal equipment.
+        //(13) We don't set the wounded %.
+    }
+    // If not then get the resref.
     else
     {
-        sArray = "-----------4--2--";
-        if(GetLocalInt(oGiver, "0_Generated_NPC"))
-        {
-            sArray = SetStringArray(sArray, 0, sGiverName, "-");
-            //(1) ResRef is not set for randoms.
-            //(2) Tag is set below.
-            sArray = SetStringArray(sArray, 3, IntToString(GetGender(oGiver)), "-");
-            sArray = SetStringArray(sArray, 4, IntToString(GetNPCRaceType(oGiver)), "-");
-            sArray = SetStringArray(sArray, 5, IntToString(GetClassByPosition(1, oGiver)), "-");
-            // Package is set to the class for default level up.
-            sArray = SetStringArray(sArray, 6, IntToString(GetClassByPosition(1, oGiver)), "-");
-            sArray = SetStringArray(sArray, 7, IntToString(GetCharacterLevels(oGiver)), "-");
-            sArray = SetStringArray(sArray, 8, IntToString(GetAlignmentLawChaos(oGiver)), "-");
-            sArray = SetStringArray(sArray, 9, IntToString(GetAlignmentGoodEvil(oGiver)), "-");
-            //(10) This is set to 4.
-            //(11) Waypoint spawn is not set for randoms.
-            //(12) Items is set to 2 for normal equipment.
-        }
-        // If not then get the resref.
-        else
-        {
-            sArray = SetStringArray(sArray, 0, sGiverName, "-");
-            sArray = SetStringArray(sArray, 1, GetResRef(oGiver), "-");
-            //(2) tag is set below.
-            //(3) through(9) are defined by the pallet.
-            //(10) Waypoint spawn is defined by programmer or is not set.
-            //(11) Items is defined by programmer or is set to 1 normal equipment.
-        }
+        sNPCArray = SetStringArray(sNPCArray, 0, sNPCName, "-");
+        sNPCArray = SetStringArray(sNPCArray, 1, GetResRef(oNPC), "-");
+        //(2) tag is set below.
+        //(3) through(9) are defined by the pallet.
+        //(10) Waypoint spawn is defined by programmer or is not set.
+        //(11) Items is defined by programmer or is set to 1 normal equipment.
+        //(13) We don't set the wounded %.
     }
-    sArray = SetStringArray(sArray, 2, GetLocalString(oPaper, "0_Q_ID"), "-");
-    return sArray;
+    sNPCArray = SetStringArray(sNPCArray, 2, GetLocalString(oPaper, "0_Q_ID"), "-");
+    return sNPCArray;
 }
-
 // Finish array -Area_Name-Area_Tag-
 string SaveFinishToArray(string sQuestText, int nPlot, int nQuestType, string sTownArea, object oPaper)
 {
@@ -3879,26 +3937,6 @@ string SaveFinishToArray(string sQuestText, int nPlot, int nQuestType, string sT
     }
     return sFinishArray;
 }
-
-// 0_Q_FINISHER array -Name-ResRef-ID-Gender-Race-Class-Package-level-Align1-Align2-Faction-Waypoint spawn-Items.
-string SaveFinisherToArray(string sQuestText, int nQuestLevel, location lLocation, object oPaper, object oPC)
-{
-    string sArray;
-    int i = FindSubString(sQuestText, "[FINISHER:");
-    if(i != -1)
-    {
-        sArray = GetQuestData(sQuestText, i + 10);
-        string sResRef = GetStringArray(sArray, 1, "-");
-        if(sResRef != "") sArray = GenerateNPCWithResRefAndSetName(sResRef, sArray, lLocation);
-        else sArray = GenerateNPCArrayAndSetName(sArray, nQuestLevel, oPC);
-        sArray = SetStringArray(sArray, 2, GetLocalString(oPaper, "0_Q_ID"), "-");
-        return sArray;
-    }
-    // Default to the Giver as the finisher unless plot 6 in that case the NPC is the finisher.
-    if(GetLocalString(oPaper, "0_Q_PLOT") == "6") return "";
-    return GetLocalString(oPaper, "0_Q_GIVER");
-}
-
 // 0_Q_REWARDS array -Fame-Infamy-Xp-Gold-KEEP-Journal_ID-Reward_Effect-
 string SaveRewardsToArray(string sQuestText)
 {
@@ -4092,10 +4130,10 @@ string GetRandomArea(string sTownArea)
     while(bCivilized && nFailSafe < 20)
     {
         // Randomize the Y axis up or down.
-        if(d2() == 1) nYQ = nY + d3() + 2;
+        if(d2() == 1) nYQ = nY + d4() + 1;
         else nYQ = nY - d3() - 2;
         // Randomize the X axis up or down.
-        if(d2() == 1) nXQ = nX + d3() + 2;
+        if(d2() == 1) nXQ = nX + d4() + 1;
         else nXQ = nX - d3() - 2;
         // Adjust to match area tags with leading 0's.
         if(nYQ < 10) sYQ = "00" + IntToString(nYQ);
@@ -4137,9 +4175,25 @@ string GetRandomArea(string sTownArea)
     }
     return sArray;
 }
-
+object CreateBlankQuest(object oPC, object oTarget)
+{
+    object oPaper = CreateItemOnObject("0_quest_paper_dm", oTarget); 
+    // Quest ID
+    string sQuestID = "CUSTOM_" + GetDateTimeToString();
+    SetLocalString(oPaper, "0_Q_ID", sQuestID);
+    SetLocalString(oPaper, "0_Q_PLOT", "1");
+    // Quest Array:(-Quest_Name-CR-Quest_Pointer-Next_Quest_Pointer-Tasks-Quest_Type-Journal_ID-Visual_Effect-Sound_Effect-Leave_Method-ID-)
+    string sArray = "-Quest-1-0-End-0-4-0-145-as_fanfare_intro--" + sQuestID + "-";
+    SetLocalString(oPaper, "0_Q_QUEST", sArray);
+    // 0_Q_REWARDS
+    sArray = "---25-100---145-as_fanfare_intro--";
+    SetLocalString(oPaper, "0_Q_REWARDS", sArray);    
+    string sState = "-0-0-0-0-0-0-0-0-0-0-0-";
+    SetLocalString(oPaper, "0_Q_STATE", sState);
+    return oPaper;
+}
 // Creates a quest for oPC and puts it on oTarget.
-// nQuestType is the type of quest STORY_QUESTS, SIDE_QUESTS.
+// nQuestType is the type of quest STORY_QUESTS, SIDE_QUESTS, LOCATION_QUESTS.
 // nQuestStrRef is the TLK line that holds the quest.
 object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
 {
@@ -4159,20 +4213,20 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     int nQuestLevel = StringToInt(GetStringArray(sArray, 1, "-"));
     int nQuestPointer = StringToInt(GetStringArray(sArray, 2, "-"));
     SetLocalString(oPaper, "0_Q_QUEST", sArray);
-    string sCompleteArray = SetStringArray("--", 1, sArray);
+    //string sCompleteArray = SetStringArray("--", 1, sArray);
     // 0_Q_ID
-    sArray = SaveQuestID(nQuestStrRef, nQuestType, nQuestPointer);
+    sArray = SaveQuestID(nQuestType, nQuestPointer);
     // Set the ID on the Giver.
     if(!GetIsPC(oTarget)) SetLocalString(oTarget, "0_QUEST_ID", sArray);
     SetLocalString(oPaper, "0_Q_ID", sArray);
-    sCompleteArray = SetStringArray(sCompleteArray, 0, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 0, sArray);
     // 0_Q_STRREF
     SetLocalString(oPaper, "0_Q_STRREF", IntToString(nQuestStrRef));
-    sCompleteArray = SetStringArray(sCompleteArray, 2, IntToString(nQuestStrRef));
+    //sCompleteArray = SetStringArray(sCompleteArray, 2, IntToString(nQuestStrRef));
     // 0_Q_PLOT
     int nPlot = SavePlot(sQuestText);
     SetLocalString(oPaper, "0_Q_PLOT", IntToString(nPlot));
-    sCompleteArray = SetStringArray(sCompleteArray, 3, IntToString(nPlot));
+    //sCompleteArray = SetStringArray(sCompleteArray, 3, IntToString(nPlot));
     // 0_Q_START
     sArray = SaveStartingAreaToArray(oArea, oTarget, sQuestText);
     SetLocalString(oPaper, "0_Q_START", sArray);
@@ -4182,11 +4236,13 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
         object oWaypoint = GetObjectInAreaByTag(oArea, "ip_area_level", 1, OBJECT_TYPE_WAYPOINT, TRUE);
         sTownArea = GetLocalString(oWaypoint, "0_Town_Area");
     }
-    sCompleteArray = SetStringArray(sCompleteArray, 4, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 4, sArray);
     // 0_Q_GIVER
-    sArray = SaveGiverToArray(sQuestText, oTarget, nQuestType, oPC, oPaper);
+    int nCharacterIndex = FindSubString(sQuestText, "[GIVER:");
+    sArray = GetQuestData(sQuestText, nCharacterIndex + 7);
+    if(sArray == "") sArray = SaveNPCToArray(sArray, oTarget, 1, oPC, oPaper);
     SetLocalString(oPaper, "0_Q_GIVER", sArray);
-    sCompleteArray = SetStringArray(sCompleteArray, 5, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 5, sArray);
     // 0_Q_FINISH
     string sArea = GetLocalString(oTarget, "0_QUEST_FINISH");
     if(sArea != "")
@@ -4197,15 +4253,17 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     }
     else sArray = SaveFinishToArray(sQuestText, nPlot, nQuestType, sTownArea, oPaper);
     SetLocalString(oPaper, "0_Q_FINISH", sArray);
-    sCompleteArray = SetStringArray(sCompleteArray, 6, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 6, sArray);
     // 0_Q_FINISHER
-    sArray = SaveFinisherToArray(sQuestText, nQuestLevel, lLocation, oPaper, oPC);
+    nCharacterIndex = FindSubString(sQuestText, "[FINISHER:");
+    sArray = GetQuestData(sQuestText, nCharacterIndex + 10);
+    sArray = SaveNPCToArray(sArray, OBJECT_INVALID, 3, oPC, oPaper, nQuestLevel);
     SetLocalString(oPaper, "0_Q_FINISHER", sArray);
-    sCompleteArray = SetStringArray(sCompleteArray, 7, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 7, sArray);
     // 0_Q_REWARDS
     sArray = SaveRewardsToArray(sQuestText);
     SetLocalString(oPaper, "0_Q_REWARDS", sArray);
-    sCompleteArray = SetStringArray(sCompleteArray, 8, sArray);
+    //sCompleteArray = SetStringArray(sCompleteArray, 8, sArray);
     // *************************************************************************
     // Parse the Quest code for objects we might need to generate.
     // *************************************************************************
@@ -4221,7 +4279,7 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_AREA", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 9, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 9, sArray);
     }
     // Set quest state 6 for area showing there is no area.
     else sState = SetStringArray(sState, 6, "2", "-");
@@ -4230,7 +4288,7 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_NPC", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 10, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 10, sArray);
     }
     // Set Quest state 5 for NPC meaning there are no NPCs.
     else sState = SetStringArray(sState, 5, "2", "-");
@@ -4239,7 +4297,7 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_VILLAIN", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 11, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 11, sArray);
     }
     // Set quest state 2 for Villain meaning there are no Villians.
     else sState = SetStringArray(sState, 2, "2", "-");
@@ -4248,7 +4306,7 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_CREATURES", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 12, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 12, sArray);
     }
     // Set quest state 3 for Creature stating there are no creatures.
     else sState = SetStringArray(sState, 3, "2", "-");
@@ -4257,28 +4315,28 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_ALLIES", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 13, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 13, sArray);
     }
     // 0_Q_FOLLOWERS
     sArray = CheckForCreaturesToArray(sQuestText, nQuestLevel, lLocation, oPaper, "[FOLLOWERS:");
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_FOLLOWERS", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 14, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 14, sArray);
     }
     // 0_Q_ENEMIES
     sArray = CheckForCreaturesToArray(sQuestText, nQuestLevel, lLocation, oPaper, "[ENEMIES:");
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_ENEMIES", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 15, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 15, sArray);
     }
     // 0_Q_ITEM
     sArray = CheckForItemToArray(sQuestText, nQuestLevel, oPaper, oPC);
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_ITEM", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 16, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 16, sArray);
     }
     // Set quest state 4 for items stating there is no item for quest.
     else sState = SetStringArray(sState, 4, "2", "-");
@@ -4287,14 +4345,14 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_GIVEITEM", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 17, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 17, sArray);
     }
     // 0_Q_PLACEABLE
     sArray = CheckForPlaceableToArray(sQuestText, lLocation, oPaper);
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_PLACEABLE", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 18, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 18, sArray);
     }
     // Set quest state 2 for placeable showing there is no placeable for quest.
     else sState = SetStringArray(sState, 1, "2", "-");
@@ -4303,14 +4361,19 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     if(sArray != "")
     {
         SetLocalString(oPaper, "0_Q_FPLACEABLE", sArray);
-        sCompleteArray = SetStringArray(sCompleteArray, 19, sArray);
+        //sCompleteArray = SetStringArray(sCompleteArray, 19, sArray);
     }
     // Save quest state to the paper.
     SetLocalString(oPaper, "0_Q_STATE", sState);
-    sCompleteArray = SetStringArray(sCompleteArray, 20, sState);
+    //sCompleteArray = SetStringArray(sCompleteArray, 20, sState);
     //Debug("0c_quest_create", "238", "Quest array: " + sCompleteArray);
     // Save complete array to paper.
-    //SetLocalString(oPaper, "0_Quest_Array", sCompleteArray);
+    //  SetLocalString(oPaper, "0_Quest_Array", sCompleteArray);
+    // Build the description for the paper.
+    string sQuestDescription = GetStringByStrRef(nQuestStrRef + 1);
+    sQuestDescription = CheckIsGiverMoving(oPC, oPaper, sQuestDescription);
+    sQuestDescription = ParseQuestTextByPaper(sQuestDescription, oPaper, oPC);
+    SetDescription(oPaper, sQuestDescription);
     return oPaper;
 }
 void Build_Treasure_Map(object oPC, object oPaper, int nLevel = 0)
@@ -4320,7 +4383,7 @@ void Build_Treasure_Map(object oPC, object oPaper, int nLevel = 0)
         int nVillainRoll, nCreatureRoll;
         if(nLevel == 0) nLevel = GetCharacterLevels(oPC, TRUE) + d3() - 2;
         if(nLevel < 1) nLevel = d3() + 2;
-        if(nLevel > 20) nLevel = 20;
+        if(nLevel > 40) nLevel = 40;
         string sLevel = IntToString(nLevel);
         string sVillainText, sCreature = "", sEncounter = "";
         location lLocation = GetLocation(GetObjectByTag("WP_Creature_Spawn"));
@@ -4391,7 +4454,7 @@ void Build_Treasure_Map(object oPC, object oPaper, int nLevel = 0)
             }
             if(sCreature == "ENCOUNTER")
             {
-                sName = GetRandomName(0, 0, nLevel, GetStringArray(sText, 0, "-"));
+                sName = GetRandomName(0, 0, nLevel, ALIGNMENT_NEUTRAL, GetStringArray(sText, 0, "-"));
                 sText = SetStringArray(sText, 0, sName, "-");
             }
             SetLocalString(oPaper, "0_Q_VILLAIN", sText);
@@ -4477,8 +4540,7 @@ void Build_Treasure_Map(object oPC, object oPaper, int nLevel = 0)
         }
         //Item Array:(-Name-BaseName-BaseItemType-ResRef-ID-Container_tag-Max_properties-)
         sText = GenerateItemArray("-" + sName + "-" + sBaseName + "-" + sBaseItemType + "-" + sResRef + "---", nLevel, oPaper, oPC);
-        //SendMessageToPC(GetFirstPC(), " MasterWork? " + IntToString(GetStringLeft(GetStringArray(sText, 0, "-"), 6) == "<cqqÿ>"));
-        if(GetStringLeft(GetStringArray(sText, 0, "-"), 6) == "<cqqÿ>") sText = SetStringArray(sText, 0, "NORMAL", "-");
+        if(GetStringLeft(GetStringArray(sText, 0, "-"), 6) == "<cqqï¿½>") sText = SetStringArray(sText, 0, "NORMAL", "-");
         // If a special or wondrous item we need to add the color to the name.
         if(nRow > 0)
         {

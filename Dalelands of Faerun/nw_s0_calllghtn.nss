@@ -9,14 +9,14 @@ Descriptor(s): Electricity
 Component(s): Verbal, Somatic
 Range: Long
 Area of Effect / Target: Large
-Duration: 1 Min / Level
+Duration: 1 round / Level
 Save: Reflex 1/2
 Spell Resistance: Yes
 
 Immediately upon completion of the spell, and once per round thereafter,
 a 5-foot-wide, 30-foot-long, vertical bolt of lightning that deals 3d6 points of
 electricity damage. The bolt of lightning flashes down in a vertical stroke at a
-random target within the spell’s range (measured from your position at the time).
+random target within the spell's range (measured from your position at the time).
 You need not call a bolt of lightning as they will strike once per round for a
 total number of times equal to your caster level (maximum 10 bolts).
 
@@ -99,12 +99,13 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_ELECTRICITY;
+    Spell.sEnhancingComp = "bloodstone_dust";
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 35.0f;
     Spell.iLineOfSight = TRUE;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ENEMIES;
-    Spell.iDurationType = DURATION_TYPE_MINUTES;
+    Spell.iDurationType = DURATION_TYPE_ROUNDS;
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;
     Spell.iSpellResistance = TRUE;
@@ -127,13 +128,24 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     // Remove any previously cast spell on this target.
-    RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+    if(GetHasSpellEffect(Spell.iSpellID, Spell.oAreaTarget))
+    {
+        SendMessages("You cannot cast this spell again until the previous one has ended!", COLOR_RED, Spell.oCaster);
+        return;
+    }
     // Get number of bolts to fire.
     int iBolts = Spell.iCasterLevel;
     // Limit the number of bolts to 10.
     if (iBolts > 10) iBolts == 10;
+    // Bloodstone Dust enhancing component adds 50% duration.
+    if(Spell.sEnhancingComp == "TRUE")
+    {
+        Spell.fDuration *= 1.5;
+        iBolts = iBolts + iBolts / 2;
+    }
     // Place effect on caster to note the spells on.
     effect eDuration = EffectVisualEffect (VFX_DUR_AURA_DRAGON_FEAR);
+    eDuration = SetEffectCasterLevel(eDuration, Spell.iCasterLevel);
     ApplyEffectToObject (Spell.iDurationType, eDuration, Spell.oCaster, Spell.fDuration);
     FireBolt (Spell, iBolts);
     CleanUpSpell (Spell);

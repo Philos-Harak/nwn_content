@@ -51,6 +51,7 @@ void main()
     int iHit;
     effect eConfusion = EffectConfused ();
     effect eImpact = EffectVisualEffect (Spell.iImpact);
+    eConfusion = SetEffectCasterLevel(eConfusion, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

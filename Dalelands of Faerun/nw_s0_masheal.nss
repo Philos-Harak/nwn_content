@@ -32,6 +32,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.iSubSchool = SUBSCHOOL_HEALING;
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 30.0f;
     Spell.iLineOfSight = TRUE;
@@ -74,6 +75,7 @@ void main()
         {
             //Set the heal effect
             eHeal = EffectHeal (Spell.iResult);
+            eHeal = SetEffectCasterLevel(eHeal, Spell.iCasterLevel);
             // Cure adverse conditions.
             eEffect = GetFirstEffect (Spell.oAreaTarget);
             while (GetIsEffectValid (eEffect))
@@ -112,6 +114,7 @@ void main()
             if (Spell.iResult > 0)
             {
                 eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply the VFX impact and effects
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
                 eImp = EffectVisualEffect (VFX_IMP_SUNSTRIKE);

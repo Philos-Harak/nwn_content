@@ -31,40 +31,34 @@ void main()
     Spell.iDurationType = DURATION_TYPE_HOURS;
     Spell.iDuration = 24;
     // Setup each individual spells structs.
-    int iAmount, iLimit;
+    int nAmount, nLimit;
     Spell.iSpellID = GetSpellId ();
     // Endure Elements Lvl:1 - Resists 5 damage absorb 20 points of damage.
     if (Spell.iSpellID == SPELL_ENDURE_ELEMENTS)
     {
-        iAmount = 5;
-        iLimit = 20;
+        nAmount = 5;
+        nLimit = 20;
     }
     // Resist Elements Lvl:2 - Resists 10 damage absorb 30 points of damage.
     else if (Spell.iSpellID == SPELL_RESIST_ELEMENTS)
     {
         Spell.iDivineFocus = TRUE;
         Spell.iDurPerLvl = 1;
-        iAmount = 10;
-        iLimit = 30;
-        Spell.sEnhancingComp = "0_adam_shaving";
-        Spell.iCompAmount = 50;
+        nAmount = 10;
+        nLimit = 30;
     }
     // Protection from Elements Lvl:3 - Resists 20 damage absorb 40 points of damage.
     else if (Spell.iSpellID == SPELL_PROTECTION_FROM_ELEMENTS)
     {
         Spell.iDivineFocus = TRUE;
-        iAmount = 20;
-        iLimit = 40;
-        Spell.sEnhancingComp = "0_adam_shaving";
-        Spell.iCompAmount = 100;
+        nAmount = 20;
+        nLimit = 40;
     }
     // Energy Buffer Lvl:5 - Resists 40 damage absorb 60 points of damage.
     else if (Spell.iSpellID == SPELL_ENERGY_BUFFER)
     {
-        iAmount = 40;
-        iLimit = 60;
-        Spell.sEnhancingComp = "0_adam_shaving";
-        Spell.iCompAmount = 150;
+        nAmount = 40;
+        nLimit = 60;
     }
     // Setup the spell.
     Spell = SetSpell (Spell);
@@ -75,27 +69,118 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    if (Spell.sEnhancingComp == "TRUE")
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
     {
-        // Resist Elements Lvl:2 - (Enhanced) Resists 10 damage absorb 40 points of damage.
-        if (Spell.iSpellID == SPELL_RESIST_ELEMENTS) iLimit = 40;
-        // Protection from Elements Lvl:3 - (Enhanced) Resists 20 damage absorb 60 points of damage.
-        else if (Spell.iSpellID == SPELL_PROTECTION_FROM_ELEMENTS) iLimit = 60;
-        // Energy Buffer Lvl:5 - (Enhanced) Resists 40 damage absorb 80 points of damage.
-        else if (Spell.iSpellID == SPELL_ENERGY_BUFFER) iLimit = 80;
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedAmount, nEnhancedLimit, nStack;
+        int nAugeliteDust, nMalachiteDust, nOrbalineDust, nSpheneDust, nFlamedanceDust;
+        int nJacinthDust, nPhenalopeDust, nFireAgateDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nAugeliteDust && GetTag(oItem) == "augelite_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nAugeliteDust = TRUE;
+                nEnhancedAmount += 2;    
+            }
+            else if(!nMalachiteDust && GetTag(oItem) == "malachite_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nMalachiteDust = TRUE;
+                nEnhancedAmount += 2;    
+            }
+            else if(!nOrbalineDust && GetTag(oItem) == "orbaline_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nOrbalineDust = TRUE;
+                nEnhancedAmount += 2;    
+            }
+            else if(!nFlamedanceDust && GetTag(oItem) == "flamedance_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nFlamedanceDust = TRUE;
+                nEnhancedAmount += 2;    
+            }
+            else if(!nSpheneDust && GetTag(oItem) == "sphene_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nSpheneDust = TRUE;
+                    nEnhancedAmount += 8;    
+                }
+            }
+            else if(!nJacinthDust && GetTag(oItem) == "jacinth_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nJacinthDust = TRUE;
+                    nEnhancedLimit += 20;    
+                }
+            }
+            else if(!nPhenalopeDust && GetTag(oItem) == "phenalope_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nPhenalopeDust = TRUE;
+                nEnhancedLimit += 5;    
+            }
+            else if(!nFireAgateDust && GetTag(oItem) == "fire_agate_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nFireAgateDust = TRUE;
+                nEnhancedLimit += 5;    
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nEnhancedAmount)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to resist +" + IntToString(nEnhancedAmount) + " additional damage per hit!", COLOR_GREEN, oObject);
+            nAmount += nEnhancedAmount;
+        }
+        if(nEnhancedLimit)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to absorb +" + IntToString(nEnhancedLimit) + " additional damage per hit!", COLOR_GREEN, oObject);
+            nLimit += nEnhancedLimit;
+        }
     }
-    effect eCold = EffectDamageResistance (DAMAGE_TYPE_COLD, iAmount, iLimit);
-    effect eFire = EffectDamageResistance (DAMAGE_TYPE_FIRE, iAmount, iLimit);
-    effect eAcid = EffectDamageResistance (DAMAGE_TYPE_ACID, iAmount, iLimit);
-    effect eSonic = EffectDamageResistance (DAMAGE_TYPE_SONIC, iAmount, iLimit);
-    effect eElec = EffectDamageResistance (DAMAGE_TYPE_ELECTRICAL, iAmount, iLimit);
-    effect eImpact = EffectVisualEffect (VFX_IMP_ELEMENTAL_PROTECTION);
-    effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
-    effect eLink = EffectLinkEffects (eCold, eFire);
-    eLink = EffectLinkEffects (eLink, eAcid);
-    eLink = EffectLinkEffects (eLink, eSonic);
-    eLink = EffectLinkEffects (eLink, eElec);
-    eLink = EffectLinkEffects (eLink, eDur);
+    effect eCold = EffectDamageResistance(DAMAGE_TYPE_COLD, nAmount, nLimit);
+    effect eFire = EffectDamageResistance(DAMAGE_TYPE_FIRE, nAmount, nLimit);
+    effect eAcid = EffectDamageResistance(DAMAGE_TYPE_ACID, nAmount, nLimit);
+    effect eSonic = EffectDamageResistance(DAMAGE_TYPE_SONIC, nAmount, nLimit);
+    effect eElec = EffectDamageResistance(DAMAGE_TYPE_ELECTRICAL, nAmount, nLimit);
+    effect eImpact = EffectVisualEffect(VFX_IMP_ELEMENTAL_PROTECTION);
+    effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
+    effect eLink = EffectLinkEffects(eCold, eFire);
+    eLink = EffectLinkEffects(eLink, eAcid);
+    eLink = EffectLinkEffects(eLink, eSonic);
+    eLink = EffectLinkEffects(eLink, eElec);
+    eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

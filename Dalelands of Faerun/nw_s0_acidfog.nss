@@ -13,7 +13,7 @@ Saving Throw:   None
 Spell Resistance:   No
 Acid fog creates a billowing mass of misty vapors similar to that produced by a
 solid fog spell. In addition to slowing creatures down and obscuring sight, this
-spell’s vapors are highly acidic. Each round on your turn, starting when you
+spellï¿½s vapors are highly acidic. Each round on your turn, starting when you
 cast the spell, the fog deals 2d6 points of acid damage to each creature and
 object within it.
 
@@ -53,6 +53,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (AOE_PER_FOGACID);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create visual effect.
         effect eCenter = EffectVisualEffect (257);
         // Apply visual effect at the center of the effect area.

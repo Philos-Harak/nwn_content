@@ -12,6 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "0i_items"
+#include "0i_itemproperty"
 #include "nwnx_itemprop"
 void main()
 {
@@ -50,27 +51,39 @@ void main()
         // Now add damage to weapon.
         if(nAcid)
         {
-            ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_ACID, nDamageBonus);
-            ipProperty = TagItemProperty (ipProperty, "itemset_1");
-            AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            if(!GetIsItemPropertyValid(HasProperty(oWeapon, ITEM_PROPERTY_DAMAGE_BONUS, IP_CONST_DAMAGETYPE_ACID)))
+            {
+                ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_ACID, nDamageBonus);
+                ipProperty = TagItemProperty (ipProperty, "itemset_1");
+                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            }
         }
         if(nElectricity)
         {
-            ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_ELECTRICAL, nDamageBonus);
-            ipProperty = TagItemProperty (ipProperty, "itemset_1");
-            AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            if(!GetIsItemPropertyValid(HasProperty(oWeapon, ITEM_PROPERTY_DAMAGE_BONUS, IP_CONST_DAMAGETYPE_ELECTRICAL)))
+            {
+                ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_ELECTRICAL, nDamageBonus);
+                ipProperty = TagItemProperty (ipProperty, "itemset_1");
+                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            }
         }
         if(nFire)
         {
-            ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_FIRE, nDamageBonus);
-            ipProperty = TagItemProperty (ipProperty, "itemset_1");
-            AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            if(!GetIsItemPropertyValid(HasProperty(oWeapon, ITEM_PROPERTY_DAMAGE_BONUS, IP_CONST_DAMAGETYPE_FIRE)))
+            {
+                ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_FIRE, nDamageBonus);
+                ipProperty = TagItemProperty (ipProperty, "itemset_1");
+                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            }
         }
         if(nCold)
         {
-            ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_COLD, nDamageBonus);
-            ipProperty = TagItemProperty (ipProperty, "itemset_1");
-            AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            if(!GetIsItemPropertyValid(HasProperty(oWeapon, ITEM_PROPERTY_DAMAGE_BONUS, IP_CONST_DAMAGETYPE_COLD)))
+            {
+                ipProperty = ItemPropertyDamageBonus (IP_CONST_DAMAGETYPE_COLD, nDamageBonus);
+                ipProperty = TagItemProperty (ipProperty, "itemset_1");
+                AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oWeapon);
+            }
         }
     }
 }

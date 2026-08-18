@@ -64,6 +64,7 @@ void main()
         if (Spell.iResult > 0)
         {
             eDamage = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDamage = SetEffectCasterLevel(eDamage, Spell.iCasterLevel);
             // Apply effects to the currently selected target.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDamage, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

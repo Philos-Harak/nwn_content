@@ -90,6 +90,7 @@ void main()
                 fTime += fDelay2;
                 //Set damage effect
                 eDmg = EffectDamage(Spell.iResult, Spell.iDamageType);
+                eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
                 //Apply the MIRV and damage effect
                 DelayCommand(fTime, ApplyEffectToObject (Spell.iDurationType, eDmg, Spell.oAreaTarget));
                 DelayCommand(fTime, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eImpact, Spell.oAreaTarget));

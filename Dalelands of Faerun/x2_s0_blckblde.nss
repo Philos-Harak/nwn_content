@@ -105,9 +105,10 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eSummon = EffectSummonCreature ("x2_s_bblade", VFX_FNF_SUMMON_MONSTER_3);
+    eSummon = SetEffectCasterLevel(eSummon, Spell.iCasterLevel);
     AdjustCurrentSummonedCreatures (Spell.oCaster, Spell.iSpellID);
     ApplyEffectAtLocation (Spell.iDurationType, eSummon, Spell.lTarget, Spell.fDuration);
-    MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID);
+    DelayCommand(0.1, MarkSummonedCreatures (Spell.oCaster, Spell.iSpellID));
     DelayCommand (1.5, spellsCreateItemForSummoned ());
     CleanUpSpell (Spell);
 }

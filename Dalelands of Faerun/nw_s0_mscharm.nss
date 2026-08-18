@@ -58,8 +58,9 @@ void main()
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
     effect eCenter = EffectVisualEffect (VFX_FNF_LOS_NORMAL_20);
     //Link persistant effects
-    effect eLoopLink;
     effect eLink = EffectLinkEffects(eMind, eDuration);
+    eLink = EffectLinkEffects(eLink, eCharm);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply vfx at the spells location.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -75,9 +76,8 @@ void main()
             Spell = ResistAndSave (Spell);
             if (!Spell.iSaveResult)
             {
-                eLoopLink = EffectLinkEffects(eLink, eCharm);
-                //Apply impact and linked effects
-                DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLoopLink, Spell.oAreaTarget, Spell.fDuration));
+               //Apply impact and linked effects
+                DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
                 DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             }
             iHitDice = iHitDice - iTargetHitDice;

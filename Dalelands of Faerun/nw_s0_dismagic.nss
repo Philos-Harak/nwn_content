@@ -27,6 +27,8 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "nune_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Nune Dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 10.0f;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE | OBJECT_TYPE_AREA_OF_EFFECT | OBJECT_TYPE_PLACEABLE;
@@ -45,6 +47,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += 2;;
     effect eCenter = EffectVisualEffect(VFX_FNF_DISPEL);
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     // Check for single target, Attempt to dispell all effects.

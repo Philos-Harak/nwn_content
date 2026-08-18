@@ -43,6 +43,7 @@ void main()
     effect eVisual = EffectVisualEffect (VFX_FNF_SUMMON_MONSTER_3);
     //Set the summoning effect
     eSummon = EffectSwarm (FALSE, "NW_SW_AIRGREAT", "NW_SW_WATERGREAT", "NW_SW_EARTHGREAT", "NW_SW_FIREGREAT");
+    eSummon = SetEffectCasterLevel(eSummon, Spell.iCasterLevel);
     //Apply the summon effect
     ApplyEffectToObject (Spell.iDurationType, eSummon, Spell.oCaster, Spell.fDuration);
     CleanUpSpell (Spell);

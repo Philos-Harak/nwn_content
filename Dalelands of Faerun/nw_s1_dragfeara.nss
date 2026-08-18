@@ -22,16 +22,6 @@ void main()
     effect eImpact = EffectVisualEffect (VFX_IMP_FEAR_S);
     int nFear;
     int nHitDice = GetHitDice(oCaster);
-    if(nHitDice < 6) nFear = 2;
-    else if(nHitDice < 16) nFear = 4;
-    else nFear = 6;
-    effect eFear = EffectAttackDecrease(nFear);
-    eFear = EffectLinkEffects (EffectSavingThrowDecrease(SAVING_THROW_ALL, nFear), eFear);
-    eFear = EffectLinkEffects (EffectSkillDecrease(SKILL_ALL_SKILLS, nFear), eFear);
-    effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
-    effect eVisual = EffectVisualEffect (VFX_DUR_MIND_AFFECTING_FEAR);
-    eFear = EffectLinkEffects (eDuration, eFear);
-    eFear = EffectLinkEffects (eVisual, eFear);
     int nDC = (GetHitDice (oCaster) / 2) + GetAbilityModifier (ABILITY_CHARISMA, oCaster) + 10;
     float fDuration = RoundsToSeconds (d6(4));
     // Fire cast spell at event for the specified target
@@ -42,7 +32,10 @@ void main()
     //Make a saving throw check
     if(!WillSave(oTarget, nDC, SAVING_THROW_TYPE_FEAR))
     {
-        ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eFear, oTarget, fDuration);
+        //Apply the VFX impact and effects
+        if(nHitDice < 6) Shaken(oTarget, fDuration, nHitDice);
+        else if(nHitDice < 16) Frightened(oTarget, fDuration, nHitDice);
+        else Panicked(oTarget, fDuration, nHitDice);
         ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oTarget);
     }
 }

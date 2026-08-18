@@ -6,12 +6,12 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_magicitems"
 #include "x2_inc_switches"
-void CheckForTreasure (object oPC, object oCreature);
+void CheckForTreasure(object oPC, object oCreature);
 
 // Randomizes Treasure and places it in oContainer.
 // oPC is the PC we are rolling treasure for.
 // iLevel bypassed default levels.
-void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 0);
+void RollTreasure(object oContainer, object oPC = OBJECT_INVALID, int iLevel = 0);
 
 // Randomizes gems and place in oContainer.
 // Selects the treasure based on the iLevel passed.
@@ -19,7 +19,7 @@ void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 
 // iLevel is the level of the treasure we are creating.
 // iNumber is the number to be rolled.
 // oPC is the PC's luck we should use.
-object RollGems (object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
+object RollGems(object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
 
 // Randomizes art items and place in oContainer.
 // Selects the treasure based on the iLevel passed.
@@ -27,15 +27,15 @@ object RollGems (object oContainer, int iLevel, int iNumber, object oPC = OBJECT
 // iLevel is the level of the treasure we are creating.
 // iNumber is the number to be rolled.
 // oPC is the PC's luck we should use.
-object RollArt (object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
+object RollArt(object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
 
 // Randomizes mundane items and place in oContainer.
 // Selects the treasure based on the iLevel passed.
 // iNumber is the number to be rolled.
 // oPC is the PC's luck we should use.
-void RollMundaneItems (object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
+void RollMundaneItems(object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID);
 
-void CheckForTreasure (object oPC, object oCreature)
+void CheckForTreasure(object oPC, object oCreature)
 {
     // if they are not incorporeal, iMultiplier = -1 (i.e. no treasure)
     // or are a specific type of creature.
@@ -66,7 +66,7 @@ void CheckForTreasure (object oPC, object oCreature)
 // Randomizes Treasure and places it in oContainer.
 // oPC is the PC we are rolling treasure for.
 // iLevel bypassed default levels.
-void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 0)
+void RollTreasure(object oContainer, object oPC = OBJECT_INVALID, int iLevel = 0)
 {
    int iMundane, iGold, iArt, iGem, iMagicItems, iRoll;
    // See if loot is disabled in this area.
@@ -91,8 +91,10 @@ void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 
        iLevel = iLevel + GetLocalInt (oContainer, "0_TreasureBonus");
        if (iLevel < 1) iLevel = 1;
    }
-   // Cap treasure levels to 20.
-   if (iLevel > 20) iLevel = 20;
+   // Cap treasure levels to 40.
+   if (iLevel > 40) iLevel = 40;
+   int nChance = iLevel;
+   if(nChance > 20) nChance = 20;
    // Get the treasure multiplier.
    int iMultiplier = GetLocalInt (oContainer, "0_Multiplier");
    // If 0 (default) then set to 1.
@@ -107,30 +109,30 @@ void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 
             iGold = (RandomLuckRoll (oPC, iLevel * 10) + iLevel) * iMultiplier;
        }
        // Art Object Chance: 1st)0% 5th)2% 10th)5% 15th)7% 20th)10%.
-       if ((d100LuckRoll (oPC) + iTreasureSlider) > 100 - (iLevel - (iLevel / 2)))
+       if ((d100LuckRoll (oPC) + iTreasureSlider) > 100 - (nChance - (nChance / 2)))
        {
             // Art Object Amount: (iLevel / 5) gives max of 4 at 20th.
-            iArt = (RandomLuckRoll (oPC, iLevel / 6)) * iMultiplier;
+            iArt = (RandomLuckRoll (oPC, nChance / 6)) * iMultiplier;
             RollArt (oContainer, iLevel, iArt, oPC);
        }
        // Gems Chance: 1st)0% 5th)3% 10th)6% 15th)10% 20th)13%.
-       if ((d100LuckRoll (oPC) + iTreasureSlider) > 100 - (iLevel - (iLevel / 3)))
+       if ((d100LuckRoll (oPC) + iTreasureSlider) > 100 - (nChance - (nChance / 3)))
        {
             // Gems Amount: (iLevel / 6) +1 gives max of 4 at 20th.
-            iGem = (RandomLuckRoll (oPC, iLevel / 6)) * iMultiplier;
+            iGem = (RandomLuckRoll (oPC, nChance / 6)) * iMultiplier;
             RollGems (oContainer, iLevel, iGem, oPC);
        }
        // Mundane Item Chance: 1st)20% 5th)15% 10th)10% 15th)5% 20th)1%.
        // Mundane Item Amount: Gives 1 item.
-       if ((d100LuckRoll (oPC) + iTreasureSlider) > 99 - (20 - iLevel)) RollMundaneItems (oContainer, iLevel, 1);
+       if ((d100LuckRoll (oPC) + iTreasureSlider) > 99 - (20 - nChance)) RollMundaneItems (oContainer, iLevel, 1);
        // Magic Item Chance: 1st)1%, 5th)5%, 10th)10%, 15th)15%, 20th)20%.
        // Magic Item Amount: (iLevel / 5) gives max of 4 at 20th.
        int nRoll = d100LuckRoll (oPC) + iTreasureSlider;
-       if (nRoll > 100 - iLevel + (iLevel / 2))
+       if (nRoll > 100 - nChance + (nChance / 2))
        {
             // Get Number of Magic items to generate.
             if (iLevel < 10) iMagicItems = 1;
-            else iMagicItems = (RandomLuckRoll(oPC, iLevel / 5)) * iMultiplier;
+            else iMagicItems = (RandomLuckRoll(oPC, nChance / 5)) * iMultiplier;
        }
    }
    // Add any bonus gold.
@@ -163,71 +165,71 @@ void RollTreasure (object oContainer, object oPC = OBJECT_INVALID, int iLevel = 
 // iLevel is the level of the treasure we are creating.
 // iNumber is the number to be rolled.
 // oPC is the PC's luck we should use.
-object RollGems (object oContainer, int iLevel, int iNumber, object oPC = OBJECT_INVALID)
+object RollGems (object oContainer, int nLevel, int nNumber, object oPC = OBJECT_INVALID)
 {
    string sGemResRef;
-   int iRoll;
+   int nRoll;
    object oItem;
-   while (iNumber > 0)
+   while (nNumber > 0)
    {
-      iRoll = d100LuckRoll (oPC);
-      if (iLevel < 6)
+      nRoll = d100LuckRoll (oPC);
+      if(nLevel < 6)
       {
             // Ornamental Stones worth 10gp.
-            if (iRoll < 50) sGemResRef = "g_10_";
+            if (nRoll < 50) { sGemResRef = "g_25_"; nRoll = 26; }
             // Semi-precious Stones worth 50gp.
-            else if (iRoll < 86) sGemResRef = "g_50_";
+            else if (nRoll < 86) { sGemResRef = "g_50_"; nRoll = 12; }
             // Fancy Stones worth 100gp.
-            else if (iRoll < 99) sGemResRef = "g_100_";
+            else if (nRoll < 99) { sGemResRef = "g_100_"; nRoll = 10; }
             // Precious Stones worth 500gp.
-            else sGemResRef = "g_500_";
+            else { sGemResRef = "g_500_"; nRoll = 12; }
       }
-      else if (iLevel < 11)
+      else if (nLevel < 11)
       {
             // Ornamental Stones worth 10gp.
-            if (iRoll < 26) sGemResRef = "g_10_";
+            if (nRoll < 26) { sGemResRef = "g_25_"; nRoll = 26; }
             // Semi-precious Stones worth 50gp.
-            else if (iRoll < 51) sGemResRef = "g_50_";
+            else if (nRoll < 51) { sGemResRef = "g_50_"; nRoll = 12; }
             // Fancy Stones worth 100gp.
-            else if (iRoll < 76) sGemResRef = "g_100_";
+            else if (nRoll < 76) { sGemResRef = "g_100_"; nRoll = 10; }
             // Precious Stones worth 500gp.
-            else if (iRoll < 99) sGemResRef = "g_500_";
+            else if (nRoll < 99) { sGemResRef = "g_500_"; nRoll = 12; }
             // Gems worth 1000gp.
-            else sGemResRef = "g_100_";
+            else { sGemResRef = "g_1000_"; nRoll = 12; }
       }
-      else if (iLevel < 16)
+      else if (nLevel < 16)
       {
             // Ornamental Stones worth 10gp.
-            if (iRoll < 13) sGemResRef = "g_10_";
+            if (nRoll < 13) { sGemResRef = "g_25_"; nRoll = 26; }
             // Semi-precious Stones worth 50gp.
-            else if (iRoll < 26) sGemResRef = "g_50_";
+            else if (nRoll < 26) { sGemResRef = "g_50_"; nRoll = 12; }
             // Fancy Stones worth 100gp.
-            else if (iRoll < 76) sGemResRef = "g_100_";
+            else if (nRoll < 76) { sGemResRef = "g_100_"; nRoll = 10; }
             // Precious Stones worth 500gp.
-            else if (iRoll < 96) sGemResRef = "g_500_";
+            else if (nRoll < 96) { sGemResRef = "g_500_"; nRoll = 12; }
             // Gems worth 1000gp.
-            else if (iRoll < 99) sGemResRef = "g_1000_";
+            else if (nRoll < 99) { sGemResRef = "g_1000_"; nRoll = 12; }
             // Jewels worth 5000gp.
-            else sGemResRef = "g_5000_";
+            else { sGemResRef = "g_5000_"; nRoll = 10; }
       }
       else
       {
             // Semi-precious Stones worth 50gp.
-            if (iRoll < 13) sGemResRef = "g_50_";
+            if (nRoll < 13) { sGemResRef = "g_50_"; nRoll = 12; }
             // Fancy Stones worth 100gp.
-            else if (iRoll < 26) sGemResRef = "g_100_";
+            else if (nRoll < 26) { sGemResRef = "g_100_"; nRoll = 10; }
             // Precious Stones worth 500gp.
-            else if (iRoll < 76) sGemResRef = "g_500_";
+            else if (nRoll < 76) { sGemResRef = "g_500_"; nRoll = 12; }
             // Gems worth 1000gp.
-            else if (iRoll < 96) sGemResRef = "g_1000_";
+            else if (nRoll < 96) { sGemResRef = "g_1000_"; nRoll = 12; }
             // Jewels worth 5000gp.
-            else sGemResRef = "g_5000_";
+            else { sGemResRef = "g_5000_"; nRoll = 10; }
       }
-      sGemResRef = sGemResRef + IntToString (d10());
+      sGemResRef = sGemResRef + IntToString (Random(nRoll) + 1);
       oItem = CreateItemOnObject (sGemResRef, oContainer, 1, "");
       // Check for an error.
       if (!GetIsObjectValid (oItem)) SetModuleError ("RESREF", "0i_treasure", "153", "Invalid resref: " + sGemResRef);
-      iNumber--;
+      nNumber--;
    }
    return oItem;
 }

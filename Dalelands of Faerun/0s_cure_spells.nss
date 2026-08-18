@@ -17,6 +17,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.iSubSchool = SUBSCHOOL_HEALING;
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iTargetType = TARGET_TYPE_ALL;
     Spell.iDurationType = DURATION_TYPE_INSTANT;
@@ -47,7 +48,6 @@ void main()
             Spell.iModifierDie = 4;
             Spell.iModifier = 0;
             Spell.iModPerLvl = 0;
-            CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
             break;
         }
         // Cures 1d8 + 1 per level up to 5.
@@ -61,7 +61,6 @@ void main()
             Spell.iModDicePerLvl = 0;
             Spell.iModifier = 1;
             Spell.iModPerLvl = 1;
-            CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
             if (Spell.iSpellID == 959/*Imbue_with_Spell_Ability_CLW*/)
                 NWNX_Creature_RemoveFeat (Spell.oCaster, 1547/*FEAT_IWSA_Cast_CLW*/);
             break;
@@ -77,7 +76,6 @@ void main()
             Spell.iModDicePerLvl = 0;
             Spell.iModifier = 1;
             Spell.iModPerLvl = 1;
-            CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
             if (Spell.iSpellID == 960/*Imbue_with_Spell_Ability_CMW*/)
                 NWNX_Creature_RemoveFeat (Spell.oCaster, 1548/*FEAT_IWSA_Cast_CMW*/);
             break;
@@ -92,7 +90,6 @@ void main()
             Spell.iModDicePerLvl = 0;
             Spell.iModifier = 1;
             Spell.iModPerLvl = 1;
-            CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
             break;
         }
         // Cures 4d8 + 1 per level up to 20
@@ -105,10 +102,73 @@ void main()
             Spell.iModDicePerLvl = 0;
             Spell.iModifier = 1;
             Spell.iModPerLvl = 1;
-            CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
             break;
         }
     }
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        // Do a special check for enhancing components in one inventory pass.
+        int nStack;
+        int nBluestonesDust, nStarRubyDust, nTopazDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nBluestonesDust && GetTag(oItem) == "blue_stones_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nBluestonesDust = TRUE;
+                Spell.iModifier += 1;
+            }
+            else if(!nStarRubyDust && GetTag(oItem) == "star_ruby_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nStarRubyDust = TRUE;
+                }
+            }
+            else if(!nTopazDust && GetTag(oItem) == "topaz_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nTopazDust = TRUE;
+                }
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nBluestonesDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced with +1 to each hit dice!", COLOR_GREEN, oObject);
+        }
+        if(nStarRubyDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been maximized!", COLOR_GREEN, oObject);
+            Spell.iMetaMagic += METAMAGIC_MAXIMIZE;
+        }
+        if(nTopazDust)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been Empowered!", COLOR_GREEN, oObject);
+            Spell.iMetaMagic += METAMAGIC_EMPOWER;
+        }
+    }
+    CureSpell (Spell, VFX_IMP_NEGATIVE_ENERGY, VFX_IMP_HEALING_S);
     CleanUpSpell (Spell);
 }
 

@@ -109,24 +109,24 @@ void PopulateArea (object oArea, object oPC)
    int bNoDifficulty = GetLocalInt (oWaypoint, "0_No_Difficulty");
    SetLocalInt (oArea, "0_No_Difficulty", bNoDifficulty);
    // Check to see if a DM has locked this area from being populated or cleared.
-   if (GetLocalString (oWaypoint, "0_Encounter_2da") == "Off") return;
+   if(GetLocalString (oWaypoint, "0_Encounter_2da") == "Off") return;
    // For special events check the Special events to see if we should change
    // encounter charts.
    if(!bNoDifficulty) CheckForSpecialEventEncounterChart(oPC, oArea, oWaypoint);
    // If area level is 0 then set it to the party's average level.
    int nLevel = GetLocalInt (oArea, "0_Area_Level");
-   if (nLevel == 0)
+   if(nLevel == 0)
    {
       // Get the minimum and maximum area levels.
-      nMin_Level = GetLocalInt (oWaypoint, "0_Min_Level");
-      if (nMin_Level < 1) nMin_Level = 1;
-      nMax_Level = GetLocalInt (oWaypoint, "0_Max_Level");
-      if (nMax_Level > 20) nMax_Level = 20;
-      if (nMax_Level < nMin_Level) nMax_Level = nMin_Level;
-      if (oPC != OBJECT_INVALID)
+      nMin_Level = GetLocalInt(oWaypoint, "0_Min_Level");
+      if(nMin_Level < 1) nMin_Level = 1;
+      nMax_Level = GetLocalInt(oWaypoint, "0_Max_Level");
+      if(nMax_Level > 40) nMax_Level = 40;
+      if(nMax_Level < nMin_Level) nMax_Level = nMin_Level;
+      if(oPC != OBJECT_INVALID)
       {
           // Get the party Level
-          nPartyAvgLevel = GetAvgPartyLevel (oPC);
+          nPartyAvgLevel = GetAvgPartyLevel(oPC);
           // Add a variable to the Level of the area if the party is over 3rd.
           if (nPartyAvgLevel > 3)
           {
@@ -144,10 +144,10 @@ void PopulateArea (object oArea, object oPC)
       }
       else nPartyAvgLevel = (nMin_Level + nMax_Level) / 2;
       // Set the areas new level until cleared.
-      SetLocalInt (oArea, "0_Area_Level", nPartyAvgLevel);
+      SetLocalInt(oArea, "0_Area_Level", nPartyAvgLevel);
       nLevel = nPartyAvgLevel;
    }
-   CheckObjects (oArea, oPC, nLevel, bNoDifficulty);
+   CheckObjects(oArea, oPC, nLevel, bNoDifficulty);
 }
 
 // Clear a quest in an area.
@@ -764,16 +764,16 @@ object GenerateArea (string sAreaTag)
 // Send the areas diffculty to the entering player.
 // oPlayer is the player to send the message to.
 // oArea is the area to check difficulty of.
-void SendDifficultyMessage (object oPlayer, object oArea)
+void SendDifficultyMessage(object oPlayer, object oArea)
 {
     // Lets inform the PC of how difficult the area is.
-    int iLevel = GetLocalInt (oArea, "0_Area_Level");
+    int iLevel = GetLocalInt(oArea, "0_Area_Level");
     // Should use code as follows.
-    if (GetIsDungeonMaster (oPlayer)) SendMessages (GetName (oArea) + "[" + GetTag (oArea) + "] has an area level of " + IntToString (iLevel), COLOR_GRAY, oPlayer, FALSE, FALSE);
+    if(GetIsDungeonMaster (oPlayer)) SendMessages (GetName (oArea) + "[" + GetTag (oArea) + "] has an area level of " + IntToString (iLevel), COLOR_GRAY, oPlayer, FALSE, FALSE);
     // Do not send difficulty message if level is 0 or the area is set to no difficulty.
-    else if (iLevel > 0 && !GetLocalInt (oArea, "0_No_Difficulty"))
+    else if(iLevel > 0 && !GetLocalInt (oArea, "0_No_Difficulty"))
     {
-        int iPCLevel = GetCharacterLevels (oPlayer);
+        int iPCLevel = GetCharacterLevels(oPlayer);
         int iDifficulty = iLevel - iPCLevel;
         string sDifficulty, sColor;
         // Lets get the difficulty and color for it.
@@ -785,7 +785,8 @@ void SendDifficultyMessage (object oPlayer, object oArea)
         else if (iDifficulty < 8) { sDifficulty = "Overpowering"; sColor = COLOR_RED; }
         else { sDifficulty = "Impossible"; sColor = COLOR_DARK_MAGENTA;}
         // Now send the message.
-        SendMessages (GetName (oArea) + " will be " + sDifficulty + " for you.", sColor, oPlayer);
+        SendMessages(GetName (oArea) + " will be " + sDifficulty + " for you.", sColor, oPlayer);
+        if(iLevel > 20) SendMessages("This is an Epic level area!", sColor, oPlayer);
     }
     else
     {
@@ -1198,81 +1199,17 @@ void Teleport(object oCaster, string sLocation, int nSpell, int nCasterLevel)
         fDelay = 3.5f;
     }
     if(sRoll != "") sRoll = " (" + sRoll + ")";
-    DelayCommand(8.0f, SendMessages ("You appear " + sText + sRoll, sColor, oCaster));
-    DelayCommand(8.0f, CheckForMishapDamage (oCaster, nDmg));
+    DelayCommand(8.0f, SendMessages("You appear " + sText + sRoll, sColor, oCaster));
+    DelayCommand(8.0f, CheckForMishapDamage(oCaster, nDmg));
     // Get the number of targets we can bring.
-    // Count off Familiar, Companion, Dominated, and Henchmen first.
+    // Count off Henchmen first.
     int nTargets = nCasterLevel / 3;
-    eDisappear = EffectVisualEffect (VFX_DUR_CUTSCENE_INVISIBILITY);
-    object oTarget = GetAssociate (ASSOCIATE_TYPE_FAMILIAR, oCaster);
-    if(oTarget != OBJECT_INVALID)
-    {
-        fDelay += 0.5;
-        nTargets --;
-        DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
-        DelayCommand(fDelay + 2.5, AssignCommand (oTarget, JumpToLocation (lTeleport)));
-        DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-    }
-    oTarget = GetAssociate (ASSOCIATE_TYPE_ANIMALCOMPANION, oCaster);
-    if (oTarget != OBJECT_INVALID)
-    {
-        fDelay += 0.5;
-        nTargets --;
-        DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
-        DelayCommand(fDelay + 2.5, AssignCommand (oTarget, JumpToLocation (lTeleport)));
-        DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-    }
+    eDisappear = EffectVisualEffect(VFX_DUR_CUTSCENE_INVISIBILITY);
     nTh = 1;
-    oTarget = GetAssociate (ASSOCIATE_TYPE_DOMINATED, oCaster, nTh);
+    object oTarget = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, oCaster, nTh);
     while (oTarget != OBJECT_INVALID)
     {
-        fDelay += 0.5;
-        nTargets --;
-        DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
-        DelayCommand(fDelay + 2.5, AssignCommand (oTarget, JumpToLocation (lTeleport)));
-        DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-        oTarget = GetAssociate (ASSOCIATE_TYPE_DOMINATED, oCaster, ++nTh);
-    }
-    nTh = 1;
-    oTarget = GetAssociate (ASSOCIATE_TYPE_SUMMONED, oCaster, nTh);
-    while (oTarget != OBJECT_INVALID)
-    {
-        fDelay += 0.5;
-        nTargets --;
-        lLocation = GetLocation(oTarget);
-        DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, lLocation));
-        DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
-        DelayCommand(fDelay + 2.5, AssignCommand(oTarget, JumpToLocation (lTeleport)));
-        DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-        oTarget = GetAssociate (ASSOCIATE_TYPE_SUMMONED, oCaster, ++nTh);
-    }
-    nTh = 1;
-    oTarget = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, oCaster, nTh);
-    while (oTarget != OBJECT_INVALID)
-    {
-        fDelay += 0.5;
-        nTargets --;
-        lLocation = GetLocation(oTarget);
-        DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, lLocation));
-        DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
-        DelayCommand(fDelay + 2.5, AssignCommand(oTarget, JumpToLocation (lTeleport)));
-        DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
-        DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-        oTarget = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, oCaster, ++nTh);
-    }
-    // Finally if there are any targets left that we can bring check PC faction members.
-    // These must be within 5' or 1.5 meters.
-    oTarget == GetFirstFactionMember (oCaster);
-    while (nTargets > 0 && oTarget != OBJECT_INVALID)
-    {
-        if (GetDistanceBetween (oCaster, oTarget) <= 1.5f)
+        if(GetLocalInt(oTarget, PC_ASSOCIATE_TYPE) == ASSOCIATE_TYPE_HENCHMAN)
         {
             fDelay += 0.5;
             nTargets --;
@@ -1282,8 +1219,26 @@ void Teleport(object oCaster, string sLocation, int nSpell, int nCasterLevel)
             DelayCommand(fDelay + 2.5, AssignCommand(oTarget, JumpToLocation (lTeleport)));
             DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
             DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
-            oTarget == GetNextFactionMember (oCaster);
         }
+        oTarget = GetAssociate (ASSOCIATE_TYPE_HENCHMAN, oCaster, ++nTh);
+    }
+    // Finally if there are any targets left that we can bring check PC faction members.
+    // These must be within 15' or 5 meters.
+    oTarget = GetFirstFactionMember(oCaster);
+    while(nTargets > 0 && oTarget != OBJECT_INVALID && oTarget != oCaster)
+    {
+        if(GetDistanceBetween(oCaster, oTarget) <= 5f && oTarget != oCaster)
+        {
+            fDelay += 0.5;
+            nTargets --;
+            lLocation = GetLocation(oTarget);
+            DelayCommand(fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, lLocation));
+            DelayCommand(fDelay + 1.0, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eDisappear, oTarget, 5.5f));
+            DelayCommand(fDelay + 2.5, AssignCommand(oTarget, JumpToLocation (lTeleport)));
+            DelayCommand(fDelay + 5.0, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact_end, GetLocation (oTarget)));
+            DelayCommand(fDelay + 5.0, CheckForMishapDamage (oTarget, nDmg));
+        }
+        oTarget = GetNextFactionMember(oCaster);
     }
 }
 

@@ -18,16 +18,6 @@ void main()
     effect eImpact = EffectVisualEffect(VFX_IMP_FEAR_S);
     int nFear;
     int nHitDice = GetHitDice(OBJECT_SELF);
-    if(nHitDice < 6) nFear = 2;
-    else if(nHitDice < 16) nFear = 4;
-    else nFear = 6;
-    effect eFear = EffectAttackDecrease(nFear);
-    eFear = EffectLinkEffects(EffectSavingThrowDecrease(SAVING_THROW_ALL, nFear), eFear);
-    eFear = EffectLinkEffects(EffectSkillDecrease(SKILL_ALL_SKILLS, nFear), eFear);
-    effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_NEGATIVE);
-    eFear = EffectLinkEffects (eDuration, eFear);
-    effect eVisual = EffectVisualEffect (VFX_DUR_MIND_AFFECTING_FEAR);
-    eFear = EffectLinkEffects (eVisual, eFear);
     float fDelay;
     int nHD = GetHitDice(OBJECT_SELF);
     int nDC = 10 + (nHD / 4);
@@ -46,9 +36,12 @@ void main()
             // Make a saving throw check
             if(!WillSave (oTarget, nDC, SAVING_THROW_TYPE_FEAR))
             {
-                // Apply the VFX impact and effects
+                //Apply the VFX impact and effects
+                if(nHitDice < 6) DelayCommand(fDelay, Shaken(oTarget, fDuration, nHitDice));
+                else if(nHitDice < 16) DelayCommand(fDelay, Frightened(oTarget, fDuration, nHitDice));
+                else DelayCommand(fDelay, Panicked(oTarget, fDuration, nHitDice));
+                DelayCommand(fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, oTarget));
                 ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, oTarget);
-                ApplyEffectToObject(DURATION_TYPE_TEMPORARY, eFear, oTarget, fDuration);
             }
         }
         // Get next target in spell area

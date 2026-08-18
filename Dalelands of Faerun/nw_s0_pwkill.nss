@@ -39,6 +39,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eDeath = EffectDeath ();
+    eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
     effect eImpact = EffectVisualEffect(Spell.iImpact);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);

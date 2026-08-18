@@ -53,7 +53,8 @@ void main()
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_NEGATIVE);
     //Link the charm and duration visual effects
     effect eLink = EffectLinkEffects(eMind, eDur);
-    int iRacial;
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
+   int iRacial;
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

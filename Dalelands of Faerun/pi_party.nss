@@ -15,7 +15,7 @@ void main()
     object oPC = OBJECT_SELF;
     if(StartingUp(oPC)) return;
     // Only run if the player is in a Civilized area!
-    if(!GetLocalInt(GetArea(oPC), "0_No_Difficulty"))
+    if(!GetLocalInt(GetArea(oPC), "0_No_Difficulty") && !GetIsDungeonMaster(oPC))
     {
         SendMessages("You must be in a safe area such as a Town or City to look at your adventuring party!", COLOR_RED, oPC);
         return;
@@ -24,20 +24,15 @@ void main()
     SetLocalInt (oPC, "AI_NO_NUI_SAVE", TRUE);
     DelayCommand (0.5f, DeleteLocalInt (oPC, "AI_NO_NUI_SAVE"));
     // Row 1 (Party Buttons) *************************************************** 775 / 73
-    json jRow = CreateButtonSelect(JsonArray(), "Party 1", "btn_party1", 90.0f, 20.0f);
+    json jRow = CreateButtonSelect(JsonArray(), "Party 1", "btn_party1", 150.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 2", "btn_party2", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 2", "btn_party2", 150.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 3", "btn_party3", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 3", "btn_party3", 150.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 4", "btn_party4", 90.0f, 20.0f);
-    jRow = CreateButtonSelect(jRow, "Party 5", "btn_party5", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Party 4", "btn_party4", 150.0f, 20.0f);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 6", "btn_party6", 90.0f, 20.0f);
-    jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Party 7", "btn_party7", 90.0f, 20.0f);
-    jRow = JsonArrayInsert(jRow, NuiSpacer());
-    jRow = CreateButtonSelect(jRow, "Dead", "btn_party8", 90.0f, 20.0f);
+    jRow = CreateButtonSelect(jRow, "Dead", "btn_party8", 150.0f, 20.0f);
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Option Buttons)*************************************************** 775 / 101
     jRow = CreateButton(JsonArray(), "Party Join", "btn_join_party", 120.0f, 20.0f, -1.0, "btn_join_party_tooltip");
@@ -99,12 +94,11 @@ void main()
     jRow = JsonArrayInsert(jRow, NuiGroup(NuiCol(jGroupCol)));
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
+    // Set the layout of the window.
+    json jLayout = NuiCol(jCol);
     // Get the window location to restore it from the database.
     CheckHenchmanDataAndInitialize(oPC, "Data");
     json jData = GetHenchmanDbJson(oPC, "classes", "Data");
-    if(JsonGetType(jData) == JSON_TYPE_NULL) jData = SetPartyOptions(oPC);
-    // Set the layout of the window.
-    json jLayout = NuiCol(jCol);
     jData = GetHenchmanDbJson(oPC, "henchman", "Data");
     json jGeometry = JsonObjectGet(jData, "party_nui");
     float fX = JsonGetFloat(JsonObjectGet(jGeometry, "x"));
@@ -134,10 +128,10 @@ void main()
     int nIndex;
     string sIndex;
     // Your adventuring group size is based on the main players character level.
-    // Number of parties is (character level / 5) + 2;
-    int nLevel = (GetCharacterLevels(oPC) / 5) + 2;
-    if(nLevel > 7) nLevel = 7;
-    for(nIndex = 1; nIndex < 8; nIndex++)
+    // Number of parties is (character level / 5);
+    int nLevel = (GetCharacterLevels(oPC) / 5);
+    if(nLevel < 1) nLevel = 1;
+    for(nIndex = 1; nIndex < 5; nIndex++)
     {
         sIndex = IntToString(nIndex);
         if(sParty == sIndex) NuiSetBind(oPC, nToken, "btn_party" + sIndex, JsonBool(TRUE));
@@ -150,12 +144,13 @@ void main()
     object oModule = GetModule();
     CheckHenchmanDataAndInitialize(oModule, "Data");
     jData = GetHenchmanDbJson(oModule, "classes", "Data");
+    if(JsonGetType(jData) == JSON_TYPE_NULL) jData = SetPartyOptions();
     int nSlot, nMaxPartySize = JsonGetInt(JsonObjectGet(jData, "Max_Party_Size")) + 1;
     json jButtons = JsonArray();
     string sFirstHenchman, sButtonText;
     json jNPCs, jNPC;
     // Add saved party members from sParty to the button list.
-    while(nIndex < nMaxPartySize)
+    while(nIndex < 11)
     {
         sIndex = IntToString(nIndex);
         sButtonText = GetHenchmanDbString(oPC, "henchname", sParty + sIndex);
@@ -180,9 +175,12 @@ void main()
     jButtons = JsonArray();
     object oPartyMember, oCharacter = OBJECT_INVALID;
     // Add current party members to the button list.
-    while(nIndex < nMaxPartySize)
+    while(nIndex < nMaxPartySize + 1)
     {
-        if(nIndex == 0) oPartyMember = oPC;
+        if(nIndex == 0)
+        {
+            jButtons = JsonArrayInsert(jButtons, JsonString(GetName(oPC)));
+        }
         else oPartyMember = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
         if(oPartyMember != OBJECT_INVALID &&
           ((RESTRICT_HENCHMAN_TYPES && GetLocalInt(oPartyMember, PC_ASSOCIATE) == 1) ||

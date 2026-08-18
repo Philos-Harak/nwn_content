@@ -16,6 +16,10 @@
           6-cloaks, 7-gems, 8-gloves, 9-headgear, 10-jewelry, 11-misc, 12-potions,
           13-scrolls, 14-shields, 15-wands, 16-weapons, 17-arrow, 18-bolt, 19-bullet, 20 HealersKit, 21 ThievesTools.
  plugins (jsonarray) - 0+ (string). * Only used in the "pc" data.
+        Plugin json structure:  0-Plugin Script Name (string) 
+                                1-Plugin add to widget (int) 
+                                2-Plugin Description (string)
+                                3-Plugin Icon (string).
  location (jsonobject) - geometry (json), used in widgets for pc and associates.
 *///////////////////////////////////////////////////////////////////////////////
 const string AI_TABLE = "PEPS_TABLE";

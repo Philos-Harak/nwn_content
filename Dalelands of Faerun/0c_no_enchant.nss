@@ -6,15 +6,18 @@
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 void main()
 {
+    object oCaster = OBJECT_SELF;
     // Remove the enchanted item.
-    DestroyObject (GetLocalObject (OBJECT_SELF, "0_enchanted_item"));
+    DestroyObject(GetLocalObject (oCaster, "0_enchanted_item"));
     // Clean up all variables.
-    DeleteLocalObject (OBJECT_SELF, "0_enchanting_box");
-    DeleteLocalObject (OBJECT_SELF, "0_enchanted_item");
-    DeleteLocalObject (OBJECT_SELF, "0_Item_to_enchant");
-    DeleteLocalInt (OBJECT_SELF, "0_Spell");
-    DeleteLocalInt (OBJECT_SELF, "0_CasterClass");
-    DeleteLocalInt (OBJECT_SELF, "0_GoldCost");
-    DeleteLocalInt (OBJECT_SELF, "0_XPCost");
-    DeleteLocalString (OBJECT_SELF, "0_enchant_column");
+    DeleteLocalObject(oCaster, "0_enchanting_box");
+    DeleteLocalObject(oCaster, "0_enchanted_item");
+    DeleteLocalObject(oCaster, "0_Item_to_enchant");
+    DeleteLocalInt(oCaster, "0_Spell");
+    DeleteLocalInt(oCaster, "0_CasterClass");
+    DeleteLocalInt(oCaster, "0_GoldCost");
+    DeleteLocalInt(oCaster, "0_XPCost");
+    DeleteLocalString(oCaster, "0_enchant_column");
+    DeleteLocalObject(oCaster, "0_Component_to_enchant");
+    DeleteLocalInt(oCaster, "0_Enhancement_Stack_Size");
 }

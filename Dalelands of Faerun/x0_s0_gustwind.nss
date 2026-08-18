@@ -49,6 +49,7 @@ void main()
     string sAOETag;
     // Create effect.
     effect eKnockdown = EffectKnockdown();
+    eKnockdown = SetEffectCasterLevel(eKnockdown, Spell.iCasterLevel);
     // Create visual effects.
     effect eCenter = EffectVisualEffect (VFX_FNF_LOS_NORMAL_20);
     effect eImpact = EffectVisualEffect (Spell.iImpact);

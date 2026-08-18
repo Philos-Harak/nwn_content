@@ -41,6 +41,7 @@ void main()
     else if(sResRef == "rd_rc_just_hamme") sWPTag = "WP_ROR_JUST_HAMMER"; // Abby of the Just Hammer, Temple to Tyr near Balck Feather Bridge.
     else if(sResRef == "rd_rc_b_of_godde") sWPTag = "WP_ROR_B_OF_GODDES"; // Bounty of the Goddes, Temple to Chauntea in Voonlar.
     else if(sResRef == "rd_rc_dark_god") sWPTag = "WP_ROR_DARK_GOD"; // The Dark God, Temple to Cyric in Voonlar.
+    else if(sResRef == "rd_rc_hp_mother") sWPTag = "WP_ROR_HP_CHUANTEA"; // Harrowport Mother shrine, Shrine to Chauntea in Harrowport.
     // Do simple gate magic effect.
     fDelay = RodOfRecallEffect(OBJECT_SELF);
     // Use simple respawn code for now.

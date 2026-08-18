@@ -3,17 +3,20 @@
  Programmer: Philos
 //////////////////////////////////////////////////////////////////////////////////////////////////////
  Event script that runs when the module is loaded into the server.
-*/////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "x2_inc_switches"
+*/
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#include "0i_character"
 #include "0i_database"
-#include "nwnx_events"
+#include "0i_webhook"
 #include "nwnx_damage"
 #include "nwnx_elc"
+#include "nwnx_events"
 #include "nwnx_feedback"
 #include "nwnx_race_2da"
-#include "0i_character"
-#include "0i_webhook"
-void main ()
+#include "x2_inc_switches"
+
+void main()
 {
     int iValue;
     string sName;
@@ -26,7 +29,6 @@ void main ()
     CheckServerDataTableAndCreateTable(ADVENTURE_TABLE);
     CheckServerDataTableAndCreateTable(AREA_TABLE);
     CheckServerDataTableAndCreateTable(ADV_OBJ_TABLE);
-    CheckServerDataTableAndCreateTable(BUFF_TABLE);
     CheckServerDataAndInitialize(oModule, SERVER_TABLE);
     GetServerCalendarFromDatabase();
     SetMaxHenchmen(SERVER_MAX_HENCHMAN);
@@ -35,10 +37,10 @@ void main ()
     // *************************************************
     // ***** Load database variables to the module *****
     // *************************************************
-    SetLocalFloat(oModule, "0_XP_SLIDER", IntToFloat (GetServerDatabaseInt (oModule, SERVER_TABLE, "xpslider")));
-    SetLocalInt(oModule, "0_TREASURE_SLIDER", GetServerDatabaseInt (oModule, SERVER_TABLE, "treasureslider"));
-    SetLocalInt(oModule, "0_VILLAIN_CHANCE", GetServerDatabaseInt (oModule, SERVER_TABLE, "villainchance"));
-    SetLocalInt(oModule, "0_UNIQUE_CHANCE", GetServerDatabaseInt (oModule, SERVER_TABLE, "uniquechance"));
+    SetLocalFloat(oModule, "0_XP_SLIDER", IntToFloat(GetServerDatabaseInt(oModule, SERVER_TABLE, "xpslider")));
+    SetLocalInt(oModule, "0_TREASURE_SLIDER", GetServerDatabaseInt(oModule, SERVER_TABLE, "treasureslider"));
+    SetLocalInt(oModule, "0_VILLAIN_CHANCE", GetServerDatabaseInt(oModule, SERVER_TABLE, "villainchance"));
+    SetLocalInt(oModule, "0_UNIQUE_CHANCE", GetServerDatabaseInt(oModule, SERVER_TABLE, "uniquechance"));
     // *************************************
     // ***** Subscribe to events. *****
     // *************************************
@@ -58,7 +60,7 @@ void main ()
     // Used for web hook on discord after leveling up.
     NWNX_Events_SubscribeEvent("NWNX_ON_LEVEL_UP_AFTER", "0e_pclvlupafter");
     // Use for player input in map pins.
-    NWNX_Events_SubscribeEvent("NWNX_ON_MAP_PIN_ADD_PIN_AFTER", "0e_pin_adda");
+    //NWNX_Events_SubscribeEvent("NWNX_ON_MAP_PIN_ADD_PIN_AFTER", "0e_pin_adda");
     // Used for henchman gold sink.
     //NWNX_Events_SubscribeEvent("NWNX_ON_INVENTORY_ADD_GOLD_BEFORE", "0e_oi_add_gold_b");
     // Used for system to replace transition triggers at edge of the maps.
@@ -151,19 +153,42 @@ void main ()
     // * Disable the Item Creation Feats that come with Hordes of the Underdark for the module.
     //---------------------------------------------------------------------------
     SetLocalInt(oModule, MODULE_SWITCH_DISABLE_ITEM_CREATION_FEATS, TRUE);
-    string s2DAText, sMessage = "The server is online.";
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 1);
-    if (s2DAText != "") sMessage += s2DAText;
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 3);
-    if (s2DAText != "") sMessage += "**" + s2DAText + "**";
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 4);
-    if (s2DAText != "") sMessage += s2DAText;
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 5);
-    if (s2DAText != "") sMessage += "**" + s2DAText + "**";
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 6);
-    if (s2DAText != "") sMessage += s2DAText;
-    s2DAText = "\\n" + Get2DAString ("Messages", "Text", 7);
-    if (s2DAText != "") sMessage += "**" + s2DAText + "**";
-    SendServerMessageToDiscord("", sMessage, SERVER_NAME, SERVER_COLOR, "https://nwn.wiki/download/thumbnails/3473429/logo-small.png");
+    string s2DAText;
+    string sMessage = "The server is online.";
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 1);
+    if (s2DAText != "")
+    {
+        sMessage += s2DAText;
+    }
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 3);
+    if (s2DAText != "")
+    {
+        sMessage += "**" + s2DAText + "**";
+    }
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 4);
+    if (s2DAText != "")
+    {
+        sMessage += s2DAText;
+    }
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 5);
+    if (s2DAText != "")
+    {
+        sMessage += "**" + s2DAText + "**";
+    }
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 6);
+    if (s2DAText != "")
+    {
+        sMessage += s2DAText;
+    }
+    s2DAText = "\\n" + Get2DAString("Messages", "Text", 7);
+    if (s2DAText != "")
+    {
+        sMessage += "**" + s2DAText + "**";
+    }
+    SendServerMessageToDiscord(
+        "",
+        sMessage,
+        SERVER_NAME,
+        SERVER_COLOR,
+        "https://nwn.wiki/download/thumbnails/3473429/logo-small.png");
 }
-

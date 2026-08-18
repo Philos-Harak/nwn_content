@@ -21,6 +21,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_GLAMER;
+    Spell.sEnhancingComp = "chrysophrase_dust";
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -36,16 +37,19 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if (Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // Create visual effect
     effect eImpact = EffectVisualEffect(VFX_IMP_HEAD_MIND);
     effect eVisual = EffectVisualEffect(VFX_DUR_INVISIBILITY);
     effect eDuration = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     // Create effect
     effect eInvisible = EffectInvisibility(INVISIBILITY_TYPE_NORMAL);
+    eInvisible = SetEffectCasterLevel(eInvisible, Spell.iCasterLevel);
     effect eCover = EffectConcealment(50);
     // Link effects
     effect eLink = EffectLinkEffects(eDuration, eCover);
     eLink = EffectLinkEffects(eLink, eVisual);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -53,7 +57,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Apply effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));

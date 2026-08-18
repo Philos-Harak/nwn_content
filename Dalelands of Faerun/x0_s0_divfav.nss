@@ -12,7 +12,7 @@ Duration:   1 minute
 
 Calling upon the strength and wisdom of a deity, you gain a +1 bonus on
 attack and weapon damage rolls for every three caster levels you have
-(at least +1, maximum +3). The bonus doesn’t apply to spell damage.
+(at least +1, maximum +3). The bonus doesnï¿½t apply to spell damage.
 
 /*///////////////////////////////////////////////
 
@@ -58,6 +58,7 @@ void main()
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     effect eLink = EffectLinkEffects(eAttack, eDamage);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Apply visual effect at the center of the effect area.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);
     //Get the spells target(s).
@@ -67,7 +68,7 @@ void main()
         //Fire spell cast at event for target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply VFX impact and bonus effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));

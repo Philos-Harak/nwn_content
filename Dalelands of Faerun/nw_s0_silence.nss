@@ -47,6 +47,7 @@ void main()
     // *******************************************************************
     // Create effect.
     effect eAOE = EffectAreaOfEffect(AOE_MOB_SILENCE);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     // Check to see if the target is hostile.
     if (GetIsEnemy (Spell.oTarget, Spell.oCaster))
     {

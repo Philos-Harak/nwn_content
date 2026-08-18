@@ -46,6 +46,7 @@ void main()
     // *******************************************************************
     // Create effects.
     effect eAttackDecrease = EffectAttackDecrease (10);
+    eAttackDecrease = SetEffectCasterLevel(eAttackDecrease, Spell.iCasterLevel);
     // Create visual effects.
     effect eVisual = EffectVisualEffect (VFX_DUR_BIGBYS_INTERPOSING_HAND);
     //Get the spells target(s).

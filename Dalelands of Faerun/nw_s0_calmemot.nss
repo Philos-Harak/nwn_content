@@ -20,7 +20,7 @@ do anything destructive. Any aggressive action against or damage dealt to a
 calmed creature immediately breaks the spell on all calmed creatures.
 
 This spell dispels any morale bonuses granted by spells such as bless, and rage,
-as well as negating a bard’s ability to inspire courage or a barbarian’s rage
+as well as negating a bardï¿½s ability to inspire courage or a barbarianï¿½s rage
 ability. It also suppresses any fear effects and removes the confused condition
 from all targets.
 /*///////////////////////////////////////////////
@@ -61,6 +61,7 @@ void main()
     effect eEffect;
     // Create visual effects.
     effect eImpact = EffectVisualEffect (Spell.iImpact);
+    eImpact = SetEffectCasterLevel(eImpact, Spell.iCasterLevel);
     effect eCenter = EffectVisualEffect(VFX_FNF_LOS_NORMAL_20);
     //Apply Spell center effect.
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);

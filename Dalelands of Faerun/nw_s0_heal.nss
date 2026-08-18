@@ -128,6 +128,7 @@ void main()
             {
                 //Set the heal effect
                 eHeal = EffectHeal (Spell.iResult);
+                eHeal = SetEffectCasterLevel(eHeal, Spell.iCasterLevel);
                 //Apply heal effect and VFX impact
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eHeal, Spell.oAreaTarget));
                 eImp = EffectVisualEffect (VFX_IMP_HEALING_X);

@@ -14,9 +14,7 @@ Spell Resistance: No
 
 The caster or a target gains a +20 bonus to Listen checks.
 /*///////////////////////////////////////////////
-
 #include "0i_spells"
-
 void main()
 {
     // ***********************************************************
@@ -24,6 +22,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "luriyl_dust";
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
@@ -43,6 +42,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // Create effect and link.
     effect eListen = EffectSkillIncrease(SKILL_LISTEN, Spell.iResult);
     // Create visual effects.
@@ -50,6 +50,7 @@ void main()
     effect eImpact = EffectVisualEffect(Spell.iImpact);
     // Link effects.
     effect eLink = EffectLinkEffects (eListen, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -57,7 +58,7 @@ void main()
         //Fire spell cast at event for target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply VFX impact and bonus effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));

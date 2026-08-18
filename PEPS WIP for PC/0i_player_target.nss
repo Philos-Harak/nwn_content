@@ -59,6 +59,8 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation, int bAct
     int nObjectType = GetObjectType(oTarget);
     ai_SetAIMode(oAssociate, AI_MODE_COMMANDED, TRUE);
     ai_ClearCreatureActions(TRUE);
+    ai_Debug("0i_player_target", "62", "oTarget: " + GetName(oTarget) + 
+                     " nObjectType: " + IntToString(nObjectType));
     if(oTarget == GetArea(oPC))
     {
         ActionMoveToLocation(lLocation, TRUE);
@@ -76,6 +78,7 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation, int bAct
     {
         if(GetIsDead(oTarget))
         {
+            oTarget = GetNearestObjectByTag("BodyBag", oTarget);
             AssignCommand(oAssociate, ActionDoCommand(ai_SearchObject(oAssociate, oTarget, oPC, TRUE)));
         }
         else if(GetIsEnemy(oTarget, oAssociate))
@@ -179,16 +182,21 @@ void ai_ActionAssociate(object oPC, object oTarget, location lLocation, int bAct
 void ai_ActionAllAssociates(object oPC, object oTarget, location lLocation)
 {
     object oAssociate;
-    int nIndex;
+    int nIndex, nTypeIndex;
     for(nIndex = 1; nIndex <= AI_MAX_HENCHMAN; nIndex++)
     {
        oAssociate = GetAssociate(ASSOCIATE_TYPE_HENCHMAN, oPC, nIndex);
        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation, TRUE));
     }
-    for(nIndex = 2; nIndex < 6; nIndex++)
+    for(nTypeIndex = 2; nTypeIndex < 6; nTypeIndex++)
     {
-        oAssociate = GetAssociate(nIndex, oPC);
-        if(oAssociate != OBJECT_INVALID) AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation, TRUE));
+        nIndex = 1;
+        oAssociate = GetAssociate(nTypeIndex, oPC);
+        while(oAssociate != OBJECT_INVALID)
+        {
+            AssignCommand(oAssociate, ai_ActionAssociate(oPC, oTarget, lLocation, TRUE));
+            oAssociate = GetAssociate(nTypeIndex, oPC, ++nIndex);
+        }
     }
 }
 void ai_SelectFollowTarget(object oPC, object oAssociate, object oTarget)

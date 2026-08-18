@@ -29,6 +29,8 @@ void main()
                 sPlot = GetServerDatabaseString(oPC, QUEST_TABLE, "plot", sDBQuestID);
                 if(sDBQuestID != "" && sPlot == "11")
                 {
+                    IncreaseServerDatabaseCounter(oPC, PLAYER_TABLE, "mapquests");
+                    IncreaseObjectDatabaseCounter(oPC, CHARACTER_TABLE, "mapquests");
                     QuestUpdate(oPC, sDBQuestID, "You have found the " + GetName(oItem) + " from your treasure map!", FALSE, FALSE, 0, "gui_quest_done");
                     SaveQuestPaperToPC(oPC, sDBQuestID);
                     DestroyObject(GetLocalObject(oPC, "0_QUEST_PAPER"));

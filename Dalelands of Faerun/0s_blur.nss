@@ -12,13 +12,13 @@ Duration:   1 min./level (D)
 Saving Throw:   Will negates (harmless)
 Spell Resistance:   Yes (harmless)
 
-The subject’s outline appears blurred, shifting and wavering.
+The subjectï¿½s outline appears blurred, shifting and wavering.
 This distortion grants the subject concealment (20% miss chance).
 
 A see invisibility spell does not counteract the blur effect,
 but a true seeing spell does.
 
-Opponents that cannot see the subject ignore the spell’s effect
+Opponents that cannot see the subject ignore the spellï¿½s effect
 (though fighting an unseen opponent carries penalties of its own).
 */////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "0i_spells"
@@ -30,6 +30,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_GLAMER;
+    Spell.sEnhancingComp = "raindrop_dust";
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -49,6 +50,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += 10;
     // Create effect.
     effect eBlur = EffectConcealment (Spell.iResult);
     // Create visual effects.
@@ -56,6 +58,7 @@ void main()
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects (eBlur, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid(Spell.oAreaTarget))

@@ -101,6 +101,7 @@ void RunInfestImpact (struct stSpell Spell)
             Spell = GetModifier (Spell);
             // Create effect.
             eDmg = ExtraordinaryEffect (EffectAbilityDecrease (ABILITY_CONSTITUTION, Spell.iResult));
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             //------------------------------------------------------------------
             // The trick that allows this spellscript to do stacking ability
             // score damage (which is not possible to do from normal scripts)

@@ -75,6 +75,7 @@ void main()
             eSave = EffectSavingThrowDecrease (SAVING_THROW_ALL, Spell.iResult, Spell.iSaveType);
             eLink = EffectLinkEffects (eAttack, eSave);
             eLink = EffectLinkEffects(eLink, eDur);
+            eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
             //Apply VFX impact and bonus effects
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));

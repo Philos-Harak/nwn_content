@@ -63,6 +63,7 @@ void main()
     eLink = EffectLinkEffects(eLink, eParal);
     eLink = EffectLinkEffects(eLink, eVis);
     eLink = EffectLinkEffects(eLink, eDur3);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

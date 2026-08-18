@@ -25,8 +25,8 @@ void main()
     iMod = StringToInt (GetStringArray (sArray, 1));
     if (iMod > 0)
     {
-        int iValue = GetLocalInt (OBJECT_SELF, "0_SpellDCMod");
-        SetLocalInt (OBJECT_SELF, "0_SpellDCMod", iValue - iMod);
+        int iValue = GetLocalInt (OBJECT_SELF, "0_Spell_DC_Mod");
+        SetLocalInt (OBJECT_SELF, "0_Spell_DC_Mod", iValue - iMod);
     }
     iMod = StringToInt (GetStringArray (sArray, 2));
     if (iMod > 0)

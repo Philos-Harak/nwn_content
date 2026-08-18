@@ -21,13 +21,13 @@ struct stLanguage
 // oSender is the person sending the message.
 // oTarget is the person receiving the message.
 // sMessage is the message.
-int DMChatPars (int nChannel, object oSender, object oTarget, string sMessage);
+void DMChatPars(int nChannel, object oSender, object oTarget, string sMessage);
 // Parses all PC chat.
 // iChannel is the channel used.
 // oSender is the person sending the message.
 // oTarget is the person receiving the message.
 // sMessage is the message.
-void PCChatPars (int nChannel, object oSender, object oTarget, string sMessage);
+void PCChatPars(int nChannel, object oSender, object oTarget, string sMessage);
 // Checks to see if any messages need to be recorded.
 // iChannel is the channel used.
 // oSender is the person sending the message.
@@ -46,7 +46,7 @@ int GetLanguageByRace (object oCreature);
 // oSender is the person sending the message.
 // oTarget is the person receiving the message.
 // sMessage is the message.
-void DMChatPars (int nChannel, object oSender, object oTarget, string sMessage)
+void DMChatPars(int nChannel, object oSender, object oTarget, string sMessage)
 {
     /*/ Check to see if they are renaming an object.
     // Change the name of an object with colors!
@@ -57,14 +57,14 @@ void DMChatPars (int nChannel, object oSender, object oTarget, string sMessage)
         iColor = GetLocalInt (oSender, "0_TextColor");
         sText = "";
         if (iColor == 0) StripColorCodes (sMessage); // Normal - no color.
-        if (iColor == 1) sText = "<cTþ>"; // Blue - masterwork
-        else if (iColor == 2) sText = "<cþKþ>"; // Purple - 2 Powers
-        else if (iColor == 3) sText = "<cþ22>"; // Red - 3 Powers
-        else if (iColor == 4) sText = "<cú–>"; // Orange - 4 Powers
-        else if (iColor == 5) sText = "<cúú>"; // Gold - Unique
-        else if (iColor == 6) sText = "<cÈ>"; // Green - Sets
-        else if (iColor == 7) sText = "<c¨¨¨>"; // Gray
-        else if (iColor == 8) sText = "<cþþþ>"; // White
+        if (iColor == 1) sText = "<cTï¿½>"; // Blue - masterwork
+        else if (iColor == 2) sText = "<cï¿½Kï¿½>"; // Purple - 2 Powers
+        else if (iColor == 3) sText = "<cï¿½22>"; // Red - 3 Powers
+        else if (iColor == 4) sText = "<cï¿½ï¿½>"; // Orange - 4 Powers
+        else if (iColor == 5) sText = "<cï¿½ï¿½>"; // Gold - Unique
+        else if (iColor == 6) sText = "<cï¿½>"; // Green - Sets
+        else if (iColor == 7) sText = "<cï¿½ï¿½ï¿½>"; // Gray
+        else if (iColor == 8) sText = "<cï¿½ï¿½ï¿½>"; // White
         if (iColor > 0) sMessage = sText + sMessage + "</c>";
         // Send message that the name was changed.
         SendMessages (GetName (oDMTarget) + " name has been changed to " + sMessage, COLOR_GRAY, oSender, FALSE, FALSE);

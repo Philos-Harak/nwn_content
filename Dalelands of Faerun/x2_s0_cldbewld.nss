@@ -47,6 +47,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (39/*VFX_PER_FOGBEWILDERMENT*/);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         // Create visual effect.
         effect eCenter = EffectVisualEffect (VFX_IMP_DUST_EXPLOSION);
         // Apply visual effect at the center of the effect area.

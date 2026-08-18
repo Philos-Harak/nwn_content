@@ -58,12 +58,13 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         // Get the modifier for the effect, sets Spell.iResult.
         Spell = GetModifier (Spell);
         //Set the bonus save effect
         eSave = EffectSavingThrowIncrease (SAVING_THROW_FORT, Spell.iResult, SAVING_THROW_TYPE_POISON);
         eLink = EffectLinkEffects (eSave, eDur);
+        eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
         //Apply the bonus effect and VFX impact
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eVis2, Spell.oAreaTarget));

@@ -35,8 +35,6 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
-    Spell.sEnhancingComp = "0_diamond_dust";
-    Spell.iCompAmount = 100;
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -62,18 +60,68 @@ void main()
     effect eDur = EffectVisualEffect(VFX_DUR_CESSATE_POSITIVE);
     // Link effects.
     effect eLink = EffectLinkEffects(eVis, eDur);
-    // If we are enhancing the spell then set the damage reduction to infinite.
-    // and add immunity to 1st level spells and concealment 10.
-    if (Spell.sEnhancingComp == "TRUE")
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
     {
-        Spell.iResult = 0;
-        effect eSpell = EffectSpellLevelAbsorption(1);
-        effect eConceal = EffectConcealment(10);
-        eLink = EffectLinkEffects(eLink, eSpell);
-        eLink = EffectLinkEffects(eLink, eConceal);
+        // Do a special check for enhancing components in one inventory pass.
+        int nEnhancedAbsorb, nStack;
+        int nLaeralTearsDust, nPeridotDust, nRaindropDust;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            // Laeral's Tears Dust enhances the spell to absorb an additional 20 points of damage.
+            if(GetTag(oItem) == "laeral_tears_dust" && !nLaeralTearsDust)
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nLaeralTearsDust = TRUE;
+                    nEnhancedAbsorb += 20;
+                }
+            }
+            // Peridot Dust Enhances the spell to absorb 1st level spells.
+            else if(GetTag(oItem) == "peridot_dust" && !nPeridotDust)
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nPeridotDust = TRUE;
+                    effect eSpell = EffectSpellLevelAbsorption(1);
+                    eLink = EffectLinkEffects(eLink, eSpell);
+                }
+            }
+            // Raindrop Dust Enhances the spell to increase concealment by +10%.
+            else if(GetTag(oItem) == "raindrop_dust" && !nRaindropDust)
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack > 3)
+                {
+                    if(nStack > 4) SetItemStackSize(oItem, nStack - 4);
+                    else DestroyObject (oItem);
+                    nRaindropDust = TRUE;
+                    effect eConceal = EffectConcealment(10);
+                    eLink = EffectLinkEffects(eLink, eConceal);
+                }
+            }
+            else if(nRaindropDust && nPeridotDust && nLaeralTearsDust) break;
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nEnhancedAbsorb)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to absorb +" + IntToString(nEnhancedAbsorb) + " additional damage!", COLOR_GREEN, oObject);
+            Spell.iResult = Spell.iResult + nEnhancedAbsorb;
+        }
     }
     effect eDmgReduction = EffectDamageReduction (5, DAMAGE_POWER_PLUS_ONE, Spell.iResult);
     eLink = EffectLinkEffects(eLink, eDmgReduction);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -81,7 +129,7 @@ void main()
         //Signal spell cast at event to fire.
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

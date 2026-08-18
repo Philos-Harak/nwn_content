@@ -53,6 +53,7 @@ void main()
     // Link effects
     effect eLoopLink, eDominateLoop;
     effect eLink = EffectLinkEffects (eMind, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid (Spell.oAreaTarget))

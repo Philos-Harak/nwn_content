@@ -8,6 +8,7 @@
 *///////////////////////////////////////////////////////////////////////////////
 #include "0i_s_message"
 #include "nwnx_elc"
+#include "nwnx_creature"
 void main()
 {
     object oPC = OBJECT_SELF;
@@ -20,8 +21,18 @@ void main()
                     ", SubType = " +IntToString (nSubType) +
                     ", StrRef = " + IntToString (nStrRef));
     // Can use to make special item ability to reduce item level restiction.
-    /*if (nSubType == NWNX_ELC_SUBTYPE_MIN_EQUIP_LEVEL)
+    if (nSubType == NWNX_ELC_SUBTYPE_MIN_EQUIP_LEVEL)
     {
-    } */
+        object oItem = NWNX_ELC_GetValidationFailureItem ();
+        int iItemType = GetBaseItemType (oItem);
+        Debug("0i_creature", "27", "ELC: " + GetName(oPC) + " hit item level restriction for item type " + IntToString(iItemType));
+        // If a skin is being equiped then skip the ILR.
+        //if (iItemType == 73 || iItemType == 160) NWNX_ELC_SkipValidationFailure();
+        if(!GetLocalInt(oPC, "0_Character_Loaded")) 
+        {
+            NWNX_Creature_RunUnequip(oPC, oItem);
+            NWNX_ELC_SkipValidationFailure();
+        }
+    }
 }
 

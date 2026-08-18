@@ -3,14 +3,14 @@
  Programmer: Preston Watamaniuk
 ////////////////////////////////////////////////
 Abjuration
-Level:	Brd 4, Clr 4, Drd 4, Luck 4, Rgr 4
-Components:	V, S, M, DF
-Casting Time:	1 standard action
-Range:	Personal or touch
-Target:	You or creature touched
-Duration:	10 min./level
-Saving Throw:	Will negates (harmless)
-Spell Resistance:	Yes (harmless)
+Level:  Brd 4, Clr 4, Drd 4, Luck 4, Rgr 4
+Components: V, S, M, DF
+Casting Time:   1 standard action
+Range:  Personal or touch
+Target: You or creature touched
+Duration:   10 min./level
+Saving Throw:   Will negates (harmless)
+Spell Resistance:   Yes (harmless)
 
 This spell enables you or a creature you touch to move and attack normally for
 the duration of the spell, even under the influence of magic that usually impedes
@@ -36,6 +36,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "octel_dust";
     Spell.iDivineFocus = TRUE;
     Spell.iAreaShape = SHAPE_TOUCH_TARGET;
     Spell.iLineOfSight = TRUE;
@@ -53,6 +54,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if (Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     // Create visual effects.
     effect eVisual = EffectVisualEffect (VFX_DUR_FREEDOM_OF_MOVEMENT);
     effect eDuration = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
@@ -67,6 +69,7 @@ void main()
     eLink = EffectLinkEffects(eLink, eVisual);
     eLink = EffectLinkEffects(eLink, eDuration);
     eLink = EffectLinkEffects(eLink, eMove);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -74,7 +77,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply Linked Effect
         ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration);
         //Get the spells target(s).

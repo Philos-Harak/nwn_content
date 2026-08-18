@@ -21,6 +21,7 @@ void main()
     // ***********************************************************
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
+    Spell.sEnhancingComp = "octel_dust";
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iDurationType = DURATION_TYPE_MINUTES;
     Spell.iTargetType = TARGET_TYPE_ALL;
@@ -36,9 +37,11 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if (Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     effect eDur = EffectVisualEffect (VFX_DUR_CESSATE_POSITIVE);
     effect eFast = EffectMovementSpeedIncrease (50);
     effect eLink = EffectLinkEffects (eFast, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid(Spell.oAreaTarget))

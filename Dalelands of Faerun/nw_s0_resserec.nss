@@ -19,33 +19,43 @@ You restore a deceased creature to life with 1/2 hitpoints.
 #include "0i_henchmen"
 #include "0i_npc"
 #include "0i_quest"
-void SetupAssociateWithResurrect (object oPC, int nAssociateType)
+void SetupAssociateWithResurrect(object oPC, object oCreature, int nAssociateType)
 {
-    SetIsDestroyable(FALSE, TRUE, FALSE);
+    SetIsDestroyable(FALSE, TRUE, FALSE, oCreature);
     effect eRaise = EffectResurrection();
-    ApplyEffectToObject(DURATION_TYPE_INSTANT, eRaise, OBJECT_SELF);
+    ApplyEffectToObject(DURATION_TYPE_INSTANT, eRaise, oCreature);
     // Setup the henchman/NPC.
-    NWNX_Creature_OverrideDamageLevel(OBJECT_SELF, -1);
-    SetAssociateMode (MODE_DYING, FALSE);
-    NWNX_Object_SetCurrentHitPoints(OBJECT_SELF, GetMaxHitPoints (OBJECT_SELF));
+    NWNX_Creature_OverrideDamageLevel(oCreature, -1);
+    DelayCommand(1.0f, NWNX_Object_SetCurrentHitPoints(oCreature, GetMaxHitPoints(oCreature)));
+    // Remove the droppable flag on an associates items.
+    SetDroppableFlagAllInventory(oCreature, TRUE, TRUE);
+    object oMaster = GetLocalObject(oCreature, "0_Master");
+    if(oMaster == OBJECT_INVALID) oMaster = oPC;
     // Set them up based on if they are a henchman or a NPC.
     if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
     {
-        SetUpHenchman (oPC, OBJECT_SELF);
-        DelayCommand(3.0f, LevelUpCurrentHenchman(oPC));
+        NWNX_Object_SetDialogResref (oCreature, "co_henchmen");
+        if(!HasMaxNumberOfHenchman(oMaster, TRUE))
+        {
+            SetUpHenchman(oMaster, oCreature, FALSE);
+            AddHenchman(oMaster, oCreature);
+            // Setup basic henchman/NPC variables.
+            SetLocalObject(oCreature, "0_Master", oMaster);
+            SaveAssociateToDatabase(oMaster, oCreature);
+        }
     }
     else
     {
-       string sQuestID =GetQuestIDByNPC (OBJECT_SELF, oPC, "npc");
-       SetQuestState (oPC, sQuestID, 9, 0);
-       SetUpNPC (OBJECT_SELF);
+        string sQuestID = GetQuestIDByNPC(oCreature, oMaster, "npc");
+        SetQuestState(oMaster, sQuestID, 9, 0);
+        SetUpNPC(oCreature, FALSE);
+        AddHenchman(oMaster, oCreature);
+        // Setup basic henchman/NPC variables.
+        SetLocalObject(oCreature, "0_Master", oMaster);
     }
-    AddHenchman (oPC);
     // Give them back any gold they had.
-    int nGold = GetLocalInt (OBJECT_SELF, "0_Gold");
-    GiveGoldToCreature (OBJECT_SELF, nGold);
-    // Setup basic henchman/NPC variables.
-    SetLocalObject (OBJECT_SELF, "0_Master", Spell.oCaster);
+    int nGold = GetLocalInt(oCreature, "0_Gold");
+    GiveGoldToCreature(oCreature, nGold);
 }
 void main()
 {
@@ -56,7 +66,7 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iSubSchool = SUBSCHOOL_HEALING;
     Spell.sDivineComponent = "diamond";
-    Spell.iCompAmount = 10000;
+    Spell.iCompAmount = 2; // 10,000 gp worth of diamonds
     Spell.iDivineFocus = TRUE;
     Spell.iAreaShape = SHAPE_RANGE_TARGET;
     Spell.iLineOfSight = TRUE;
@@ -64,112 +74,92 @@ void main()
     Spell.iTargetType = TARGET_TYPE_ALLIES;
     Spell.iDurationType = DURATION_TYPE_INSTANT;
     Spell.iImpact = VFX_IMP_RAISE_DEAD;
+    // If NPC_SPELL is set then the spell is being cast by an NPC and not the player.
+    // Remove the divine component requirement for NPCs.
+    if(GetLocalInt(OBJECT_SELF, "NPC_SPELL")) 
+    {
+        Spell.sDivineComponent = "";
+        Spell.iCompAmount = 0;
+        DeleteLocalInt(OBJECT_SELF, "NPC_SPELL");
+    }
     // Setup the spell.
     Spell = SetSpell (Spell);
     // Check to see if we should still fire off the spell.
     if (Spell.iSpellID == STOP_SPELL) return;
+    SendMessageToPC(Spell.oCaster, "Casting Resserrect!");
     // Get the duration of the spell, sets Spell.fDuration.
     Spell = GetDuration (Spell);
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    int iHeal, nGold, nAssociateType, bResurrect;
+    int iHeal, nGold, nAssociateType;
     string sQuestID;
     object oMaster;
     // Create effect.
     effect eRaise = EffectResurrection();
     // Create visual effect.
-    effect eImpact = EffectVisualEffect (Spell.iImpact);
+    effect eImpact = EffectVisualEffect(Spell.iImpact);
     //Get the spells target(s).
-    Spell = GetSpellTarget (Spell);
+    Spell = GetSpellTarget(Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
     {
         // Ressurect spells look for this variable and if set will require specific spell
         // based upon the value: 1 Raise Dead, 2 Resurrection, 3 True Resurrection.
-        if (GetLocalInt (Spell.oAreaTarget, "0_Raise") <= 2)
+        if(GetLocalInt(Spell.oAreaTarget, "0_Raise") <= 2)
         {
-            nAssociateType = GetLocalInt (Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
-            if (GetObjectType (Spell.oAreaTarget) == OBJECT_TYPE_ITEM &&
-                GetTag (Spell.oAreaTarget) == "0_corpse")
+            if(GetObjectType(Spell.oAreaTarget) == OBJECT_TYPE_ITEM &&
+               GetTag(Spell.oAreaTarget) == "0_corpse")
             {
-                // Check for what type of corpse this is. Henchman or NPC?
-                bResurrect = FALSE;
-                if (nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
+                object oCreature;
+                string sArray = GetLocalString(Spell.oAreaTarget, "0_Array");
+                if(sArray != "")
                 {
-                    if(HasMaxNumberOfHenchman(Spell.oCaster))
-                    {
-                        SendMessages ("You already have a henchman! Raising a dead body makes them your henchmen.", COLOR_RED, Spell.oCaster);
-                    }
-                    else bResurrect = TRUE;
+                    // Get location to safely create creatures and objects.
+                    location lLocation = GetLocation(GetWaypointByTag(WP_CREATURE_SPAWN));
+                    oCreature = CreateNPC(GetLocation(Spell.oCaster), sArray);
+                    NWNX_Object_SetCurrentHitPoints(oCreature, 0);
                 }
-                else bResurrect = TRUE;
-                if (bResurrect)
+                else
                 {
-                    object oCreature;
-                    string sArray = GetLocalString (Spell.oAreaTarget, "0_Array");
-                    if (sArray != "")
-                    {
-                        // Get location to safely create creatures and objects.
-                        location lLocation = GetLocation (GetWaypointByTag (WP_CREATURE_SPAWN));
-                        oCreature = CreateNPC(GetLocation (Spell.oCaster), sArray);
-                        NWNX_Object_SetCurrentHitPoints (oCreature, 0);
-                        //DelayCommand (1.0f, AssignCommand (oCreature, JumpToObject (Spell.oCaster)));
-                    }
-                    else
-                    {
-                        json jCreature = GetLocalJson (Spell.oAreaTarget, "0_Stats");
-                        oCreature = JsonToObject (jCreature, GetLocation (Spell.oCaster), OBJECT_INVALID, TRUE);
-                    }
-                    DelayCommand(2.0f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, oCreature));
-                    AssignCommand(oCreature, DelayCommand (2.0, SetupAssociateWithResurrect (Spell.oCaster, nAssociateType)));
-                    // Remove the corpse.
-                    DestroyObject (Spell.oAreaTarget);
+                    json jCreature = GetLocalJson(Spell.oAreaTarget, "0_Stats");
+                    oCreature = JsonToObject(jCreature, GetLocation(Spell.oCaster), OBJECT_INVALID, TRUE);
                 }
+                DelayCommand(2.0f, ApplyEffectToObject(DURATION_TYPE_INSTANT, eImpact, oCreature));
+                DelayCommand(2.0, SetupAssociateWithResurrect(Spell.oCaster, oCreature, nAssociateType));
+                // Remove the corpse.
+                DestroyObject(Spell.oAreaTarget);
             }
             else
             {
                 //Signal spell cast at event to fire.
-                SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
-                if(GetIsDead (Spell.oAreaTarget))
+                SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
+                nAssociateType = GetLocalInt(Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
+                if(GetIsDead(Spell.oAreaTarget))
                 {
-                    //Apply raise dead effect and VFX impact
-                    DelayCommand (Spell.fDelay, ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eImpact, GetLocation (Spell.oAreaTarget)));
-                    DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eRaise, Spell.oAreaTarget));
-                    // Now set the hitpoints to full.
-                    iHeal = GetMaxHitPoints (Spell.oAreaTarget);
-                    DelayCommand (Spell.fDelay, NWNX_Object_SetCurrentHitPoints (Spell.oAreaTarget, iHeal));
-                    if (nAssociateType == ASSOCIATE_TYPE_HENCHMAN || nAssociateType == ASSOCIATE_TYPE_NPC)
+                    if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN || nAssociateType == ASSOCIATE_TYPE_NPC)
                     {
-                        // Remove the droppable flag on an associates items.
-                        SetDroppableFlagAllInventory(Spell.oAreaTarget, TRUE, TRUE);
-                        // Give them back any gold they had.
-                        nGold = GetLocalInt(Spell.oAreaTarget, "0_Gold");
-                        GiveGoldToCreature(Spell.oAreaTarget, nGold);
-                        // Reset dying to normal status.
-                        NWNX_Creature_OverrideDamageLevel(Spell.oAreaTarget, -1);
-                        SetAssociateMode(MODE_DYING, FALSE, Spell.oAreaTarget);
-                        oMaster = GetLocalObject(Spell.oAreaTarget, "0_Master");
-                        if(nAssociateType == ASSOCIATE_TYPE_NPC)
-                        {
-                            sQuestID = GetQuestIDByNPC(Spell.oAreaTarget, oMaster, "npc");
-                            SetQuestState(oMaster, sQuestID, 9, 0);
-                        }
-                        else ActionSaveAssociateToDatabase(oMaster, Spell.oAreaTarget);
-                        AddHenchman(oMaster, Spell.oAreaTarget);
+                        ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eImpact, GetLocation (Spell.oAreaTarget));
+                        SetupAssociateWithResurrect(Spell.oCaster, Spell.oAreaTarget, nAssociateType);    
                     }
                     else if(GetIsCharacter(Spell.oAreaTarget))
                     {
+                        //Apply raise dead effect and VFX impact
+                        DelayCommand(Spell.fDelay, ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eImpact, GetLocation (Spell.oAreaTarget)));
+                        DelayCommand(Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eRaise, Spell.oAreaTarget));
+                        // Now set the hitpoints to full.
+                        iHeal = GetMaxHitPoints(Spell.oAreaTarget);
+                        DelayCommand(Spell.fDelay, NWNX_Object_SetCurrentHitPoints (Spell.oAreaTarget, iHeal));
                         int nToken = NuiFindWindow(Spell.oAreaTarget, "pldeathpanel");
                         NuiDestroy(Spell.oAreaTarget, nToken);
                     }
                 }
             }
         }
-        else SendMessages ("This spell is not strong enough to resurrect " + GetName (Spell.oAreaTarget) + "!", COLOR_RED, Spell.oCaster);
+        else SendMessages("This spell is not strong enough to bring " + GetName(Spell.oAreaTarget) + " back to life!", COLOR_RED, Spell.oCaster);
         //Get the spells target(s).
-        Spell = GetSpellTarget (Spell);
+        Spell = GetSpellTarget(Spell);
     }
-    CleanUpSpell (Spell);
+    CleanUpSpell(Spell);
 }
 
 

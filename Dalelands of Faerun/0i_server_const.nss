@@ -1,3 +1,4 @@
+  //////////////////////////////////////////////////////////////////////////////
 /*//////////////////////////////////////////////////////////////////////////////
 // Name: 0i_constants
 // Programmer: Philos
@@ -7,15 +8,15 @@
  Information on how to adjust the server is as follows.
  These constants are static and can only be changed in the toolset.
  Changes to any constants will not take effect until the scripts are recompiled.
-*///////////////////////////////////////////////////////////////////////////////
-//**************************** MODULE CONSTANTS ***************************** \\
+*/
+//**************************** MODULE CONSTANTS *****************************
 // Used for _debugging scripts, turn off when server is live!
 // This spams messages to the first player on the server.
-const int DEBUG_MODE = TRUE;
+const int DEBUG_MODE = FALSE;
 // Send all debug to the first PC.
-const int DEBUG_FIRST_PC = FALSE;
+const int DEBUG_FIRST_PC = TRUE;
 // The number of real minutes that makeup a game hour in game. See module properties.
-const int MINUTES_IN_ONE_GAME_HOUR = 5;
+const int MINUTES_IN_ONE_GAME_HOUR = 10;
 // Default 60.0f: (1 minute) In Seconds. Used on temporary delays.
 const float MINUTE_DELAY = 60.0f;
 // This is used on small time delays like Doors closing etc.
@@ -52,19 +53,19 @@ const int TOTAL_NUMBER_OF_HENCHMEN = 10;
 // The maximum number of henchman a the server will allow a player to have.
 // These "henchman" don't mean they are henchman, some are summons, dominated, etc.
 const int SERVER_MAX_HENCHMAN = 30;
-//**************************** CHEAT TESTING ****************************\\
+//**************************** CHEAT TESTING ****************************
 // Total ability scores. Divide by 6 to get the average ability score.
 // This does not count magic items.
-const int MAX_ABILITIES_1_to_7 = 96; // Avg = 16
-const int MAX_ABILITIES_8_to_15 = 108; // Avg = 18
-const int MAX_ABILITIES_16_Up = 120; // Avg = 20
+const int MAX_ABILITIES_1_to_7 = 96;  // Avg = 16
+const int MAX_ABILITIES_8_to_15 = 108;  // Avg = 18
+const int MAX_ABILITIES_16_Up = 120;  // Avg = 20
 // Total saving throw numbers. Divide by 3 to get the average save.
 // This counts the base save only.
-const int MAX_SAVES_1_to_7 = 45; // Avg < 15
-const int MAX_SAVES_8_to_15 = 60; // Avg < 20
-const int MAX_SAVES_16_Up = 90; // Avg < 30
+const int MAX_SAVES_1_to_7 = 45;  // Avg < 15
+const int MAX_SAVES_8_to_15 = 60;  // Avg < 20
+const int MAX_SAVES_16_Up = 90;  // Avg < 30
 
-//**************************** WAYPOINTS **************************** \\
+//**************************** WAYPOINTS ****************************
 // Where to send illegal or disruptive characters.
 const string WP_LIMBO = "WP_Limbo";
 // Default waypoint for respawning players.
@@ -76,7 +77,7 @@ const string WP_START_LOCATION = "WP_Start_Location";
 // Temporary creature spawn.
 const string WP_CREATURE_SPAWN = "WP_Creature_Spawn";
 
-//**************************** DATABASE CONSTANTS **************************** \\
+//**************************** DATABASE CONSTANTS ****************************
 const string SERVER_DATABASE = "ServerDatabase";
 const string SERVER_TABLE = "ServerTable";
 const string PLAYER_TABLE = "PlayerTable";
@@ -89,7 +90,6 @@ const string DMPIN_TABLE = "DMPinTable";
 const string AREA_TABLE = "AreaTable";
 const string ADVENTURE_TABLE = "AdventureTable";
 const string ADV_OBJ_TABLE = "AdvObjTable";
-const string BUFF_TABLE = "BuffTable";
 // Default 1: Sets the starting characters level. Only used when building the database.
 const int STARTING_CHARACTER_LEVEL = 1;
 // Default 0%: Sets the starting experience slider. Only used when building the database.
@@ -110,60 +110,15 @@ const int MAX_PERSISTANT_ITEMS = 20;
 // Used to reduce time spent saving information per game hour (i.e 5 minutes per hour).
 const int SAVE_CHARACTERS_DURATION = 2;
 
-//**************************** COMBAT CONSTANTS **************************** \\
-// Variables used to keep track of objects in combat.
-const string ENEMY = "0_ENEMY"; // The enemy objects.
-const string ENEMY_DISABLED = "0_ENEMY_DISABLED"; // Int if they are disabled.
-const string ENEMY_SEEN = "0_ENEMY_SEEN"; // TRUE if we have seen them, FALSE if not.
-const string ENEMY_RANGE = "0_ENEMY_RANGE"; // The range from OBJECT_SELF.
-const string ENEMY_COMBAT = "0_ENEMY_COMBAT"; // Combat rating: (BAB + AC - 10) / 2
-const string ENEMY_MELEE = "0_ENEMY_MELEE"; // Enemies within 5 meters - Allies within 5 meters.
-const string ENEMY_HEALTH = "0_ENEMY_HEALTH"; // % of hitpoints.
-const string ENEMY_NUMBERS = "0_ENEMY_NUM"; // Number of enemies in combat.
-const string ENEMY_POWER = "0_ENEMY_POWER"; // (Level * Health %) / 100 added for each enemy to this.
-const string ENEMY_NEAREST = "0_ENEMY_NEAREST"; // Nearest enemy to OBJECT_SELF.
-// Below is the same for Allies.
-const string ALLY = "0_ALLY"; // All friendly creatures
-const string ALLY_DISABLED = "0_ALLY_DISABLED"; // Int if they are disabled.
-const string ALLY_SEEN = "0_ALLY_SEEN"; // All allies are set to be seen.
-const string ALLY_RANGE = "0_ALLY_RANGE"; // The range from OBJECT_SELF.
-const string ALLY_COMBAT = "0_ALLY_COMBAT"; // Combat rating: (BAB + AC - 10) / 2
-// Enemies within 5 meters - Allies within 5 meters.
-const string ALLY_MELEE = "0_ALLY_MELEE"; // Enemies within 5 meters - Allies within 5 meters.
-const string ALLY_HEALTH = "0_ALLY_HEALTH"; // % of hitpoints.
-const string ALLY_NUMBERS = "0_ALLY_NUM"; // Number of allies in combat.
-const string ALLY_POWER = "0_ALLY_POWER"; // (Level * Health %) / 100 added for each enemy to this.
-// Roles are used to define who we attack.
-const int ROLE_DEFENDER = 1; // Attack Strikers then Controllers.
-const int ROLE_STRIKER = 2;  // Attack Controllers then Support.
-const int ROLE_SUPPORT = 3;  // Attack Defenders then Strikers.
-const int ROLE_CONTROL = 4;  // Attack Support then Defenders.
-// Combat Ranges
-const float RANGE_MELEE = 5.0; // Anyone within this is considered to be in melee.
-const float RANGE_PERCEPTION = 35.0; // This is the distance for perception in battle.
-const float RANGE_BATTLEFIELD = 40.0; // This is the size of the battlefield area.
-// Combat casting DC's
-const int DEFENSIVE_CASTING_DC = 19; // The base DC for checking if we should use defensive casting.
-const int CASTING_IN_MELEE_DC =10; // The base DC for checking if we should cast in melee.
-// Arcane Spell failure
-const int ASF_WILL_USE = 15; // The amount of arcane spell failure we will allow to cast spells.
-// Memory Action Variable
-// Each action in combat either increases or decreases this check.
-// Offensive actions increase it by +2.
-// Defensive actions decrease it by +2.
-// A the action DC is beaten by a d20() roll then we check for defensive actions.
-// otherwise we skip down to more offensive actions.
-const string MEMORY_ACTION_VARIABLE = "0_MEMORY_ACTION";
-
-//**************************** RESTING CONSTANTS **************************** \\
+//**************************** RESTING CONSTANTS ****************************
 // Tells the server to restrict rest to certain areas and time 1 true, 0 false.
 const int RESTRICT_REST = 1;
 // The number of hitpoint to heal a character per character level when resting.
 const int HEAL_HP_PER_LEVEL = 1;
 // The rest wait period in game minutes per character level. Resets to this value on a server reset.
-  // Based of REST_WAIT_PER_LEVEL = 1 & REST_LEVELS_TO_DIVIDE_BY = 4
-  // 1-3(1 min) 3-7(2 min) 8-11(3 min) 12-15(4 min) 16-19(5 min) 20-23(6 min)
-  // 24-27(7 min) 28-31(8 min) 32-35(9 min) 36-39(10 min) 40(11 min)
+// Based of REST_WAIT_PER_LEVEL = 1 & REST_LEVELS_TO_DIVIDE_BY = 4
+// 1-3(1 min) 3-7(2 min) 8-11(3 min) 12-15(4 min) 16-19(5 min) 20-23(6 min)
+// 24-27(7 min) 28-31(8 min) 32-35(9 min) 36-39(10 min) 40(11 min)
 const int REST_WAIT_PER_LEVEL = 1;
 // The number to divide the character levels by to calculate wait period.
 const int REST_LEVELS_TO_DIVIDE_BY = 4;
@@ -171,14 +126,14 @@ const int REST_LEVELS_TO_DIVIDE_BY = 4;
 // Variable to define that a character is clicking on a Placable to rest.
 const string USING_PLACEABLE_TO_REST = "USING_PLACEABLE_TO_REST";
 
-//**************************** HITPOINT CONSTANTS **************************** \\
+//**************************** HITPOINT CONSTANTS ****************************
 // The Base DC for bleeding Fortitude DC.
 // Add one per hit point below zero to get the actual DC.
 const int BLEED_DC = 16;
 // Maximum hitpoints constant for use with SetHitPoints function.
 const int MAX_HITPOINTS = 1000;
 
-// *************************** EXPERIENCE CONSTANTS ************************* \\
+// *************************** EXPERIENCE CONSTANTS *************************
 // The radius from the kill Players may get xp.
 const float XP_PARTY_RADIUS = 50.0f;
 // The minimum xp a player may gain per kill.
@@ -222,13 +177,27 @@ const float BASE_DISARM_TRAP_XP = 0.0f;
 const float BASE_UNLOCK_XP = -5.0f;
 // BASE_UNLOCK_XP = -5.0f; 1st (15 - 24) 5th (19 - 28) 10th (25 - 34) 20th (35 - 44).
 
-// *************************** ENCOUNTER CONSTANTS ************************* \\
+// *************************** ENCOUNTER CONSTANTS *************************
 // The default number of creatures that can spawn for an encounter area.
 const int SPAWN_DEFAULT = 4;
 // Default chance an encounter waypoint will spawn an extra creature.
 const int EXTRA_CREATURE_CHANCE = 25;
 
-// *************************** MAGIC ITEM CONSTANTS ************************* \\
+// *************************** DUNGEON MASTER CONSTANTS *********************
+// These are used to hold all of the DM's targets so they can be manipulated.
+// Target type is used to define what some windows target type is set to for 
+// example inventory can be placeables or creatures.
+const string DM_TARGET_TYPE = "0_TARGET_TYPE";
+// Var target type is used just for checking variables.
+const string DM_VAR_TARGET_TYPE = "0_VAR_TARGET_TYPE";
+const string DM_TARGET_CREATURE = "0_DM_TARGET_CREATURE";
+const string DM_TARGET_ITEM = "0_DM_TARGET_ITEM";
+const string DM_TARGET_PLACEABLE = "0_DM_TARGET_PLACEABLE";
+const string DM_TARGET_TILE = "0_DM_TARGET_TILE";
+const string DM_TARGET_AREA = "0_DM_TARGET_AREA";
+const string DM_TARGET_TRIGGER = "0_DM_TARGET_TRIGGER";
+const string DM_TARGET_LOCATION = "0_DM_TARGET_LOCATION";
+// *************************** MAGIC ITEM CONSTANTS *************************
 // The file that randomizes the type of magic item to be found.
 const string BASE_MAGIC_ITEM_2DA_FILE = "base_mi_table";
 // The file that randomizes the type of mundane items to be found.
@@ -240,7 +209,7 @@ const string CRAFTING_2DA_FILE = "crafting_table";
 // Any items <= to this value will automatically be identified.
 const int ID_MIN_GP_VALUE = 15;
 
-// *************************** QUEST CONSTANTS ************************* \\
+// *************************** QUEST CONSTANTS *************************
 // Sets the base chance of getting a new quest NPC for a player onenterarea.
 const int NPC_QUEST_CHANCE = 20;
 const int NPC_TAVERN_QUEST_CHANCE = 40;
@@ -250,10 +219,11 @@ const int MAX_QUESTS = 10;
 const int MAX_QUEST_XP = 999999;
 const int STORY_QUESTS = 0;
 const int SIDE_QUESTS = 1;
-const int QUESTS = 2;
+const int LOCATION_QUESTS = 2;
 const int TREASURE_QUESTS = 3;
+const int DM_QUESTS = 4;
 
-// *************************** CRAFTING CONSTANTS ************************* \\
+// *************************** CRAFTING CONSTANTS *************************
 // DC required to craft a Master Work item.
 const int ITEM_QUALITY_MASTER_WORK = 25;
 // DC required to craft a Exquite item.
@@ -265,29 +235,29 @@ const int ITEM_QUALITY_RELIC = 40;
 // DC required to craft a Artifact item.
 const int ITEM_QUALITY_ARTIFACT = 45;
 
-// *************************** BODY MODIFICATION CONSTANTS ************************* \\
-int WINGMAX     =   230;    //-- Max wingmodel.2da line.
-int TAILMAX     =   500;    //-- Max tailmodel.2da line.
+// *************************** BODY MODIFICATION CONSTANTS *************************
+int WINGMAX = 230;  //-- Max wingmodel.2da line.
+int TAILMAX = 500;  //-- Max tailmodel.2da line.
 // This is PC Model heads.
-int HFHEADMAX   =   137;   //-- human female
-int HMHEADMAX   =   127;   //-- human male
-int AFHEADMAX   =   23;    //-- halfling female
-int AMHEADMAX   =   29;    //-- halfling male
-int EFHEADMAX   =   102;   //-- elf female
-int EMHEADMAX   =   43;    //-- elf male
-int GFHEADMAX   =   10;    //-- gnome female
-int GMHEADMAX   =   14;    //-- gnome male
-int DFHEADMAX   =   18;    //-- dwarf female
-int DMHEADMAX   =   21;    //-- dwarf male
-int OFHEADMAX   =   15;    //-- halforc female
-int OMHEADMAX   =   22;    //-- halforc male
+int HFHEADMAX = 137;  //-- human female
+int HMHEADMAX = 127;  //-- human male
+int AFHEADMAX = 23;  //-- halfling female
+int AMHEADMAX = 29;  //-- halfling male
+int EFHEADMAX = 102;  //-- elf female
+int EMHEADMAX = 43;  //-- elf male
+int GFHEADMAX = 10;  //-- gnome female
+int GMHEADMAX = 14;  //-- gnome male
+int DFHEADMAX = 18;  //-- dwarf female
+int DMHEADMAX = 21;  //-- dwarf male
+int OFHEADMAX = 15;  //-- halforc female
+int OMHEADMAX = 22;  //-- halforc male
 
-// *************************** SEARCH CONSTANT ********************** \\
-const int BASE_SEARCH_DC = 10; // Formula = BASE_SEARCH_DC + Area Level + d10().
+// *************************** SEARCH CONSTANT **********************
+const int BASE_SEARCH_DC = 10;  // Formula = BASE_SEARCH_DC + Area Level + d10().
 // BASE_SEARCH_DC = 10; 1st (12-21), 5th (16-25), 10th (21-30, 20th (31-40)
-const int PASSIVE_SEARCH_PENALTY = -10; // This is the penalty on search checks when not in search mode.
+const int PASSIVE_SEARCH_PENALTY = -10;  // This is the penalty on search checks when not in search mode.
 
-// *************************** LOCKED OBJECT CONSTANTS ********************** \\
+// *************************** LOCKED OBJECT CONSTANTS **********************
 // BASE_CHANCE_OF_LOCK + (Area Level / LOCK_CHANCE_LVL_DIVISOR).
 const int BASE_CHANCE_OF_LOCK = 10;
 const int LOCK_CHANCE_LVL_DIVISOR = 2;
@@ -301,7 +271,7 @@ const int BASH_BASE_DC = 10;
 const int BASH_DIE = 10;
 // BASE_BASH_DC = 10; 1st (12-[16]-21), 5th (16-[20]-25), 10th (21-[25]-30, 20th (31-[35]-40)
 
-// ******************************** TRAP CONSTANTS *************************** \\
+// ******************************** TRAP CONSTANTS ***************************
 // Random chance is BASE_CHANCE_OF_TRAP + (Area_Level / TRAP_CHANCE_LVL_DIVISOR).
 const int BASE_CHANCE_OF_TRAP = 10;
 const int TRAP_CHANCE_LVL_DIVISOR = 2;
@@ -314,23 +284,23 @@ const int TRAP_DISARM_DIE = 10;
 const int TRAP_DETECT_BASE_DC = 10;
 const int TRAP_DETECT_DIE = 10;
 // TRAP_DETECT_BASE_DC = 10; 1st (12-[16]-21), 5th (16-[20]-25), 10th (21-[25]-30, 20th (31-[35]-40)
-const int MINOR_TRAP_DAMAGE_CHANCE    = 30; // This is the chance to roll for a minor trap. See 0i_traps.
-const int AVERAGE_TRAP_DAMAGE_CHANCE  = 90; // This is the chance to roll for a average trap. See 0i_traps.
-const int STRONG_TRAP_DAMAGE_CHANCE   = 99; // This is the chance to roll for a strong trap. See 0i_traps.
-const int DEADLY_TRAP_DAMAGE_CHANCE   = 100; // This is the chance to roll for a deadly trap. See 0i_traps.
+const int MINOR_TRAP_DAMAGE_CHANCE = 30;  // This is the chance to roll for a minor trap. See 0i_traps.
+const int AVERAGE_TRAP_DAMAGE_CHANCE = 90;  // This is the chance to roll for a average trap. See 0i_traps.
+const int STRONG_TRAP_DAMAGE_CHANCE = 99;  // This is the chance to roll for a strong trap. See 0i_traps.
+const int DEADLY_TRAP_DAMAGE_CHANCE = 100;  // This is the chance to roll for a deadly trap. See 0i_traps.
 // Trap damage
-const int TRAP_LVL_DIVISOR = 1; // Number to divide into the area level.
-const int MINOR_TRAP_NUM_OF_DMG_DIE   = 1; // This is the number of dice to roll for a minor trap. See 0i_traps.
-const int MINOR_TRAP_DAMAGE_DIE       = 2; // This is the die to roll for a minor trap. See 0i_traps.
+const int TRAP_LVL_DIVISOR = 1;  // Number to divide into the area level.
+const int MINOR_TRAP_NUM_OF_DMG_DIE = 1;  // This is the number of dice to roll for a minor trap. See 0i_traps.
+const int MINOR_TRAP_DAMAGE_DIE = 2;  // This is the die to roll for a minor trap. See 0i_traps.
 // 1d2 1st (1-2) 5th (5-10) 10th (10-20) 20th (20-40).
-const int AVERAGE_TRAP_NUM_OF_DMG_DIE = 1; // This is the number of dice to roll for a average trap. See 0i_traps.
-const int AVERAGE_TRAP_DAMAGE_DIE     = 4; // This is the die to roll for a average trap. See 0i_traps.
+const int AVERAGE_TRAP_NUM_OF_DMG_DIE = 1;  // This is the number of dice to roll for a average trap. See 0i_traps.
+const int AVERAGE_TRAP_DAMAGE_DIE = 4;  // This is the die to roll for a average trap. See 0i_traps.
 // 1d4 1st (1-4) 5th (5-20) 10th (10-40) 20th (20-80).
-const int STRONG_TRAP_NUM_OF_DMG_DIE  = 1; // This is the number of dice to roll for a strong trap. See 0i_traps.
-const int STRONG_TRAP_DAMAGE_DIE      = 6; // This is the die to roll for a strong trap. See 0i_traps.
+const int STRONG_TRAP_NUM_OF_DMG_DIE = 1;  // This is the number of dice to roll for a strong trap. See 0i_traps.
+const int STRONG_TRAP_DAMAGE_DIE = 6;  // This is the die to roll for a strong trap. See 0i_traps.
 // 1d6 1st (1-6) 5th (5-30) 10th (10-60) 20th (20-120).
-const int DEADLY_TRAP_NUM_OF_DMG_DIE  = 1; // This is the number of dice to roll for a deadly trap. See 0i_traps.
-const int DEADLY_TRAP_DAMAGE_DIE      = 8; // This is the die to roll for a deadly trap. See 0i_traps.
+const int DEADLY_TRAP_NUM_OF_DMG_DIE = 1;  // This is the number of dice to roll for a deadly trap. See 0i_traps.
+const int DEADLY_TRAP_DAMAGE_DIE = 8;  // This is the die to roll for a deadly trap. See 0i_traps.
 // 1d8 1st (1-8) 5th (5-40) 10th (10-80) 20th (20-160).
 // Formula = TRAP_BASE_SAVE + d(TRAP_SAVE_DIE) + Area Level.
 const int TRAP_BASE_SAVE = 10;
@@ -342,16 +312,15 @@ const float TRAP_RADIUS = 30.0f;
 const int TRAP_TYPE_GAS = 5000;
 const int TRAP_TYPE_TANGLE = 5001;
 
-// ******************************** PORTAL CONSTANTS ************************\\
+// ******************************** PORTAL CONSTANTS ************************
 // Used on an area to keep players from using Rods of Recall, teleport, and
 // Leomunds secure shelter!
 const string NO_PORTALING = "NO_PORTALING";
 
-
-// ******************************** HOUSING CONSTANTS *********************** \\
-const int UPKEEP_WAIT_STRING = 3; // This is the wait period The players will see such as 3 months instead of 30000 months.
-const int UPKEEP_WAIT_PERIOD = 30000; // This is the wait period betweek upkeep costs. 1000000 is one year, 10000 is one month, 100 is one day, 1 is one hour.
-const string UPKEEP_WAIT_TEXT = "months"; // This is to use with the time. Put year if using years, month if using a month etc.
+/******************************** HOUSING CONSTANTS ***********************
+const int UPKEEP_WAIT_STRING = 3;  // This is the wait period The players will see such as 3 months instead of 30000 months.
+const int UPKEEP_WAIT_PERIOD = 30000;  // This is the wait period betweek upkeep costs. 1000000 is one year, 10000 is one month, 100 is one day, 1 is one hour.
+const string UPKEEP_WAIT_TEXT = "months";  // This is to use with the time. Put year if using years, month if using a month etc.
 const int HOUSE_TYPE_COTTAGE = 1;
 const int HOUSE_TYPE_HOUSE = 2;
 const int HOUSE_TYPE_MANSION = 3;
@@ -359,19 +328,19 @@ const int HOUSE_TYPE_TOWER = 4;
 const int HOUSE_TYPE_KEEP = 5;
 const string HOUSE_LOC_SOUTH_WARD = "WP_SOUTH_WARD";
 const string HOUSE_LOC_SEA_WARD = "WP_SEA_WARD";
-const int COTTAGE_BASE_COST = 1000; // The a simple home.
-const int HOUSE_BASE_COST = 10000; // The a basic home.
-const int MANSION_BASE_COST = 30000; // The a very nice home.
-const int TOWER_BASE_COST = 30000; // A wizards home.
-const int KEEP_BASE_COST = 70000; // A stronghold for warriors.
-const int COTTAGE_COMPONENT_COST = 100; // The a simple homes.
-const int HOUSE_COMPONENT_COST = 1000; // The a basic home.
-const int MANSION_COMPONENT_COST = 3000; // The a very nice home.
-const int TOWER_COMPONENT_COST = 3000; // A wizards home.
-const int KEEP_COMPONENT_COST = 7000; // A stronghold for warriors.
-const int MAX_NUM_OF_HOMES = 9; // This is the maximum number of homes the game will create before it stops. Used to preserve memory.
-
-//**************************** MERCHANT CONSTANTS *************************** \\
+const int COTTAGE_BASE_COST = 1000;  // The a simple home.
+const int HOUSE_BASE_COST = 10000;  // The a basic home.
+const int MANSION_BASE_COST = 30000;  // The a very nice home.
+const int TOWER_BASE_COST = 30000;  // A wizards home.
+const int KEEP_BASE_COST = 70000;  // A stronghold for warriors.
+const int COTTAGE_COMPONENT_COST = 100;  // The a simple homes.
+const int HOUSE_COMPONENT_COST = 1000;  // The a basic home.
+const int MANSION_COMPONENT_COST = 3000;  // The a very nice home.
+const int TOWER_COMPONENT_COST = 3000;  // A wizards home.
+const int KEEP_COMPONENT_COST = 7000;  // A stronghold for warriors.
+const int MAX_NUM_OF_HOMES = 9;  // This is the maximum number of homes the game will create before it stops. Used to preserve memory.
+*/
+//**************************** MERCHANT CONSTANTS ***************************
 // A magic shop will start with MIN_MERCHANT_ITEMS + d(MIN_MERCHANT_ITEMS).
 // The maximum number of shop items will be MIN_MERCHANT_ITEMS x 2.
 const int MIN_MERCHANT_ITEMS = 20;
@@ -380,32 +349,37 @@ const int MIN_MERCHANT_ITEM_PRICE = 10;
 // Number of hours before the shops will get new shipments.
 const int NEW_SHIPMENT_DELAY = 24;
 
-// ****************************** ITEM CONSTANTS **************************** \\
-const int CHANCE_BREAK_AMULET = 1; // Chance of a amulet breaking in a bashed chest.
-const int CHANCE_BREAK_ARMOR = 1; // Chance of a armor breaking in a bashed chest.
-const int CHANCE_BREAK_BELT = 1; // Chance of a belt breaking in a bashed chest.
-const int CHANCE_BREAK_BOOTS = 1; // Chance of a boots breaking in a bashed chest.
-const int CHANCE_BREAK_BRACER = 1; // Chance of a bracer breaking in a bashed chest.
-const int CHANCE_BREAK_CLOAK = 1; // Chance of a cloak breaking in a bashed chest.
-const int CHANCE_BREAK_GLOVES = 1; // Chance of a gloves breaking in a bashed chest.
-const int CHANCE_BREAK_HELMET = 1; // Chance of a helmet breaking in a bashed chest.
-const int CHANCE_BREAK_ROD = 1; // Chance of a rod breaking in a bashed chest.
-const int CHANCE_BREAK_STAFF = 1; // Chance of a staff breaking in a bashed chest.
-const int CHANCE_BREAK_WAND = 1; // Chance of a wand breaking in a bashed chest.
-const int CHANCE_BREAK_MISC = 1; // Chance of a misc breaking in a bashed chest.
-const int CHANCE_BREAK_WEAPON = 1; // Chance of a weapon breaking in a bashed chest.
-const int CHANCE_BREAK_POTION = 50; // Chance of a potion breaking in a bashed chest.
-const int CHANCE_BREAK_SCROLL = 1; // Chance of a scroll breaking in a bashed chest.
-const int CHANCE_BREAK_RING = 1; // Chance of a ring breaking in a bashed chest.
-const int CHANCE_BREAK_GRENADE = 1; // Chance of a grenade item breaking in a bashed chest.
+// *************** Associates **********************************
+// The variable name used on an associate to define the type of associate.
+const string PC_ASSOCIATE_TYPE = "0_PCAssociate";
+// New Associate type NPC. They are used in quests and are not real henchman.
+const int ASSOCIATE_TYPE_NPC = 6;
+
+// ****************************** ITEM CONSTANTS ****************************
+const int CHANCE_BREAK_AMULET = 1;  // Chance of a amulet breaking in a bashed chest.
+const int CHANCE_BREAK_ARMOR = 1;  // Chance of a armor breaking in a bashed chest.
+const int CHANCE_BREAK_BELT = 1;  // Chance of a belt breaking in a bashed chest.
+const int CHANCE_BREAK_BOOTS = 1;  // Chance of a boots breaking in a bashed chest.
+const int CHANCE_BREAK_BRACER = 1;  // Chance of a bracer breaking in a bashed chest.
+const int CHANCE_BREAK_CLOAK = 1;  // Chance of a cloak breaking in a bashed chest.
+const int CHANCE_BREAK_GLOVES = 1;  // Chance of a gloves breaking in a bashed chest.
+const int CHANCE_BREAK_HELMET = 1;  // Chance of a helmet breaking in a bashed chest.
+const int CHANCE_BREAK_ROD = 1;  // Chance of a rod breaking in a bashed chest.
+const int CHANCE_BREAK_STAFF = 1;  // Chance of a staff breaking in a bashed chest.
+const int CHANCE_BREAK_WAND = 1;  // Chance of a wand breaking in a bashed chest.
+const int CHANCE_BREAK_MISC = 1;  // Chance of a misc breaking in a bashed chest.
+const int CHANCE_BREAK_WEAPON = 1;  // Chance of a weapon breaking in a bashed chest.
+const int CHANCE_BREAK_POTION = 50;  // Chance of a potion breaking in a bashed chest.
+const int CHANCE_BREAK_SCROLL = 1;  // Chance of a scroll breaking in a bashed chest.
+const int CHANCE_BREAK_RING = 1;  // Chance of a ring breaking in a bashed chest.
+const int CHANCE_BREAK_GRENADE = 1;  // Chance of a grenade item breaking in a bashed chest.
 
 const int BASE_ITEM_OPEN_FACE_HELMET = 23;
 const int BASE_ITEM_SMALL_CONTAINER = 68;
 const int BASE_ITEM_SMALL_STACKING_ITEM = 30;
 const int BASE_ITEM_HOLY_SYMBOLS = 43;
 
-// ************************* SKILL CONSTANTS *******************\\
-// Changed skills.
+// ************************* SKILL CONSTANTS *******************
 const int SKILL_ATHLETICS = 3;
 const int SKILL_KNOWLEDGE = 7;
 const int SKILL_SLEIGHT_OF_HAND = 13;
@@ -434,18 +408,27 @@ const int MIN_GOLD_TO_STEAL = 5;
 // The maximum weight of an item that can be stolen in tenth pounds, example 9 is .9 pounds.
 const int MAX_WEIGHT_OF_ITEM = 9;
 
-// ************************* FEAT CONSTANTS ******************* \\
-// This is the line number of the feat in the feat.2da file.
+// ************************* FEAT CONSTANTS *******************
 // GENERAL FEATS
-const int FEAT_2_HAND_WEAPON_STYLE = 1370; // Any 2 handed weapon gains +2 dmg.
-const int FEAT_GREATER_2_HAND_WEAPON_STYLE = 1371; // Any 2 handed weapon gains +4 dmg.
-const int FEAT_SWORD_SHIELD_STYLE = 1501; // +2 AC vs piercing and slashing weapons.
-const int FEAT_IMPROVED_SWORD_SHIELD_STYLE = 1502; // +4 AC vs piercing and slashing weapons.
-const int FEAT_1_HAND_WEAPON_STYLE = 1549; // +4 Parry and +2 AC vs piercing weapons.
-const int FEAT_GREATER_1_HAND_WEAPON_STYLE = 1550; // +6 Parry and +4 AC vs piercing weapons.
-const int FEAT_EMPOWER_TURNING = 1562; //  -2 on turning check, +2d6 on turning damage.
-const int FEAT_HEIGHTEN_TURNING = 1563; // Turning check gains + Caster Level and Turning damage - half caster level.
-
+const int FEAT_2_HAND_WEAPON_STYLE = 1370;  // Any 2 handed weapon gains +2 dmg.
+const int FEAT_GREATER_2_HAND_WEAPON_STYLE = 1371;  // Any 2 handed weapon gains +4 dmg.
+const int FEAT_SWORD_SHIELD_STYLE = 1501;  // +2 AC vs piercing and slashing weapons.
+const int FEAT_IMPROVED_SWORD_SHIELD_STYLE = 1502;  // +4 AC vs piercing and slashing weapons.
+const int FEAT_1_HAND_WEAPON_STYLE = 1549;  // +4 Parry and +2 AC vs piercing weapons.
+const int FEAT_GREATER_1_HAND_WEAPON_STYLE = 1550;  // +6 Parry and +4 AC vs piercing weapons.
+const int FEAT_EMPOWER_TURNING = 1562;  //  -2 on turning check, +2d6 on turning damage.
+const int FEAT_HEIGHTEN_TURNING = 1563;  // Turning check gains + Caster Level and Turning damage - half caster level.
+const int FEAT_AUGMENT_SUMMONING = 1305;  // Summoned creatures gain +4 enhancement bonus to Strength and Constitution.
+const int FEAT_ESCHEW_MATERIALS = 1306;  // Ignore material components that are not consumed.
+const int FEAT_WIDEN_SPELL_METAMAGIC = 1307;  // Increase the area of effect of spells by 100%.
+const int FEAT_PRACTICED_SPELLCASTER_BARD = 1569;
+const int FEAT_PRACTICED_SPELLCASTER_CLERIC = 1570;
+const int FEAT_PRACTICED_SPELLCASTER_DRUID = 1571;
+const int FEAT_PRACTICED_SPELLCASTER_SORCERER = 1572;
+const int FEAT_PRACTICED_SPELLCASTER_WIZARD = 1573;
+const int FEAT_PRACTICED_SPELLCASTER_ASSASSIN = 1574;
+const int FEAT_PRACTICED_SPELLCASTER_FAVORED_SOUL = 1575;
+const int FEAT_PRACTICED_SPELLCASTER_WARMAGE = 1576;
 // RACE FEATS
 const int FEAT_RACIAL_TYPE_DWARF = 1235;
 const int FEAT_RACIAL_TYPE_ELF = 1236;
@@ -485,63 +468,63 @@ const int FEAT_RACIAL_ORC_MOUNTAIN = 1222;
 const int FEAT_RACIAL_ORC_GRAY = 1223;
 
 // SKILL FEATS
-const int FEAT_SKILL_AFFINITY_APPRAISE = 1249; // +2 to Appraise
-const int FEAT_SKILL_AFFINITY_CRAFTING = 1248; // +2 to Crafting
-const int FEAT_SKILL_AFFINITY_HIDE = 1251; // +2 to Hide
-const int FEAT_SKILL_AFFINITY_PERSUASION = 1250; // +2 to Persuade
-const int FEAT_SKILL_MASTERY_HIDE = 1285; // +4 to Hide
-const int FEAT_SKILL_MASTERY_MOVESILENT = 1252; // +4 to Move Silently
-const int FEAT_SKILL_AFFINITY_ATHLETICS = 1286; // +2 to Athletics
-const int FEAT_DILIGENT = 1294; // +2 Appraise & Decipher Script.
-const int FEAT_INVESTIGATOR = 1295; // +2 Knowledge & Search.
-const int FEAT_MAGICAL_APTITUDE = 1296; // +2 Spellcraft & Use Magic Device.
-const int FEAT_NEGOTIATOR = 1297; // +2 Persuade & Taunt.
-const int FEAT_NIMBLE_FINGERS = 1298; // +2 Disable Device & Open Locks.
-const int FEAT_SELF_SUFFICIENT = 1299; // +2 Heal & Survival.
+const int FEAT_SKILL_AFFINITY_APPRAISE = 1249;  // +2 to Appraise
+const int FEAT_SKILL_AFFINITY_CRAFTING = 1248;  // +2 to Crafting
+const int FEAT_SKILL_AFFINITY_HIDE = 1251;  // +2 to Hide
+const int FEAT_SKILL_AFFINITY_PERSUASION = 1250;  // +2 to Persuade
+const int FEAT_SKILL_MASTERY_HIDE = 1285;  // +4 to Hide
+const int FEAT_SKILL_MASTERY_MOVESILENT = 1252;  // +4 to Move Silently
+const int FEAT_SKILL_AFFINITY_ATHLETICS = 1286;  // +2 to Athletics
+const int FEAT_DILIGENT = 1294;  // +2 Appraise & Decipher Script.
+const int FEAT_INVESTIGATOR = 1295;  // +2 Knowledge & Search.
+const int FEAT_MAGICAL_APTITUDE = 1296;  // +2 Spellcraft & Use Magic Device.
+const int FEAT_NEGOTIATOR = 1297;  // +2 Persuade & Taunt.
+const int FEAT_NIMBLE_FINGERS = 1298;  // +2 Disable Device & Open Locks.
+const int FEAT_SELF_SUFFICIENT = 1299;  // +2 Heal & Survival.
 
 // RACIAL FEATS
-const int FEAT_ABERRATIONS_TRAINING = 1253; // +1 attack vs aberrations.
-const int FEAT_DUERGAR_IMMUNITIES = 1284; // Immune to Illusion, paryalzation, poison.
-const int FEAT_RACIAL_SPELL_RESISTANCE = 1269; // Gain Spell Resistance 12 + 2 per 2 levels after 1 (stops at 20th).
-const int FEAT_DODGE_MASTERY = 1272; // Gain +4 Dodge
-const int FEAT_DEFENSIVE_MASTERY = 1273; // Gain +2 to all saves.
-const int FEAT_TELEPATHY = 1287; // RP only feat.
-const int FEAT_AASIMAR_RESISTANCE = 1274; // Gain Acid, Cold, and Electric resistance 5.
-const int FEAT_TIEFLING_RESISTANCE = 1275; // Gain Cold, Fire, and Electric resistance 5.
-const int FEAT_AIR_AFFINITY = 1256; // Gain +1 save vs Electricty per 5 levels.
-const int FEAT_EARTH_AFFINITY = 1257; // Gain +1 save vs Acid per 5 levels.
-const int FEAT_FIRE_AFFINITY = 1258; // Gain +1 save vs Fire per 5 levels.
-const int FEAT_WATER_AFFINITY = 1259; // Gain +1 save vs Cold per 5 levels.
-const int FEAT_LIGHTNING_RESISTANCE_10 = 1288; // Lightning reistance of 10.
-const int FEAT_ACID_RESISTANCE_10 = 1289; // Acid reistance of 10.
-const int FEAT_FIRE_RESISTANCE_10 = 1290; // Fire reistance of 10.
-const int FEAT_COLD_RESISTANCE_10 = 1291; // Cold reistance of 10.
-const int FEAT_DUERGAR_SPELL_ABILITIES = 1292; // Can cast Enlarge Person and Invisiblity 1/day.
+const int FEAT_ABERRATIONS_TRAINING = 1253;  // +1 attack vs aberrations.
+const int FEAT_DUERGAR_IMMUNITIES = 1284;  // Immune to Illusion, paryalzation, poison.
+const int FEAT_RACIAL_SPELL_RESISTANCE = 1269;  // Gain Spell Resistance 12 + 2 per 2 levels after 1 (stops at 20th).
+const int FEAT_DODGE_MASTERY = 1272;  // Gain +4 Dodge
+const int FEAT_DEFENSIVE_MASTERY = 1273;  // Gain +2 to all saves.
+const int FEAT_TELEPATHY = 1287;  // RP only feat.
+const int FEAT_AASIMAR_RESISTANCE = 1274;  // Gain Acid, Cold, and Electric resistance 5.
+const int FEAT_TIEFLING_RESISTANCE = 1275;  // Gain Cold, Fire, and Electric resistance 5.
+const int FEAT_AIR_AFFINITY = 1256;  // Gain +1 save vs Electricty per 5 levels.
+const int FEAT_EARTH_AFFINITY = 1257;  // Gain +1 save vs Acid per 5 levels.
+const int FEAT_FIRE_AFFINITY = 1258;  // Gain +1 save vs Fire per 5 levels.
+const int FEAT_WATER_AFFINITY = 1259;  // Gain +1 save vs Cold per 5 levels.
+const int FEAT_LIGHTNING_RESISTANCE_10 = 1288;  // Lightning reistance of 10.
+const int FEAT_ACID_RESISTANCE_10 = 1289;  // Acid reistance of 10.
+const int FEAT_FIRE_RESISTANCE_10 = 1290;  // Fire reistance of 10.
+const int FEAT_COLD_RESISTANCE_10 = 1291;  // Cold reistance of 10.
+const int FEAT_DUERGAR_SPELL_ABILITIES = 1292;  // Can cast Enlarge Person and Invisiblity 1/day.
 const int FEAT_CAST_ENLARGE_PERSON_1_DAY = 1276;
 const int FEAT_CAST_INVISIBILITY_1_DAY = 1277;
-const int FEAT_SVIRFNEBLIN_SPELL_ABILITIES = 1293; // Can cast Blindness/Deafness and Blur 1/day.
+const int FEAT_SVIRFNEBLIN_SPELL_ABILITIES = 1293;  // Can cast Blindness/Deafness and Blur 1/day.
 const int FEAT_CAST_BLIND_DEAF_1_DAY = 1278;
 const int FEAT_CAST_BLUR_1_DAY = 1279;
 
 // CLASS FEATS
 // *************************** Barbarian *********************************
-const int FEAT_DEATHLESS_RAGE = 1372; // While in a rage they cannot go below 20 hp.
-const int FEAT_GREATER_RAGE = 329; // Rage bonus is increased.
+const int FEAT_DEATHLESS_RAGE = 1372;  // While in a rage they cannot go below 20 hp.
+const int FEAT_GREATER_RAGE = 329;  // Rage bonus is increased.
 // *************************** Orc Warlord *********************************
-const int FEAT_PARTY_RAGE = 1373; // Put all allies within 30' in a rage.
-const int FEAT_FEARLESS_RAGE = 1382; // While in a rage they are immune to fear.
-const int FEAT_DOMINATE_ORC_RADIUS = 1381; // Dominate orcs in a 10' radius.
+const int FEAT_PARTY_RAGE = 1373;  // Put all allies within 30' in a rage.
+const int FEAT_FEARLESS_RAGE = 1382;  // While in a rage they are immune to fear.
+const int FEAT_DOMINATE_ORC_RADIUS = 1381;  // Dominate orcs in a 10' radius.
 // ***************************** Artificer *************************************
-const int FEAT_MASTER_CRAFTSMAN = 1263; // +3 Crafting skill at 1, 5, 9.
-const int FEAT_GRAND_CRAFTMANSHIP = 1264; // Reduce crafting/enchanting cost at 2, 7.
-const int FEAT_TUNE_DEVICES = 1265; // +5 Use magic device skill at 3, 8.
-const int FEAT_EXTEND_ENCHANTMENTS = 1266; // Extend enchantments on weapons and armor.
-const int FEAT_PURGE_MAGIC = 1267; // Remove properties from a magic item.
-const int FEAT_POWERFUL_IMBUE = 1268; // Gain +1 max propery when enchanting an item.
+const int FEAT_MASTER_CRAFTSMAN = 1263;  // +3 Crafting skill at 1, 5, 9.
+const int FEAT_GRAND_CRAFTMANSHIP = 1264;  // Reduce crafting/enchanting cost at 2, 7.
+const int FEAT_TUNE_DEVICES = 1265;  // +5 Use magic device skill at 3, 8.
+const int FEAT_EXTEND_ENCHANTMENTS = 1266;  // Extend enchantments on weapons and armor.
+const int FEAT_PURGE_MAGIC = 1267;  // Remove properties from a magic item.
+const int FEAT_POWERFUL_IMBUE = 1268;  // Gain +1 max propery when enchanting an item.
 // **************************** Swashbuckler ***********************************
-const int FEAT_INSIGHTFUL_STRIKE = 1302; // Gain damage on melee attacks equal to your intelligence.
-const int FEAT_SKILL_AFFINITY_ACROBATICS = 1300; // Gain +2 to Acrobatics.
-const int FEAT_SKILL_MASTERY_ACROBATICS = 1401; // Gain +4 to Acrobatics.
+const int FEAT_INSIGHTFUL_STRIKE = 1302;  // Gain damage on melee attacks equal to your intelligence.
+const int FEAT_SKILL_AFFINITY_ACROBATICS = 1300;  // Gain +2 to Acrobatics.
+const int FEAT_SKILL_MASTERY_ACROBATICS = 1401;  // Gain +4 to Acrobatics.
 // *************************** Dragon Disciple *********************************
 const int FEAT_BLACK_DRAGON_BLOOD = 1356;
 const int FEAT_BLUE_DRAGON_BLOOD = 1357;
@@ -555,8 +538,8 @@ const int FEAT_GOLD_DRAGON_BLOOD = 1364;
 const int FEAT_SILVER_DRAGON_BLOOD = 1365;
 const int FEAT_DRAGON_IMMUNE_ELEMENT = 1366;
 // ************************** Bard / Warmage ***********************************
-const int FEAT_ARMORED_MAGE_LIGHT = 1524; // -25% Arcane spell failure.
-const int FEAT_ARMORED_MAGE_MEDIUM = 1525; // -35% Arcane spell failure.
+const int FEAT_ARMORED_MAGE_LIGHT = 1524;  // -25% Arcane spell failure.
+const int FEAT_ARMORED_MAGE_MEDIUM = 1525;  // -35% Arcane spell failure.
 // MAGIC FEATS
 const int FEAT_CRAFT_ARMS_AND_ARMOR = 1280;
 const int FEAT_CRAFT_RODS_STAVES = 1281;
@@ -566,8 +549,7 @@ const int FEAT_CRAFT_AMULETS_RINGS = 1283;
 // OTHER FEATS
 const int FEAT_FLY = 1368;
 
-// ************************* CLASS CONSTANTS ******************* \\
-// This is the line number of the class in the class.2da file.
+// ************************* CLASS CONSTANTS *******************
 const int CLASS_TYPE_ARTIFICER = 42;
 const int CLASS_TYPE_SWASHBUCKLER = 43;
 const int CLASS_TYPE_ORC_WARLORD = 44;
@@ -577,8 +559,14 @@ const int CLASS_TYPE_FAVORED_SOUL = 47;
 const int CLASS_TYPE_WARMAGE = 48;
 const int CLASS_TYPE_MYSTIC_THEURGE = 49;
 
-// ************************* SPELL CONSTANTS ******************* \\
+// ************* MATERIAL COMPONENTS AND FOCUSES **********
+const string COMPONENT_POUCH = "0_comp_pouch";
+const string CLERIC_HOLY_SYMBOL = "holy_symbol";
+const string DRUID_HOLY_SYMBOL = "holly_mistletoe";
+
+// ************************* SPELL CONSTANTS *******************
 const int STOP_SPELL = -1;
+// SUB_SCHOOL
 const int SUBSCHOOL_CALLING = 1;
 const int SUBSCHOOL_CREATION = 2;
 const int SUBSCHOOL_HEALING = 3;
@@ -592,6 +580,7 @@ const int SUBSCHOOL_GLAMER = 10;
 const int SUBSCHOOL_PATTERN = 11;
 const int SUBSCHOOL_PHANTASM = 12;
 const int SUBSCHOOL_SHADOW = 13;
+// DESCRIPTION
 const int DESC_ACID = 1;
 const int DESC_AIR = 2;
 const int DESC_CHAOTIC = 4;
@@ -611,11 +600,13 @@ const int DESC_LIGHT = 32768;
 const int DESC_MIND = 65536;
 const int DESC_SONIC = 131072;
 const int DESC_WATER = 262144;
+// DURATION TYPE
 const int DURATION_TYPE_CONCENTRATION = 3;
 const int DURATION_TYPE_ROUNDS = 4;
 const int DURATION_TYPE_MINUTES = 5;
 const int DURATION_TYPE_TURNS = 6;
 const int DURATION_TYPE_HOURS = 7;
+// TARGET TYPE
 const int TARGET_TYPE_ALL = 0;
 const int TARGET_TYPE_ENEMIES = 1;
 const int TARGET_TYPE_ALLIES = 2;
@@ -623,19 +614,103 @@ const int TARGET_TYPE_ALL_BUT_CASTER = 3;
 const int SHAPE_RANGE_TARGET = 5;
 const int SHAPE_TOUCH_TARGET = 6;
 const int SHAPE_PERSONAL = 7;
-
-// ************* Basic material components and focuses **********
-const string COMPONENT_POUCH = "0_comp_pouch";
-const string CLERIC_HOLY_SYMBOL = "holy_symbol";
-const string DRUID_HOLY_SYMBOL = "holly_mistletoe";
-
-// This is the line number of the spell in the spells.2da file.
+// SPELLS 2DA
+const int SPELL_FEAT_CAST_LIGHT = 850;
+const int SPELL_FEAT_CAST_DARKNESS = 851;
+const int SPELL_FEAT_CAST_ENLARGE_PERSON = 852;
+const int SPELL_FEAT_CAST_INVISIBILITY = 853;
+const int SPELL_FEAT_CAST_BLIND_DEAF = 854;
+const int SPELL_FEAT_CAST_BLUR = 855;
+const int SPELL_FEAT_DD_ACID_LINE = 856;
+const int SPELL_FEAT_DD_LIGHTNING_LINE = 857;
+const int SPELL_FEAT_DD_ACID_CONE = 858;
+const int SPELL_FEAT_DD_FIRE_CONE = 859;
+const int SPELL_FEAT_DD_COLD_CONE = 860;
+const int SPELL_FEAT_DD_FIRE_LINE = 861;
+// const int SPELL_LANGUAGE (ABYSSAL 862 TO THIEVES' CANT 887)
+const int SPELL_QUEST_DIFFICULTY = 888;
+const int SPELL_QUEST_GIVE = 889;
+const int SPELL_QUEST_REMOVE = 890;
 const int SPELL_BLUR = 900;
+const int SPELL_FEAT_PURGE_MAGIC = 901;
 const int SPELL_ENLARGE_PERSON = 902;
-
-// *************** Associates **********************************
-// The variable name used on an associate to define the type of associate.
-const string PC_ASSOCIATE_TYPE = "0_PCAssociate";
-// New Associate type NPC. They are used in quests and are not real henchman.
-const int ASSOCIATE_TYPE_NPC = 6;
-
+const int SPELL_FLY_UNLIMITED_USES = 903;
+const int SPELL_FEAT_PARTY_RAGE = 904;
+const int SPELL_FEAT_DOMINATE_ORC = 905;
+const int SPELL_ARCANE_BLAST = 906;
+const int SPELL_FEAT_ACIDIC_RAY = 907;
+const int SPELL_FEAT_ELECTRIC_RAY = 908;
+const int SPELL_FEAT_FIRE_RAY = 909;
+const int SPELL_FEAT_COLD_RAY = 910;
+const int SPELL_FEAT_ACID_RAY = 911;
+const int SPELL_FEAT_ELECTRIC_BLAST = 912;
+const int SPELL_FEAT_FIRE_BLAST = 913;
+const int SPELL_FEAT_COLD_BLAST = 914;
+const int SPELL_FEAT_ACID_BLAST = 915;
+const int SPELL_FEAT_ELEMENTAL_TRANSFERANCE = 916;
+const int SPELL_CHAOS_BLAST = 917;
+const int SPELL_CORUPTING_RAY = 918;
+const int SPELL_HELFIRE = 919;
+const int SPELL_FEAT_HOLY_SACRIFICE = 920;
+const int SPELL_FLY = 921;
+const int SPELL_ITEM_IOUN_STONE_YELLOW = 922;
+const int SPELL_ITEM_IOUN_STONE_RED = 923;
+const int SPELL_ITEM_IOUN_STONE_BLUE = 924;
+const int SPELL_ITEM_IOUN_STONE_GREEN = 925;
+const int SPELL_ITEM_IOUN_STONE_WHITE = 926;
+const int SPELL_FEAT_LUMINESCENCE = 927;
+const int SPELL_FEAT_SCATTER_SHOT = 928;
+const int SPELL_FEAT_ARCANE_SONG = 929;
+const int SPELL_FEAT_DIVINE_SONG = 930;
+const int SPELL_FEAT_ROGUE_SONG = 931;
+const int SPELL_FEAT_WARRIOR_SONG = 932;
+const int SPELL_DETECT_SECRET_DOORS = 933;
+const int SPELL_FIND_THE_PATH = 934;
+const int SPELL_LEOMUNDS_SECURE_SHELTER = 935;
+const int SPELL_IMPRISONMENT = 936;
+const int SPELL_WORD_OF_CHAOS = 937;
+const int SPELL_WORD_OF_EVIL = 938;
+const int SPELL_WORD_OF_GOOD = 939;
+const int SPELL_WORD_OF_LAW = 940;
+const int SPELL_CHAOS_HAMMER = 941;
+const int SPELL_FREEDOM = 942;
+const int SPELL_INSANITY = 943;
+const int SPELL_ANIMATE_ROPE = 944;
+const int SPELL_MINOR_CREATION = 945;
+const int SPELL_FANTASTIC_MACHINE = 946;
+const int SPELL_GREATER_FANTASTIC_MACHINE = 947;
+const int SPELL_MAJOR_CREATION = 948;
+const int SPELL_DARKBOLT = 949;
+const int SPELL_ARMOR_OF_DARKNESS = 950;
+const int SPELL_SUMMON_SWARM = 951;
+const int SPELL_SPIDERSKIN = 952;
+const int SPELL_SPIDERFORM = 953;
+const int SPELL_SNARE = 954;
+const int SPELL_LIVEOAK = 955;
+const int SPELL_HEROES_FEAST = 956;
+const int SPELL_IMBUE_WITH_SPELL_ABILITY = 957;
+const int SPELL_ISA_BLESS = 958;
+const int SPELL_ISA_CURE_LIGHT_WOUNDS = 959;
+const int SPELL_ISA_CURE_MODERATE_WOUNDS = 960;
+const int SPELL_PRISMATIC_SPHERE = 961;
+const int SPELL_GREATER_MAGE_ARMOR = 962;
+const int SPELL_DOMAIN_PWR_CHAOS = 963;
+const int SPELL_DOMAIN_PWR_CHARM = 964;
+const int SPELL_DOMAIN_PWR_DARKNESS = 965;
+const int SPELL_DOMAIN_PWR_DESTRUCTION = 966;
+const int SPELL_DOMAIN_PWR_DROW = 967;
+const int SPELL_DOMAIN_PWR_ELF = 968;
+const int SPELL_DOMAIN_PWR_FAMILY = 969;
+const int SPELL_TRUE_RESURRECTION = 970;
+const int SPELL_FEAT_SUDDEN_EMPOWER = 971;
+const int SPELL_FEAT_SUDDEN_WIDEN = 972;
+const int SPELL_FEAT_SUDDEN_MAXIMIZE = 973;
+const int SPELL_FEAT_SUDDEN_EXTEND = 974;
+const int SPELL_DEEP_SLUMBER = 975;
+const int SPELL_TELEPORT = 976;
+const int SPELL_GREATER_TELEPORT = 977;
+const int SPELL_FEAT_DETECT_GOOD = 978;
+const int SPELL_FEAT_UNHOLY_SACRIFICE = 979;
+const int SPELL_FEAT_WIDEN_METAMAGIC = 980;
+const int SPELL_FEAT_BLOOD_COMPONENT = 981;
+const int SPELL_FEAT_BLOOD_MAGIC = 982;

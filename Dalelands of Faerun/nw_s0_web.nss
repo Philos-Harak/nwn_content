@@ -15,12 +15,12 @@ Spell Resistance:   No
 Web creates a many-layered mass of strong, sticky strands. These strands trap
 those caught in them. The strands are similar to spider webs but far larger and
 tougher. Creatures caught within a web become entangled among the gluey fibers.
-Attacking a creature in a web won’t cause you to become entangled.
+Attacking a creature in a web won't cause you to become entangled.
 
-Anyone in the effect’s area when the spell is cast must make a Reflex save.
+Anyone in the effect's area when the spell is cast must make a Reflex save.
 If this save succeeds, the creature is entangled, but not prevented from moving,
 though moving is more difficult than normal for being entangled (see below).
-If the save fails, the creature is entangled and can’t move from its space,
+If the save fails, the creature is entangled and can't move from its space,
 but can break loose by spending 1 round and making a DC 20 Strength check or a
 DC 25 Escape Artist check. Once loose (either by making the initial Reflex save
 or a later Strength check or Escape Artist check), a creature remains entangled,
@@ -63,6 +63,7 @@ void main()
     {
         // Create effect.
         effect eAOE = EffectAreaOfEffect (AOE_PER_WEB);
+        eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
         //Create an instance of the AOE Object using the Apply Effect function
         ApplyEffectAtLocation (DURATION_TYPE_TEMPORARY, eAOE, Spell.lTarget, Spell.fDuration);
         CleanUpSpell (Spell);

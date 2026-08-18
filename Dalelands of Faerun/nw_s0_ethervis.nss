@@ -38,8 +38,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_FIRE;
     Spell.sArcaneComponent = COMPONENT_POUCH;
-    Spell.sEnhancingComp = "0_diamond_dust";
-    Spell.iCompAmount = 300;
+    Spell.sEnhancingComp = "diamond_dust";
+    Spell.iCompAmount = 12; // 300gp worth of diamond dust.
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -77,6 +77,7 @@ void main()
     }
     effect eDmgReduction = EffectDamageReduction (10, DAMAGE_POWER_PLUS_THREE, Spell.iResult);
     eLink = EffectLinkEffects(eLink, eDmgReduction);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))
@@ -84,7 +85,7 @@ void main()
         //Signal spell cast at event to fire.
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject(Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

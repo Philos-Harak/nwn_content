@@ -57,6 +57,7 @@ void main()
     eLink = EffectLinkEffects(eAttack, eSpot);
     eLink = EffectLinkEffects(eSearch, eLink);
     eLink = EffectLinkEffects(eDuration, eLink);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Get the modifier for the effect, sets Spell.iResult.
     Spell = GetModifier (Spell);
     //Get the spells target(s).

@@ -44,18 +44,19 @@ void GiveXPForKill(object oDeadCreature, int bBonusXP = FALSE);
 // Divide out a set amount of xp to the party adjusting for the XP slider and penalties.
 void GiveAreaXP(object oPoint, float fXP, float fCR);
 
-// Returns a random name for creatures based on Boss, Gender, Race.
+// Returns a random name for creatures based on Boss, Gender, Race, and alignment.
 // iGender is the creatures gender.
 // iRace is the creatures race.
+// iAlign is the creatures alignment.
 // iBoss defines if the creature is a boss or not, Put the CR of the Boss.
 // sName is the name of the boss creature.
-string GetRandomName(int iGender, int iRace, int iBoss = FALSE, string sName = "");
+string GetRandomName(int iGender, int iRace, int iAlign = ALIGNMENT_NEUTRAL, int iBoss = FALSE, string sName = "");
 
 // Create a creature array and return any randomized fields.
 // sArray is the array we are building the creature from.
 // Array -0Name-1ResRef-2Tag-3Gender-4Race-5Class-6Package-7level-8Align1
 // -9Align2-10Faction-11Waypointspawn-12Items-
-string CreateNPCArray(string sArray = "-----------1--0-");
+string CreateNPCArray(string sArray = "-----------0--0-");
 
 // Create NPC
 // lLocation is the location where the creature is created.
@@ -162,7 +163,8 @@ void AdjustFeatUses(object oCreature);
 void AdjustSummonUses(object oCreature, int nState);
 
 // Gives a villian a special power.
-void GiveVillianSpecialPower(object oCreature);
+// nLevel can be set to a specific number to change the number of powers given.
+void GiveVillianSpecialPower(object oCreature, int nLevel = 0);
 
 // Will randomize a portrait for the creature if they are set with "0_Random_Portrait" var.
 void SetPortrait(object oCreature);
@@ -327,14 +329,14 @@ int GetAvgPartyLevel (object oCreature, int iPCOnly = TRUE)
     }
     // Cap the minimum and maximum levels of the party.
     if (iLevels < 1) iLevels = 1;
-    else if (iLevels > 20) iLevels = 20;
+    else if (iLevels > 40) iLevels = 40;
     return iLevels;
 }
 void GiveXPForKill(object oDeadCreature, int bBonusXP = FALSE)
 {
    // Get the creatures CR and cap at 20.
    float fCR = GetChallengeRating (oDeadCreature);
-   if (fCR > 20.0f) fCR = 20.0f;
+   if (fCR > 40.0f) fCR = 40.0f;
    // Let the all lower CR's through at this time.
    //else if (fCR < 0.5) fCR = 0.5f;
    // Get the highest level PC in xp area and use that level for calculation.
@@ -458,44 +460,52 @@ void SetXpByLevel (object oPC)
    SetXP(oPC, iXP);
 }
 
-// Returns a random name for creatures based on Boss, Gender, Race.
+// Returns a random name for creatures based on Boss, Gender, Race, and alignment.
 // iGender is the creatures gender.
 // iRace is the creatures race.
+// iAlign is the creatures alignment.
 // iBoss defines if the creature is a boss or not, Put the CR of the Boss.
 // sName is the name of the boss creature.
-string GetRandomName (int iGender, int iRace, int iBoss = FALSE, string sName = "")
+string GetRandomName(int iGender, int iRace, int nAlign = ALIGNMENT_NEUTRAL, int iBoss = FALSE, string sName = "")
 {
-    int iRace, iRaceStrRef, iPrefix, iSuffix, iCR;
-    string sPrefix, sSuffix, sRaceNameA, sRaceNameB, sGender, sColor, sRaceName;
     // If a boss add prefix or suffix.
-    if (iBoss > 0)
+    if(iBoss > 0)
     {
+        int iPrefix, iSuffix, iMain, iCR;
+        string sPrefix, sSuffix, sMain, sColor, sAlignName;
+        if(nAlign == ALIGNMENT_GOOD) sAlignName = "holy_";
+        else if(nAlign == ALIGNMENT_EVIL) sAlignName = "unholy_";
         // Get the prefix.
         if (d100() <= 50)
         {
+
             iPrefix = RollOn2daTable ("names_Boss");
-            sPrefix = Get2DAString ("names_Boss", "prefix", iPrefix);
-            // Clear suffix, bosses only have a prefix or suffix.
-            sSuffix = "";
+            sPrefix = Get2DAString ("names_Boss", sAlignName + "prefix", iPrefix);
         }
-        else
+        if(d100() <= 25)
+        {
+            iMain = RollOn2daTable ("names_Boss");
+            sName = Get2DAString ("names_Boss", sAlignName + "main", iMain);
+        }
+        if(d100() <= 50 || !iPrefix)
         {
             // Get the suffix.
             iSuffix = RollOn2daTable ("names_Boss");
-            sSuffix = Get2DAString ("names_Boss", "suffix", iSuffix);
+            sSuffix = Get2DAString ("names_Boss", sAlignName + "suffix", iSuffix);
             // Clear prefix, bosses only have a prefix or suffix.
-            sPrefix = "";
         }
-        if (iBoss <= 4) sColor = COLOR_MAGIC;
-        else if (iBoss <= 9) sColor = COLOR_EXQUISITE;
-        else if (iBoss <= 14) sColor = COLOR_LEGENDARY;
-        else if (iBoss <= 19) sColor = COLOR_RELIC;
+        if (iBoss < 6) sColor = COLOR_MAGIC;
+        else if (iBoss < 12) sColor = COLOR_EXQUISITE;
+        else if (iBoss < 18) sColor = COLOR_LEGENDARY;
+        else if (iBoss < 20) sColor = COLOR_RELIC;
         else sColor = COLOR_ARTIFACT;
         return AddColorToText(sPrefix + " " + sName + " " + sSuffix, sColor);
     }
     // Generate an NPC based on race and sex.
     else
     {
+        int iRace, iRaceStrRef, iPrefix, iSuffix;
+        string sRaceNameA, sRaceNameB, sGender, sRaceName, sPrefix, sSuffix;
         // Get the name to generate from racialtype.2da column NameGenTableA and NameGenTableB.
         sRaceNameA = Get2DAString ("racialtypes", "NameGenTableA", iRace);
         sRaceNameB = Get2DAString ("racialtypes", "NameGenTableB", iRace);
@@ -551,7 +561,7 @@ void AdjustAbiliyScores (object oTarget, int nClass, int nRace)
 // Any field in the array that is set to "" will be randomized if possible.
 // Array -0Name-1ResRef-2Tag-3Gender-4Race-5Class-6Package-7level-8Align1
 // -9Align2-10Faction-11Waypointspawn-12Items-
-string CreateNPCArray (string sArray = "-----------4--0-")
+string CreateNPCArray (string sArray = "-----------0--0-")
 {
     int nSwitch, nClass, nLawChaos, nGoodEvil;
     string sRace, sClass, sLevel, sGender, sName, sAlign1, sAlign2, sPackage;
@@ -616,7 +626,7 @@ string CreateNPCArray (string sArray = "-----------4--0-")
     // If name is blank then set to randomize name.
     if (sName == "" || sName == "random")
     {
-        sName = GetRandomName (StringToInt (sGender), StringToInt (sRace));
+        sName = GetRandomName(StringToInt (sGender), StringToInt (sRace));
         sArray = SetStringArray (sArray, 0, sName, "-");
     }
     // Check class.
@@ -834,10 +844,10 @@ void LevelUpCreature (object oCreature, int nClass, int nLevel, int nReadyAllSpe
 
 // Gets the correct base race type for NPC races.
 // oCreature is the creature to get the race id for.
-// iNPCRace will return the NPC race id number for random NPC's.
-int GetNPCRaceType (object oCreature)
+// nNPCRace will return the NPC race id number for random NPC's.
+int GetNPCRaceType(object oCreature)
 {
-    return GetLocalInt (oCreature, "0_RacialType");
+    return GetLocalInt(oCreature, "0_RacialType");
 }
 
 // Returns TRUE if the creature has the ability to cast Arcane or Divine spells of iSpellLevel.
@@ -1546,42 +1556,43 @@ int GetTrueRacialType (object oCreature, int nRace = 0)
     else if (nRace >= 60 && nRace <= 66) nRace = 4; // Outsider
     return nRace;
 }
-void SetCreatureAuras (object oCreature)
+int GetHasAura(object oCreature, string sTag)
 {
     object oAura;
-    int bFound = FALSE, nCount = 0;
-    // Check for aura of fear on dragon bloodline III.
-    if (GetHasFeat (1332 /* Draconic bloodline III */, oCreature))
+    int nCount = 0;
+    oAura = GetObjectByTag(sTag, nCount);
+    while(GetIsObjectValid(oAura))
     {
-        // Check to see if they already have a fear aura on.
-        // Check each aura with this tag.
-        oAura = GetObjectByTag ("VFX_SORCERER_FEAR_AURA", nCount);
-        while (GetIsObjectValid (oAura) && !bFound)
-        {
-            // See if the creator is the PC we are setting up.
-            if (GetAreaOfEffectCreator (oAura) == oCreature) bFound = TRUE;
-            nCount ++;
-            oAura = GetObjectByTag ("VFX_SORCERER_FEAR_AURA", nCount);
-        }
-        if (!bFound) ExecuteScript ("0s_fear_aura_ap", oCreature);
+        if(GetAreaOfEffectCreator(oAura) == oCreature) return TRUE;
+        oAura = GetObjectByTag(sTag, ++nCount);
     }
-    oAura = OBJECT_INVALID;
-    bFound = FALSE;
-    nCount = 0;
-    // Check for aura of defense on Aura of Defense.
-    if (GetHasFeat (1493 /* Aura of Defense */, oCreature))
+    return FALSE;
+}
+void SetCreatureAuras (object oCreature)
+{
+    // Check for aura of fear on dragon bloodline III.
+    if(GetHasFeat (1332 /* Draconic bloodline III */, oCreature))
     {
-        // Check to see if they already have a aura of defense on.
-        // Check each aura with this tag.
-        oAura = GetObjectByTag ("VFX_AURA_OF_DEFENSE", nCount);
-        while (GetIsObjectValid (oAura) && !bFound)
+        if(!GetHasAura(oCreature, "VFX_SORCERER_FEAR_AURA"))
         {
-            // See if the creator is the PC we are setting up.
-            if (GetAreaOfEffectCreator (oAura) == oCreature) bFound = TRUE;
-            nCount ++;
-            oAura = GetObjectByTag ("VFX_AURA_OF_DEFENSE", nCount);
+            ExecuteScript ("0s_fear_aura_ap", oCreature);
         }
-        if (!bFound) ExecuteScript ("0s_Auraofdefense", oCreature);
+    }
+    // Check for aura of defense.
+    if(GetHasFeat (1493 /* Aura of Defense */, oCreature))
+    {
+        if(!GetHasAura(oCreature, "VFX_AURA_OF_DEFENSE"))
+        {
+            ExecuteScript ("0s_auraofdefense", oCreature);
+        }
+    }
+    // Check for aura of despair.
+    if(GetHasFeat (1566 /* Aura of Despair */, oCreature))
+    {
+        if(!GetHasAura(oCreature, "VFX_AURA_OF_DESPAIR"))
+        {
+            ExecuteScript ("0s_auraofdespair", oCreature);
+        }
     }
 }
 void CheckForClaws (object oCreature, int nCharacterLevel)
@@ -1653,43 +1664,41 @@ void CheckForWings (object oCreature)
         }
         // Remove any wings since they don't have them now, mostly for level down.
         else SetCreatureWingType(0, oCreature);
-
     }
 }
 object SetCreatureSkin(object oCreature, int bMonster)
 {
-    object oSkin = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oCreature);
-    Debug("0i_creature", "1662", "SetCreatureSkin: " + GetName(oCreature) +
-                                 " bMonster: " + IntToString(bMonster) +
-                                 " Old oSkin: " + GetName(oSkin));
-    if(oSkin == OBJECT_INVALID)
+    object oNewSkin;
+    object oOldSkin = GetItemInSlot(INVENTORY_SLOT_CARMOUR, oCreature);
+    if(oOldSkin == OBJECT_INVALID)
     {
-        NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_RECEIVED, TRUE, oCreature);
-        oSkin = CreateItemOnObject("0_skin_natural", oCreature);
-        NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, FALSE, oCreature);
-        AssignCommand(oCreature, ActionEquipItem(oSkin, INVENTORY_SLOT_CARMOUR));
-    }
-    else
-    {
-        if(!bMonster)
+        if(GetIsPC(oCreature))
         {
-            string sResRef = GetResRef(oSkin);
-            NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, TRUE, oCreature);
-            DestroyObject(oSkin);
-            DelayCommand(0.5f, NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_LOST, FALSE, oCreature));
             NWNX_Feedback_SetFeedbackMessageHidden(NWNX_FEEDBACK_ITEM_RECEIVED, TRUE, oCreature);
-            oSkin = CreateItemOnObject(sResRef, oCreature);
+            oNewSkin = CreateItemOnObject("0_skin_natural", oCreature);
             NWNX_Feedback_SetFeedbackMessageHidden (NWNX_FEEDBACK_ITEM_RECEIVED, FALSE, oCreature);
-            AssignCommand(oCreature, ActionEquipItem(oSkin, INVENTORY_SLOT_CARMOUR));
         }
+        else
+        {
+            oNewSkin = CreateItemOnObject("0_skin_natural", oCreature);
+            SetName(oNewSkin, "New Skin");
+        }
+        ClearAllActions(FALSE, oCreature);
+        AssignCommand(oCreature, ActionEquipItem(oNewSkin, INVENTORY_SLOT_CARMOUR));
     }
-    return oSkin;
+    else if(!bMonster)
+    {
+        RemoveAllItemProperties(oOldSkin, DURATION_TYPE_PERMANENT);
+        oNewSkin = oOldSkin;
+    }
+    else oNewSkin = oOldSkin;
+    return oNewSkin;
 }
 void SetCharacterEffectsToSkin(object oCreature, int bMonster = FALSE)
 {
     int nCharacterLevel = GetCharacterLevels(oCreature);
     int nClassLevel, nStr, nDex, nCon, nInt, nWis, nCha, nFort, nWill, nRefl, nAll;
-    int nElectricity, nAcid, nFire, nCold, nArmor, nLuck;
+    int nElectricity, nAcid, nFire, nCold, nArmor;
     int nAppraise, nCraft, nMoveSilent, nHide, nAthletics, nPersuade, nUMD;
     int nDecipher, nKnowledge, nSearch, nSpellcraft, nTaunt, nDisableDevice;
     int nOpenLocks, nHeal, nSurvival, nAcrobatics, nListen, nSpot;
@@ -1702,7 +1711,8 @@ void SetCharacterEffectsToSkin(object oCreature, int bMonster = FALSE)
     // **** Add Other bonus feats ******
     // *********************************
     // Fix for darkvision, may test without it later to see if feats work correctly.
-    if(GetHasFeat(FEAT_DARKVISION, oCreature) || GetHasFeat(1330/*FEAT_DRACONIC_BLOODLINE_I*/, oCreature))
+    //if(GetHasFeat(FEAT_DARKVISION, oCreature) || GetHasFeat(1330/*FEAT_DRACONIC_BLOODLINE_I*/, oCreature))
+    if(GetHasFeat(1330/*FEAT_DRACONIC_BLOODLINE_I*/, oCreature))
     {
         ipProperty = ItemPropertyDarkvision();
         AddItemProperty (DURATION_TYPE_PERMANENT, ipProperty, oSkin);
@@ -2089,7 +2099,7 @@ void CheckForDomainFeats (object oCreature)
     int nClassLevel = GetLevelByClass (CLASS_TYPE_CLERIC, oCreature);
     int nDeity, bHasDomain;
     // Total level is required to add feat at the correct level.
-    int nLevel = GetCharacterLevels (oCreature);
+    int nLevel = GetCharacterLevels (oCreature, FALSE);
     // Check to see if they have a set deity in the database.
     // We assume NPC's always have the correct Deity so set it to -1.
     if (GetIsCharacter (oCreature)) nDeity = GetObjectDatabaseInt (oCreature, CHARACTER_TABLE, "deity");
@@ -2101,7 +2111,7 @@ void CheckForDomainFeats (object oCreature)
     if (nDeity != -1) bHasDomain = StringToInt (Get2DAString ("deities", "Luck_Domain", nDeity));
     if (bHasDomain && GetHasFeat (1556/*FEAT_LUCK_DOMAIN*/, oCreature))
     {
-        int nLuck = nLuck + (nClassLevel / 2);
+        int nLuck = nClassLevel / 2;
         SetLocalInt (oCreature, "0_Luck", nLuck);
     }
     // ********** ANIMAL DOMAIN **********
@@ -2235,29 +2245,81 @@ void CheckForFeatsToAdd (object oCreature)
         int iCha = GetAbilityScore (oCreature, ABILITY_CHARISMA, TRUE) + 2;
         NWNX_Creature_SetRawAbilityScore (oCreature, ABILITY_CHARISMA, iCha);
     }
-    // PaleMaster Undead Graft strength Increase.
-    if(GetHasFeat(FEAT_UNDEAD_GRAFT_1, oCreature, TRUE) &&
-       GetLevelByClass(CLASS_TYPE_PALEMASTER, oCreature) == 6)
-    {
-        int nStrength = NWNX_Creature_GetRawAbilityScore(oCreature, ABILITY_STRENGTH) + 4;
-        NWNX_Creature_SetRawAbilityScore(oCreature, ABILITY_STRENGTH, nStrength);
-    }
     CheckForFavoredSoulFeats (oCreature);
     CheckForDomainFeats (oCreature);
     CheckForFamiliarFeats (oCreature);
 }
 
 // Adjust feat uses.
-void AdjustFeatUses (object oCreature)
+void AdjustFeatUses(object oCreature)
 {
-    int iLevel;
-    // Paladin Smite evil 1/day then 2/day at 9th, and 3/day at 15th.
-    if (GetHasFeat (FEAT_SMITE_EVIL, oCreature))
+    int nLevel, nUses;
+    if(GetHasFeat(FEAT_EXTRA_SMITING, oCreature, TRUE)) nUses = 2;
+    if(GetHasFeat(FEAT_SMITE_EVIL, oCreature, TRUE))
     {
-        iLevel = GetLevelByClass (45/*Paladin*/, oCreature);
-        if (iLevel > 14) NWNX_Creature_SetFeatRemainingUses (oCreature, FEAT_SMITE_EVIL, 3);
-        else if (iLevel > 8) NWNX_Creature_SetFeatRemainingUses (oCreature, FEAT_SMITE_EVIL, 2);
-        else NWNX_Creature_SetFeatRemainingUses (oCreature, FEAT_SMITE_EVIL, 1);
+        nLevel = GetLevelByClass(CLASS_TYPE_PALADIN2, oCreature);
+        if(nLevel > 14) nUses += 3;
+        else if(nLevel > 8) nUses += 2;
+        else nUses += 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, FEAT_SMITE_EVIL, nUses);
+    }
+    if(GetHasFeat(FEAT_SMITE_GOOD, oCreature, TRUE))
+    {
+        nLevel = GetLevelByClass(CLASS_TYPE_BLACKGUARD, oCreature);
+        if(nLevel > 7) nUses += 3;
+        else if(nLevel > 4) nUses += 2;
+        else nUses += 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, FEAT_SMITE_GOOD, nUses);
+    }
+    if(GetHasFeat(1526/*FEAT_SUDDEN_EMPOWER*/, oCreature, TRUE))
+    {
+        nLevel = GetLevelByClass(CLASS_TYPE_WARMAGE, oCreature);
+
+        if(nLevel > 18) nUses = 8;
+        else if(nLevel > 16) nUses = 7;
+        else if(nLevel > 14) nUses = 6;
+        else if(nLevel > 12) nUses = 5;
+        else if(nLevel > 10) nUses = 4;
+        else if(nLevel > 8) nUses = 3;
+        else if(nLevel > 6) nUses = 2;
+        else nUses = 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, 1526/*FEAT_SUDDEN_EMPOWER*/, nUses);
+    }
+    if(GetHasFeat(1561/*FEAT_SUDDEN_EXTENDED*/, oCreature, TRUE))
+    {
+        nLevel = GetLevelByClass(CLASS_TYPE_WARMAGE, oCreature);
+
+        if(nLevel > 18) nUses = 7;
+        else if(nLevel > 16) nUses = 6;
+        else if(nLevel > 14) nUses = 5;
+        else if(nLevel > 12) nUses = 4;
+        else if(nLevel > 10) nUses = 3;
+        else if(nLevel > 8) nUses = 2;
+        else nUses = 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, 1561/*FEAT_SUDDEN_EXTENDED*/, nUses);
+    }
+    if(GetHasFeat(1527/*FEAT_SUDDEN_WIDEN*/, oCreature, TRUE))
+    {
+        nLevel = GetLevelByClass(CLASS_TYPE_WARMAGE, oCreature);
+
+        if(nLevel > 18) nUses = 6;
+        else if(nLevel > 16) nUses = 5;
+        else if(nLevel > 14) nUses = 4;
+        else if(nLevel > 12) nUses = 3;
+        else if(nLevel > 10) nUses = 2;
+        else nUses = 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, 1527/*FEAT_SUDDEN_WIDEN*/, nUses);
+    }
+    if(GetHasFeat(1528/*FEAT_SUDDEN_MAXIMIZE*/, oCreature, TRUE))
+    {
+        nLevel = GetLevelByClass(CLASS_TYPE_WARMAGE, oCreature);
+
+        if(nLevel > 18) nUses = 5;
+        else if(nLevel > 16) nUses = 4;
+        else if(nLevel > 14) nUses = 3;
+        else if(nLevel > 12) nUses = 2;
+        else nUses = 1;
+        NWNX_Creature_SetFeatRemainingUses(oCreature, 1528/*FEAT_SUDDEN_MAXIMIZE*/, nUses);
     }
 }
 
@@ -2297,10 +2359,10 @@ void AdjustSummonUses (object oCreature, int nState)
 // Gives a villians special powers based on level.
 // 3st - 4th 1 power,  5th - 9th 2 powers, 10th - 14th 3 powers.
 // 15th to 19th 4 powers, 20th 5 powers.
-void GiveVillianSpecialPower (object oCreature)
+void GiveVillianSpecialPower(object oCreature, int nLevel = 0)
 {
     // Villians of Level 1 or 2 don't get special powers.
-    int nLevel = FloatToInt (GetChallengeRating (oCreature));
+    if(nLevel == 0) nLevel = FloatToInt(GetChallengeRating (oCreature));
     if (nLevel < 3) return;
     effect eEffect, eVisual, eHaste, eParalysis, eEntangle, eSlow, eMove, eHp;
     int nNumOfPowers, nAC = 2;
@@ -2310,8 +2372,13 @@ void GiveVillianSpecialPower (object oCreature)
     if (nLevel < 6) nNumOfPowers = 1;
     else if (nLevel < 12) nNumOfPowers = 2;
     else if (nLevel < 18) nNumOfPowers = 3;
-    else if (nLevel < 24) nNumOfPowers = 4;
-    else nNumOfPowers = 5;
+    else if (nLevel < 22) nNumOfPowers = 4;
+    else if (nLevel < 25) nNumOfPowers = 5;
+    else if (nLevel < 28) nNumOfPowers = 6;
+    else if (nLevel < 31) nNumOfPowers = 7;
+    else if (nLevel < 34) nNumOfPowers = 8;
+    else if (nLevel < 37) nNumOfPowers = 9;
+    else nNumOfPowers = 10;
     SetLocalInt(oCreature, "0_NUM_OF_POWERS", nNumOfPowers);
     while(nNumOfPowers > 0)
     {
@@ -2372,13 +2439,17 @@ void GiveVillianSpecialPower (object oCreature)
         {
             int nEffect;
             int nDmgType, nDmgBonus = (nLevel / 4) + 1;
-            if (nDmgBonus == 12) nDmgBonus = 13;
+            int nRndDamage = DAMAGE_BONUS_1d4;
+            if(nDmgBonus < 3) nRndDamage = DAMAGE_BONUS_1d8;
+            if(nDmgBonus < 4) nRndDamage = DAMAGE_BONUS_2d4;
+            if(nDmgBonus < 5) nRndDamage = DAMAGE_BONUS_2d8;
+            else nRndDamage = DAMAGE_BONUS_2d12;
             nRoll = d100();
             if (nRoll < 20) { nDmgType = DAMAGE_TYPE_ACID; nEffect = VFX_DUR_IOUNSTONE_GREEN; }
             else if (nRoll < 40) { nDmgType = DAMAGE_TYPE_COLD; nEffect = VFX_DUR_IOUNSTONE_BLUE; }
             else if (nRoll < 70) { nDmgType = DAMAGE_TYPE_ELECTRICAL; nEffect = VFX_DUR_IOUNSTONE_YELLOW; }
             else { nDmgType = DAMAGE_TYPE_FIRE; nEffect = VFX_DUR_IOUNSTONE_RED; }
-            eEffect = EffectDamageShield (DAMAGE_BONUS_3, nDmgBonus + 6, nDmgType);
+            eEffect = EffectDamageShield (nDmgBonus, nRndDamage, nDmgType);
             eVisual = EffectVisualEffect (nEffect);
             eEffect = EffectLinkEffects (eVisual, eEffect);
             ApplyEffectToObject (DURATION_TYPE_PERMANENT, eEffect, oCreature);
@@ -2388,7 +2459,9 @@ void GiveVillianSpecialPower (object oCreature)
     // Give bonus hitpoints.
     int nHitpoints = GetMaxHitPoints (oCreature) * nHp;
     NWNX_Object_SetMaxHitPoints (oCreature, nHitpoints);
-    DelayCommand (0.1f, SetCurrentHitPoints (oCreature, nHitpoints));
+    eEffect = EffectHeal(nHitpoints);
+    ApplyEffectToObject(DURATION_TYPE_PERMANENT, eEffect, oCreature);
+    //DelayCommand (0.1f, SetCurrentHitPoints (oCreature, nHitpoints));
     // Give bonus AC.
     eEffect = EffectACIncrease (nAC);
     if (nHp > 2)
@@ -2586,14 +2659,14 @@ void PassVariables (object oWaypoint, object oObject, int bVillain = FALSE)
 // oCreature - the creature spawned.
 // oWaypoint - the waypoint that spawned them.
 // oPC - the player that spawned them.
-void SetupCreature (object oCreature, object oWaypoint = OBJECT_INVALID, object oPC = OBJECT_INVALID, int bVillain = FALSE)
+void SetupCreature(object oCreature, object oWaypoint = OBJECT_INVALID, object oPC = OBJECT_INVALID, int bVillain = FALSE)
 {
-    int nCR = FloatToInt (GetChallengeRating (oCreature));
-    if (oWaypoint != OBJECT_INVALID) PassVariables (oWaypoint, oCreature, bVillain);
-    SetPortrait (oCreature);
-    CheckAnimations (oCreature);
+    int nCR = FloatToInt(GetChallengeRating(oCreature));
+    if(oWaypoint != OBJECT_INVALID) PassVariables (oWaypoint, oCreature, bVillain);
+    SetPortrait(oCreature);
+    CheckAnimations(oCreature);
     // Check for Ranged weapons.
-    if (GetLocalInt (oWaypoint, "0_Ranged") == 1)
+    if(GetLocalInt(oWaypoint, "0_Ranged") == 1)
     {
         if (GetHasFeat (FEAT_WEAPON_PROFICIENCY_MARTIAL, oCreature))
             GiveMartialRangedWeapons (oCreature);
@@ -2601,17 +2674,21 @@ void SetupCreature (object oCreature, object oWaypoint = OBJECT_INVALID, object 
                  GiveSimpleRangedWeapons (oCreature);
     }
     // Do we scale this creature with the area level?
-    if (GetLocalInt (oWaypoint, "0_Scale"))
+    int nScale = GetLocalInt(oWaypoint, "0_Scale");
+    if(nScale)
     {
         int nClass = GetClassByPosition (1, oCreature);
-        int nLevel = GetLocalInt (GetArea (oCreature), "0_Area_Level");
+        int nLevel = GetLocalInt(GetArea (oCreature), "0_Area_Level");
+        nLevel += GetLocalInt(oWaypoint, "0_CR_Increase");
+        if(nScale > nLevel) nLevel = nScale;
+        if(nLevel > 20) nLevel = 20;
         //Debug ("0i_spawn", "282", "nCR: " + IntToString (nCR) + " nLevel: " + IntToString (nLevel) +
         //       " nClass: " + IntToString (nClass));
         int nLevelAdjustment = nLevel - nCR;
-        while (nCR < nLevel)
+        while(nCR < nLevel)
         {
             LevelUpHenchman (oCreature, nClass, TRUE);
-            nCR ++;
+            nCR++;
         }
         // Adjust hitpoints based on classtype and level.
         if(nLevelAdjustment > 0)
@@ -2623,34 +2700,36 @@ void SetupCreature (object oCreature, object oWaypoint = OBJECT_INVALID, object 
             else if(nLevel > 4) nHp = 2;
             int nHitpoints = GetMaxHitPoints(oCreature) * nHp;
             NWNX_Object_SetMaxHitPoints(oCreature, nHitpoints);
-            DelayCommand(0.1f, SetCurrentHitPoints(oCreature, nHitpoints));
+            //DelayCommand(0.1f, SetCurrentHitPoints(oCreature, nHitpoints));
+            effect eHeal = EffectHeal(nHitpoints);
+            ApplyEffectToObject(DURATION_TYPE_PERMANENT, eHeal, oCreature);
         }
     }
     // Roll treasure.
     // if they are not incorporeal, iMultiplier = -1 (i.e. no treasure)
     // or are a specific type of creature.
-    object oArea = GetArea (oCreature);
-    int nRacialType = (GetRacialType (oCreature));
+    object oArea = GetArea(oCreature);
+    int nRacialType = GetRacialType(oCreature);
     int bEquipment = FALSE;
-    if (nRacialType != RACIAL_TYPE_ANIMAL &&
+    if(nRacialType != RACIAL_TYPE_ANIMAL &&
         nRacialType != RACIAL_TYPE_VERMIN &&
         nRacialType != RACIAL_TYPE_CONSTRUCT &&
         nRacialType != RACIAL_TYPE_ELEMENTAL &&
-        !GetCreatureFlag (oCreature, CREATURE_VAR_IS_INCORPOREAL)) bEquipment = TRUE;
-    if ((GetTag (oArea) != "cynosure2" &&
-        GetLocalInt (oCreature, "0_Multiplier") != -1 && bEquipment) ||
-        GetLocalInt (oCreature, "0_BonusMagicItems") > 0)
+        !GetCreatureFlag(oCreature, CREATURE_VAR_IS_INCORPOREAL)) bEquipment = TRUE;
+    if((GetTag(oArea) != "cynosure2" &&
+        GetLocalInt(oCreature, "0_Multiplier") != -1 && bEquipment) ||
+        GetLocalInt(oCreature, "0_BonusMagicItems") > 0)
     {
-        RollTreasure (oCreature, oPC);
+        RollTreasure(oCreature, oPC);
         // Give base equipment and armor.
-        if (bEquipment && nRacialType != RACIAL_TYPE_OOZE &&
+        if(bEquipment && nRacialType != RACIAL_TYPE_OOZE &&
             nRacialType != RACIAL_TYPE_MAGICAL_BEAST &&
             nRacialType != RACIAL_TYPE_DRAGON)
             {
-                GiveEquipment (oCreature, FALSE);
-                DelayCommand (0.5f, EquipItems (oCreature, FALSE));
+                GiveEquipment(oCreature, FALSE);
+                DelayCommand(0.5f, EquipItems(oCreature, FALSE));
             }
-        if (GetLocalInt (oCreature, "0_No_Ranged")) SetAssociateMode (MODE_STOP_RANGED, TRUE);
+        if(GetLocalInt(oCreature, "0_No_Ranged")) SetAssociateMode(MODE_STOP_RANGED, TRUE);
     }
 }
 

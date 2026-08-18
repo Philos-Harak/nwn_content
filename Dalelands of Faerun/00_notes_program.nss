@@ -2,13 +2,24 @@
 
 Game notes:
 
+Encounters:
+Bosses CR is equal to the encounter CR.
+Encounters are equal to 4 creatures being 3 CR less than the encounter.
+Thus using between 1 and 5 creatures per encounter.
+5 CR 1 creatures are a CR 5 encounter.
+4 CR 2 creatures are a CR 5 encounter.
+3 CR 3 creatures are a CR 5 encounter.
+2 CR 4 creatures are a CR 5 encounter.
+1 CR 5 creature is a CR 5 encounter.
+
+
 New definitions:
 
 Fear effects do not make creatures flee, but instead give penalties on
       attack rolls, saving throws, skill checks, and ability checks.
 Shaken: -2 penalty.
-Frightened: -4 penalty.
-Panicked: -6 penalty.
+Frightened: -4 penalty & paralyzed for 1-3 rounds.
+Panicked: -6 penalty & paralyzed for 1-6 rounds.
 
 Coding notes:
 

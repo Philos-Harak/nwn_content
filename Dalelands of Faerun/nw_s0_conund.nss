@@ -31,6 +31,8 @@ void main()
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
     Spell.sDivineComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "tiger_eye_agate_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Tiger Eye Agate Dust.
     Spell.iAreaShape = SHAPE_SPHERE;
     Spell.fAreaSize = 30.0f;
     Spell.iLineOfSight = FALSE;
@@ -50,6 +52,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     int iLevel, iCreatureHD, iHD, iLowest, iRacialType;
+    if(Spell.sEnhancingComp == "TRUE") Spell.iResult += Spell.iCasterLevel;
     object oLowest;
     // Create effects.
     effect eDominate = EffectDominated();
@@ -61,6 +64,7 @@ void main()
     // Link effects.
     effect eLink = EffectLinkEffects (eMind, eDominate);
     eLink = EffectLinkEffects (eLink, eDuration);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     // Used to tell the script we have hit this creature already.
     string sSpellLocal = "CONTROL_UNDEAD_" + GetName (Spell.oCaster);
     // Get the result for the effect, sets Spell.iResult.
@@ -105,7 +109,7 @@ void main()
                 if (!Spell.iSaveResult)
                 {
                     DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eImpact, oLowest));
-                    DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, oLowest));
+                    DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_TEMPORARY, eLink, oLowest, Spell.fDuration));
                 }
                 // Set a local int to make sure the creature is not used twice in the pass.  Destroy that variable in
                 // 1.0f seconds to remove it from the creature

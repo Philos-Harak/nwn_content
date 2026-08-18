@@ -40,7 +40,7 @@
 #include "0i_database"
 // Randomizes magic items and places them in oContainer.
 // oContainer is the object to place the items in.
-// iLevel is the level of the roll; From 1 to 20. Count as a CR or area Level.
+// iLevel is the level of the roll; From 1 to 40. Count as a CR or area Level.
 // iNumber is the number of items to be rolled.
 // iItemType = BASE_ITEM_* of the type needed. See new top of script for new BASE_ITEM_*.
 // oPC is the PC's luck we will be using.
@@ -79,7 +79,7 @@ void GenerateLightOnItem(object oItem, int nQuality);
 
 // Randomizes magic items and places them in oContainer.
 // oContainer is the object to place the items in.
-// iLevel is the level of the roll; From 1 to 20. Count as a CR or area Level.
+// iLevel is the level of the roll; From 1 to 40. Count as a CR or area Level.
 // iNumber is the number of items to be rolled.
 // iItemType = BASE_ITEM_* of the type needed. See new top of script for new BASE_ITEM_*.
 // oPC is the PC's luck we will be using.
@@ -227,6 +227,12 @@ object RollMagicItems (object oContainer, int iLevel, int iNumber = 1, int iItem
             SetLocalInt (oItem, "0_NumOfProperties", iNumOfProperties);
             // Set the items powerlevel so we can reduce based on multiple properties.
             iPowerLevel = iLevel;
+            // Reduce each power added by this value that is reduce at higher levels.
+            int nReduction;
+            if(iLevel > 29 && iLevel < 35) nReduction = 1;
+            else if(iLevel > 24) nReduction = 2;
+            else if(iLevel > 21) nReduction = 3;
+            else nReduction = 4;
             // Set the failsafe.
             iFailSafe = 0;
             // Now roll properties until we have the max properties for this item.
@@ -238,7 +244,7 @@ object RollMagicItems (object oContainer, int iLevel, int iNumber = 1, int iItem
                 iSet = EnchantItem (oItem, iPowerLevel, iRow, FALSE, oPC);
                 if (iSet)
                 {
-                    iPowerLevel = iPowerLevel -4;
+                    iPowerLevel = iPowerLevel - nReduction;
                     if (iPowerLevel < 1) iPowerLevel = 1;
                     iNumOfProperties --;
                 }
@@ -317,7 +323,7 @@ object RollMagicItems (object oContainer, int iLevel, int iNumber = 1, int iItem
 // iCrafting defines weather we randomly roll or use ilevel.
 // oPC is the PC we will be using the luck of for rolls.
 // Returns true if the item was enchanted.
-int EnchantItem (object oItem, int iLevel, int iRow, int iCrafting = FALSE, object oPC = OBJECT_INVALID)
+int EnchantItem(object oItem, int iLevel, int iRow, int iCrafting = FALSE, object oPC = OBJECT_INVALID)
 {
     int iType, iSubType, iModifier = 0, iSubModifier, iProperty, iSet, iRow2;
     string sTypeName, sModName, s2DAModFile, sETypeName, sEModName;
@@ -678,17 +684,31 @@ int EnchantItem (object oItem, int iLevel, int iRow, int iCrafting = FALSE, obje
             // Generate spell cast property on the item.
             // Get the 2da file that holds the modifiers.
             s2DAModFile = Get2DAString (PROPERTY_LIST_2DA_FILE, "ModifierTable", iRow);
-            // Roll for the modifier. Need to fix Crafting for this property!
-            if (iCrafting)
+            // The spell to add is passed via iCrafting.
+            if(iCrafting)
             {
-                sETypeName = Get2DAString (PROPERTY_LIST_2DA_FILE, "Enchant_Name", iRow);
-                iRow = iLevel;
+                // iType is the spell to be added we get it from iCrafting.
+                iType = iCrafting;
+                sTypeName = GetStringByStrRef(StringToInt(Get2DAString("spells", "Name", iType)));
+                // iModifier is the number of uses, i.e. charges, or per day uses.
+                int sLevel = StringToInt(Get2DAString("spells", "Innate", iType));
+                if(sLevel == 1) iModifier = 11; // Level 1 spells get 4 uses per day.
+                else if(sLevel == 2) iModifier = 10; // Level 2 spells get 3 uses per day.
+                else if(sLevel == 3) iModifier = 9; // Level 3 spells get 2 uses per day.
+                else if(sLevel == 4) iModifier = 8; // Level 4 spells get 1 use per day.
+                else if(sLevel == 5) iModifier = 5; // Level 5 spells use 2 charges per use.
+                else iModifier = 3; // Level 6+ spells use 4 charges per use.
+                // Now we must get the iprp_spells.2da row for this spell.
+                iType = StringToInt(Get2DAString("enchant_table", "iprp_spells", iCrafting));
             }
-            else iRow = RollOn2daTableWithMinItems (s2DAModFile, iLevel);
-            iType = StringToInt (Get2DAString (s2DAModFile, "Modifier", iRow));
-            sTypeName = Get2DAString (s2DAModFile, "Name", iRow);
-            iModifier = StringToInt (Get2DAString (s2DAModFile, "Num_Of_Uses", iRow));
-            // Generate the spell immunity property on the item.
+            else
+            {
+                iRow = RollOn2daTableWithMinItems (s2DAModFile, iLevel);
+                iType = StringToInt (Get2DAString (s2DAModFile, "Modifier", iRow));
+                sTypeName = Get2DAString (s2DAModFile, "Name", iRow);
+                iModifier = StringToInt (Get2DAString (s2DAModFile, "Num_Of_Uses", iRow));
+            }
+            // Generate the spell property on the item.
             iSet = IP_CastSpell (oItem, iType, iModifier);
             //Debug ("0i_magicitems", "701", GetName (oItem) + " sTypeName: " + sTypeName);
             // Set Name : ItemName + " of " + sTypeName (Brooch of Shielding).
@@ -698,11 +718,11 @@ int EnchantItem (object oItem, int iLevel, int iRow, int iCrafting = FALSE, obje
                 // Using an odd number so the last charge is not used.
                 // We set the charges at either 2 or 4 only!
                 if (iModifier < 7) SetItemCharges (oItem, 21);
-                SetMagicItemName (oItem, GetName (oItem, TRUE) + " of " + sTypeName, iCrafting);
-                if (iCrafting)
+                SetMagicItemName (oItem, GetName (oItem, TRUE) + " of " + sTypeName, iType);
+                if(iCrafting)
                 {
-                    sEModName = Get2DAString (s2DAModFile, "Enchant_Name", iRow);
-                    SetCustomToken (304, sETypeName + " " + sEModName);
+                    sEModName = GetStringByStrRef(StringToInt(Get2DAString("iprp_spells", "Name", iType)));
+                    SetCustomToken (304, sEModName + " spell");
                 }
             }
             break;

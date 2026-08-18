@@ -43,6 +43,7 @@ void main()
     // ********************** Spell effects ******************************
     // *******************************************************************
     effect eAOE = EffectAreaOfEffect (50/*VFX_PRISMATIC_SPHERE*/);
+    eAOE = SetEffectCasterLevel(eAOE, Spell.iCasterLevel);
     effect eCenter = EffectVisualEffect (VFX_FNF_LOS_NORMAL_20);
     Spell = GetSaveDC (Spell);
     ApplyEffectAtLocation (DURATION_TYPE_INSTANT, eCenter, Spell.lTarget);

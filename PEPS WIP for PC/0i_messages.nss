@@ -52,8 +52,7 @@ void ai_SendMessages(string sMessage, string sTextColor = AI_COLOR_YELLOW, objec
 void ai_Debug(string sScriptName, string sLineNumber, string sMessage)
 {
     string sName = GetName(OBJECT_SELF);
-    if(sName == GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) &&
-       sName != "")
+    if(TRUE) //sName == GetLocalString(GetModule(), AI_RULE_DEBUG_CREATURE) && sName != "")
     {
         sMessage = "(((DEBUG)))[" + sScriptName + " - " + sLineNumber + " ]" + sMessage;
         sMessage = ai_StripColorCodes(sMessage);

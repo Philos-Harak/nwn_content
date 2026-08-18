@@ -8,7 +8,7 @@ School: Abjuration
 Descriptor(s): Mind
 Component(s): Verbal, Somatic
 Range: Short
-Area of Effect / Target: Huge
+Area of Effect / Target: Single
 Duration: 24 Hours
 Additional Counter Spells: Mass Charm
 Spell Resistance: No
@@ -29,13 +29,13 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_MIND;
-    Spell.iAreaShape = SHAPE_SPHERE;
-    Spell.fAreaSize = 20.0f;
+    Spell.sEnhancingComp = "green_stone_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Green Stone Dust.    
+    Spell.iAreaShape = SHAPE_RANGE_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
     Spell.iDurationType = DURATION_TYPE_HOURS;
-    Spell.iDuration = 1;
-    Spell.iDurPerLvl = 1;
+    Spell.iDuration = 24;
     // Setup the spell.
     Spell = SetSpell (Spell);
     // Check to see if we should still fire off the spell.

@@ -16,11 +16,11 @@ The caster is able to turn himself into either a drider, or large monstrous spid
 This spell functions like alter self, except that you change into another form
 of living creature. The new form may be of the same type as the subject or any
 of the following types: aberration, animal, dragon, fey, giant, humanoid,
-magical beast, monstrous humanoid, ooze, plant, or vermin. The assumed form can’t
-have more Hit Dice than your caster level (or the subject’s HD, whichever is
-lower), to a maximum of 15 HD at 15th level. You can’t cause a subject to
+magical beast, monstrous humanoid, ooze, plant, or vermin. The assumed form canï¿½t
+have more Hit Dice than your caster level (or the subjectï¿½s HD, whichever is
+lower), to a maximum of 15 HD at 15th level. You canï¿½t cause a subject to
 assume a form smaller than Fine, nor can you cause a subject to assume an
-incorporeal or gaseous form. The subject’s creature type and subtype (if any)
+incorporeal or gaseous form. The subjectï¿½s creature type and subtype (if any)
 change to match the new form.
 
 Upon changing, the subject regains lost hit points as if it had rested for a
@@ -59,7 +59,7 @@ void main()
     // Get the duration of the spell, sets Spell.fDuration.
     Spell = GetDuration (Spell);
     // Check for Sorcerer Abberation Blood line II, if has it then extend the spell.
-    if (GetHasFeat (1311, Spell.oCaster)) Spell.fDuration = Spell.fDuration * 2.0f;
+    if(GetHasFeat (1311, Spell.oCaster)) Spell.fDuration = Spell.fDuration * 2.0f;
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
@@ -71,6 +71,7 @@ void main()
     iPolymorph = StringToInt (GetStringArray (sArray, 2));
     if (iPolymorph == 0) iPolymorph == 3;
     ePolymorph = EffectPolymorph (iPolymorph);
+    ePolymorph = SetEffectCasterLevel(ePolymorph, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

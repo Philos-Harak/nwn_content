@@ -24,7 +24,7 @@ duration, DC, and other details of spells or special abilities).
 Negative levels stack.
 
 Assuming the subject survives, these negative levels are permanent.
-An undead creature struck by the ray gains 1d4×5 temporary hit points for a number
+An undead creature struck by the ray gains 1d4ï¿½5 temporary hit points for a number
 of hours equal to your caster level (maximum 15 hours).
 /*///////////////////////////////////////////////
 #include "0i_spells"
@@ -105,6 +105,7 @@ void main()
                     if (GetCharacterLevels (Spell.oAreaTarget) <= Spell.iResult)
                     {
                         eDeath = EffectDeath ();
+                        eDeath = SetEffectCasterLevel(eDeath, Spell.iCasterLevel);
                         DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDeath, Spell.oAreaTarget));
                         DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
                     }
@@ -113,7 +114,7 @@ void main()
                     {
                         // Create effects.
                         eDrain = EffectNegativeLevel (Spell.iResult);
-                        eDrain = SupernaturalEffect (eDrain);
+                        //eDrain = SupernaturalEffect (eDrain);
                         //Apply the VFX impact and effects
                         DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_PERMANENT, eDrain, Spell.oAreaTarget));
                         DelayCommand (Spell.fDelay + 0.5f, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));

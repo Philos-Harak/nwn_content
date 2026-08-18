@@ -30,6 +30,8 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.iDescriptor = DESC_MIND;
+    Spell.sEnhancingComp = "green_stone_dust";
+    Spell.iCompAmount = 4; // 100gp worth of Green Stone Dust.
     Spell.iAreaShape = SHAPE_RANGE_TARGET;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -37,14 +39,14 @@ void main()
     Spell.iDuration = 1;
     Spell.iDurPerLvl = 1;
     // Setup the spell.
-    Spell = SetSpell (Spell);
+    Spell = SetSpell(Spell);
     // Check to see if we should still fire off the spell.
-    if (Spell.iSpellID == STOP_SPELL) return;
+    if(Spell.iSpellID == STOP_SPELL) return;
     // Get the duration of the spell, sets Spell.fDuration.
-    Spell = GetDuration (Spell);
+    Spell = GetDuration(Spell);
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    ApplyMindBlank (Spell);
-    CleanUpSpell (Spell);
+    ApplyMindBlank(Spell);
+    CleanUpSpell(Spell);
 }

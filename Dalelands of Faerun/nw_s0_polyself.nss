@@ -8,7 +8,7 @@ Components: V, S, M
 Casting Time:   1 standard action
 Range:Personal
 Target:Caster
-Duration:   0 minutes / level
+Duration: 10 minutes / level
 Saving Throw:   None
 Spell Resistance:   No
 
@@ -21,11 +21,11 @@ Zombie
 This spell functions like alter self, except that you change into another form
 of living creature. The new form may be of the same type as the subject or any
 of the following types: aberration, animal, dragon, fey, giant, humanoid,
-magical beast, monstrous humanoid, ooze, plant, or vermin. The assumed form can’t
-have more Hit Dice than your caster level (or the subject’s HD, whichever is
-lower), to a maximum of 15 HD at 15th level. You can’t cause a subject to
+magical beast, monstrous humanoid, ooze, plant, or vermin. The assumed form canï¿½t
+have more Hit Dice than your caster level (or the subject's HD, whichever is
+lower), to a maximum of 15 HD at 15th level. You can't cause a subject to
 assume a form smaller than Fine, nor can you cause a subject to assume an
-incorporeal or gaseous form. The subject’s creature type and subtype (if any)
+incorporeal or gaseous form. The subject's creature type and subtype (if any)
 change to match the new form.
 
 Upon changing, the subject regains lost hit points as if it had rested for a
@@ -50,6 +50,7 @@ void main()
     // Setup the spell in the structured variables, then pass through the SetSpell function.
     Spell.iSubType = SUBTYPE_MAGICAL;
     Spell.sArcaneComponent = COMPONENT_POUCH;
+    Spell.sEnhancingComp = "sarbossa_dust";
     Spell.iAreaShape = SHAPE_PERSONAL;
     Spell.iObjectFilter = OBJECT_TYPE_CREATURE;
     Spell.iTargetType = TARGET_TYPE_ALLIES;
@@ -68,6 +69,7 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
+    if(Spell.sEnhancingComp == "TRUE") Spell.fDuration *= 1.5;
     effect eImpact = EffectVisualEffect (Spell.iImpact);
     effect ePolymorph;
     int iPolymorph;
@@ -78,6 +80,7 @@ void main()
     else if (Spell.iSpellID == 390) iPolymorph = POLYMORPH_TYPE_PIXIE;
     else if (Spell.iSpellID == 391) iPolymorph = POLYMORPH_TYPE_ZOMBIE;
     ePolymorph = EffectPolymorph (iPolymorph);
+    ePolymorph = SetEffectCasterLevel(ePolymorph, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while(GetIsObjectValid(Spell.oAreaTarget))

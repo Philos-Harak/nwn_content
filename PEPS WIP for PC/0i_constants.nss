@@ -183,6 +183,8 @@ const string AI_PLUGIN_SET = "AI_PLUGIN_SET";
 const string AI_MONSTER_MOD_JSON = "AI_MONSTER_MOD_JSON";
 // The maximum number of henchman the code works with.
 const int AI_MAX_HENCHMAN = 30;
+// The maximum number of summons the code works with.
+const int AI_MAX_SUMMONS = 10;
 // Delay between Henchman casting Healing spells. Must be minimum of 0.5 seconds.
 const float AI_HENCHMAN_HEALING_DELAY = 6.0;
 // A variable that can be set on creatures to stop mobile animations.

@@ -74,6 +74,7 @@ void main()
             SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
             // Create the heal effect.
             eEffect = EffectHeal (Spell.iResult);
+            eEffect = SetEffectCasterLevel(eEffect, Spell.iCasterLevel);
             // Apply effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eEffect, Spell.oAreaTarget));
             // Apply visual effects.
@@ -90,6 +91,7 @@ void main()
             {
                 // Create the damage effect.
                 eEffect = EffectDamage (Spell.iResult, Spell.iDamageType);
+                eEffect = SetEffectCasterLevel(eEffect, Spell.iCasterLevel);
                 // Apply effect.
                 DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eEffect, Spell.oAreaTarget));
                 // Apply visual effects.

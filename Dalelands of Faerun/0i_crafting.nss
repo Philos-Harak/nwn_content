@@ -16,7 +16,7 @@ void CraftDisposableItem (struct stSpell Spell);
 // Craft a permanent magic item from inside a box.
 // stSpell is the spells information.
 // oTarget is containers that cannot be placed into the enchanting box.
-void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID);
+void CraftPermanentItem (struct stSpell Spell, int nSpellLevel, object oTarget = OBJECT_INVALID);
 
 // Used to craft base items such as Longswords.
 // oPC is the crafter.
@@ -32,7 +32,7 @@ void EnchantBox (object oCaster, int iLevel);
 // Checks oContainer for any enhancment items.
 // oContainer it the enchantment box.
 // iSpell is the spell cast.
-int CheckEnhancments (object oCaster, int iSpell);
+int CheckEnhancments (object oCaster, int iSpell, int nSpellLevel = 0);
 
 // Used in the crafting GUI to copy an item to be pasted to another item later.
 void CopyCraftingItem (object oPC, object oItem);
@@ -61,7 +61,7 @@ void CancelCraftedItem (object oPlayer, object oTarget);
 // Craft a permanent magic item from inside a box.
 // stSpell is the spells information.
 // oTarget is containers that cannot be placed into the enchanting box.
-void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID)
+void CraftPermanentItem (struct stSpell Spell, int nSpellLevel, object oTarget = OBJECT_INVALID)
 {
     int iEnchant = FALSE, iEnchantFail, iQuality, iPowerFullImbue = FALSE;
 
@@ -81,7 +81,7 @@ void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID)
     }
     // Select the correct enchantment type based on item type.
     int iBaseItemType = GetBaseItemType (oItemToEnchant);
-    string sEnchant_Column = Get2DAString ("smi_list", "enchant", iBaseItemType);
+    string sEnchant_Column = Get2DAString ("smi_list", "Enchant", iBaseItemType);
     // Break out armors and clothing.
     if(sEnchant_Column == "armor")
     {
@@ -119,19 +119,19 @@ void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID)
                 sMinLevel = "an Artificer";
                 sPowerNum = "5";
             }
-            else if (iPropCounter == 3 && Spell.iCasterLevel <= 19)
+            else if (iPropCounter == 3 && Spell.iCasterLevel < 19)
             {
                 iEnchantFail = TRUE;
                 sMinLevel = "19th level";
                 sPowerNum = "4";
             }
-            else if (iPropCounter == 2 && Spell.iCasterLevel <= 13)
+            else if (iPropCounter == 2 && Spell.iCasterLevel < 13)
             {
                 iEnchantFail = TRUE;
                 sMinLevel = "13th level";
                 sPowerNum = "3";
             }
-            else if (iPropCounter == 1 && Spell.iCasterLevel <= 7)
+            else if (iPropCounter == 1 && Spell.iCasterLevel < 7)
             {
                 iEnchantFail = TRUE;
                 sMinLevel = "7th level";
@@ -140,7 +140,7 @@ void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID)
             if (iEnchantFail)
             {
                 SendMessages ("You do not have enough power to enchant this item further [Must be "
-                             + sMinLevel + " to enchant up to" + sPowerNum + " powers!", COLOR_RED, Spell.oCaster, FALSE, FALSE);
+                             + sMinLevel + " to enchant up to " + sPowerNum + " powers!", COLOR_RED, Spell.oCaster, FALSE, FALSE);
                 return;
             }
             // Check the items quality.
@@ -196,17 +196,56 @@ void CraftPermanentItem (struct stSpell Spell, object oTarget = OBJECT_INVALID)
                }
         }
     }
+    // Save the enchanting box to the caster for later use.
+    SetLocalObject (Spell.oCaster, "0_enchanting_box", Spell.oTarget);
+    int iEnchantProperty;
     // Get the spells name.
     string sSpellName = GetStringByStrRef (StringToInt (Get2DAString ("Spells", "Name", Spell.iSpellID)));
-    // Check to make sure this spell can enchant this item.
-    int iEnchantProperty = StringToInt (Get2DAString ("enchant_table", sEnchant_Column, Spell.iSpellID));
-    if (iEnchantProperty == 0)
+    // Rings and amulets can have any spell enchanted into them as long as the proper gem is used.
+    // Rings can only have arcane spells.
+    if(sEnchant_Column == "ring")
+    {
+        // Check to make sure there is the correct type of gem in the box.
+        iEnchantProperty = CheckEnhancments(Spell.oCaster, Spell.iSpellID, nSpellLevel);
+        // If CheckEnhancements returns -1 then we did not have enough of gems to enchant the item.
+        if(iEnchantProperty == -1) return;
+        if(iEnchantProperty != 0 && !GetIsDungeonMaster(Spell.oCaster) &&
+           Get2DAString("classes", "Arcane", GetLastSpellCastClass()) != "1")
+        {
+            SendMessages ("Only arcane spells can be enchanted into rings!", COLOR_RED, Spell.oCaster, FALSE, FALSE);
+            return;
+        }
+    }
+    // Amulets can only have divine spells.
+    else if(sEnchant_Column == "amulet")
+    {
+        iEnchantProperty = CheckEnhancments(Spell.oCaster, Spell.iSpellID, nSpellLevel);
+        // If CheckEnhancements returns -1 then we did not have enough of gems to enchant the item.
+        if(iEnchantProperty == -1) return;
+        if(iEnchantProperty != 0 && !GetIsDungeonMaster(Spell.oCaster) &&
+           Get2DAString("classes", "Arcane", GetLastSpellCastClass()) != "0")
+        {
+            SendMessages ("Only divine spells can be enchanted into amulets!", COLOR_RED, Spell.oCaster, FALSE, FALSE);
+            return;
+        }
+    }
+    // Masks can have arcane and divine spells.
+    else if(sEnchant_Column == "helmet" && GetTag(oItemToEnchant) == "mask")
+    {
+        iEnchantProperty = CheckEnhancments(Spell.oCaster, Spell.iSpellID, nSpellLevel);
+        // If CheckEnhancements returns -1 then we did not have enough of gems to enchant the item.
+        if(iEnchantProperty == -1) return;
+    }
+    // If we have not found an enchantment property then check in the enchant_table 2da for the spell.
+    if(!iEnchantProperty)
+    {
+        iEnchantProperty = StringToInt (Get2DAString ("enchant_table", sEnchant_Column, Spell.iSpellID));
+    }
+    if(!iEnchantProperty)
     {
         SendMessages (sSpellName + " cannot enchant this item!", COLOR_RED, Spell.oCaster, FALSE, FALSE);
         return;
     }
-    // Save the enchanting box to the caster for later use.
-    SetLocalObject (Spell.oCaster, "0_enchanting_box", Spell.oTarget);
     // Save the spell on the caster to use later in the convo.
     SetLocalInt (Spell.oCaster, "0_Spell", Spell.iSpellID);
     // Save the class used on the caster to use later in the convo.
@@ -280,16 +319,19 @@ void CraftDisposableItem (struct stSpell Spell)
         SetLocalInt (Spell.oCaster, "0_ReturnInt", FALSE);
         // Save that this is a temp item.
         int iMinSpellLvl = StringToInt (Get2DAString ("spells", "Innate", Spell.iSpellID));
-        // Check to see if this spell is level 4 or less.
-        if (iMinSpellLvl > 4 && sItemType == "Wand of")
+        if(GetIsCharacter(Spell.oCaster))
         {
-            SendMessages ("Spells above 4th level cannot be enchanted into a wand!", COLOR_RED, Spell.oCaster);
-            return;
-        }
-        else if (iMinSpellLvl > 3 && sItemType == "Potion of")
-        {
-            SendMessages ("Spells above 3rd level cannot be enchanted into a potion!", COLOR_RED, Spell.oCaster);
-            return;
+            // Check to see if this spell is level 4 or less.
+            if (iMinSpellLvl > 4 && sItemType == "Wand of")
+            {
+                SendMessages ("Spells above 4th level cannot be enchanted into a wand!", COLOR_RED, Spell.oCaster);
+                return;
+            }
+            else if (iMinSpellLvl > 3 && sItemType == "Potion of")
+            {
+                SendMessages ("Spells above 3rd level cannot be enchanted into a potion!", COLOR_RED, Spell.oCaster);
+                return;
+            }
         }
         iMinSpellLvl = (iMinSpellLvl + iMinSpellLvl) - 1;
         SetLocalInt (Spell.oCaster, "0_Min_Spell_Level", iMinSpellLvl);
@@ -696,9 +738,16 @@ void EnchantBox (object oCaster, int iLevel)
         // Get the cost of the item before enchantment.
         iPreviousCost = GetGoldPieceValue(oNewItem);
         // We need to check for enhancment objects within the box based on the property used.
-        iEnchantProperty = CheckEnhancments (oCaster, iSpell);
+        iEnchantProperty = CheckEnhancments(oCaster, iSpell);
+        int nCrafting;
+        if(iEnchantProperty == 222 /*Property for casting spells*/)
+        {
+            // We save the spell in nCrafting to be used in enchanting the item with the cast spell property.
+            nCrafting = iSpell;
+        }
+        else nCrafting = TRUE;
         // Enchant the item.
-        EnchantItem (oNewItem, iLevel, iEnchantProperty, TRUE);
+        EnchantItem (oNewItem, iLevel, iEnchantProperty, nCrafting);
         // Get the cost of the new item and reduce it by the previous cost.
         iGoldCost = GetGoldPieceValue(oNewItem) - iPreviousCost;
     }
@@ -731,98 +780,120 @@ void EnchantBox (object oCaster, int iLevel)
 // Checks for any enhancment items in the enchant box.
 // oCaster it the player casting the enchantment.
 // iSpell is the spell cast.
-int CheckEnhancments (object oCaster, int iSpell)
+int CheckEnhancments(object oCaster, int iSpell, int nSpellLevel = 0)
 {
-    object oEnchantBox = GetLocalObject (oCaster, "0_enchanting_box");
+    object oEnchantBox = GetLocalObject(oCaster, "0_enchanting_box");
     // Get the spell used.
     int iItemType;
     // Get the sEnchant_Column.
-    string sResRef, sResRefLeft, sEnchant_Column = GetLocalString (oCaster, "0_enchant_column");
+    string sResRef, sResRefLeft, sEnchant_Column = GetLocalString(oCaster, "0_enchant_column");
     // Get the property to add to the item.
-    int iProperty = StringToInt (Get2DAString ("enchant_table", sEnchant_Column, iSpell));
+    int iProperty = StringToInt(Get2DAString("enchant_table", sEnchant_Column, iSpell));
     // Now check the property for any enhancements.
-    object oItem = GetFirstItemInInventory (oEnchantBox);
-    while (GetIsObjectValid (oItem))
+    object oItem = GetFirstItemInInventory(oEnchantBox);
+    while(GetIsObjectValid(oItem))
     {
         // make sure the item is an enhancing item.
-        sResRef = GetResRef (oItem);
+        sResRef = GetResRef(oItem);
         sResRefLeft = GetStringLeft(sResRef, 2);
-        if (sResRefLeft == "g_" || sResRefLeft == "e_")
+        if(sResRefLeft == "g_" || sResRefLeft == "e_")
         {
             // Check for light property (yellow).
-            if (iProperty == 156)
+            if(iProperty == 156)
             {
                 // Blue color.
-                if (sResRef == "g_500_1" || sResRef == "g_10_5" || sResRef == "g_10_6" ||
-                    sResRef == "g_50_5" || sResRef == "g_1000_2" || sResRef == "g_1000_5") iProperty = 150;
+                if (sResRef == "g_25_5" || sResRef == "g_25_6" ||
+                    sResRef == "g_50_5" || sResRef == "g_1000_2" || sResRef == "g_1000_5") return 150;
                 // Green color.
-                else if (sResRef == "g_500_1" || sResRef == "g_5000_4" ||
-                         sResRef == "g_5000_2" || sResRef == "g_10_3" ||
-                         sResRef == "g_100_6" || sResRef == "g_10_4") iProperty = 151;
+                else if (sResRef == "g_5000_4" ||
+                         sResRef == "g_5000_2" || sResRef == "g_25_3" ||
+                         sResRef == "g_100_6" || sResRef == "g_25_4") return 151;
                 // Orange color.
-                else if (sResRef == "g_50_4" || sResRef == "g_5000_5") iProperty = 152;
+                else if (sResRef == "g_50_4" || sResRef == "g_5000_5") return 152;
                 // Purple color.
-                else if (sResRef == "g_100_1" || sResRef == "g_10_2)" ||
-                         sResRef == "g_500_4") iProperty = 153;
+                else if (sResRef == "g_100_1" || sResRef == "g_25_2)" ||
+                         sResRef == "g_500_4") return 153;
                 // Red color.
                 else if (sResRef == "g_1000_1" || sResRef == "g_100_2" ||
-                         sResRef == "g_5000_3" || sResRef == "g_1000_4") iProperty = 154;
+                         sResRef == "g_5000_3" || sResRef == "g_1000_4") return 154;
                 // White color.
                 else if (sResRef == "g_5000_1" || sResRef == "g_5000_6" ||
-                         sResRef == "g_100_4") iProperty = 155;
+                         sResRef == "g_100_4") return 155;
             }
             // Check for bane weapons (Uses Enhancment 148).
-            else if (iProperty == 148)
+            else if(iProperty == 148)
             {
-                if (sResRef == "e_aberration_eye") iProperty = 192;
-                else if (sResRef == "e_animal_skin") iProperty = 193;
-                else if (sResRef == "e_construct_part") iProperty = 195;
-                else if (sResRef == "e_dragon_blood") iProperty = 196;
-                else if (sResRef == "e_dwarf_beard") iProperty = 197;
-                else if (sResRef == "e_elemental_esse") iProperty = 198;
-                else if (sResRef == "e_elf_ear") iProperty = 199;
-                else if (sResRef == "e_fey_dust") iProperty = 200;
-                else if (sResRef == "e_giant_tooth") iProperty = 201;
-                else if (sResRef == "e_gnome_nose") iProperty = 202;
-                else if (sResRef == "e_halfling_hand") iProperty = 204;
-                else if (sResRef == "e_human_skull") iProperty = 206;
-                else if (sResRef == "e_goblin_head") iProperty = 207;
-                else if (sResRef == "e_monster_heart") iProperty = 208;
-                else if (sResRef == "e_orc_head") iProperty = 209;
-                else if (sResRef == "e_reptilian_tong") iProperty = 210;
-                else if (sResRef == "e_beast_claw") iProperty = 211;
-                else if (sResRef == "e_outsider_soul") iProperty = 212;
-                else if (sResRef == "e_shchange_brain") iProperty = 213;
-                else if (sResRef == "e_undead_bone") iProperty = 214;
-                else if (sResRef == "e_vermin_guts") iProperty = 215;
+                if(sResRef == "e_aberration_eye") return 192;
+                else if(sResRef == "e_animal_skin") return 193;
+                else if(sResRef == "e_construct_part") return 195;
+                else if(sResRef == "e_dragon_blood") return 196;
+                else if(sResRef == "e_dwarf_beard") return 197;
+                else if(sResRef == "e_elemental_esse") return 198;
+                else if(sResRef == "e_elf_ear") return 199;
+                else if(sResRef == "e_fey_dust") return 200;
+                else if(sResRef == "e_giant_tooth") return 201;
+                else if(sResRef == "e_gnome_nose") return 202;
+                else if(sResRef == "e_halfling_hand") return 204;
+                else if(sResRef == "e_human_skull") return 206;
+                else if(sResRef == "e_goblin_head") return 207;
+                else if(sResRef == "e_monster_heart") return 208;
+                else if(sResRef == "e_orc_head") return 209;
+                else if(sResRef == "e_reptilian_tong") return 210;
+                else if(sResRef == "e_beast_claw") return 211;
+                else if(sResRef == "e_outsider_soul") return 212;
+                else if(sResRef == "e_shchange_brain") return 213;
+                else if(sResRef == "e_undead_bone") return 214;
+                else if(sResRef == "e_vermin_guts") return 215;
             }
             // Check for ac vs creature type (Uses armor bonus 13, 14, 15, 16).
-            else if (iProperty >= 13 && iProperty <= 16)
+            else if(iProperty >= 13 && iProperty <= 16)
             {
-                if (sResRef == "e_aberration_eye") iProperty = 22;
-                else if (sResRef == "e_animal_skin") iProperty = 23;
-                else if (sResRef == "e_construct_part") iProperty = 25;
-                else if (sResRef == "e_dragon_blood") iProperty = 26;
-                else if (sResRef == "e_dwarf_beard") iProperty = 27;
-                else if (sResRef == "e_elemental_esse") iProperty = 28;
-                else if (sResRef == "e_elf_ear") iProperty = 29;
-                else if (sResRef == "e_fey_dust") iProperty = 30;
-                else if (sResRef == "e_giant_tooth") iProperty = 31;
-                else if (sResRef == "e_gnome_nose") iProperty = 32;
-                else if (sResRef == "e_halfling_hand") iProperty = 34;
-                else if (sResRef == "e_human_skull") iProperty = 36;
-                else if (sResRef == "e_goblin_head") iProperty = 37;
-                else if (sResRef == "e_monster_heart") iProperty = 38;
-                else if (sResRef == "e_orc_head") iProperty = 39;
-                else if (sResRef == "e_reptilian_tong") iProperty = 40;
-                else if (sResRef == "e_beast_claw") iProperty = 41;
-                else if (sResRef == "e_outsider_soul") iProperty = 42;
-                else if (sResRef == "e_shchange_brain") iProperty = 43;
-                else if (sResRef == "e_undead_bone") iProperty = 44;
-                else if (sResRef == "e_vermin_guts") iProperty = 45;
+                if(sResRef == "e_aberration_eye") return 22;
+                else if(sResRef == "e_animal_skin") return 23;
+                else if(sResRef == "e_construct_part") return 25;
+                else if(sResRef == "e_dragon_blood") return 26;
+                else if(sResRef == "e_dwarf_beard") return 27;
+                else if(sResRef == "e_elemental_esse") return 28;
+                else if(sResRef == "e_elf_ear") return 29;
+                else if(sResRef == "e_fey_dust") return 30;
+                else if(sResRef == "e_giant_tooth") return 31;
+                else if(sResRef == "e_gnome_nose") return 32;
+                else if(sResRef == "e_halfling_hand") return 34;
+                else if(sResRef == "e_human_skull") return 36;
+                else if(sResRef == "e_goblin_head") return 37;
+                else if(sResRef == "e_monster_heart") return 38;
+                else if(sResRef == "e_orc_head") return 39;
+                else if(sResRef == "e_reptilian_tong") return 40;
+                else if(sResRef == "e_beast_claw") return 41;
+                else if(sResRef == "e_outsider_soul") return 42;
+                else if(sResRef == "e_shchange_brain") return 43;
+                else if(sResRef == "e_undead_bone") return 44;
+                else if(sResRef == "e_vermin_guts") return 45;
+            }
+            // Check to see if it is a spell melding gem. Allows spells to be added to the item.
+            else
+            {
+                // Adding spells to rings, amulets, and masks requires a Spinel , Peridot, Flamedance,
+                // Aquamarine, or Alexandrite gem.
+                if(sResRef == "g_500_6" || sResRef == "g_500_12" || sResRef == "g_500_8" ||
+                   sResRef == "g_500_3" || sResRef == "g_500_1")
+                {
+                    int nAmount = GetItemStackSize(oItem);
+                    if(nAmount >= nSpellLevel)
+                    {
+                        SetLocalObject(OBJECT_SELF, "0_Component_to_enchant", oItem);
+                        if(nSpellLevel > 0) SetLocalInt(OBJECT_SELF, "0_Enhancement_Stack_Size", nSpellLevel);
+                        return 222;
+                    }
+                    else
+                    {
+                        SendMessages("This spell requires " + IntToString(nSpellLevel) + " " + GetName(oItem) + " gems to enchant it to this item.", COLOR_RED, oCaster);
+                        return -1;
+                    }
+                }
             }
         }
-        oItem = GetNextItemInInventory (oEnchantBox);
+        oItem = GetNextItemInInventory(oEnchantBox);
     }
     return iProperty;
 }

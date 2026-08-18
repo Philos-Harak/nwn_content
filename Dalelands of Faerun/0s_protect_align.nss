@@ -90,12 +90,84 @@ void main()
     // *******************************************************************
     // ********************** Spell effects ******************************
     // *******************************************************************
-    // AC bonus
-    effect eAC = EffectACIncrease (Spell.iResult, AC_DEFLECTION_BONUS);
-    eAC = VersusAlignmentEffect (eAC, nAlign1, nAlign2);
+    int nSaveBonus, nACBonus;
+    // Do a special check for enhancing components in one inventory pass.
+    if(GetLocalInt(Spell.oCaster, "0_Use_Enhancing_Component"))
+    {
+        int nEnhancedAmount, nEnhancedLimit, nStack;
+        int nAlestoneDust, nCarnelianDust, nCrownOfSilverDust, nJasmalDust;
+        float fEnhancedDuration;
+        object oItem = GetFirstItemInInventory(Spell.oCaster);
+        while(oItem != OBJECT_INVALID)
+        {
+            if(!nAlestoneDust && GetTag(oItem) == "alestone_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nAlestoneDust = TRUE;
+                fEnhancedDuration += 0.5;
+            }
+            else if(!nCarnelianDust && GetTag(oItem) == "carnelian_dust" &&
+                    Spell.iSpellID == SPELL_PROTECTION_FROM_EVIL)
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nCarnelianDust = TRUE;
+                nACBonus += 1;
+                nSaveBonus += 1;
+            }
+            else if(!nCrownOfSilverDust && GetTag(oItem) == "crown_of_silver_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nCrownOfSilverDust = TRUE;
+                fEnhancedDuration += 0.5;
+            }
+            else if(!nJasmalDust && GetTag(oItem) == "jasmal_dust")
+            {
+                nStack = GetItemStackSize(oItem);
+                if(nStack == 1) DestroyObject (oItem);
+                else SetItemStackSize(oItem, nStack - 1);
+                nJasmalDust = TRUE;
+                nACBonus += 1;
+            }
+            oItem = GetNextItemInInventory(Spell.oCaster);
+        }
+        object oObject;
+        if(nACBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase AC by +" + IntToString(nACBonus) + "!", COLOR_GREEN, oObject);
+        }
+        if(nSaveBonus)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase saving throws by +" + IntToString(nSaveBonus) + "!", COLOR_GREEN, oObject);
+        }
+        if(fEnhancedDuration > 0.0)
+        {
+            string sSpellName = GetStringByStrRef(StringToInt(Get2DAString("Spells", "Name", Spell.iSpellID)));
+            if(GetIsCharacter(Spell.oCaster)) oObject = Spell.oCaster;
+            else oObject = GetMaster(Spell.oCaster);
+            SendMessages(sSpellName + " has been enhanced to increase the duration by +" + FloatToString(fEnhancedDuration * 100.0) + "%!", COLOR_GREEN, oObject);
+            Spell.fDuration *= (1.0 + fEnhancedDuration);
+        }
+    }
+    nACBonus += Spell.iResult;
+    nSaveBonus += Spell.iResult;
     // Save bonus
-    effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, Spell.iResult);
+    effect eSave = EffectSavingThrowIncrease (SAVING_THROW_ALL, nSaveBonus);
     eSave = VersusAlignmentEffect (eSave, nAlign1, nAlign2);
+    // AC bonus
+    effect eAC = EffectACIncrease (nACBonus, AC_DEFLECTION_BONUS);
+    eAC = VersusAlignmentEffect (eAC, nAlign1, nAlign2);
     // Immunity to mind spells
     effect eImmune = EffectImmunity (IMMUNITY_TYPE_MIND_SPELLS);
     eImmune = VersusAlignmentEffect (eImmune, nAlign1, nAlign2);
@@ -104,6 +176,7 @@ void main()
     effect eLink = EffectLinkEffects (eImmune, eSave);
     eLink = EffectLinkEffects(eLink, eAC);
     eLink = EffectLinkEffects(eLink, eDur);
+    eLink = SetEffectCasterLevel(eLink, Spell.iCasterLevel);
     //Get the spells target(s).
     Spell = GetSpellTarget (Spell);
     while (GetIsObjectValid (Spell.oAreaTarget))
@@ -111,7 +184,7 @@ void main()
         //Fire cast spell at event for the specified target
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
-        RemoveSpellEffects (Spell.iSpellID, Spell.oCaster, Spell.oAreaTarget);
+        RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
         //Apply the VFX impact and effects
         DelayCommand (Spell.fDelay, ApplyEffectToObject (Spell.iDurationType, eLink, Spell.oAreaTarget, Spell.fDuration));
         //Get the spells target(s).

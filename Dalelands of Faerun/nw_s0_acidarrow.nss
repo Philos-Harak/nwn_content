@@ -18,7 +18,7 @@ You must succeed on a ranged touch attack to hit your target. The arrow deals
 (to a maximum of 18th), the acid, unless somehow neutralized, lasts for another
 round, dealing another 2d4 points of damage in that round.
 
-Material Component: Powdered rhubarb leaf and an adder’s stomach.
+Material Component: Powdered rhubarb leaf and an adderï¿½s stomach.
 Focus: A dart.
 /*////////////////////////////////////////////////////////
 #include "0i_spells"
@@ -85,6 +85,7 @@ void main()
             Spell = GetModifier (Spell);
             // Create damage effect.
             eDmg = EffectDamage (Spell.iResult, Spell.iDamageType);
+            eDmg = SetEffectCasterLevel(eDmg, Spell.iCasterLevel);
             // Apply the effect.
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eDmg, Spell.oAreaTarget));

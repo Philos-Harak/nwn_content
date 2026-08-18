@@ -15,7 +15,6 @@ const string CRAFT_BANNED_BASEITEMTYPES = ":23:";
 //const string CRAFT_BANNED_BASEITEMTYPES = "::";
 // Maximum model number for all items except weapons.
 const int CRAFT_MAX_MODEL_NUMBER = 999;
-
 struct stWeaponAppearance
 {
     object oItem;
@@ -104,6 +103,7 @@ void CraftItemInfoEvents(object oPC, int nToken);
 //void CreateDresserGUIPanel(object oPC, object oTarget);
 json CreateItemCombo(object oPC, json jRow, string sComboBind);
 json CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind);
+void CreateCraftingVFXGUIPanel(object oPC, object oTarget, string sVFXItemTag);
 void CreateCreatureCraftingGUIPanel(object oPC, object oTarget);
 // See above for constant that can have base item types added to the list.
 int IfOnBannedBaseItemTypeList(object oPC, object oItem);
