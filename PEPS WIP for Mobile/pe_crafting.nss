@@ -8,11 +8,6 @@
 #include "nw_inc_gff"
 #include "0i_main"
 #include "0i_items"
-// Banned list of BaseItemTypes use rows from baseitemtype.2da.
-// Place each one between a : . Example ":21:28:" will not change belts and clubs.
-// Best used for visual effect items like helms.
-const string CRAFT_BANNED_BASEITEMTYPES = ":23:";
-//const string CRAFT_BANNED_BASEITEMTYPES = "::";
 // Maximum model number for all items except weapons.
 const int CRAFT_MAX_MODEL_NUMBER = 999;
 
@@ -105,8 +100,6 @@ void CraftItemInfoEvents(object oPC, int nToken);
 json CreateItemCombo(object oPC, json jRow, string sComboBind);
 json CreateModelCombo(object oPC, object oTarget, json jRow, string sComboBind);
 void CreateCreatureCraftingGUIPanel(object oPC, object oTarget);
-// See above for constant that can have base item types added to the list.
-int IfOnBannedBaseItemTypeList(object oPC, object oItem);
 
 int GetColorIDChange(object oItem, int nType, int nIndex, int nChange)
 {
@@ -429,19 +422,19 @@ void main()
                         }
                         ipProperty = GetNextItemProperty(oItem);
                     }
-                    if(nSelected > 0)
+                    if(nSelected == 1) nVisual = ITEM_VISUAL_ACID;
+                    else if(nSelected == 2) nVisual = ITEM_VISUAL_COLD;
+                    else if(nSelected == 3) nVisual = ITEM_VISUAL_ELECTRICAL;
+                    else if(nSelected == 4) nVisual = ITEM_VISUAL_EVIL;
+                    else if(nSelected == 5) nVisual = ITEM_VISUAL_FIRE;
+                    else if(nSelected == 6) nVisual = ITEM_VISUAL_HOLY;
+                    else if(nSelected == 7) nVisual = ITEM_VISUAL_SONIC;
+                    if(nVisual)
                     {
-                        if(nSelected == 1) nVisual = ITEM_VISUAL_ACID;
-                        else if(nSelected == 2) nVisual = ITEM_VISUAL_COLD;
-                        else if(nSelected == 3) nVisual = ITEM_VISUAL_ELECTRICAL;
-                        else if(nSelected == 4) nVisual = ITEM_VISUAL_EVIL;
-                        else if(nSelected == 5) nVisual = ITEM_VISUAL_FIRE;
-                        else if(nSelected == 6) nVisual = ITEM_VISUAL_HOLY;
-                        else if(nSelected == 7) nVisual = ITEM_VISUAL_SONIC;
                         ipProperty = ItemPropertyVisualEffect(nVisual);
                         AddItemProperty(DURATION_TYPE_PERMANENT, ipProperty, oItem);
-                        LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
                     }
+                    LockItemInCraftingWindow(oPC, oItem, oTarget, nToken);
                 }
             }
         }
@@ -498,8 +491,6 @@ void main()
                 // If the button is on cancel then clear the item.
                 if(JsonGetString(NuiGetBind(oPC, nToken, "btn_cancel_label")) == "Cancel")
                 {
-                    jCraft = JsonObjectSet(jCraft, CRAFT_MODEL_SELECTION, JsonInt(0));
-                    SetLocalJson(oPC, CRAFT_JSON, jCraft);
                     CancelCraftedItem(oPC, oTarget);
                     ClearItemInCraftingWindow(oPC, oItem, nToken);
                     DelayCommand(0.5, NuiDestroy(oPC, nToken));
@@ -526,8 +517,6 @@ void main()
                         RemoveTagedEffects(oTarget, CRAFT_HIGHLIGHT);
                         DeleteLocalInt(oPC, CRAFT_HIGHLIGHT);
                     }
-                    ReplaceObjectAnimation(oTarget, "drwright", "");
-                    ReplaceObjectAnimation(oTarget, "drwleft", "");
                 }
             }
             // Get the previous model of the selected item.
@@ -734,7 +723,7 @@ void main()
             }
             SetLocalJson(oPC, CRAFT_JSON, jCraft);
         }
-       else if(sEvent == "mousedown")
+        else if(sEvent == "mousedown")
         {
             int nMouseButton = JsonGetInt(JsonObjectGet(NuiGetEventPayload(), "mouse_btn"));
             if(nMouseButton == NUI_MOUSE_BUTTON_RIGHT)
@@ -1181,7 +1170,10 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         DestroyObject(oItem);
         // Item selected 3 is the right hand, 4 is the left hand.
         //SendMessageToPC(oPC, "nItemSelected: " + IntToString(nItemSelected));
-        if(nItemSelected == 3) AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_RIGHTHAND));
+        if(nItemSelected == 3)
+        {
+            AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_RIGHTHAND));
+        }
         else AssignCommand(oTarget, ActionEquipItem(oNewItem, INVENTORY_SLOT_LEFTHAND));
         NuiSetBind(oPC, nToken, "txt_model_number_" + sPart, JsonString(IntToString(nModelNumber)));
     }
@@ -1225,8 +1217,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
         // Check for changes to the torso (base part of the armor linked to AC).
         if(nModelSelected == ITEM_APPR_ARMOR_MODEL_TORSO)
         {
-            string sCurrentACBonus = GetStringLeft(Get2DAString("parts_chest", "ACBONUS", nBaseModelNumber), 1);
-            string sACBonus = GetStringLeft(Get2DAString("parts_chest", "ACBONUS", nModelNumber), 1);
+            string sCurrentACBonus = Get2DAString("parts_chest", "ACBONUS", nBaseModelNumber);
+            string sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModelNumber);
             sModelName += Get2DAString ("capart", "MDLNAME", nModelSelected);
             //SendMessageToPC(oPC, "pe_crafting, 842, sModelName: " + sModelName + sModelNumber +
             //         " nModelNumber: " + IntToString(nModelNumber) + " sCurrentACBonus: " + sCurrentACBonus +
@@ -1240,14 +1232,14 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 if(nModelNumber < 10) sModelNumber = "00" + IntToString(nModelNumber);
                 else if(nModelNumber < 100) sModelNumber = "0" + IntToString(nModelNumber);
                 else sModelNumber = IntToString(nModelNumber);
-                sACBonus = GetStringLeft(Get2DAString ("parts_chest", "ACBONUS", nModelNumber), 1);
+                sACBonus = Get2DAString ("parts_chest", "ACBONUS", nModelNumber);
                 //SendMessageToPC(oPC, "pe_crafting, 854, sModelName: " + sModelName + sModelNumber +
                 //         " nModelNumber: " + IntToString(nModelNumber) + " sACBonus: " + sACBonus +
                 //         " nModelSelected: " + IntToString(nModelSelected));
             }
             // Change the model.
-            //WriteTimestampedLogEntry("pe_crafting, 1241, " + GetName(oItem) + " nModelSelected: " +
-            //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
+            WriteTimestampedLogEntry("pe_crafting, 1241, " + GetName(oItem) + " nModelSelected: " +
+                          IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
             oNewItem = CopyItemAndModify (oItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
             DestroyObject (oItem);
             AssignCommand (oTarget, ActionEquipItem (oNewItem, INVENTORY_SLOT_CHEST));
@@ -1258,8 +1250,7 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
             sModelName += Get2DAString("capart", "MDLNAME", nModelSelected);
             //SendMessageToPC(oPC, "pe_crafting, 866, sModelName: " + sModelName + sModelNumber +
             //         " nModelNumber: " + IntToString(nModelNumber) + " nModelSelected: " + IntToString(nModelSelected));
-            while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "" &&
-                  (nModelSelected != ITEM_APPR_ARMOR_MODEL_ROBE || nModelNumber != 0))
+            while(ResManGetAliasFor(sModelName + sModelNumber, RESTYPE_MDL) == "")
             {
                 nModelNumber += nDirection;
                 if (nModelNumber > CRAFT_MAX_MODEL_NUMBER) nModelNumber = 0;
@@ -1281,8 +1272,8 @@ object ChangeItemsAppearance(object oPC, object oTarget, int nToken, object oIte
                 // Note: Right Thigh and Left Thigh are backwards so this fixes that!
                 if (nModelSelected == ITEM_APPR_ARMOR_MODEL_RTHIGH) nModelSelected--;
                 else nModelSelected++;
-                //WriteTimestampedLogEntry("pe_crafting, 1275, " + GetName(oItem) + " nModelSelected: " +
-                //              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
+                WriteTimestampedLogEntry("pe_crafting, 1275, " + GetName(oItem) + " nModelSelected: " +
+                              IntToString(nModelSelected) + " nModelNumber: " + IntToString(nModelNumber));
                 oItem = CopyItemAndModify(oNewItem, ITEM_APPR_TYPE_ARMOR_MODEL, nModelSelected, nModelNumber, TRUE);
                 DestroyObject(oNewItem);
                 AssignCommand(oTarget, ActionEquipItem(oItem, INVENTORY_SLOT_CHEST));
@@ -1599,7 +1590,6 @@ void SaveCraftedItem(object oPC, object oTarget, int nToken)
 }
 int CanCraftItem(object oPC, object oItem, int nToken, int bPasteCheck = FALSE)
 {
-    if(IfOnBannedBaseItemTypeList(oPC, oItem)) return FALSE;
     // Plot items cannot be changed.
     if(GetPlotFlag(oItem))
     {
@@ -1736,7 +1726,7 @@ void SetModelNumberText(object oPC, object oTarget, int nToken)
         NuiSetBind(oPC, nToken, "btn_next_b_event", JsonBool(TRUE));
     }
     // Armor and clothing
-    else if(nItem == 0)
+    if(nItem == 0)
     {
         nSelected = GetArmorModelSelected(oPC);
         // These models only have one side so make sure we are not linked.
@@ -1964,7 +1954,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     // Add row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     float fHeight = 113.0;
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC))
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC))
     {
         // Row 2 (Tag)************************************************************** 101
         jRow = CreateLabel(JsonArray(), "Tag:", "lbl_tag_title", 50.0f, 20.0f, NUI_HALIGN_LEFT);
@@ -1986,7 +1976,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     fHeight += 28.0;
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC))
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC))
     {
         // Row 4 (Gold Value)******************************************************* 185
         jRow = CreateLabel(JsonArray(), "Gold Value: ", "lbl_gold_title", 85.0f, 25.0f, NUI_HALIGN_LEFT);
@@ -2022,7 +2012,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     fHeight += 251.0;
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
     {
         // Row 12 (Description Save Button)***************************************** 558
         jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
@@ -2062,12 +2052,12 @@ void CreateItemGUIPanel(object oPC, object oItem)
                             -1.0, -1.0, 400.0, fHeight, FALSE, FALSE, TRUE, FALSE, TRUE, "pe_crafting");
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "txt_item_name", JsonString(GetName(oItem)));
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
     {
         NuiSetBind(oPC, nToken, "txt_item_name_event", JsonBool(TRUE));
         NuiSetBindWatch(oPC, nToken, "txt_item_name", TRUE);
     }
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC))
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC))
     {
         NuiSetBind(oPC, nToken, "txt_item_tag_event", JsonBool(TRUE));
         NuiSetBind(oPC, nToken, "txt_item_tag", JsonString(GetTag(oItem)));
@@ -2082,7 +2072,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     NuiSetBind(oPC, nToken, "lbl_weight_label", JsonString(sValue));
     NuiSetBind(oPC, nToken, "btn_select_target_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_select_target_tooltip", JsonString("  Select another Item"));
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC))
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC))
     {
         int nValue = GetGoldPieceValue(oItem);
         NuiSetBind (oPC, nToken, "lbl_gold_value_label", JsonString(IntToString(nValue)));
@@ -2128,7 +2118,7 @@ void CreateItemGUIPanel(object oPC, object oItem)
     }
     // Description
     NuiSetBind(oPC, nToken, "txt_desc", JsonString(GetDescription(oItem)));
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
     {
         NuiSetBind(oPC, nToken, "txt_desc_event", JsonBool(TRUE));
         NuiSetBindWatch(oPC, nToken, "txt_desc", TRUE);
@@ -2510,7 +2500,7 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     object oItem = GetSelectedItem(oTarget, nItem);
     // Row 1
     NuiSetBind(oPC, nToken, "txt_item_name", JsonString(GetName(oItem)));
-    if(!ai_GetIsServer() || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
+    if(!AI_SERVER || ai_GetIsDungeonMaster(oPC) || ALLOW_CRAFT_NAMES)
     {
         NuiSetBind(oPC, nToken, "txt_item_name_event", JsonBool(TRUE));
         NuiSetBindWatch(oPC, nToken, "txt_item_name", TRUE);
@@ -2556,8 +2546,6 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     // Model Group
     if(ai_GetIsWeapon(oItem))
     {
-        ReplaceObjectAnimation(oTarget, "drwright", "pause1");
-        ReplaceObjectAnimation(oTarget, "drwleft", "pause1");
         int nModel = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_MODEL, 0);
         int nColor = GetItemAppearance(oItem, ITEM_APPR_TYPE_WEAPON_COLOR, 0);
         int nModelNumber = (nModel * 10) + nColor;
@@ -2871,18 +2859,4 @@ void CreateCreatureCraftingGUIPanel(object oPC, object oTarget)
     // Lets make sure we clean up any cool down variables.
     //DeleteLocalInt(oPC, CRAFT_COOL_DOWN);
 }
-int IfOnBannedBaseItemTypeList(object oPC, object oItem)
-{
-    int nIndex, nBaseItemType = GetBaseItemType(oItem);
-    int nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, nIndex));
-    while(nBannedBaseItemType)
-    {
-        if(nBaseItemType == nBannedBaseItemType)
-        {
-            ai_SendMessages(GetName(oItem) + " cannot have it's appearance changed!", AI_COLOR_RED, oPC);
-            return TRUE;
-        }
-        nBannedBaseItemType = StringToInt(ai_GetStringArray(CRAFT_BANNED_BASEITEMTYPES, ++nIndex));
-    }
-    return FALSE;
-}
+

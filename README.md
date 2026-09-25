@@ -8,9 +8,9 @@ PEPS module build: This is the files needed to add to a module for builders.
 
 PEPS PDF files: These are the manuals for using PEPS in pdf format.
 
-PEPS WIP for Mobile: This is my work in progress (full module) that I use to build and work on the files for the mobile version.
+PEPS WIP for Mobile(Old Do not use): This is my work (full module) for the old mobile version, mobile is now built into the PEPS WIP.
 
-PEPS WIP for PC: This is my work in progress (full module) that I use to build and work on the files for PC version.
+PEPS WIP: This is my work in progress (full module) that I use to build and work on the files for PC version.
 
 PEPS WIP override files: These files must be placed in the override folder or a hak to work with any of the WIP folders.
 
