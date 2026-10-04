@@ -107,6 +107,7 @@ void main()
         // based upon the value: 1 Raise Dead, 2 Resurrection, 3 True Resurrection.
         if(GetLocalInt(Spell.oAreaTarget, "0_Raise") <= 2)
         {
+            nAssociateType = GetLocalInt(Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
             if(GetObjectType(Spell.oAreaTarget) == OBJECT_TYPE_ITEM &&
                GetTag(Spell.oAreaTarget) == "0_corpse")
             {
@@ -133,7 +134,6 @@ void main()
             {
                 //Signal spell cast at event to fire.
                 SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
-                nAssociateType = GetLocalInt(Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
                 if(GetIsDead(Spell.oAreaTarget))
                 {
                     if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN || nAssociateType == ASSOCIATE_TYPE_NPC)

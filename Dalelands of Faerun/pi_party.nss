@@ -14,8 +14,10 @@ void main()
 {
     object oPC = OBJECT_SELF;
     if(StartingUp(oPC)) return;
+    object oArea = GetArea(oPC);
     // Only run if the player is in a Civilized area!
-    if(!GetLocalInt(GetArea(oPC), "0_No_Difficulty") && !GetIsDungeonMaster(oPC))
+    if(!GetLocalInt(oArea, "0_No_Difficulty") && !GetIsDungeonMaster(oPC) && 
+      (GetTag(oArea) != "cynosure"))
     {
         SendMessages("You must be in a safe area such as a Town or City to look at your adventuring party!", COLOR_RED, oPC);
         return;

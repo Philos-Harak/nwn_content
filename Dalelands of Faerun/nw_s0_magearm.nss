@@ -124,7 +124,7 @@ void main()
         SignalEvent (Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
         // Remove any previously cast spell on this target.
         RemoveSpellEffects (Spell.iSpellID, Spell.oAreaTarget);
-        if(!GetHasSpellEffect(962/*SPELL_GREATER_MAGE_ARMOR*/))
+        if(!GetHasSpellEffect(962/*SPELL_GREATER_MAGE_ARMOR*/, Spell.oAreaTarget))
         {
             // Set the armor bonus on the character incase they equip or unequip items.
             nArmorBonus = GetLocalInt (Spell.oAreaTarget, "0_Armor_Bonus");
@@ -135,6 +135,7 @@ void main()
             DelayCommand (Spell.fDelay, ApplyEffectToObject (DURATION_TYPE_INSTANT, eImpact, Spell.oAreaTarget));
             //Get the spells target(s).
         }
+        else if(GetIsCharacter(Spell.oCaster)) SendMessages(GetName(Spell.oAreaTarget) + " already has Greater Mage Armor effects!", COLOR_RED, Spell.oCaster);
         Spell = GetSpellTarget (Spell);
     }
     CleanUpSpell (Spell);

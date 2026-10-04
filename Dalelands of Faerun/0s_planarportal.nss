@@ -173,7 +173,7 @@ void main()
         }
         else
         {
-            DestroyObject (oCreature);
+            DestroyObject(oCreature);
             SendMessages (GetName (oCreature) + " has ignored your call!", COLOR_RED, Spell.oCaster);
         }
     }

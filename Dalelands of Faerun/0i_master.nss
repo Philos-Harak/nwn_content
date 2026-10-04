@@ -79,6 +79,13 @@ int GetIsCharacter(object oCreature);
 int GetIsDungeonMaster(object oCreature);
 // Gets the top master and returns them if they are a player.
 object GetPlayerMaster(object oAssociate);
+// Returns the race type from the racialtype.2da file.
+// This also returns the correct racialtype for non-player characters.
+// bBaseRace if set to TRUE will return the base race values i.e. DWARF = 0, ELF = 1;
+// nRace if bBaseRace is TRUE and nRace is > 0 then it will turn the value into a base race value.
+int GetRaceType(object oCreature, int bBaseRace = FALSE, int nRace = 0);
+// Return the Effective character level.
+float GetEffectiveCharacterLevel(object oCreature);
 // Turns a hex into an int.
 int HexStringToInt(string sString);
 // Will return a rolled result from a dice string.
@@ -172,7 +179,6 @@ float GetRandomDelay(float fMinimumTime = 0.4, float MaximumTime = 1.1);
 void SetNewSkillFeats ();
 // Creates a json array with sString up to nIndex.
 json CreateJsonArrayWithString (string sString, int nIndex);
-
 // Makes extensive check for player characters (not DM's)
 int GetIsCharacter (object oCreature)
 {
@@ -194,6 +200,124 @@ object GetPlayerMaster(object oAssociate)
     if(GetIsCharacter(oMaster)) return oMaster;
     else if(oMaster != OBJECT_INVALID) GetPlayerMaster(oMaster);
     return OBJECT_INVALID;
+}
+int GetRaceType(object oCreature, int bBaseRace = FALSE, int nRace = 0)
+{
+    if(bBaseRace)
+    {
+        if(nRace > 0)
+        {
+            // int racialtypes.2da the Endurance column is not being used so we define the base race for each subrace there!
+            return StringToInt(Get2DAString("racialtypes", "Endurance", nRace));    
+        }
+        else // Check for Racial type feat. If they don't have one then they should be a base race type.
+        {
+            if(GetHasFeat(FEAT_RACIAL_TYPE_DWARF, oCreature)) return 0;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_ELF, oCreature)) return 1;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_GNOME, oCreature)) return 2;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_HALFLING, oCreature)) return 3;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_HALF_ORC, oCreature)) return 5;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_HUMAN, oCreature)) return 6;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_ORC, oCreature)) return 14;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_REPTILIAN, oCreature)) return 15;
+            if(GetHasFeat(FEAT_RACIAL_TYPE_OUTSIDER, oCreature)) return 20;
+            return GetRacialType(oCreature);
+        }
+    }
+    if(GetIsCharacter(oCreature)) return GetRacialType(oCreature);
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_DAMARAN, oCreature)) return 30;
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_ILLUSKAN, oCreature)) return 31;
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_RASHEMI, oCreature)) return 32;
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_MULAN, oCreature)) return 33;
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_TETHYRIAN, oCreature)) return 34;
+    if(GetHasFeat(FEAT_RACIAL_HUMAN_CHONDATHAN, oCreature)) return 35;
+    if(GetHasFeat(FEAT_RACIAL_DWARF_SHIELD, oCreature)) return 36;
+    if(GetHasFeat(FEAT_RACIAL_DWARF_GOLD, oCreature)) return 37;
+    if(GetHasFeat(FEAT_RACIAL_DWARF_DUERGAR, oCreature)) return 38;
+    if(GetHasFeat(FEAT_RACIAL_ELF_MOON, oCreature)) return 39;
+    if(GetHasFeat(FEAT_RACIAL_ELF_SUN, oCreature)) return 40;
+    if(GetHasFeat(FEAT_RACIAL_ELF_WOOD, oCreature)) return 41;
+    if(GetHasFeat(FEAT_RACIAL_ELF_DROW, oCreature)) return 42;
+    if(GetHasFeat(FEAT_RACIAL_ELF_STAR, oCreature)) return 43;
+    if(GetHasFeat(FEAT_RACIAL_GNOME_ROCK, oCreature)) return 44;
+    if(GetHasFeat(FEAT_RACIAL_GNOME_FOREST, oCreature)) return 45;
+    if(GetHasFeat(FEAT_RACIAL_GNOME_SVIRFNEBLIN, oCreature)) return 46;
+    if(GetHasFeat(FEAT_RACIAL_GOBLIN, oCreature)) return 47;
+    if(GetHasFeat(FEAT_RACIAL_HALFLING_LIGHTFOOT, oCreature)) return 48;
+    if(GetHasFeat(FEAT_RACIAL_HALFLING_STRONGHEART, oCreature)) return 49;
+    if(GetHasFeat(FEAT_RACIAL_HALFLING_GHOSTWISE, oCreature)) return 50;
+    if(GetHasFeat(FEAT_RACIAL_HALFELF_MOON, oCreature)) return 51;
+    if(GetHasFeat(FEAT_RACIAL_HALFELF_SUN, oCreature)) return 52;
+    if(GetHasFeat(FEAT_RACIAL_HALFELF_WOOD, oCreature)) return 53;
+    if(GetHasFeat(FEAT_RACIAL_HALFELF_DROW, oCreature)) return 54;
+    if(GetHasFeat(FEAT_RACIAL_HALFELF_STAR, oCreature)) return 55;
+    if(GetHasFeat(FEAT_RACIAL_HALF_ORC, oCreature)) return 56;
+    if(GetHasFeat(FEAT_RACIAL_KOBOLD, oCreature)) return 57;
+    if(GetHasFeat(FEAT_RACIAL_ORC_MOUNTAIN, oCreature)) return 56;
+    if(GetHasFeat(FEAT_RACIAL_ORC_GRAY, oCreature)) return 56;
+    if(GetHasFeat(FEAT_RACIAL_AASIMAR, oCreature)) return 60;
+    if(GetHasFeat(FEAT_RACIAL_TIEFLING, oCreature)) return 61;
+    if(GetHasFeat(FEAT_RACIAL_AIR_GENASI, oCreature)) return 62;
+    if(GetHasFeat(FEAT_RACIAL_EARTH_GENASI, oCreature)) return 63;
+    if(GetHasFeat(FEAT_RACIAL_FIRE_GENASI, oCreature)) return 64;
+    if(GetHasFeat(FEAT_RACIAL_WATER_GENASI, oCreature)) return 65;
+    if(GetHasFeat(FEAT_RACIAL_GLOAMING, oCreature)) return 66;
+    if(GetHasFeat(FEAT_RACIAL_DWARF_ARCTIC, oCreature)) return 67;
+    if(GetHasFeat(FEAT_RACIAL_DWARF_WILD, oCreature)) return 68;
+    if(GetHasFeat(FEAT_RACIAL_ELF_AVARIEL, oCreature)) return 69;
+    if(GetHasFeat(FEAT_RACIAL_ORC_OROG, oCreature)) return 70;
+    return GetRacialType(oCreature);
+}
+float GetEffectiveCharacterLevel(object oCreature)
+{
+    // Check for ECL level
+    // Nonplayer characters do not return the correct Racial Type.
+    // So we check for the feat with them.
+    if(!GetIsCharacter(oCreature))
+    {
+        if(GetHasFeat(FEAT_RACIAL_GNOME_FOREST, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_ORC_GRAY, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_AASIMAR, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_TIEFLING, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_AIR_GENASI, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_EARTH_GENASI, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_FIRE_GENASI, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_WATER_GENASI, oCreature)) return 1.0;
+        if(GetHasFeat(FEAT_RACIAL_DWARF_ARCTIC)) return 2.0;
+        if(GetHasFeat(FEAT_RACIAL_DWARF_DUERGAR, oCreature)) return 2.0;
+        if(GetHasFeat(FEAT_RACIAL_ELF_DROW, oCreature)) return 2.0;
+        if(GetHasFeat(FEAT_RACIAL_ORC_OROG, oCreature)) return 2.0;
+        if(GetHasFeat(FEAT_RACIAL_GLOAMING, oCreature)) return 2.0;
+        if(GetHasFeat(FEAT_RACIAL_GNOME_SVIRFNEBLIN, oCreature)) return 3.0;
+        if(GetHasFeat(FEAT_RACIAL_ELF_AVARIEL, oCreature)) return 3.0;
+        return 0.0;
+    }
+    int nRacialType = GetRacialType(oCreature);
+    switch(nRacialType)
+    {
+        // ERL 1
+        case 45: // Forest Gnome
+        case 56: // Gray Orc
+        case 60: // Aasimar
+        case 61: // Tiefling
+        case 62: // Air Genasi
+        case 63: // Earth Genasi
+        case 64: // Fire Genasi
+        case 65: // Water Genasi
+            return 1.0;
+        // ERL 2
+        case 67: // Arctic Dwarf
+        case 38: // Duergar Dwarf
+        case 42: // Drow Elf
+        case 70: // Orog Orc
+        case 66: // Gloaming
+            return 2.0;
+        // ERL 3
+        case 69: // Avariel Elf
+        case 46: // Svirfneblin Gnome
+            return 3.0;
+    }
+    return 0.0;
 }
 // Turns a hex into an int.
 int HexStringToInt(string sString)

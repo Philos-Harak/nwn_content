@@ -258,7 +258,7 @@ void SetQuestPaperDescription (object oTarget)
 
 int GetLanguageByRace (object oCreature)
 {
-    int nRace = GetTrueRacialType (oCreature);
+    int nRace = GetRaceType(oCreature, TRUE);
     if (nRace == RACIAL_TYPE_ANIMAL) return 1172;
     else if (nRace == RACIAL_TYPE_BEAST) return 1172;
     else if (nRace == RACIAL_TYPE_CONSTRUCT) return 1185;

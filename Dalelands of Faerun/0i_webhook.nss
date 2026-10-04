@@ -40,14 +40,14 @@ int GetPlayerCount ()
     return nPCCnt;
 }
 // Gets the number of dungeon masters on the server.
-int GetDMCount ()
+int GetDMCount()
 {
-    object oPC = GetFirstPC ();
+    object oPC = GetFirstPC();
     int nDMCnt = 0;
-    while (GetIsObjectValid (oPC))
+    while(GetIsObjectValid(oPC))
     {
-        if (GetIsDungeonMaster (oPC)) nDMCnt++;
-        oPC = GetNextPC ();
+        if(GetIsDungeonMaster(oPC)) nDMCnt++;
+        oPC = GetNextPC();
     }
     return nDMCnt;
 }
@@ -121,25 +121,22 @@ void SendServerMessageToDiscord (string sTitle, string sDescription, string sUse
 // nData allows us to pass special data to specific TEXT_* options.
 void SendPlayerLogToDiscord(object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, int nData = 0)
 {
-    WriteTimestampedLogEntry("Debug, 124, 0i_webhook, " + GetName(oPC) +
-      " IsDM: " + IntToString(GetIsDungeonMaster(oPC)));
     if(GetIsDungeonMaster(oPC))
     {
         string sOptions = GetServerDatabaseString(oPC, DM_TABLE, "options");
-        WriteTimestampedLogEntry("Debug, 129, 0i_webhook, " + " Option: " + GetStringArray(sOptions, 1));
         if(GetStringArray(sOptions, 1) == "0") return;
     }
     struct NWNX_WebHook_Message stMessage;
-    string sActionText, sDMs, sChar = "", sPlayers = "", sUserAction;
+    string sActionText, sDMs, sChar, sPlayers, sUserAction;
     // Set the description to show if they aregloging in or out.
     int nPlayers = GetPlayerCount();
     int nDMs = GetDMCount();
     if(nTextOption == TEXT_PLAYER_LOG_IN)
     {
         sUserAction = " has logged in.";
-        sActionText += " has logged in";
+        sActionText = " has logged in";
         stMessage.sColor = LOG_PLAYER_COLOR;
-        if(nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString (nDMs);
+        if(nDMs > 0) sDMs = "   Dungeon Masters: " + IntToString(nDMs);
         sPlayers = "Players: " + IntToString(nPlayers) + sDMs;
     }
     else if(nTextOption == TEXT_PLAYER_LOG_OUT)
@@ -186,7 +183,7 @@ void SendPlayerLogToDiscord(object oPC, int nTextOption = TEXT_PLAYER_LOG_IN, in
     stMessage.sThumbnailURL = "https://battledale-nwsync.com/portraits/" + GetStringLowerCase (GetPortraitResRef (oPC)) + "m.png";
     if(GetIsDungeonMaster(oPC))
     {
-        stMessage.sDescription += "**" + GetName(oPC) + "** " + sActionText + " as a Dungeon Master.";
+        stMessage.sDescription = "**" + GetName(oPC) + "** " + sActionText + " as a Dungeon Master.";
     }
     else
     {

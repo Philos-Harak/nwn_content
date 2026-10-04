@@ -2333,6 +2333,7 @@ void CheckPCQuestIDsByArea(object oPC, object oArea)
                         int nLevel = GetCharacterLevels(oPC);
                         sGiverArray = GenerateNPCArrayAndSetName(sGiverArray,(nLevel / 2) + d3()-2, oPC);
                         // Create the quest giver.
+                        WriteTimestampedLogEntry("0i_quest, 2336, sGiverArray: " + sGiverArray);
                         oCreature = CreateNPC(lLocation, sGiverArray);
                         SetUpNPC(oCreature);
                         SetLocalInt(oCreature, "0_Animation", 1);
@@ -2343,8 +2344,8 @@ void CheckPCQuestIDsByArea(object oPC, object oArea)
                         EquipItems(oCreature, TRUE, TRUE);
                         // Let them walk around and act normal.
                         AssignCommand(oCreature, SetSpawnInCondition(SPAWN_IN_AMBIENT_ANIMATIONS));
-                        // Make them a side quest giver(TRUE or 1).
-                        SetLocalInt(oCreature, "0_Quest_Type", TRUE);
+                        // Make them a side quest giver.
+                        SetLocalInt(oCreature, "0_Quest_Type", SIDE_QUESTS);
                         SetName(oCreature, AddColorToText(GetName(oCreature), COLOR_DARK_CYAN));
                     }
                 }
@@ -3319,10 +3320,7 @@ void PopulateFinishQuestArea(object oPC, object oArea, string sQuestID)
     else
     {
         sFinisherArray = SqlGetString(sqlfinish, 1);
-        if(CheckForNPC(oPC, oArea, sFinisherArray) != OBJECT_INVALID)
-        {
-            bFinisherSpawned = TRUE;
-        }
+        if(CheckForNPC(oPC, oArea, sFinisherArray) != OBJECT_INVALID) bFinisherSpawned = TRUE;
         else
         {
             sFinisherResRef = GetStringArray(sFinisherArray, 1, "-");
@@ -4239,8 +4237,8 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     //sCompleteArray = SetStringArray(sCompleteArray, 4, sArray);
     // 0_Q_GIVER
     int nCharacterIndex = FindSubString(sQuestText, "[GIVER:");
-    sArray = GetQuestData(sQuestText, nCharacterIndex + 7);
-    if(sArray == "") sArray = SaveNPCToArray(sArray, oTarget, 1, oPC, oPaper);
+    if(nCharacterIndex != -1) sArray = GetQuestData(sQuestText, nCharacterIndex + 7);
+    else sArray = SaveNPCToArray(sArray, oTarget, 1, oPC, oPaper);
     SetLocalString(oPaper, "0_Q_GIVER", sArray);
     //sCompleteArray = SetStringArray(sCompleteArray, 5, sArray);
     // 0_Q_FINISH
@@ -4256,8 +4254,12 @@ object CreateQuest(object oPC, object oTarget, int nQuestType, int nQuestStrRef)
     //sCompleteArray = SetStringArray(sCompleteArray, 6, sArray);
     // 0_Q_FINISHER
     nCharacterIndex = FindSubString(sQuestText, "[FINISHER:");
-    sArray = GetQuestData(sQuestText, nCharacterIndex + 10);
-    sArray = SaveNPCToArray(sArray, OBJECT_INVALID, 3, oPC, oPaper, nQuestLevel);
+    if(nCharacterIndex != -1)
+    {
+        sArray = GetQuestData(sQuestText, nCharacterIndex + 10);
+        sArray = SaveNPCToArray(sArray, OBJECT_INVALID, 3, oPC, oPaper, nQuestLevel);
+    }
+    else sArray = GetLocalString(oPaper, "0_Q_GIVER");
     SetLocalString(oPaper, "0_Q_FINISHER", sArray);
     //sCompleteArray = SetStringArray(sCompleteArray, 7, sArray);
     // 0_Q_REWARDS

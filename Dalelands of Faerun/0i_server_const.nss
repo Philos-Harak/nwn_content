@@ -187,7 +187,7 @@ const int EXTRA_CREATURE_CHANCE = 25;
 // These are used to hold all of the DM's targets so they can be manipulated.
 // Target type is used to define what some windows target type is set to for 
 // example inventory can be placeables or creatures.
-const string DM_TARGET_TYPE = "0_TARGET_TYPE";
+const string DM_INV_TARGET_TYPE = "0_INV_TARGET_TYPE";
 // Var target type is used just for checking variables.
 const string DM_VAR_TARGET_TYPE = "0_VAR_TARGET_TYPE";
 const string DM_TARGET_CREATURE = "0_DM_TARGET_CREATURE";
@@ -429,33 +429,45 @@ const int FEAT_PRACTICED_SPELLCASTER_WIZARD = 1573;
 const int FEAT_PRACTICED_SPELLCASTER_ASSASSIN = 1574;
 const int FEAT_PRACTICED_SPELLCASTER_FAVORED_SOUL = 1575;
 const int FEAT_PRACTICED_SPELLCASTER_WARMAGE = 1576;
-// RACE FEATS
+// BASE RACE FEATS
 const int FEAT_RACIAL_TYPE_DWARF = 1235;
 const int FEAT_RACIAL_TYPE_ELF = 1236;
 const int FEAT_RACIAL_TYPE_OUTSIDER = 1240;
 const int FEAT_RACIAL_TYPE_GNOME = 1237;
 const int FEAT_RACIAL_TYPE_GOBLINOID = 1241;
 const int FEAT_RACIAL_TYPE_HALFLING = 1238;
+const int FEAT_RACIAL_TYPE_HALF_ORC = 1221;
 const int FEAT_RACIAL_TYPE_HUMAN = 1234;
 const int FEAT_RACIAL_TYPE_ORC = 1239;
 const int FEAT_RACIAL_TYPE_REPTILIAN = 1242;
-
+// DWARF RACE FEATS
+const int FEAT_RACIAL_DWARF_ARCTIC = 1587;
 const int FEAT_RACIAL_DWARF_DUERGAR = 1209;
 const int FEAT_RACIAL_DWARF_GOLD = 1208;
 const int FEAT_RACIAL_DWARF_SHIELD = 1207;
+const int FEAT_RACIAL_DWARF_WILD = 1588;
+// ELF RACE FEATS
+const int FEAT_RACIAL_ELF_AVARIEL = 1589;
 const int FEAT_RACIAL_ELF_DROW = 1213;
 const int FEAT_RACIAL_ELF_MOON = 1210;
-const int FEAT_RACIAL_ELF_STAR = 1241;
+const int FEAT_RACIAL_ELF_STAR = 1243;
 const int FEAT_RACIAL_ELF_SUN = 1211;
 const int FEAT_RACIAL_ELF_WOOD = 1212;
+// GNOME RACE FEATS
 const int FEAT_RACIAL_GNOME_FOREST = 1215;
 const int FEAT_RACIAL_GNOME_ROCK = 1214;
 const int FEAT_RACIAL_GNOME_SVIRFNEBLIN = 1216;
-const int FEAT_RACIAL_GOBLIN = 1220;
+// HALF ELF RACE FEATS
+const int FEAT_RACIAL_HALFELF_DROW = 1227;
+const int FEAT_RACIAL_HALFELF_MOON = 1224;
+const int FEAT_RACIAL_HALFELF_STAR = 1244;
+const int FEAT_RACIAL_HALFELF_SUN = 1225;
+const int FEAT_RACIAL_HALFELF_WOOD = 1226;
+// HALFLING RACE FEATS
 const int FEAT_RACIAL_HALFLING_LIGHTFOOT = 1217;
 const int FEAT_RACIAL_HALFLING_STRONGHEART = 1218;
 const int FEAT_RACIAL_HALFLING_GHOSTWISE = 1219;
-const int FEAT_RACIAL_HALF_ORC = 1221;
+// HUMAN RACE FEATS
 const int FEAT_RACIAL_HUMAN = 1200;
 const int FEAT_RACIAL_HUMAN_DAMARAN = 1201;
 const int FEAT_RACIAL_HUMAN_ILLUSKAN = 1202;
@@ -463,10 +475,22 @@ const int FEAT_RACIAL_HUMAN_RASHEMI = 1203;
 const int FEAT_RACIAL_HUMAN_MULAN = 1204;
 const int FEAT_RACIAL_HUMAN_TETHYRIAN = 1205;
 const int FEAT_RACIAL_HUMAN_CHONDATHAN = 1206;
-const int FEAT_RACIAL_KOBOLD = 1245;
+// ORC RACE FEATS
+const int FEAT_RACIAL_HALF_ORC = 1221;
 const int FEAT_RACIAL_ORC_MOUNTAIN = 1222;
 const int FEAT_RACIAL_ORC_GRAY = 1223;
-
+const int FEAT_RACIAL_ORC_OROG = 1590;
+// RACIAL FEATS OUTSIDERS
+const int FEAT_RACIAL_AASIMAR = 1228;
+const int FEAT_RACIAL_TIEFLING = 1229;
+const int FEAT_RACIAL_AIR_GENASI = 1230;
+const int FEAT_RACIAL_EARTH_GENASI = 1231;
+const int FEAT_RACIAL_FIRE_GENASI = 1232;
+const int FEAT_RACIAL_WATER_GENASI = 1233;
+// OTHER RACIAL FEATS
+const int FEAT_RACIAL_GLOAMING = 1246;
+const int FEAT_RACIAL_GOBLIN = 1220;
+const int FEAT_RACIAL_KOBOLD = 1245;
 // SKILL FEATS
 const int FEAT_SKILL_AFFINITY_APPRAISE = 1249;  // +2 to Appraise
 const int FEAT_SKILL_AFFINITY_CRAFTING = 1248;  // +2 to Crafting
@@ -482,7 +506,7 @@ const int FEAT_NEGOTIATOR = 1297;  // +2 Persuade & Taunt.
 const int FEAT_NIMBLE_FINGERS = 1298;  // +2 Disable Device & Open Locks.
 const int FEAT_SELF_SUFFICIENT = 1299;  // +2 Heal & Survival.
 
-// RACIAL FEATS
+// RACIAL ABILITY FEATS
 const int FEAT_ABERRATIONS_TRAINING = 1253;  // +1 attack vs aberrations.
 const int FEAT_DUERGAR_IMMUNITIES = 1284;  // Immune to Illusion, paryalzation, poison.
 const int FEAT_RACIAL_SPELL_RESISTANCE = 1269;  // Gain Spell Resistance 12 + 2 per 2 levels after 1 (stops at 20th).
@@ -505,6 +529,7 @@ const int FEAT_CAST_INVISIBILITY_1_DAY = 1277;
 const int FEAT_SVIRFNEBLIN_SPELL_ABILITIES = 1293;  // Can cast Blindness/Deafness and Blur 1/day.
 const int FEAT_CAST_BLIND_DEAF_1_DAY = 1278;
 const int FEAT_CAST_BLUR_1_DAY = 1279;
+const int FEAT_COLD_IMMUNITY = 1588;
 
 // CLASS FEATS
 // *************************** Barbarian *********************************

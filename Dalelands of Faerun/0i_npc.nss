@@ -199,7 +199,7 @@ json RanomizeJsonNPC (json jNPC)
         {
             int nPRace, nPGender, nID = Random (1317) + 1;
             int nGender = JsonGetInt (JsonObjectGet (jNPC, "gender"));
-            int nRace = GetTrueRacialType(OBJECT_INVALID, JsonGetInt (JsonObjectGet (jNPC, "race")));
+            int nRace = GetRaceType(OBJECT_INVALID, TRUE, JsonGetInt (JsonObjectGet (jNPC, "race")));
             string sPRace = Get2DAString ("portraits", "Race", nID);
             if (sPRace != "") nPRace = StringToInt (sPRace);
             else nPRace = -1;
@@ -475,7 +475,7 @@ void CreateJsonNPC (object oPlayer)
     string sRace = IntToString (nRace);
     sText = sText + sRace;
     // Create NPC.
-    location lLocation = GetLocalLocation (oPlayer, "0_DM_Target_Location");
+    location lLocation = GetLocalLocation (oPlayer, DM_TARGET_LOCATION);
     vector vPosition = GetPositionFromLocation (lLocation);
     object oArea = GetAreaFromLocation (lLocation);
     lLocation = Location (oArea, vPosition, GetFacing (oPlayer));

@@ -377,7 +377,7 @@ void main()
                     if(nID > 5000) nID = 1;
                     if(nID < 0) nID = 5000;
                     int nGender = GetGender(oHenchman);
-                    int nRace = GetTrueRacialType(oHenchman);
+                    int nRace = GetRaceType(oHenchman, TRUE);
                     string sPRace = Get2DAString("portraits", "Race", nID);
                     if(sPRace != "") nPRace = StringToInt(sPRace);
                     else nPRace = -1;

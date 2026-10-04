@@ -34,7 +34,7 @@ void main()
             }
             ai_CreateEffectIconMenu(oPC, nEventInt);
         }
-        case GUIEVENT_PARTYBAR_PORTRAIT_CLICK:
+       case GUIEVENT_PARTYBAR_PORTRAIT_CLICK:
         {
             object oAssociate = GetLastGuiEventObject();
             if(GetMaster(oAssociate) == oPC)
@@ -68,7 +68,7 @@ void main()
                             if(nMobile) ai_CreateAssociateAIMobileNUI(oPC, oAssociate);
                             else ai_CreateAssociateAINUI(oPC, oAssociate);
                         }
-                        IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI);
+                        IsWindowClosed(oPC, sAssociateType + AI_COMMAND_NUI);                        
                         IsWindowClosed(oPC, sAssociateType + AI_LOOTFILTER_NUI);
                         IsWindowClosed(oPC, sAssociateType + AI_COPY_NUI);
                         IsWindowClosed(oPC, sAssociateType + AI_QUICK_WIDGET_NUI);
@@ -81,6 +81,7 @@ void main()
                         ai_ToggleAssociateWidgetOnOff(oPC, nToken, oAssociate, sAssociateType);
                     }
                     else if(nPortrait == PORTRAIT_SETTING_ACTION) ai_Action(oPC, oAssociate);
+                    else if(nPortrait == PORTRAIT_SETTING_CAMERA) ai_ChangeCameraView(oPC, oAssociate);
                 }
                 else
                 {

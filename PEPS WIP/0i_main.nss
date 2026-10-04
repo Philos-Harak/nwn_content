@@ -1082,7 +1082,7 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
 {
     //ai_Debug("0i_main", "810", "Checking data for oAssociate: " + GetName(oAssociate));
     // Do quick check to see if they have a variable saved if so then exit.
-    if(GetLocalInt(oAssociate, PORTRAIT_SETTING) != 0)
+    if(GetLocalInt(oAssociate, PORTRAIT_SETTING))
     {
         if(!bLoad) return;
         // If the database gets destroyed lets drop an error and restore values
@@ -1183,7 +1183,17 @@ void ai_CheckAssociateData(object oPlayer, object oAssociate, string sAssociateT
             ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
             SetLocalInt(oAssociate, PORTRAIT_SETTING, PORTRAIT_SETTING_WIDGET);
         }
-        else SetLocalInt(oAssociate, PORTRAIT_SETTING, JsonGetInt(jPortraitSetting));
+        else 
+        {
+            int nValue = JsonGetInt(jPortraitSetting);
+            if(nValue < PORTRAIT_SETTING_WIDGET || nValue > PORTRAIT_SETTING_ACTION) 
+            {
+                nValue = PORTRAIT_SETTING_WIDGET;
+                jAIData = JsonArrayInsert(jAIData, JsonInt(PORTRAIT_SETTING_WIDGET));
+                ai_SetAssociateDbJson(oPlayer, sAssociateType, "aidata", jAIData);
+            }
+            SetLocalInt(oAssociate, PORTRAIT_SETTING, nValue);
+        }
     }
     // ********** LootFilters **********
     json jLootFilters = ai_GetAssociateDbJson(oPlayer, sAssociateType, "lootfilters");

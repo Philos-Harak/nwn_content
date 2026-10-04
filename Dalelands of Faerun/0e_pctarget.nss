@@ -57,32 +57,16 @@ void main()
         else if(sTargetMode == "0_DM_EXAMINE_TARGET")
         {
             int nObjectType = GetObjectType(oTarget);
-            if(nObjectType == OBJECT_TYPE_CREATURE)
+            //RemoveExamineWindows(oPC, nObjectType);
+            if(nObjectType == OBJECT_TYPE_CREATURE || nObjectType == OBJECT_TYPE_DOOR ||
+               nObjectType == OBJECT_TYPE_PLACEABLE || nObjectType == OBJECT_TYPE_TRIGGER)
             {
-                SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_CREATURE);
-                SetLocalObject(oPC, DM_TARGET_CREATURE, oTarget);
+                SetDMTargetNUI(oPC, oTarget);
                 PopUpDMCreatureGUIPanel(oPC);
-            }
-            else if(nObjectType == OBJECT_TYPE_DOOR)
-            {
-                SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_PLACEABLE);
-                SetLocalObject(oPC, DM_TARGET_PLACEABLE, oTarget);
-                PopUpDMObjectGUIPanel(oPC);
-            }
-            else if(nObjectType == OBJECT_TYPE_PLACEABLE)
-            {
-                SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_PLACEABLE);
-                SetLocalObject(oPC, DM_TARGET_PLACEABLE, oTarget);
-                PopUpDMObjectGUIPanel(oPC);
-            }
-            else if(nObjectType == OBJECT_TYPE_TRIGGER)
-            {
-                SetLocalObject(oPC, DM_TARGET_TRIGGER, oTarget);
-                PopUpDMTriggerGUIPanel(oPC);
             }
             else if(nObjectType == OBJECT_TYPE_ITEM)
             {
-                SetLocalObject(oPC, DM_TARGET_ITEM, oTarget);
+                SetDMTargetNUI(oPC, oTarget);
                 string sTag = GetTag(oTarget);
                 if(sTag == "0_quest_paper") 
                 {
@@ -93,9 +77,8 @@ void main()
             }
             else if(nObjectType == 0)
             {
-                SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_CREATURE);
-                SetLocalObject(oPC, DM_TARGET_PLACEABLE, oTarget);
                 oTarget = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lTarget);
+                SetDMTargetNUI(oPC, oTarget);
                 PopUpDMMovePlaceableGUIPanel(oPC);
             }
         }
@@ -107,8 +90,7 @@ void main()
             {
                 oTarget = GetNearestObjectToLocation(OBJECT_TYPE_PLACEABLE, lTarget);
             }
-            SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_PLACEABLE);
-            SetLocalObject(oPC, DM_TARGET_PLACEABLE, oTarget);
+            SetDMTargetNUI(oPC, oTarget);
             PopUpDMMovePlaceableGUIPanel(oPC);
         }
         //**********************************************************************
@@ -125,27 +107,6 @@ void main()
         {
             string sResRef = GetLocalString (oPC, "0_Trans_ResRef");
             SetDMTransition (oPC, sResRef, lTarget);
-        }
-        //**********************************************************************
-        // Target mode: Get DM Target
-        else if (sTargetMode == "0_DM_GET_TARGET")
-        {
-            RemoveAllExamineWindows (oPC);
-            int nObjectType = GetObjectType(oTarget);
-            if(nObjectType == OBJECT_TYPE_CREATURE) 
-            {
-                SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_CREATURE);
-                SetLocalObject (oPC, DM_TARGET_CREATURE, oTarget);
-            }
-            else if(nObjectType == OBJECT_TYPE_ITEM) SetLocalObject (oPC, DM_TARGET_ITEM, oTarget);
-            else if(nObjectType == OBJECT_TYPE_PLACEABLE || 
-                    nObjectType == OBJECT_TYPE_DOOR) 
-                    {
-                        SetLocalInt(oPC, DM_TARGET_TYPE,OBJECT_TYPE_PLACEABLE);
-                        SetLocalObject (oPC, DM_TARGET_PLACEABLE, oTarget);
-                    }
-            else if(nObjectType == OBJECT_TYPE_TILE) SetLocalObject (oPC, DM_TARGET_TILE, oTarget);
-            else if(nObjectType == OBJECT_TYPE_TRIGGER) SetLocalObject (oPC, DM_TARGET_TRIGGER, oTarget);
         }
         //**********************************************************************
         // Target mode: Get PLAYER Target
@@ -204,12 +165,12 @@ void main()
         // Target mode: Get object to set on variable.
         else if (sTargetMode == "0_DM_SET_VAR_OBJ")
         {
-            string sName = GetLocalString (oPC, "0_Obj_Var_Name");
-            object oOrgTarget = GetLocalObject (oPC, "0_Obj_Org_Target");
-            SetLocalObject (oOrgTarget, sName, oTarget);
-            DeleteLocalObject (oPC, "0_Obj_Org_Target");
-            DeleteLocalString (oPC, "0_Obj_Var_Name");
-            PopupDMVariablesGUIPanel (oPC);
+            string sName = GetLocalString(oPC, "0_Obj_Var_Name");
+            object oOrgTarget = GetLocalObject(oPC, "0_Obj_Org_Target");
+            SetLocalObject(oOrgTarget, sName, oTarget);
+            DeleteLocalObject(oPC, "0_Obj_Org_Target");
+            DeleteLocalString(oPC, "0_Obj_Var_Name");
+            PopupDMVariablesGUIPanel(oPC);
         }
         // Quest Menu target selections - NPC's for Start, Quest, Finish.
         else if(sTargetMode == "0_QUEST_START_NPC")
@@ -424,9 +385,6 @@ void main()
             NuiSetBind(oPC, nToken, "finish_placeable_value", JsonString(sArray));
         }
     }
-    int nDMToken;
-    if (oTarget != OBJECT_INVALID) SetPlayerWinTarget (oPC, GetName (oTarget));
-    else SetPlayerWinTarget (oPC, "None");
 }
 
 

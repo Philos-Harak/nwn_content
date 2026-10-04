@@ -33,7 +33,7 @@ void SetupAssociateWithRaiseDead(object oPC, object oCreature, int nAssociateTyp
     object oMaster = GetLocalObject(oCreature, "0_Master");
     if(oMaster == OBJECT_INVALID) oMaster = oPC;
     // Set them up based on if they are a henchman or a NPC.
-    if (nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
+    if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN)
     {
         NWNX_Object_SetDialogResref (oCreature, "co_henchmen");
         if(!HasMaxNumberOfHenchman(oMaster, TRUE))
@@ -113,6 +113,7 @@ void main()
         // based upon the value: 1 Raise Dead, 2 Resurrection, 3 True Resurrection.
         if(GetLocalInt(Spell.oAreaTarget, "0_Raise") <= 1)
         {
+            nAssociateType = GetLocalInt(Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
             if(GetObjectType(Spell.oAreaTarget) == OBJECT_TYPE_ITEM &&
                GetTag(Spell.oAreaTarget) == "0_corpse")
             {
@@ -139,7 +140,6 @@ void main()
                 SignalEvent(Spell.oAreaTarget, EventSpellCastAt (Spell.oCaster, Spell.iSpellID, FALSE));
                 if(GetIsDead(Spell.oAreaTarget))
                 {
-                    nAssociateType = GetLocalInt(Spell.oAreaTarget, PC_ASSOCIATE_TYPE);
                     if(nAssociateType == ASSOCIATE_TYPE_HENCHMAN || nAssociateType == ASSOCIATE_TYPE_NPC)
                     {
                         ApplyEffectAtLocation(DURATION_TYPE_INSTANT, eImpact, GetLocation (Spell.oAreaTarget));

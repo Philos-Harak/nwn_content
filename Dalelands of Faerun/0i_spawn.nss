@@ -10,17 +10,14 @@
 
 // Makes a waypoint stop spawning creatures for one minute.
 void ClearWaypointSpawning (object oWaypoint);
-
 // Checks a door or placeable to see if it needs to be locked.
 // oObject to be locked.
 // nLevel is the level of the lock.
 void CheckForLock (object oObject, int nLevel);
-
 // Checks a door or placeable to see if it needs to be Trapped.
 // oObject to be trapped.
 // nLevel is the level of the trap.
 void CheckForTrap (object oObject, int nLevel);
-
 // Cycles through all objects in the area spawning based on information point waypoints.
 // oArea is the area to check from.
 // oPC used in rolls.
@@ -29,32 +26,25 @@ void CheckForTrap (object oObject, int nLevel);
 // sType is a prefix to select trigger or special spawn waypoints.
 // sNewTag is to change a placeables tag.
 void CheckObjects(object oArea, object oPC, int nLevel, int bNoDifficulty, string sType = "", string sNewTag = "");
-
 // Used to Populate area to build effect for an area.
 // oPoint is an object in the area to help find the waypoints.
 // sType is the type of waypoint to be used. Defaults are Area, Trigger, Placeable.
 void SpawnEffects (object oPC, string sType = "");
-
 // Used to continue an effect on a level while a player is in it.
 void SpawnEffectAgain (object oWaypoint);
-
 // oObject is the object to lock.
 void LockObject (object oObject, int iLevel);
-
 // oObject is the object to trap.
 // nLevel is the level of the trap (1-20).
 // nTrapType is the type of trap (1 - 19).
 void TrapObject (object oObject, int nLevel, int  nTrapType);
-
 // Creates a group of placeables at lLocation.
 // sGroup is the name of the group to make.
 // lLocation is the location center of the group.
 // sQuestTag will allow a quest to place a special tag onto a container.
 void CreateGroupPlaceable(string sGroup, location lLocation, string sQuestTag = "");
-
 // Randomizes a location within the radius of the given location.
 location RandomizeLocation  (location lLocation, int nRadius);
-
 // Makes a waypoint stop spawning creatures for one minute.
 void ClearWaypointSpawning (object oWaypoint)
 {
@@ -71,7 +61,6 @@ void ClearWaypointSpawning (object oWaypoint)
         DelayCommand (60.0f, SetLocalInt (oWaypoint, "0_ChanceNight", nChance));
     }
 }
-
 // Checks a door or placeable to see if it needs to be locked.
 void CheckForLock (object oObject, int nLevel)
 {
@@ -89,7 +78,6 @@ void CheckForLock (object oObject, int nLevel)
    }
    else SetLocked (oObject, FALSE);
 }
-
 // Checks a door, trigger or placeable to see if it needs to be Trapped.
 void CheckForTrap (object oObject, int nLevel)
 {
@@ -122,7 +110,6 @@ void CheckForTrap (object oObject, int nLevel)
         }
    }
 }
-
 void CheckforSummonsEffect (object oWaypoint, location lLocation, object oObject)
 {
    // Check to see if we are suppose to fire an effect first.
@@ -142,7 +129,6 @@ void CheckforSummonsEffect (object oWaypoint, location lLocation, object oObject
         }
    }
 }
-
 void CreateCreature (object oWaypoint, object oPC, int nLevel)
 {
    int iRow, iCount, iChampionChance, iNumber, iAnimation, iAppear;
@@ -256,7 +242,6 @@ void CreateCreature (object oWaypoint, object oPC, int nLevel)
    // Check for summons effects.
    CheckforSummonsEffect(oWaypoint, lLocation, oCreature);
 }
-
 void CreateVillain (object oWaypoint, object oPC, int nLevel, int bRandom = FALSE)
 {
     // Get the area.
@@ -321,26 +306,25 @@ void CreateVillain (object oWaypoint, object oPC, int nLevel, int bRandom = FALS
    // Check for summons effects.
    CheckforSummonsEffect(oWaypoint, lLocation, oCreature);
 }
-
 // Checks to see if the placeable should have a corpse.
-void CheckForCorpse (object oPlaceable, int nLevel)
+void CheckForCorpse(object oPlaceable, int nLevel)
 {
-       int nGender = GetLocalInt (oPlaceable, "0_Gender");
+       int nGender = GetLocalInt(oPlaceable, "0_Gender");
        string sTag = GetTag(oPlaceable);
        object oCorpse;
        if(sTag == "corpse")
        {
-            if(nGender) oCorpse = CreateItemOnObject ("0_corpse_female", oPlaceable);
-            else oCorpse = CreateItemOnObject ("0_corpse_male", oPlaceable);
+            if(nGender) oCorpse = CreateItemOnObject("0_corpse_female", oPlaceable);
+            else oCorpse = CreateItemOnObject("0_corpse_male", oPlaceable);
        }
        else if(sTag == "skeleton")
        {
-            oCorpse = CreateItemOnObject ("0_corpse_skeleto", oPlaceable);
-            nGender = Random (2);
+            oCorpse = CreateItemOnObject("0_corpse_skeleto", oPlaceable);
+            nGender = Random(2);
        }
        if(oCorpse != OBJECT_INVALID)
        {
-            SetEventScript (oPlaceable, EVENT_SCRIPT_PLACEABLE_ON_INVENTORYDISTURBED, "0e_dist_premains");
+            SetEventScript(oPlaceable, EVENT_SCRIPT_PLACEABLE_ON_INVENTORYDISTURBED, "0e_dist_premains");
             string sArray = "-----------4--0-";
             // (0) Name - randomize.
             // (1) ResRef is not set for randoms.
@@ -405,7 +389,7 @@ void CheckForCorpse (object oPlaceable, int nLevel)
             if (nGender) sGender = "female";
             else sGender = "male";
             int nRace = StringToInt (sRace);
-            int nTrueRace = GetTrueRacialType(OBJECT_INVALID, nRace);
+            int nTrueRace = GetRaceType(OBJECT_INVALID, TRUE, nRace);
             float fWeight;
             if (nTrueRace == RACIAL_TYPE_DWARF)
             {

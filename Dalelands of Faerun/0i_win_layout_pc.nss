@@ -911,7 +911,7 @@ void PopUpCharacterLanguageGUIPanel (object oPC)
     NuiSetBind (oPC, nToken, "btn_take_lang", JsonBool (bTakeLang));
     NuiSetBind (oPC, nToken, "btn_take_lang_event", JsonBool (bTakeLang));
     NuiSetBind (oPC, nToken, "btn_throw_voice_event", JsonBool (TRUE));
-    string sValue = GetName (GetLocalObject (oPC, "0_PLAYER_Target"));
+    string sValue = GetName(GetLocalObject (oPC, "0_PLAYER_Target"));
     NuiSetBind (oPC, nToken, "pc_target_value_label", JsonString (sValue));
     NuiSetBindWatch (oPC, nToken, "window_geometry", TRUE);
     // Save the ResRef's to the window.

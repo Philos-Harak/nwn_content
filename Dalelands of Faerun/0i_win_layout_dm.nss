@@ -161,9 +161,15 @@ void PopUpDMGUIPanel(object oPC)
     }
     if (bTarget)
     {
-        jRow = CreateLabel(jRow, "Target:", "dm_target_title", 65.0, 32.0);
-        jRow = CreateLabel(jRow, "", "dm_target_value", 135.0, 32.0, -1.0, NUI_HALIGN_LEFT);
-        fWidth += 208.0;
+        json jCombo = JsonArrayInsert(JsonArray(), NuiComboEntry("Creature:", 0));
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Item:", 1));
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Placeable:", 2));
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Area:", 3));
+        jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Trigger:", 4));
+        //jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Location:", 5));
+        jRow = CreateCombo(jRow, jCombo, "cmb_target", 100.0, 32.0);
+        jRow = CreateLabel(jRow, "", "dm_target_value", 200.0, 32.0, -1.0, NUI_HALIGN_LEFT);
+        fWidth += 300.0;
     }
     fWidth += 12.0;
     // Add the row to the column.
@@ -171,20 +177,8 @@ void PopUpDMGUIPanel(object oPC)
     // Set the layout of the window.
     float fScale = IntToFloat(GetPlayerDeviceProperty(oPC, PLAYER_DEVICE_PROPERTY_GUI_SCALE)) / 100.0f;
     json jLayout = NuiCol(jCol);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "plplayerwin",
-        "",
-        477.0 * fScale,
-        0.0,
-        fWidth,
-        56.0 * fScale,
-        FALSE,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE);
+    int nToken = SetWindow(oPC, jLayout, "plplayerwin", "", 490.0 * fScale, 0.0, fWidth, 40.0,
+                   FALSE, FALSE, FALSE, TRUE, FALSE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "btn_options_event", JsonBool(TRUE));
     if (bStartCombat)
@@ -245,8 +239,17 @@ void PopUpDMGUIPanel(object oPC)
     }
     if (bTarget)
     {
-        string sValue = GetName(GetLocalObject(oPC, "0_DM_Target"));
+        string sValue;
+        int nTargetType = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_target"));
+        if(nTargetType == 0) sValue = GetName(GetLocalObject(oPC, DM_TARGET_CREATURE));
+        else if(nTargetType == 1) sValue = GetName(GetLocalObject(oPC, DM_TARGET_ITEM));
+        else if(nTargetType == 2) sValue = GetName(GetLocalObject(oPC, DM_TARGET_PLACEABLE));
+        else if(nTargetType == 3) sValue = GetName(GetLocalObject(oPC, DM_TARGET_AREA));
+        else if(nTargetType == 4) sValue = GetName(GetLocalObject(oPC, DM_TARGET_TRIGGER));
+        //else if(nTargetType == 5) sValue = GetName(GetLocalObject(oPC, DM_TARGET_LOCATION));
         NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(sValue));
+        NuiSetBind(oPC, nToken, "cmb_target_event", JsonBool(TRUE));
+        NuiSetBindWatch(oPC, nToken, "cmb_target_selected", TRUE);
     }
 }
 
@@ -325,8 +328,14 @@ void PopUpDMOptionsGUIPanel(object oPC)
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 10 (Action Buttons)************************************************** 297
     jRow = CreateCheckBox(JsonArray(), "", "target", 25.0, 20.0f);
-    jRow = CreateLabel(jRow, "Target:", "dm_target_title", 65.0, 20.0);
-    jRow = CreateLabel(jRow, "", "dm_target_value", 135.0, 20.0, -1.0, NUI_HALIGN_LEFT);
+    json jCombo = JsonArrayInsert(JsonArray(), NuiComboEntry("Creature:", 0));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Item:", 1));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Placeable:", 2));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Area:", 3));
+    jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Trigger:", 4));
+    //jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Location:", 5));
+    jRow = CreateCombo(jRow, jCombo, "cmb_target", 100.0, 32.0);
+    jRow = CreateLabel(jRow, "", "dm_target_value", 180.0, 32.0, -1.0, NUI_HALIGN_LEFT);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
@@ -336,20 +345,8 @@ void PopUpDMOptionsGUIPanel(object oPC)
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "ploptionwin",
-        "Options",
-        fX,
-        fY,
-        298.0f,
-        329.0f,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "ploptionwin", "Options", fX, fY, 298.0f, 329.0f,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     string sOptionsArray = GetServerDatabaseString(oPC, PLAYER_TABLE, "ploptionwin");
@@ -442,7 +439,17 @@ void PopUpDMOptionsGUIPanel(object oPC)
     NuiSetBind(oPC, nToken, "btn_pc_mode_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "target_check", JsonBool(bTarget));
     NuiSetBindWatch(oPC, nToken, "target_check", TRUE);
-    string sValue = GetName(GetLocalObject(oPC, "0_DM_Target"));
+    string sValue;
+    int nTargetType = JsonGetInt(NuiGetBind(oPC, nToken, "cmb_target"));
+    if(nTargetType == 0) sValue = GetName(GetLocalObject(oPC, DM_TARGET_CREATURE));
+    else if(nTargetType == 1) sValue = GetName(GetLocalObject(oPC, DM_TARGET_ITEM));
+    else if(nTargetType == 2) sValue = GetName(GetLocalObject(oPC, DM_TARGET_PLACEABLE));
+    else if(nTargetType == 3) sValue = GetName(GetLocalObject(oPC, DM_TARGET_AREA));
+    else if(nTargetType == 4) sValue = GetName(GetLocalObject(oPC, DM_TARGET_TRIGGER));
+    //else if(nTargetType == 5) sValue = GetName(GetLocalObject(oPC, DM_TARGET_LOCATION));
+    NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(sValue));
+    NuiSetBind(oPC, nToken, "cmb_target_event", JsonBool(TRUE));
+    NuiSetBindWatch(oPC, nToken, "cmb_target_selected", TRUE);
     NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(sValue));
 }
 
@@ -454,7 +461,7 @@ void PopUpDMCreatureGUIPanel(object oPC)
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     int bPC = GetIsPC(oTarget);
     // Create the column.
     // Row 1 (Character sheet tabs)********************************************* 45
@@ -468,16 +475,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     if (bPC)
     {
         jRow = CreateLabel(jRow, "Player", "player_lbl", 45.0f, 20.0f, -1.0, NUI_HALIGN_LEFT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "player_value",
-            139.0f,
-            20.0f,
-            -1.0,
-            NUI_HALIGN_LEFT,
-            NUI_VALIGN_MIDDLE,
-            "player_tooltip");
+        jRow = CreateLabel(jRow, "", "player_value", 139.0f, 20.0f, -1.0,
+            NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, "player_tooltip");
     }
     else
     {
@@ -498,15 +497,9 @@ void PopUpDMCreatureGUIPanel(object oPC)
     json jLabel = NuiLabel(JsonString(""), JsonInt(0), JsonInt(0));
     jLabel = NuiHeight(NuiWidth(jLabel, 128.0), 10.0);
     // Create image to the left of the window.
-    json jImage = JsonArrayInsert(
-        JsonArray(),
-        NuiDrawListImage(
-            JsonBool(TRUE),
-            NuiBind("port_resref_image"),
-            jPos,
-            JsonInt(NUI_ASPECT_EXACTSCALED),
-            JsonInt(NUI_HALIGN_LEFT),
-            JsonInt(NUI_VALIGN_TOP)));
+    json jImage = JsonArrayInsert(JsonArray(), NuiDrawListImage(JsonBool(TRUE), 
+                         NuiBind("port_resref_image"), jPos, JsonInt(NUI_ASPECT_EXACTSCALED), 
+                         JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_TOP)));
     jRow = JsonArrayInsert(JsonArray(), NuiDrawList(jLabel, JsonBool(FALSE), jImage));
     jRow = CreateLabel(jRow, "", "race", 180.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
     jRow = CreateLabel(jRow, "", "align", 26.0f, 10.0f, -1.0, NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, "align_tooltip");
@@ -533,15 +526,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Row 8 (Str line)********************************************************* 206
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Strength", "str_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_str",
-        "str_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_str",  "str_img", NUI_ASPECT_EXACTSCALED,
+        NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "0_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "0_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_str", 20.0, 16.0);
@@ -551,15 +537,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Row 9 (Dex line)********************************************************* 230
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Dexterity", "dex_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_dex",
-        "str_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_dex", "str_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "1_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "1_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_dex", 20.0, 16.0);
@@ -569,15 +548,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Row 10 (Con line)******************************************************** 254
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Constitution", "con_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_con",
-        "con_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_con", "con_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "2_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "2_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_con", 20.0, 16.0);
@@ -587,15 +559,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Row 11 (Int line)******************************************************** 278
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Intelligence", "int_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_int",
-        "int_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_int", "int_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "3_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "3_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_int", 20.0, 16.0);
@@ -605,15 +570,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Row 12 (Wis line)******************************************************** 302
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Wisdom", "wis_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_wis",
-        "wis_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_wis", "wis_img", NUI_ASPECT_EXACTSCALED,
+        NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "4_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "4_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_wis", 20.0, 16.0);
@@ -625,15 +583,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     jRow = CreateLabel(jRow, "", "port_id", 58.0, 16.0f);
     jRow = CreateButton(jRow, ">", "btn_portrait_next", 32.0f, 16.0f);
     jRow = CreateLabel(jRow, "Charisma", "cha_lbl", 94.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_cha",
-        "cha_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_cha", "cha_img", NUI_ASPECT_EXACTSCALED,
+        NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "5_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "5_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_cha", 20.0, 16.0);
@@ -654,16 +605,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     {
         jRow = CreateLabel(jRow, "", "blank_lbl", 10.0f, 10.0f);
         jRow = CreateLabel(jRow, "Fame", "fame_lbl", 45.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "fame_value",
-            60.0,
-            10.0f,
-            -1.0,
-            NUI_HALIGN_RIGHT,
-            NUI_VALIGN_MIDDLE,
-            "fame_tooltip");
+        jRow = CreateLabel(jRow, "", "fame_value", 60.0, 10.0f, -1.0,
+            NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "fame_tooltip");
     }
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
@@ -677,16 +620,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     {
         jRow = CreateLabel(jRow, "", "blank_lbl", 10.0f, 10.0f);
         jRow = CreateLabel(jRow, "Infamy", "infamy_lbl", 45.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "infamy_value",
-            60.0,
-            10.0f,
-            -1.0,
-            NUI_HALIGN_RIGHT,
-            NUI_VALIGN_MIDDLE,
-            "infamy_tooltip");
+        jRow = CreateLabel(jRow, "", "infamy_value", 60.0, 10.0f, -1.0,
+            NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "infamy_tooltip");
     }
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
@@ -702,16 +637,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         // Row (Experience)***************************************************** 562
         jRow = CreateLabel(JsonArray(), "Racial XP", "racial_xp_lbl", 65.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "racial_xp_value",
-            30.0,
-            10.0f,
-            -1.0,
-            NUI_HALIGN_RIGHT,
-            NUI_VALIGN_MIDDLE,
-            "racial_xp_tooltip");
+        jRow = CreateLabel(jRow, "", "racial_xp_value", 30.0, 10.0f, -1.0,
+            NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "racial_xp_tooltip");
         jRow = CreateLabel(jRow, "", "blank_lbl", 10.0f, 10.0f);
         jRow = CreateLabel(jRow, "XP", "xp_lbl", 25.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
         jRow = CreateLabel(jRow, "", "xp_value", 60.0, 10.0f, -1.0, NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "xp_tooltip");
@@ -731,55 +658,23 @@ void PopUpDMCreatureGUIPanel(object oPC)
     jRow = CreateLabel(jRow, "", "gold_value", 70.0, 10.0f, -1.0, NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "gold_tooltip");
     jRow = CreateLabel(jRow, "", "blank_lbl", 10.0f, 10.0f);
     jRow = CreateLabel(jRow, "Wealth lvl", "wealth_lvl_lbl", 65.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateLabel(
-        jRow,
-        "",
-        "wealth_lvl_value",
-        20.0,
-        10.0f,
-        -1.0,
-        NUI_HALIGN_RIGHT,
-        NUI_VALIGN_MIDDLE,
-        "wealth_lvl_tooltip");
+    jRow = CreateLabel(jRow, "", "wealth_lvl_value", 20.0, 10.0f, -1.0,
+        NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "wealth_lvl_tooltip");
     jRow = CreateLabel(jRow, "", "blank_lbl", 10.0f, 10.0f);
     jRow = CreateLabel(jRow, "Wealth", "wealth_lbl", 45.0f, 10.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateLabel(
-        jRow,
-        "",
-        "wealth_value",
-        60.0,
-        10.0f,
-        -1.0,
-        NUI_HALIGN_RIGHT,
-        NUI_VALIGN_MIDDLE,
-        "wealth_tooltip");
+    jRow = CreateLabel(jRow, "", "wealth_value", 60.0, 10.0f, -1.0,
+        NUI_HALIGN_RIGHT, NUI_VALIGN_MIDDLE, "wealth_tooltip");
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     if(!bPC)
     {
         // Row (Experience)***************************************************** 580
         jRow = CreateLabel(JsonArray(), "Faction Current:", "c_faction_lbl", 110.0f, 10.0f, -1.0, NUI_HALIGN_RIGHT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "c_faction_value",
-            75.0,
-            10.0f,
-            -1.0,
-            NUI_HALIGN_LEFT,
-            NUI_VALIGN_MIDDLE,
-            "c_faction_tooltip");
+        jRow = CreateLabel(jRow, "", "c_faction_value", 75.0, 10.0f, -1.0,
+            NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, "c_faction_tooltip");
         jRow = CreateLabel(jRow, "Permanent:", "p_faction_lbl", 70.0f, 10.0f, -1.0, NUI_HALIGN_RIGHT);
-        jRow = CreateLabel(
-            jRow,
-            "",
-            "p_faction_value",
-            75.0,
-            10.0f,
-            -1.0,
-            NUI_HALIGN_LEFT,
-            NUI_VALIGN_MIDDLE,
-            "p_faction_tooltip");
+        jRow = CreateLabel(jRow, "", "p_faction_value", 75.0, 10.0f, -1.0,
+            NUI_HALIGN_LEFT, NUI_VALIGN_MIDDLE, "p_faction_tooltip");
         // Add the row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 18.0f;
@@ -835,20 +730,8 @@ void PopUpDMCreatureGUIPanel(object oPC)
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmcreaturewin",
-        "Character Record, " + sName,
-        fX,
-        fY,
-        366.0,
-        fHeight,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmcreaturewin", "Character Record, " + sName,
+        fX, fY, 366.0, fHeight, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
@@ -860,8 +743,11 @@ void PopUpDMCreatureGUIPanel(object oPC)
     NuiSetBind(oPC, nToken, "skill_sht_tooltip", JsonString("  Skills"));
     NuiSetBind(oPC, nToken, "btn_feat_sheet_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "feat_sht_tooltip", JsonString("  Feats"));
-    // Set Race.
-    NuiSetBind(oPC, nToken, "race_label", JsonString(GetRaceText(oTarget)));
+    // Set Race/Gender.
+    string sGender;
+    if(GetGender(oTarget)) sGender = "Female";
+    else sGender = "Male";
+    NuiSetBind(oPC, nToken, "race_label", JsonString(GetRaceText(oTarget) + ", " + sGender));
     // Set Alignment.
     NuiSetBind(oPC, nToken, "align_label", JsonString(GetAlignText(oTarget)));
     NuiSetBind(oPC, nToken, "align_tooltip", JsonString("  Click to change alignment!"));
@@ -946,14 +832,16 @@ void PopUpDMCreatureGUIPanel(object oPC)
     NuiSetUserData(oPC, nToken, JsonInt(nID));
     string sValue = GetPortraitResRef(oTarget);
     string sID;
-    if (nID == 65535)
+    if(nID == 65535) 
     {
         sID = "Custom Portrait";
+        if(ResManGetAliasFor(sValue, RESTYPE_TGA) == "")
+        {            
+            if(GetGender(oTarget)) sValue = "po_hu_f_99_";
+            else sValue = "po_hu_m_99_";
+        }
     }
-    else
-    {
-        sID = IntToString(nID);
-    }
+    else sID = IntToString(nID);
     NuiSetBindWatch(oPC, nToken, "port_name", TRUE);
     NuiSetBind(oPC, nToken, "port_name", JsonString(sValue));
     NuiSetBind(oPC, nToken, "port_id_label", JsonString(sID));
@@ -1056,7 +944,7 @@ void PopUpDMCreatureGUIPanel(object oPC)
 void PopUpQuestsGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Set window to not save until it has been created.
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
@@ -1147,20 +1035,8 @@ void PopUpQuestsGUIPanel(object oPC)
     // Set the Layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmmainquestswin",
-        sName + "'s main quest menu",
-        fX,
-        fY,
-        425.0f,
-        fHeight,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmmainquestswin", sName + "'s main quest menu", fX, fY,
+        425.0f, fHeight, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
@@ -1247,24 +1123,12 @@ void PopUpDMXPGUIPanel(object oPC)
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmxpwin",
-        sName + "'s experience menu",
-        -3.0,
-        -3.0,
-        328.0,
-        166.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmxpwin", sName + "'s experience menu", -3.0, -3.0, 328.0, 166.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "xp_opt_selected", JsonInt(0));
     NuiSetBind(oPC, nToken, "xp_opt_event", JsonBool(TRUE));
@@ -1343,24 +1207,12 @@ void PopUpDMHPGUIPanel(object oPC)
     // Add the row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmhpwin",
-        sName + "'s hitpoint menu",
-        -3.0,
-        -3.0,
-        328.0,
-        199.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmhpwin", sName + "'s hitpoint menu", -3.0, -3.0, 328.0, 199.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "roll_tooltip", JsonString("Put a die roll here: 3d6+5."));
     NuiSetBind(oPC, nToken, "box_roll", JsonString("1d6+1"));
@@ -1379,7 +1231,7 @@ void PopUpDMHPGUIPanel(object oPC)
 void PopUpDMClassGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Row 1 (Class1 and level label)******************************************* 45
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateCombo(jRow, JArrayInsertClasses(), "class1_opt", 150.0, 25.0);
@@ -1473,7 +1325,7 @@ void PopUpDMClassGUIPanel(object oPC)
 void PopUpDMReputationGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Row 1 (Fame & Infamy labels)*********************************************
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateLabel(jRow, "Fame", "fame_title", 150.0f, 10.0f, -1.0, NUI_HALIGN_CENTER, NUI_VALIGN_MIDDLE);
@@ -1611,22 +1463,10 @@ void PopUpDMGoldGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmgoldwin",
-        sName + "'s gold menu",
-        -3.0,
-        -3.0,
-        328.0,
-        166.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC,  jLayout, "dmgoldwin", sName + "'s gold menu", -3.0, -3.0, 328.0, 166.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "gold_opt_selected", JsonInt(0));
     NuiSetBind(oPC, nToken, "gold_opt_event", JsonBool(TRUE));
@@ -1643,7 +1483,7 @@ void PopUpDMGoldGUIPanel(object oPC)
 void PopupDMItemWealthGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Create the column.
     // Row 1 (text)*************************************************************
     json jRow = CreateTextBox(JsonArray(), "items_text", 440.0f, 570.0f);
@@ -1653,20 +1493,8 @@ void PopupDMItemWealthGUIPanel(object oPC)
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 627.0);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmitemwealthwin",
-        sName + "'s item wealth",
-        0.0,
-        fY,
-        460.0,
-        627.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmitemwealthwin", sName + "'s item wealth", 0.0, fY, 460.0, 627.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set all binds, events, and watches.
     string sText = GetInventoryGoldValues(oTarget);
     NuiSetBind(oPC, nToken, "items_text", JsonString(sText));
@@ -1716,22 +1544,10 @@ void PopUpDMAlignGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmalignwin",
-        sName + "'s alignment menu",
-        -3.0,
-        -3.0,
-        422.0,
-        199.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmalignwin", sName + "'s alignment menu", -3.0, -3.0, 422.0, 199.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     json jTarget = ObjectToJson(oTarget);
     int nValue = JsonGetInt(JsonObjectGet(JsonObjectGet(jTarget, "LawfulChaotic"), "value"));
@@ -1762,7 +1578,7 @@ void PopUpDMAlignGUIPanel(object oPC)
 void PopUpDMPlayerGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Row 1 (Boot/Ban/Watch)*************************************************** 45
     json jRow = CreateButton(JsonArray(), "Boot", "btn_boot", 60.0, 20.0);
     jRow = JsonArrayInsert(jRow, NuiSpacer());
@@ -1890,7 +1706,7 @@ void PopUpDMPlayerGUIPanel(object oPC)
 void PopUpDMDatabaseGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Row 1 (Object Table label)*********************************************** 45
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateLabel(jRow, "Database Objects", "lbl_database_objects", 150.0, 20.0);
@@ -1933,20 +1749,8 @@ void PopUpDMDatabaseGUIPanel(object oPC)
     json jLayout = NuiCol(jCol);
     float fX = GetGUIWidthMiddle(oPC, 478.0);
     float fY = GetGUIHeightMiddle(oPC, 500.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmdatabasewin",
-        GetPCPlayerName(oTarget) + "'s database menu",
-        fX,
-        fY,
-        478.0,
-        500.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmdatabasewin", GetPCPlayerName(oTarget) + "'s database menu",
+        fX, fY, 478.0, 500.0, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Create buttons for players database objects.
     json jTag = JsonArray();
     json jObjTag = JsonArray();
@@ -2018,7 +1822,7 @@ void PopUpDMObjectGUIPanel(object oPC)
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
     // Get the type of object we are examining.
     int nObjectType = GetObjectType(oTarget);
     // Is this a container?
@@ -2351,7 +2155,7 @@ void PopUpDMTriggerGUIPanel(object oPC)
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_TRIGGER);
     // Row 1 (Name)************************************************************* 45
     json jRow = CreateLabel(JsonArray(), "Name", "name_title", 45.0f, 20.0f, -1.0, NUI_HALIGN_LEFT);
     jRow = CreateTextEditBox(jRow, "name_placeholder", "name_value", 30, FALSE, 353.0f, 20.0f);
@@ -2429,20 +2233,8 @@ void PopUpDMTriggerGUIPanel(object oPC)
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
     // Get the window location to restore it from the database.
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmobjectwin",
-        "Trigger menu",
-        fX,
-        fY,
-        426.0,
-        388.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmobjectwin", "Trigger menu", fX, fY, 426.0, 388.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "name_value", JsonString(GetName(oTarget)));
     NuiSetBindWatch(oPC, nToken, "name_value", TRUE);
@@ -2495,7 +2287,9 @@ void PopUpDMInventoryGUIPanel(object oPC)
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget;
+    if(GetLocalInt(oPC, DM_INV_TARGET_TYPE) == OBJECT_TYPE_CREATURE) oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+    else oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
     // Row 1 (Treasure labels)************************************************** 45
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateLabel(jRow, "Treasure Type", "treasure_type_title", 150.0f, 10.0f);
@@ -2623,20 +2417,8 @@ void PopUpDMInventoryGUIPanel(object oPC)
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dminventorywin",
-        sName + "'s inventory menu",
-        fX,
-        fY,
-        428.0,
-        256.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow( oPC, jLayout, "dminventorywin", sName + "'s inventory menu", fX, fY, 428.0, 256.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events to 0e_window.
@@ -2664,96 +2446,45 @@ void PopUpDMInventoryGUIPanel(object oPC)
     if (oLeft != OBJECT_INVALID)
     {
         nBaseItemType = GetBaseItemType(oLeft);
-        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON)
-        {
-            sCreatureResRef = "iit_cr_prc_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON)
-        {
-            sCreatureResRef = "iit_cr_sla_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON)
-        {
-            sCreatureResRef = "iit_cr_blud_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP)
-        {
-            sCreatureResRef = "iit_cr_bite_001";
-        }
+        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON) sCreatureResRef = "iit_cr_prc_001";
+        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON) sCreatureResRef = "iit_cr_sla_001";
+        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON) sCreatureResRef = "iit_cr_blud_001";
+        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP) sCreatureResRef = "iit_cr_bite_001";
     }
-    else
-    {
-        sCreatureResRef = "inv_slot_right";
-    }
+    else sCreatureResRef = "inv_slot_right";
     NuiSetBind(oPC, nToken, "img_left_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "img_left_image", JsonString(sCreatureResRef));
     if (oRight != OBJECT_INVALID)
     {
         nBaseItemType = GetBaseItemType(oRight);
-        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON)
-        {
-            sCreatureResRef = "iit_cr_prc_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON)
-        {
-            sCreatureResRef = "iit_cr_sla_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON)
-        {
-            sCreatureResRef = "iit_cr_blud_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP)
-        {
-            sCreatureResRef = "iit_cr_bite_001";
-        }
+        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON) sCreatureResRef = "iit_cr_prc_001";
+        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON) sCreatureResRef = "iit_cr_sla_001";
+        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON) sCreatureResRef = "iit_cr_blud_001";
+        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP) sCreatureResRef = "iit_cr_bite_001";
     }
-    else
-    {
-        sCreatureResRef = "inv_slot_right";
-    }
+    else sCreatureResRef = "inv_slot_right";
     NuiSetBind(oPC, nToken, "img_right_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "img_right_image", JsonString(sCreatureResRef));
     if (oSpecial != OBJECT_INVALID)
     {
         nBaseItemType = GetBaseItemType(oSpecial);
-        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON)
-        {
-            sCreatureResRef = "iit_cr_prc_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON)
-        {
-            sCreatureResRef = "iit_cr_sla_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON)
-        {
-            sCreatureResRef = "iit_cr_blud_001";
-        }
-        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP)
-        {
-            sCreatureResRef = "iit_cr_bite_001";
-        }
+        if (nBaseItemType == BASE_ITEM_CPIERCWEAPON) sCreatureResRef = "iit_cr_prc_001";
+        if (nBaseItemType == BASE_ITEM_CSLASHWEAPON) sCreatureResRef = "iit_cr_sla_001";
+        if (nBaseItemType == BASE_ITEM_CBLUDGWEAPON) sCreatureResRef = "iit_cr_blud_001";
+        if (nBaseItemType == BASE_ITEM_CSLSHPRCWEAP) sCreatureResRef = "iit_cr_bite_001";
     }
-    else
-    {
-        sCreatureResRef = "inv_slot_right";
-    }
+    else sCreatureResRef = "inv_slot_right";
     NuiSetBind(oPC, nToken, "img_special_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "img_special_image", JsonString(sCreatureResRef));
-    if (oSkin != OBJECT_INVALID)
-    {
-        sCreatureResRef = "iit_cr_item_001";
-    }
-    else
-    {
-        sCreatureResRef = "inv_slot_armor";
-    }
+    if (oSkin != OBJECT_INVALID) sCreatureResRef = "iit_cr_item_001";
+    else sCreatureResRef = "inv_slot_armor";
     NuiSetBind(oPC, nToken, "img_skin_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "img_skin_image", JsonString(sCreatureResRef));
 }
 void PopUpDMMovePlaceableGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
     // Row 1 (RotateRight/North/RotateLeft)************************************* 45
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateButton(jRow, "Rotate Right", "btn_rotate_right", 110.0, 25.0);
@@ -2790,20 +2521,8 @@ void PopUpDMMovePlaceableGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmmoveplaceablewin",
-        "Placeable menu",
-        -3.0,
-        -3.0,
-        362.0,
-        214.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmmoveplaceablewin", "Placeable menu", -3.0, -3.0, 362.0, 214.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     if (NWNX_Object_GetPlaceableIsStatic(oTarget))
     {
@@ -2838,7 +2557,7 @@ void PopUpDMMovePlaceableGUIPanel(object oPC)
 void PopUpDMItemGUIPanel(object oPC, float fX = -3.0, float fY = -3.0)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_ITEM);
     // Row 1 (Name)************************************************************* 45
     json jRow = CreateLabel(JsonArray(), "Name", "name_title", 35.0f, 20.0f, -1.0, NUI_HALIGN_LEFT);
     jRow = CreateTextEditBox(jRow, "name_placeholder", "name_value", 255, FALSE, 337.0f, 20.0f);
@@ -2925,20 +2644,8 @@ void PopUpDMItemGUIPanel(object oPC, float fX = -3.0, float fY = -3.0)
     json jLayout = NuiCol(jCol);
     object oOwner = GetItemPossessor(oTarget);
     string sName = StripColorCodes(GetName(oOwner));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmitemwin",
-        sName + "'s item menu",
-        fX,
-        fY,
-        400.0,
-        700.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow( oPC, jLayout, "dmitemwin", sName + "'s item menu", fX, fY, 400.0, 700.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "name_value", JsonString(GetName(oTarget)));
     NuiSetBindWatch(oPC, nToken, "name_value", TRUE);
@@ -3058,7 +2765,7 @@ void PopUpDMItemPropertiesGUIPanel(object oPC, object oItem, json jProperty)
     SetLocalInt(oPC, "0_No_Win_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_ITEM);
     int nPropertyIndex = JsonGetInt(JsonArrayGet(jProperty, 0));
     int nPropertyType = JsonGetInt(JsonArrayGet(jProperty, 1));
     // Row 1 (Item Property Name)*********************************************** 45
@@ -3107,15 +2814,7 @@ void PopUpDMItemPropertiesGUIPanel(object oPC, object oItem, json jProperty)
     {
         // Row 4 (Item Property SubType Name)*************************************** 96
         // Insert elements into the combo box array.
-        jRow = CreateLabel(
-            JsonArray(),
-            "Item Property SubType",
-            "ip_sub_title",
-            300.0f,
-            20.0f,
-            -1.0,
-            0,
-            NUI_VALIGN_BOTTOM);
+        jRow = CreateLabel(JsonArray(), "Item Property SubType", "ip_sub_title", 300.0f, 20.0f, -1.0, 0, NUI_VALIGN_BOTTOM);
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         // Row 5 (Item Properties Subtype)****************************************** 114
@@ -3142,15 +2841,7 @@ void PopUpDMItemPropertiesGUIPanel(object oPC, object oItem, json jProperty)
     {
         // Row 6 (Item Property CostTable Name)*************************************** 96
         // Insert elements into the combo box array.
-        jRow = CreateLabel(
-            JsonArray(),
-            "Item Property Bonus",
-            "ip_bonus_title",
-            300.0f,
-            20.0f,
-            -1.0,
-            0,
-            NUI_VALIGN_BOTTOM);
+        jRow = CreateLabel( JsonArray(), "Item Property Bonus", "ip_bonus_title", 300.0f, 20.0f, -1.0, 0, NUI_VALIGN_BOTTOM);
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         // Row 7 (Item Properties CostTable)****************************************** 114
@@ -3182,15 +2873,7 @@ void PopUpDMItemPropertiesGUIPanel(object oPC, object oItem, json jProperty)
     {
         // Row 8 (Item Property Param1 Name)*************************************** 96
         // Insert elements into the combo box array.
-        jRow = CreateLabel(
-            JsonArray(),
-            "Item Property Param",
-            "ip_param_title",
-            300.0f,
-            20.0f,
-            -1.0,
-            0,
-            NUI_VALIGN_BOTTOM);
+        jRow = CreateLabel(JsonArray(), "Item Property Param", "ip_param_title", 300.0f, 20.0f, -1.0, 0, NUI_VALIGN_BOTTOM);
         // Add row to the column.
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         // Row 9 (Item Properties CostTable)****************************************** 114
@@ -3216,20 +2899,8 @@ void PopUpDMItemPropertiesGUIPanel(object oPC, object oItem, json jProperty)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     string sName = StripColorCodes(GetName(oItem));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmitempropertywin",
-        sName + "'s item property menu",
-        -1.0,
-        -1.0,
-        325.0,
-        fHeight,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmitempropertywin", sName + "'s item property menu", -1.0, -1.0, 325.0,
+        fHeight, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "ip_selected", JsonInt(nPropertyType));
     NuiSetBind(oPC, nToken, "ip_event", JsonBool(TRUE));
@@ -3393,8 +3064,7 @@ void PopUpDMQuestItemGUIPanel(object oPC)
     object oOwner = GetItemPossessor(oTarget);
     string sName = StripColorCodes(GetName(oOwner));
     int nToken = SetWindow( oPC, jLayout, "dmquestswin", sName + " quest item menu", fX, fY,
-                    600.0, 767.0, FALSE, FALSE, TRUE, 
-                    FALSE, TRUE);
+                    600.0, 767.0, FALSE, FALSE, TRUE,  FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events to 0e_window.
@@ -3626,7 +3296,18 @@ void PopUpDMQuestItemGUIPanel(object oPC)
 void PopupDMVariablesGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget;
+    int nObjectType = GetLocalInt(oPC, DM_VAR_TARGET_TYPE);
+    if(nObjectType == OBJECT_TYPE_CREATURE) oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
+    else if(nObjectType == OBJECT_TYPE_ITEM) oTarget = GetLocalObject(oPC, DM_TARGET_ITEM);
+    else if(nObjectType == OBJECT_TYPE_PLACEABLE) oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
+    else if(nObjectType == OBJECT_TYPE_TILE) oTarget = GetLocalObject(oPC, DM_TARGET_AREA);
+    else if(nObjectType == OBJECT_TYPE_TRIGGER) oTarget = GetLocalObject(oPC, DM_TARGET_TRIGGER);
+    if(!GetIsObjectValid(oTarget))
+    {
+        SendMessages("The passed object type is in invalid (" + IntToString(nObjectType) + ")! Variable menu not loaded.", COLOR_RED, oPC);
+        return;
+    }
     // Row 1 (filter)*********************************************************** 45
     json jRow = CreateTextEditBox(JsonArray(), "dmv_filter_placeholder", DMV_FILTER_ID, 64, FALSE, 404.0f, 34.0f);
     jRow = CreateButton(jRow, "X", DMV_FILTER_CLEAR, 40.0, 34.0);
@@ -3664,20 +3345,8 @@ void PopupDMVariablesGUIPanel(object oPC)
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 470.0);
     string sName = StripColorCodes(GetName(oTarget));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmvariableswin",
-        sName + " variables",
-        0.0,
-        fY,
-        464.0,
-        470.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmvariableswin", sName + " variables", 0.0, fY, 464.0, 470.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set all binds, events, and watches.
     string sText = GetVariableText(oTarget);
     NuiSetBind(oPC, nToken, DMV_BIND_ITEMS_FULL, JsonString(sText));
@@ -3691,7 +3360,7 @@ void PopupDMVariablesGUIPanel(object oPC)
     NuiSetBind(oPC, nToken, "btn_string_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_object_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_delete_event", JsonBool(TRUE));
-    // Display creatures event scripts.
+    /*/ Display creatures event scripts.
     if (GetObjectType(oTarget) == OBJECT_TYPE_CREATURE)
     {
         string sScript = GetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_HEARTBEAT);
@@ -3714,7 +3383,7 @@ void PopupDMVariablesGUIPanel(object oPC)
         SendMessages("ON_SPELLCASTAT: " + sScript, COLOR_WHITE, oPC);
         sScript = GetEventScript(oTarget, EVENT_SCRIPT_CREATURE_ON_BLOCKED_BY_DOOR);
         SendMessages("ON_BLOCKED_BY_DOOR: " + sScript, COLOR_WHITE, oPC);
-    }
+    } */
 }
 
 void PopUpDMAreaGUIPanel(object oPC, object oArea = OBJECT_INVALID)
@@ -3724,12 +3393,7 @@ void PopUpDMAreaGUIPanel(object oPC, object oArea = OBJECT_INVALID)
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Win_Save"));
     // Get the DM target.
     object oTarget = oArea;
-    if (oTarget == OBJECT_INVALID)
-    {
-        oTarget = GetArea(oPC);
-    }
-    SetLocalObject(oPC, "0_DM_Target", oTarget);
-    SetPlayerWinTarget(oPC, GetName(oTarget));
+    if (oTarget == OBJECT_INVALID) oTarget = GetArea(oPC);
     int nDMToken;
     float fHeigth = 334.0;
     // Row 1 (Name)************************************************************* 45
@@ -3850,20 +3514,8 @@ void PopUpDMAreaGUIPanel(object oPC, object oArea = OBJECT_INVALID)
     string sPCWindow = GetServerDatabaseString(oPC, PLAYER_TABLE, "dmareawin");
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmareawin",
-        "Area menu",
-        fX,
-        fY,
-        366.0,
-        fHeigth,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmareawin", "Area menu", fX, fY, 366.0, fHeigth,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events to 0e_window.
@@ -3969,7 +3621,7 @@ void PopUpDMColorsGUIPanel(object oPC)
     SetLocalInt(oPC, "0_No_Color_Save", TRUE);
     DelayCommand(0.5f, DeleteLocalInt(oPC, "0_No_Color_Save"));
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_AREA);
     // Row 1 (Main Lights label)************************************************ 45
     json jRow = CreateLabel(JsonArray(), "Main Lights 1", "main_lights_1_title", 169.0f, 10.0f, -1.0, NUI_HALIGN_CENTER);
     jRow = CreateLabel(jRow, "Main Lights 2", "main_lights_2_title", 169.0f, 10.0f, -1.0, NUI_HALIGN_CENTER);
@@ -4049,20 +3701,8 @@ void PopUpDMColorsGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 304.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmcolorswin",
-        GetName(oTarget) + " (Area color menu)",
-        0.0,
-        fY,
-        366.0,
-        304.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmcolorswin", GetName(oTarget) + " (Area color menu)", 0.0, fY,
+        366.0, 304.0, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     location lLocation = Location(oTarget, Vector(0.0, 0.0, 0.0), 0.0);
     int nValue = GetTileMainLight1Color(lLocation);
@@ -4110,7 +3750,7 @@ void PopUpDMColorsGUIPanel(object oPC)
 void PopUpDMSoundsGUIPanel(object oPC)
 {
     // Get the DM target.
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_AREA);
     // Row 1 (Sounds label)***************************************************** 45
     json jRow = CreateLabel(JsonArray(), "Daytime Ambient", "day_sounds_title", 169.0f, 10.0f, -1.0, NUI_HALIGN_CENTER);
     jRow = CreateLabel(jRow, "Nighttime Ambient", "night_sounds_title", 169.0f, 10.0f, -1.0, NUI_HALIGN_CENTER);
@@ -4142,20 +3782,8 @@ void PopUpDMSoundsGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 184.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmsoundswin",
-        GetName(oTarget) + " (Area sound menu)",
-        0.0,
-        fY,
-        366.0,
-        184.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmsoundswin", GetName(oTarget) + " (Area sound menu)", 0.0, fY,
+        366.0, 184.0, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     int nValue = NWNX_Area_GetAmbientSoundDay(oTarget);
     NuiSetBind(oPC, nToken, "day_sounds_selected", JsonInt(nValue));
@@ -4199,15 +3827,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Add the row to the column.
     json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
     // Row 2 (Portrait Name/Deity)********************************************** 73
-    jRow = CreateTextEditBox(
-        JsonArray(),
-        "port_placeholder",
-        "npc_port_resref",
-        16,
-        FALSE,
-        150.0,
-        20.0,
-        "npc_port_tooltip");
+    jRow = CreateTextEditBox(JsonArray(), "port_placeholder", "npc_port_resref", 16,
+        FALSE, 150.0, 20.0, "npc_port_tooltip");
     jRow = CreateLabel(jRow, "Deity", "npc_deity_lbl", 40.0f, 20.0f, -1.0, NUI_HALIGN_LEFT);
     jRow = CreateTextEditBox(jRow, "place_holder", "npc_deity", 25, FALSE, 144.0, 20.0f);
     // Add the row to the column.
@@ -4227,15 +3848,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     json jLabel = NuiLabel(JsonString(""), JsonInt(0), JsonInt(0));
     jLabel = NuiHeight(NuiWidth(jLabel, 128.0), 20.0);
     // Create image to the left of the window.
-    json jImage = JsonArrayInsert(
-        JsonArray(),
-        NuiDrawListImage(
-            JsonBool(TRUE),
-            NuiBind("npc_port_image"),
-            jPos,
-            JsonInt(NUI_ASPECT_EXACTSCALED),
-            JsonInt(NUI_HALIGN_LEFT),
-            JsonInt(NUI_VALIGN_TOP)));
+    json jImage = JsonArrayInsert(JsonArray(), NuiDrawListImage( JsonBool(TRUE), NuiBind("npc_port_image"),
+            jPos, JsonInt(NUI_ASPECT_EXACTSCALED), JsonInt(NUI_HALIGN_LEFT), JsonInt(NUI_VALIGN_TOP)));
     jRow = JsonArrayInsert(JsonArray(), NuiDrawList(jLabel, JsonBool(FALSE), jImage));
     jRow = CreateCombo(jRow, JArrayInsertNPCBaseClasses(), "npc_class1", 160.0f, 20.0f);
     jRow = CreateCombo(jRow, JArrayInsertNPCLevels(), "npc_level1", 46.0f, 20.0f);
@@ -4256,15 +3870,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Row 7 (Str line)********************************************************* 213
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Strength", "str_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_str",
-        "str_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_str", "str_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "str_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "str_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_str", 20.0, 16.0);
@@ -4274,15 +3881,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Row 8 (Dex line)********************************************************* 237
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Dexterity", "dex_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_dex",
-        "str_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_dex", "str_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "dex_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "dex_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_dex", 20.0, 16.0);
@@ -4292,15 +3892,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Row 9 (Con line)********************************************************* 261
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Constitution", "con_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_con",
-        "con_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_con", "con_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "con_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "con_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_con", 20.0, 16.0);
@@ -4310,15 +3903,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Row 10 (Int line)******************************************************** 285
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Intelligence", "int_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_int",
-        "int_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_int", "int_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "int_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "int_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_int", 20.0, 16.0);
@@ -4328,15 +3914,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     // Row 11 (Wis line)******************************************************** 309
     jRow = CreateLabel(JsonArray(), "", "blk_lbl", 128.0f, 10.0f);
     jRow = CreateLabel(jRow, "Wisdom", "wis_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_wis",
-        "wis_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_wis", "wis_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "wis_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "wis_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_wis", 20.0, 16.0);
@@ -4348,15 +3927,8 @@ void PopUpDMNPCGUIPanel(object oPC)
     jRow = CreateLabel(jRow, "", "npc_port_id", 58.0, 16.0f);
     jRow = CreateButton(jRow, ">", "btn_portrait_next", 32.0f, 16.0f);
     jRow = CreateLabel(jRow, "Charisma", "cha_lbl", 90.0f, 16.0f, -1.0, NUI_HALIGN_LEFT);
-    jRow = CreateImage(
-        jRow,
-        "gui_chrsht_cha",
-        "cha_img",
-        NUI_ASPECT_EXACTSCALED,
-        NUI_HALIGN_CENTER,
-        NUI_VALIGN_MIDDLE,
-        16.0f,
-        16.0f);
+    jRow = CreateImage(jRow, "gui_chrsht_cha", "cha_img", NUI_ASPECT_EXACTSCALED, NUI_HALIGN_CENTER,
+        NUI_VALIGN_MIDDLE, 16.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "cha_value", 20.0f, 16.0f);
     jRow = CreateLabel(jRow, "", "cha_mod", 20.0f, 16.0f);
     jRow = CreateButtonImage(jRow, "nui_cnt_up", "btn_up_cha", 20.0, 16.0);
@@ -4390,28 +3962,13 @@ void PopUpDMNPCGUIPanel(object oPC)
     string sPCWindow = GetServerDatabaseString(oPC, PLAYER_TABLE, "dmnpcwin");
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmnpcwin",
-        "Create non-player character",
-        fX,
-        fY,
-        366.0,
-        593.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmnpcwin", "Create non-player character", fX, fY, 366.0, 593.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set all binds, events, and watches.
     json jNPC = GetLocalJson(oPC, "0_JNPC");
-    if (JsonGetType(jNPC) == JSON_TYPE_NULL)
-    {
-        jNPC = SetJsonNPC(oPC);
-    }
+    if (JsonGetType(jNPC) == JSON_TYPE_NULL)jNPC = SetJsonNPC(oPC);
     NuiSetBindWatch(oPC, nToken, "npc_name", TRUE);
     NuiSetBindWatch(oPC, nToken, "npc_deity", TRUE);
     NuiSetBind(oPC, nToken, "npc_gender_event", JsonBool(TRUE));
@@ -4515,8 +4072,8 @@ void PopUpDMServerGUIPanel(object oPC)
         nCount++;
     }
     jRow = CreateCombo(JsonArray(), jCombo, "start_char_lvl", 111.0, 20.0);
-    jRow = CreateSlider(jRow, "xp_slider", 111.0, 20.0);
-    jRow = CreateSlider(jRow, "treasure_slider", 111.0, 20.0);
+    jRow = CreateSlider(jRow, "xp_slider", 111.0, 20.0, "tooltip_mousescroll");
+    jRow = CreateSlider(jRow, "treasure_slider", 111.0, 20.0, "tooltip_mousescroll");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 3 (labels)*********************************************************** 91
@@ -4525,8 +4082,8 @@ void PopUpDMServerGUIPanel(object oPC)
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 4 (Sliders)********************************************************** 109
-    jRow = CreateSlider(JsonArray(), "villain_slider", 169.0, 20.0);
-    jRow = CreateSlider(jRow, "unique_slider", 169.0, 20.0);
+    jRow = CreateSlider(JsonArray(), "villain_slider", 169.0, 20.0, "tooltip_mousescroll");
+    jRow = CreateSlider(jRow, "unique_slider", 169.0, 20.0, "tooltip_mousescroll");
     // Add row to the column.
     jCol = JsonArrayInsert(jCol, NuiRow(jRow));
     // Row 5 (Buttons)********************************************************** 137
@@ -4592,20 +4149,8 @@ void PopUpDMServerGUIPanel(object oPC)
     string sPCWindow = GetServerDatabaseString(oPC, PLAYER_TABLE, "dmserverwin");
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmserverwin",
-        "Server menu",
-        fX,
-        fY,
-        366.0,
-        299.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmserverwin", "Server menu", fX, fY, 366.0, 299.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the buttons to show events to 0e_window.
@@ -4614,6 +4159,7 @@ void PopUpDMServerGUIPanel(object oPC)
     NuiSetBindWatch(oPC, nToken, "start_char_lvl_selected", TRUE);
     int nValue = GetServerDatabaseInt(oModule, SERVER_TABLE, "xpslider");
     string sValue = IntToString(nValue + 100);
+    NuiSetBind(oPC, nToken, "tooltip_mousescroll", JsonString("    Mouse scroll can adjust values."));
     NuiSetBind(oPC, nToken, "xp_title_label", JsonString("Experience " + sValue + "%"));
     NuiSetBind(oPC, nToken, "xp_slider_min", JsonInt(-100));
     NuiSetBind(oPC, nToken, "xp_slider_max", JsonInt(100));
@@ -4720,20 +4266,8 @@ void PopUpDMTransitionsGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 217.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmtransitionswin",
-        "Transition Menu",
-        0.0,
-        fY,
-        228.0,
-        217.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmtransitionswin", "Transition Menu", 0.0, fY, 228.0, 217.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "btn_overland_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "btn_ladder_event", JsonBool(TRUE));
@@ -4751,7 +4285,7 @@ void PopUpDMTransitionsGUIPanel(object oPC)
 
 void PopUpDMFactionsGUIPanel(object oPC)
 {
-    object oTarget = GetLocalObject(oPC, "0_DM_Target");
+    object oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
     // Row 1 (buttons)********************************************************** 73
     json jRow = CreateButton(JsonArray(), "Show Current", "btn_show_c_factions", 150.0, 20.0);
     jRow = CreateButton(jRow, "Show Permanent", "btn_show_p_factions", 150.0, 20.0);
@@ -4783,20 +4317,8 @@ void PopUpDMFactionsGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 151.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmfactionswin",
-        GetName(oTarget) + "'s factions menu",
-        0.0,
-        fY,
-        328.0,
-        151.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmfactionswin", GetName(oTarget) + "'s factions menu", 0.0, fY,
+        328.0, 151.0, FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the buttons to show events to 0e_window.
     NuiSetBind(oPC, nToken, "targets_event", JsonBool(TRUE));
     int nFaction = GetLocalInt(oTarget, "0_CurrentFaction");
@@ -4825,20 +4347,8 @@ void PopUpDMAdvLoadGUIPanel(object oPC)
     // Set the layout of the window.
     json jLayout = NuiCol(jCol);
     float fY = GetGUIHeightMiddle(oPC, 257.0);
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmadvloadwin",
-        "Select an Adventure to load",
-        0.0,
-        fY,
-        274.0,
-        257.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmadvloadwin", "Select an Adventure to load", 0.0, fY, 274.0, 257.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Set the elements to show events to 0e_window.
     // Create buttons with adventures.
     json jButtons = JsonArray();
@@ -4910,20 +4420,8 @@ void PopUpDMAdventureGUIPanel(object oPC, int nIndex, object oArea = OBJECT_INVA
     string sPCWindow = GetServerDatabaseString(oPC, PLAYER_TABLE, "dmadventurewin");
     float fX = StringToFloat(GetStringArray(sPCWindow, 1));
     float fY = StringToFloat(GetStringArray(sPCWindow, 2));
-    int nToken = SetWindow(
-        oPC,
-        jLayout,
-        "dmadventurewin",
-        "Adventure menu",
-        fX,
-        fY,
-        366.0,
-        377.0,
-        FALSE,
-        FALSE,
-        TRUE,
-        FALSE,
-        TRUE);
+    int nToken = SetWindow(oPC, jLayout, "dmadventurewin", "Adventure menu", fX, fY, 366.0, 377.0,
+        FALSE, FALSE, TRUE, FALSE, TRUE);
     // Setup watch so we can save this windows position to the database.
     NuiSetBindWatch(oPC, nToken, "window_geometry", TRUE);
     // Set the elements to show events to 0e_window.
@@ -4962,8 +4460,7 @@ void PopUpDMAdventureGUIPanel(object oPC, int nIndex, object oArea = OBJECT_INVA
     if (oArea == OBJECT_INVALID)
     {
         oArea = GetArea(oPC);
-        SetLocalObject(oPC, "0_DM_Target", oArea);
-        SetPlayerWinTarget(oPC, GetName(oArea));
+        SetDMTargetNUI(oPC, oArea);
         NuiSetBind(oPC, nToken, "btn_jump_area_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_load_area_event", JsonBool(FALSE));
         NuiSetBind(oPC, nToken, "btn_remove_area_event", JsonBool(FALSE));

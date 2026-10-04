@@ -16,8 +16,8 @@ Options : "X0_COMBAT_FLAG_AMBUSHER" - Set enemy to use stealth to attack.
 #include "nwnx_object"
 #include "nwnx_feedback"
 #include "0i_checks"
-#include "0i_effects"
 #include "0i_animate"
+#include "0i_effects"
 #include "nw_inc_gff"
 // Gives NPC's equipment, used for the delay command.
 // oCreature is the creature to give the equipment to.
@@ -28,22 +28,18 @@ Options : "X0_COMBAT_FLAG_AMBUSHER" - Set enemy to use stealth to attack.
 // bDroppable set if they drop the items or not.
 // iPackage is the package of the creature.
 void GiveCreatureEquipment(object oCreature, int nEquipment, int bDroppable = TRUE, int iPackage = PACKAGE_INVALID);
-
 // Gives creatures xp based onlECLevels and xp slider.
 // oCreature is the creature to give xp.
 // fXP is the base xp to adjust before giving xp to the creature.
 void AdjustXPGiveToCreature(object oCreature, float fXP);
-
 // Returns the average character level of the party based on oPC as an int.
 // oPC is a member of the party (Only use on players).
 // iPCOnly will only count players if TRUE.
 int GetAvgPartyLevel(object oCreature, int iPCOnly = TRUE);
 // Gives xp to the players in the current area.
 void GiveXPForKill(object oDeadCreature, int bBonusXP = FALSE);
-
 // Divide out a set amount of xp to the party adjusting for the XP slider and penalties.
 void GiveAreaXP(object oPoint, float fXP, float fCR);
-
 // Returns a random name for creatures based on Boss, Gender, Race, and alignment.
 // iGender is the creatures gender.
 // iRace is the creatures race.
@@ -51,19 +47,16 @@ void GiveAreaXP(object oPoint, float fXP, float fCR);
 // iBoss defines if the creature is a boss or not, Put the CR of the Boss.
 // sName is the name of the boss creature.
 string GetRandomName(int iGender, int iRace, int iAlign = ALIGNMENT_NEUTRAL, int iBoss = FALSE, string sName = "");
-
 // Create a creature array and return any randomized fields.
 // sArray is the array we are building the creature from.
 // Array -0Name-1ResRef-2Tag-3Gender-4Race-5Class-6Package-7level-8Align1
 // -9Align2-10Faction-11Waypointspawn-12Items-
 string CreateNPCArray(string sArray = "-----------0--0-");
-
 // Create NPC
 // lLocation is the location where the creature is created.
 // sArray is an array of variables to fill in the PC variables uses "-" in array.
 // The array is used by CreateNPC to build and create an NPC at lLocation.
 object CreateNPC(location lLocation, string sArray = "");
-
 // Levels up a creature to the specified level by using LevelUpHenchman script.
 // oCreature is the creature to level up.
 // iClass is the class to level up in.
@@ -71,19 +64,15 @@ object CreateNPC(location lLocation, string sArray = "");
 // iReadyAllSpells will have the NPC fully ready to cast spells.
 // iPackage is a specific package for the class to use to level up.
 void LevelUpCreature(object oCreature, int nClass, int nLevel, int nReadyAllSpells = FALSE, int nPackage = PACKAGE_INVALID);
-
 // Gets the correct race type for new races.
 int GetNPCRaceType(object oCreature);
-
 // Returns TRUE if the creature has the ability to cast Arcane or Divine spells of iSpellLevel.
 // iSpellLevel is the level of the spells the character must be able to cast.
 // iArcane defines if we check for Arcane spells(TRUE) or Divine spells(FALSE).
 int HasSpellLevel(object oCreature, int iSpellLevel, int iArcane);
-
 // Returns TRUE if the creature has a spell ability.
 // nSpellAbility is the spell ability to check for SPELLABILITY_*.
 int HasSpellAbility(object oCreature, int nSpellAbility);
-
 // Return the tracking DC based on various conditions.
 // oArea is the Area being checked.
 // oUser is the tracker.
@@ -92,98 +81,65 @@ int HasSpellAbility(object oCreature, int nSpellAbility);
 // iSize the size of the creature.
 // iRacialType is the race of the creature.
 int TrackingDC(object oArea, object oUser, object oCreature, location lLocation, int iSize = CREATURE_SIZE_INVALID, int iRacialType = RACIAL_TYPE_INVALID);
-
 string GetFactionName(int nFaction);
-
 // returns TRUE or FALSE if they have waterskin and rations.
 // rations will be deducted from the creatures inventory.
 int CheckForWaterAndRations(object oCreature);
-
 // returns TRUE or FALSE if there is a campfire near them.
 int IsCampfireNearby(object oCreature);
-
 // Sets the forage bonus of the area for this creatures party.
 void SetForageBonus(object oCreature, int nBonus);
-
 // Gets the forage bonus of the area for this creatures party.
 int GetForageBonus(object oCreature);
-
 // Gets the forage bonus of the area for this creatures party.
 void DeleteForageBonus(object oCreature);
-
 // Sets the parties resting bonus from a survival check on the area for 1 min.
 int MakePartyForageCheck(object oCreature);
-
 // Set a creatures hitpoints to a % of wounded.
 // i.e. nWounded = 50 then a creature with 18 hitpoints will be at 9 hitpoints.
 // nWounded the % of damage a creature will take.
 void SetCreatureAsWounded(object oCreature, int nWounded);
-
 void SetNPCHP(object oCreature);
-
 // Buffs casters in the on spawn script.
 void CheckCasterBuffs(object oCaster = OBJECT_SELF);
-
-// Returns the base race of the creature or of nRace
-// i.e. 0 = dwarf, 1 = elf, 6 = human, 4 = Halfelf & Outsiders.
-int GetTrueRacialType(object oCreature, int nRace = 0);
-
 void SetCreatureAuras(object oCreature);
-
 // Check to make sure if we need to do something before we choose an action.
-void DoMonsterCombatRound();
-
 void CheckForClaws(object oCreature, int nCharacterLevel);
-
 void CheckForWings(object oCreature);
 // Clears old skin and reapplies all effects to a new skin if not a monster.
 // Should be done on Loading in, Leveling up, Change of Deity.
 // bMonster should be used on monsters spawning in as this preserves their original skin.
 void SetCharacterEffectsToSkin(object oCreature, int bMonster = FALSE);
-
 void SetCharacterEffects(object oCreature);
-
 // Selectes a Deity for the Favored Soul class based on oCreatures race.
 // Saves the Deity int to "0_Deity" on oCreature base on deities.2da
 void SelectDeityForFavoredSoul(object oCreature);
-
 void CheckForFavoredSoulFeats(object oCreature);
-
 void CheckForFamiliarFeats(object oCreature);
-
 void CheckForDomainFeats(object oCreature);
-
 void CheckForFeatsToAdd(object oCreature);
-
 void AdjustFeatUses(object oCreature);
-
 // Adjust all summons after resting/logging in.
 // Remove use if resting (nState 1) and have the summons out.
 // Add the use if they are logging in (nState 2).
 void AdjustSummonUses(object oCreature, int nState);
-
 // Gives a villian a special power.
 // nLevel can be set to a specific number to change the number of powers given.
 void GiveVillianSpecialPower(object oCreature, int nLevel = 0);
-
 // Will randomize a portrait for the creature if they are set with "0_Random_Portrait" var.
 void SetPortrait(object oCreature);
-
 // Setup animations for a just spawned creature.
 void CheckAnimations(object oCreature);
-
 // Pass waypoint variables to the object.
 // Get any variables from oWaypoint.
 // Pass them to oObject.
 void PassVariables(object oWaypoint, object oObject, int bVillain = FALSE);
-
 // Does checks for all spawned creatures after the have been spawned.
 // This fires after the spawn script, but uses variables from the waypoint that spawns them.
 // oCreature - the creature spawned.
 // oWaypoint - the waypoint that spawned them.
 // oPC - the player that spawned them.
 void SetupCreature(object oCreature, object oWaypoint = OBJECT_INVALID, object oPC = OBJECT_INVALID, int bVillain = FALSE);
-
 // Returns if the target is a humanoid (person).
 int GetIsHumanoid(object oTarget);
 // Action version of SaveAssociateToDatabase so we can delay the save.
@@ -197,7 +153,6 @@ string SaveAssociateToDatabase(object oPC, object oAssociate, string sEffect = "
 void RemoveHenchmanFromDatabase(object oPC, object oAssociate);
 // Create the remains and puts any treasure on it as well as the corpse.
 void CreateRemains(object oCreature);
-
 // Gives creatures equipment, used for the delay command.
 // oCreature is the creature to give the equipment to.
 // nEquipment gives different equipment based on value
@@ -229,30 +184,9 @@ void AdjustXPGiveToCreature (object oCreature, float fXP)
     if (fXPSlider != 0.0) fXP = fXP + fXP * (fXPSlider / 100);
     // Check for ECL level
     iRace = GetRacialType (oCreature);
-    switch (iRace)
-    {
-        // ERL 1
-        case 38: // Duergar
-        case 60: // Aasimar
-        case 61: // Tiefling
-        case 62: // Air Genasi
-        case 63: // Earth Genasi
-        case 64: // Fire Genasi
-        case 65: // Water Genasi
-            fERL = 1.0f;
-            break;
-        // ERL 2
-        case 42: // Drow
-        case 66: // Gloaming
-            fERL = 2.0f;
-            break;
-        // ERL 3
-        case 46: // Svirfneblin
-            fERL = 3.0f;
-            break;
-    }
+    fERL = GetEffectiveCharacterLevel(oCreature);
     // Adjust any ERL characters.
-    if (fERL > 0.0f)
+    if(fERL > 0.0f)
     {
         // Get any racial xp left.
         fRacialXP = GetLocalFloat (oCreature, "0_RacialXP");
@@ -561,106 +495,106 @@ void AdjustAbiliyScores (object oTarget, int nClass, int nRace)
 // Any field in the array that is set to "" will be randomized if possible.
 // Array -0Name-1ResRef-2Tag-3Gender-4Race-5Class-6Package-7level-8Align1
 // -9Align2-10Faction-11Waypointspawn-12Items-
-string CreateNPCArray (string sArray = "-----------0--0-")
+string CreateNPCArray(string sArray = "-----------0--0-")
 {
     int nSwitch, nClass, nLawChaos, nGoodEvil;
     string sRace, sClass, sLevel, sGender, sName, sAlign1, sAlign2, sPackage;
     // Check gender.
     sGender = GetStringArray (sArray, 3, "-");
     // If gender is blank then randomize.
-    if (sGender == "") sArray = SetStringArray (sArray, 3, IntToString (Random (2)), "-");
+    if(sGender == "") sArray = SetStringArray(sArray, 3, IntToString (Random (2)), "-");
     // Check race.
-    sRace = GetStringArray (sArray, 4, "-");
+    sRace = GetStringArray(sArray, 4, "-");
     // If Race is blank then randomize.
-    if (sRace == "")
+    if(sRace == "")
     {
         nSwitch = d100();
-        if (nSwitch < 6) sRace = "36"; // Dwarf Shield
-        else if (nSwitch < 11) sRace = "37"; // Dwarf Gold
-        else if (nSwitch < 16) sRace = "39"; // Elf Moon
-        else if (nSwitch < 19) sRace = "40"; // Elf Sun
-        else if (nSwitch < 20) sRace = "41"; // Elf Wood
-        else if (nSwitch < 25) sRace = "44"; // Gnome Rock
-        else if (nSwitch < 26) sRace = "45"; // Gnome Forest
-        else if (nSwitch < 30) sRace = "48"; // Halfling Lightfoot
-        else if (nSwitch < 35) sRace = "49"; // Halfling Strongheart
-        else if (nSwitch < 36) sRace = "50"; // Halfling Ghostwise
-        else if (nSwitch < 37) sRace = "51"; // Half elf Moon
-        else if (nSwitch < 38) sRace = "52"; // Half elf Sun
-        else if (nSwitch < 39) sRace = "53"; // Half elf Wood
-        else if (nSwitch < 44) sRace = "56"; // Half orc
-        else if (nSwitch < 52) sRace = "30"; // Human Damaran
-        else if (nSwitch < 61) sRace = "31"; // Human Iluskan
-        else if (nSwitch < 69) sRace = "32"; // Human Rashemi
-        else if (nSwitch < 77) sRace = "33"; // Human Mulan
-        else if (nSwitch < 85) sRace = "34"; // Human Tethyrian
-        else if (nSwitch < 98) sRace = "35"; // Human Chondathan
-        else if (nSwitch < 99) // Rare races
+        if(nSwitch < 6) sRace = "36"; // Dwarf Shield
+        else if(nSwitch < 11) sRace = "37"; // Dwarf Gold
+        else if(nSwitch < 16) sRace = "39"; // Elf Moon
+        else if(nSwitch < 19) sRace = "40"; // Elf Sun
+        else if(nSwitch < 20) sRace = "41"; // Elf Wood
+        else if(nSwitch < 25) sRace = "44"; // Gnome Rock
+        else if(nSwitch < 26) sRace = "45"; // Gnome Forest
+        else if(nSwitch < 30) sRace = "48"; // Halfling Lightfoot
+        else if(nSwitch < 35) sRace = "49"; // Halfling Strongheart
+        else if(nSwitch < 36) sRace = "50"; // Halfling Ghostwise
+        else if(nSwitch < 37) sRace = "51"; // Half elf Moon
+        else if(nSwitch < 38) sRace = "52"; // Half elf Sun
+        else if(nSwitch < 39) sRace = "53"; // Half elf Wood
+        else if(nSwitch < 44) sRace = "56"; // Half orc
+        else if(nSwitch < 52) sRace = "30"; // Human Damaran
+        else if(nSwitch < 61) sRace = "31"; // Human Iluskan
+        else if(nSwitch < 69) sRace = "32"; // Human Rashemi
+        else if(nSwitch < 77) sRace = "33"; // Human Mulan
+        else if(nSwitch < 85) sRace = "34"; // Human Tethyrian
+        else if(nSwitch < 98) sRace = "35"; // Human Chondathan
+        else if(nSwitch < 99) // Rare races
         {
             nSwitch = d100();
-            if (nSwitch < 15) sRace = "38"; // Dwarf Duergar
-            else if (nSwitch < 31) sRace = "46"; // Gnome Svirfneblin
-            else if (nSwitch < 47) sRace = "42"; // Elf Drow
-            else if (nSwitch < 48) sRace = "43"; // Elf Star
-            else if (nSwitch < 49) sRace = "55"; // Half elf Star
-            else if (nSwitch < 50) sRace = "54"; // Half elf Drow
-            else if (nSwitch < 66) sRace = "58"; // Orc Mountain
-            else if (nSwitch < 81) sRace = "59"; // Orc Gray
-            else if (nSwitch < 91) sRace = "57"; // Kobold
+            if(nSwitch < 15) sRace = "38"; // Dwarf Duergar
+            else if(nSwitch < 31) sRace = "46"; // Gnome Svirfneblin
+            else if(nSwitch < 47) sRace = "42"; // Elf Drow
+            else if(nSwitch < 48) sRace = "43"; // Elf Star
+            else if(nSwitch < 49) sRace = "55"; // Half elf Star
+            else if(nSwitch < 50) sRace = "54"; // Half elf Drow
+            else if(nSwitch < 66) sRace = "58"; // Orc Mountain
+            else if(nSwitch < 81) sRace = "59"; // Orc Gray
+            else if(nSwitch < 91) sRace = "57"; // Kobold
             else sRace = "47"; // Goblin
         }
         else // Outsiders
         {
             nSwitch = d100();
-            if (nSwitch < 17) sRace = "60"; // Aasimar
-            else if (nSwitch < 34) sRace = "61"; // Tiefling
-            else if (nSwitch < 51) sRace = "62"; // Air Genasi
-            else if (nSwitch < 68) sRace = "63"; // Earth Genasi
-            else if (nSwitch < 85) sRace = "64"; // Fire Genasi
+            if(nSwitch < 17) sRace = "60"; // Aasimar
+            else if(nSwitch < 34) sRace = "61"; // Tiefling
+            else if(nSwitch < 51) sRace = "62"; // Air Genasi
+            else if(nSwitch < 68) sRace = "63"; // Earth Genasi
+            else if(nSwitch < 85) sRace = "64"; // Fire Genasi
             else sRace = "65"; // Water Genasi
         }
-        sArray = SetStringArray (sArray, 4, sRace, "-");
+        sArray = SetStringArray(sArray, 4, sRace, "-");
     }
     // Check name.
     sName = GetStringArray (sArray, 0, "-");
     // If name is blank then set to randomize name.
-    if (sName == "" || sName == "random")
+    if(sName == "" || sName == "random")
     {
-        sName = GetRandomName(StringToInt (sGender), StringToInt (sRace));
-        sArray = SetStringArray (sArray, 0, sName, "-");
+        sName = GetRandomName(StringToInt(sGender), StringToInt(sRace));
+        sArray = SetStringArray(sArray, 0, sName, "-");
     }
     // Check class.
-    sClass = GetStringArray (sArray, 5, "-");
+    sClass = GetStringArray(sArray, 5, "-");
     // If Class is blank then randomize.
-    if (sClass == "")
+    if(sClass == "")
     {
        nSwitch = d100();
-       if (nSwitch <= 5) sClass = "0"; // Barbarian
-       else if (nSwitch <= 10) sClass = "1"; // Bard
-       else if (nSwitch <= 20) sClass = "2"; // Cleric
-       else if (nSwitch <= 22) sClass = "3"; // Druid
-       else if (nSwitch <= 52) sClass = "4"; // Fighter
-       else if (nSwitch <= 54) sClass = "5"; // Monk
-       else if (nSwitch <= 59) sClass = "46"; // Ranger
-       else if (nSwitch <= 79) sClass = "8"; // Rogue
-       else if (nSwitch <= 85) sClass = "9"; // Sorcerer
-       else if (nSwitch <= 95) sClass = "10"; // Wizard
-       else if (nSwitch <= 97) sClass = "47"; // Favored Soul
+       if(nSwitch <= 5) sClass = "0"; // Barbarian
+       else if(nSwitch <= 10) sClass = "1"; // Bard
+       else if(nSwitch <= 20) sClass = "2"; // Cleric
+       else if(nSwitch <= 22) sClass = "3"; // Druid
+       else if(nSwitch <= 52) sClass = "4"; // Fighter
+       else if(nSwitch <= 54) sClass = "5"; // Monk
+       else if(nSwitch <= 59) sClass = "46"; // Ranger
+       else if(nSwitch <= 79) sClass = "8"; // Rogue
+       else if(nSwitch <= 85) sClass = "9"; // Sorcerer
+       else if(nSwitch <= 95) sClass = "10"; // Wizard
+       else if(nSwitch <= 97) sClass = "47"; // Favored Soul
        else sClass = "9"; // must fix class. "48"; // Warmage
-       nClass = StringToInt (sClass);
-       sArray = SetStringArray (sArray, 5, sClass, "-");
+       nClass = StringToInt(sClass);
+       sArray = SetStringArray(sArray, 5, sClass, "-");
     }
     // Check if package is set if not then randomize.
     sPackage = GetStringArray (sArray, 6, "-");
-    if (sPackage == "")
+    if(sPackage == "")
     {
         nSwitch = StringToInt (sClass);
-        if (d100() > 50)
+        if(d100() > 50)
         {
             // Packages.2da has 5 alternate packages for each class set at 150+.
-            nSwitch = (nSwitch * 5) + 66 + Random (5);
-            if (Get2DAString ("packages", "Name", nSwitch) == "") sPackage = sClass;
-            else sPackage = IntToString (nSwitch);
+            nSwitch = (nSwitch * 5) + 66 + Random(5);
+            if(Get2DAString ("packages", "Name", nSwitch) == "") sPackage = sClass;
+            else sPackage = IntToString(nSwitch);
         }
         else sPackage = sClass;
         sArray = SetStringArray (sArray, 6, sPackage, "-");
@@ -668,45 +602,45 @@ string CreateNPCArray (string sArray = "-----------0--0-")
     // Check Level.
     sLevel = GetStringArray (sArray, 7, "-");
     // If level is blank then randomize.
-    if (sLevel == "") sArray = SetStringArray (sArray, 7, IntToString (d20()), "-");
+    if(sLevel == "") sArray = SetStringArray (sArray, 7, IntToString (d20()), "-");
     // Check Align1.
     sAlign1 = GetStringArray (sArray, 8, "-");
     // If Align1 is blank then randomize. 1-Neutral, 2-Lawful, 3-Chaotic
-    if (sAlign1 == "")
+    if(sAlign1 == "")
     {
         // Adjust alignment for class restrictions law/chaos.
-        if (nClass == CLASS_TYPE_BARD || nClass == CLASS_TYPE_BARBARIAN)
+        if(nClass == CLASS_TYPE_BARD || nClass == CLASS_TYPE_BARBARIAN)
         {
-            nLawChaos = Random (2) + 1;
+            nLawChaos = Random(2) + 1;
         }
-        if (nClass == CLASS_TYPE_MONK) nLawChaos = ALIGNMENT_LAWFUL;
+        if(nClass == CLASS_TYPE_MONK) nLawChaos = ALIGNMENT_LAWFUL;
         else nLawChaos = d3();
-        sArray = SetStringArray (sArray, 8, IntToString (nLawChaos), "-");
+        sArray = SetStringArray(sArray, 8, IntToString(nLawChaos), "-");
     }
     // Check Align2.
-    sAlign2 = GetStringArray (sArray, 9, "-");
+    sAlign2 = GetStringArray(sArray, 9, "-");
     // If Align2 is blank then randomize. 4-Good 5-Evil
-    if (sAlign2 == "")
+    if(sAlign2 == "")
     {
         // Adjust alignment for class restrictions good/evil.
-        if (nClass == 45 /*Paladin*/) nGoodEvil = ALIGNMENT_GOOD;
-        if (nClass == CLASS_TYPE_DRUID)
+        if(nClass == 45 /*Paladin*/) nGoodEvil = ALIGNMENT_GOOD;
+        if(nClass == CLASS_TYPE_DRUID)
         {
-            if (nLawChaos != ALIGNMENT_NEUTRAL || nGoodEvil != ALIGNMENT_NEUTRAL)
+            if(nLawChaos != ALIGNMENT_NEUTRAL || nGoodEvil != ALIGNMENT_NEUTRAL)
             {
-                nSwitch = Random (2);
-                if (nSwitch == 0) nLawChaos = ALIGNMENT_NEUTRAL;
+                nSwitch = Random(2);
+                if(nSwitch == 0) nLawChaos = ALIGNMENT_NEUTRAL;
                 else nGoodEvil = ALIGNMENT_NEUTRAL;
             }
         }
         else
         {
             nSwitch = d6();
-            if (nSwitch < 3) nGoodEvil = ALIGNMENT_GOOD;
-            else if (nSwitch < 5) nGoodEvil = ALIGNMENT_NEUTRAL;
+            if(nSwitch < 3) nGoodEvil = ALIGNMENT_GOOD;
+            else if(nSwitch < 5) nGoodEvil = ALIGNMENT_NEUTRAL;
             else nGoodEvil = ALIGNMENT_EVIL;
         }
-        sArray = SetStringArray (sArray, 9, IntToString (nGoodEvil), "-");
+        sArray = SetStringArray(sArray, 9, IntToString (nGoodEvil), "-");
     }
     return sArray;
 }
@@ -715,7 +649,7 @@ string CreateNPCArray (string sArray = "-----------0--0-")
 // lLocation is the location where the creature is created.
 // sArray is an array of variables to fill in the PC variables uses "-" in array.
 // The array is used by CreateNPC to build and create an NPC at lLocation.
-object CreateNPC (location lLocation, string sArray = "")
+object CreateNPC(location lLocation, string sArray = "")
 {
     int iClass, iSwitch, iPackage, iStat, iLevel, nRace, iAlignGE, iAlignLC;
     string sText, sResRef, sSkin, sPackage;
@@ -725,13 +659,13 @@ object CreateNPC (location lLocation, string sArray = "")
     //       -9Align2-10Faction-11Waypointspawn-12Items-
     // First see if they have a ResRef.
     //Debug ("0i_creature", "633", "sArray: " + sArray + " iQuestNPC: " + IntToString (iQuestNPC));
-    sResRef = GetStringArray (sArray, 1, "-");
-    if (sResRef != "")
+    sResRef = GetStringArray(sArray, 1, "-");
+    if(sResRef != "")
     {
-        oCreature = CreateObject (OBJECT_TYPE_CREATURE, sResRef, lLocation);
-        if (!GetIsObjectValid (oCreature))
+        oCreature = CreateObject(OBJECT_TYPE_CREATURE, sResRef, lLocation);
+        if(!GetIsObjectValid (oCreature))
         {
-              SetModuleError ("RESREF", "0i_creature", "710", "Cannot create NPC! ResRef (" +  sResRef +
+              SetModuleError("RESREF", "0i_creature", "734", "Cannot create NPC! ResRef (" +  sResRef +
                               " Location: " + LocationToStringArray (lLocation) + ")");
         }
     }
@@ -739,21 +673,21 @@ object CreateNPC (location lLocation, string sArray = "")
     else
     {
         // Get gender.
-        iSwitch = StringToInt (GetStringArray (sArray, 3, "-"));
-        if (iSwitch) sText = "f_";
+        iSwitch = StringToInt(GetStringArray (sArray, 3, "-"));
+        if(iSwitch) sText = "f_";
         else sText = "m_";
         // Get race.
-        string sRace = GetStringArray (sArray, 4, "-");
-        nRace = StringToInt (sRace);
+        string sRace = GetStringArray(sArray, 4, "-");
+        nRace = StringToInt(sRace);
         sText = sText + sRace;
         // Create NPC.
-        oCreature = CreateObject (OBJECT_TYPE_CREATURE, sText, lLocation);
-        if (!GetIsObjectValid (oCreature))
+        oCreature = CreateObject(OBJECT_TYPE_CREATURE, sText, lLocation);
+        if(!GetIsObjectValid(oCreature))
         {
-              SetModuleError ("RESREF", "0i_creature", "728", "Invalid Creature: ResRef (" +  sText + ") " +
-                              " lLocation: " + LocationToStringArray (lLocation) + " Generating a male, human (Chondathan) instead.");
+              SetModuleError("RESREF", "0i_creature", "728", "Invalid Creature: ResRef (" +  sText + ") " +
+                              " lLocation: " + LocationToStringArray(lLocation) + " Generating a male, human (Chondathan) instead.");
               // Generate a generic NPC (Male, Human (Chondathan) on failure.
-              oCreature = CreateObject (OBJECT_TYPE_CREATURE, "m_35", lLocation);
+              oCreature = CreateObject(OBJECT_TYPE_CREATURE, "m_35", lLocation);
               sArray = "-Male-----4-4-3-1-1-4--1-";
         }
         // Set the faction.
@@ -1540,22 +1474,6 @@ void CheckCreatureSpecialAbilities (object oCreature = OBJECT_SELF)
         }
     }
 }
-
-// Returns the base race of the creature or of nRace
-// i.e. 0 = dwarf, 1 = elf, 6 = human, 4 = Halfelf & Outsiders.
-int GetTrueRacialType (object oCreature, int nRace = 0)
-{
-    if (nRace == 0) nRace = GetRacialType (oCreature);
-    if (nRace >= 36 && nRace <= 38) nRace = 0; // Dwarf
-    else if (nRace >= 39 && nRace <= 43) nRace = 1; // Elf
-    else if (nRace >= 44 && nRace <= 46) nRace = 2; // Gnome
-    else if (nRace >= 48 && nRace <= 50) nRace = 3; // Halfling
-    else if (nRace >= 51 && nRace <= 56) nRace = 4; // Halfelf
-    else if (nRace == 56 || nRace == 58 || nRace == 59) nRace = 5; // Orc
-    else if (nRace >= 30 && nRace <= 35) nRace = 6; // Human
-    else if (nRace >= 60 && nRace <= 66) nRace = 4; // Outsider
-    return nRace;
-}
 int GetHasAura(object oCreature, string sTag)
 {
     object oAura;
@@ -1624,9 +1542,9 @@ void CheckForClaws (object oCreature, int nCharacterLevel)
     }
 }
 
-void CheckForWings (object oCreature)
+void CheckForWings(object oCreature)
 {
-    if(GetCreatureWingType(oCreature) == 0)
+    if(!GetCreatureWingType(oCreature))
     {
         // Sorcerer: Abyssal Bloodline II.
         if(GetHasFeat (1316/*FEAT_ABYSSAL_BLOODLINE*/, oCreature)) SetCreatureWingType(203, oCreature);
@@ -1649,9 +1567,25 @@ void CheckForWings (object oCreature)
             else if(GetHasFeat(FEAT_WHITE_DRAGON_BLOOD, oCreature)) SetCreatureWingType(64, oCreature);
         }
         // Check for any racial wings.
-        else if(GetRacialType(oCreature) == 66) SetCreatureWingType(230, oCreature); // Butterfly Black.
+        else if(GetHasFeat(1369/*FEAT_FLIGHT*/, oCreature))
+        { 
+            int nRaceType = GetRaceType(oCreature);
+            if(nRaceType == 66) SetCreatureWingType(230, oCreature); // Butterfly Black.
+            else if(nRaceType == 69) 
+            {
+                int nWingType;
+                switch (d10())
+                { // Avariel usually have white wings, but can have gray, brown, or black.
+                    case 1: case 2: case 3: case 4: case 5: case 6: case 7: nWingType = 2; break; // White
+                    case 8: nWingType = 6; break; // Brown
+                    case 9: nWingType = 198; break; // Brown
+                    case 10: nWingType = 199; break; // Black
+                }
+                SetCreatureWingType(nWingType, oCreature); // Random feather.
+            }
+        }
         // Check for the Wing feat.
-        if(GetHasFeat(1368/*FEAT_WINGS*/, oCreature))
+        else if(GetHasFeat(1368/*FEAT_WINGS*/, oCreature))
         {
             // Check Favored Souls.
             if(GetLevelByClass(CLASS_TYPE_FAVORED_SOUL, oCreature) > 0)
@@ -1735,6 +1669,7 @@ void SetCharacterEffectsToSkin(object oCreature, int bMonster = FALSE)
         else if(GetHasFeat(FEAT_SILVER_DRAGON_BLOOD, oCreature)) bDmgCold = TRUE;
         else if(GetHasFeat(FEAT_WHITE_DRAGON_BLOOD, oCreature)) bDmgCold = TRUE;
     }
+    if(GetHasFeat(FEAT_COLD_IMMUNITY)) bDmgCold = TRUE;
     // Sorcerer: Abyssal blood line V, Infernal blood line V: Poison Immunity.
     if(GetHasFeat(1319, oCreature) || GetHasFeat (1349, oCreature)) bPoison = TRUE;
     // Sorcerer: Draconic blood line V: Immunity Sleep and Paralysis.
@@ -1905,6 +1840,8 @@ void SetCharacterEffectsToSkin(object oCreature, int bMonster = FALSE)
     // ********************************
     // **** Add Armor bonus feats *****
     // ********************************
+    // Orog race gets +2 Natural armor.
+    if(GetRaceType(oCreature) == 70) nArmor = 2;
     // Set Armor properties
     if(nArmor > 0) IP_ACBonus(oSkin, nArmor);
     // *********************************
@@ -2004,7 +1941,7 @@ void SelectDeityForFavoredSoul(object oCreature)
     }
     else
     {
-        int nRace = GetTrueRacialType(oCreature);
+        int nRace = GetRaceType(oCreature, TRUE);
         if(nRace == RACIAL_TYPE_DWARF) nDeity = Random(14) + 74;
         else if(nRace == RACIAL_TYPE_ELF) nDeity = Random(12) + 88;
         else if(nRace == RACIAL_TYPE_GNOME) nDeity = Random(8) + 100;
@@ -2519,7 +2456,7 @@ void SetPortrait (object oCreature)
     {
         int nMaxMalePortrait, nMaxFemalePortrait;
         int nGender = GetGender (oCreature);
-        int nRace = GetTrueRacialType (oCreature);
+        int nRace = GetRaceType(oCreature, TRUE);
         string sRoll, sPortrait;
         if (nRace == 0)
         {
@@ -2602,7 +2539,7 @@ void CheckAnimations (object oCreature)
 {
     int nAnimation = GetLocalInt (oCreature, "0_Animation");
     // Default - 0_Animation = 0 This gives them mobile animations.
-    if (nAnimation == 1) SetAICondition (AI_IS_MOBILE_CLOSE_RANGE, TRUE, oCreature);
+    if(nAnimation == 1) SetAICondition (AI_IS_MOBILE_CLOSE_RANGE, TRUE, oCreature);
     else if (nAnimation == 2) SetAICondition (AI_IS_IMMOBILE, TRUE, oCreature);
 }
 
@@ -2802,17 +2739,17 @@ void RemoveHenchmanFromDatabase(object oPC, object oAssociate)
     }
 }
 // Create the remains of a creature and puts any treasure on it as well as its corpse.
-void CreateRemains (object oCreature)
+void CreateRemains(object oCreature)
 {
-    object oCopy, oCorpse, oRemains = CreateObject (OBJECT_TYPE_PLACEABLE, "0_inv_remains", GetLocation (oCreature));
-    string sTag, sName = GetName (oCreature);
+    object oCopy, oCorpse, oRemains = CreateObject(OBJECT_TYPE_PLACEABLE, "0_inv_remains", GetLocation (oCreature));
+    string sTag, sName = GetName(oCreature);
     location lDropLocation;
-    SetName (oRemains, "Remains of " + sName);
-    SetDescription (oRemains, sName + " lies here with all of their worldly possessions.");
-    SetLocalObject (oRemains, "0_Remains_of_Creature", oCreature);
+    SetName(oRemains, "Remains of " + sName);
+    SetDescription(oRemains, sName + " lies here with all of their worldly possessions.");
+    SetLocalObject(oRemains, "0_Remains_of_Creature", oCreature);
     // Move all items to the corpse.
-    object oItem = GetFirstItemInInventory (oCreature);
-    while (oItem != OBJECT_INVALID)
+    object oItem = GetFirstItemInInventory(oCreature);
+    while(oItem != OBJECT_INVALID)
     {
         if(GetTag(oItem) != "0_skin")
         {
@@ -2853,7 +2790,7 @@ void CreateRemains (object oCreature)
     SetName (oCorpse, sName);
     SetDescription (oCorpse, "This is the body of " + sName);
     float fWeight;
-    int nRace = GetTrueRacialType (oCreature);
+    int nRace = GetRaceType(oCreature, TRUE);
     if (nRace == RACIAL_TYPE_DWARF) fWeight = 1550.0f;
     else if (nRace == RACIAL_TYPE_ELF) fWeight = 1050.0f;
     else if (nRace == RACIAL_TYPE_GNOME) fWeight = 450.0f;

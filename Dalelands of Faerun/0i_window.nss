@@ -323,8 +323,8 @@ json CreateButton(json jRow, string sLabel, string sId, float fWidth, float fHei
     else jButton = NuiEnabled (NuiId (NuiButton (JsonString (sLabel)), sId), NuiBind (sId + "_event"));
     jButton = NuiWidth (jButton, fWidth);
     jButton = NuiHeight (jButton, fHeight);
-    if (fMargin > 0.0) jButton = NuiMargin (jButton, fMargin);
-    if (sTooltip != "") jButton = NuiTooltip (jButton, NuiBind (sTooltip));
+    if(fMargin > -1.0) jButton = NuiMargin (jButton, fMargin);
+    if(sTooltip != "") jButton = NuiTooltip (jButton, NuiBind (sTooltip));
     return JsonArrayInsert (jRow, jButton);
 }
 

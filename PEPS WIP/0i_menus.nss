@@ -1158,6 +1158,11 @@ void ai_CreateAssociateCommandNUI(object oPC, object oAssociate)
         NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_ACTION));
         NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_ACTION));
     }
+    if(nPortrait == PORTRAIT_SETTING_CAMERA)
+    {
+        NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_CAMERA));
+        NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_CAMERA));
+    }
     // Row 4
     if(bIsPC && bUsingHenchAI) 
     {

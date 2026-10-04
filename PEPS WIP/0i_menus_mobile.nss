@@ -834,6 +834,11 @@ void ai_CreateAssociateCommandMobileNUI(object oPC, object oAssociate)
         NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_ACTION));
         NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_ACTION));
     }
+    if(nPortrait == PORTRAIT_SETTING_CAMERA)
+    {
+        NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_CAMERA));
+        NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_CAMERA));
+    }
     // Row 4
     if(bIsPC && bUsingHenchAI) 
     {
@@ -1523,7 +1528,8 @@ void ai_CreateAssociateAIMobileNUI(object oPC, object oAssociate)
     {
         jRow = CreateButton(JsonArray(), BTN_TXT_CURRENT_AI, "btn_ai_script", 175.0f, 30.0f, -1.0, "btn_ai_script_tooltip");
         jRow = CreateTextEditBox(jRow, "sPlaceHolder", "txt_ai_script", 16, FALSE, 175.0f, 30.0f, "txt_ai_script_tooltip");
-        jRow = CreateCombo(jRow, ai_CreateAIScriptJson(oPC), "cmb_ai_script", 176.0, 30.0);
+        jRow = CreateButton(jRow, BTN_TXT_SELECT_AI, "btn_select_ai", 175.0f, 30.0f, -1.0, "btn_select_ai_tooltip");
+        //jRow = CreateCombo(jRow, ai_CreateAIScriptJson(oPC), "cmb_ai_script", 176.0, 30.0);
         jCol = JsonArrayInsert(jCol, NuiRow(jRow));
         fHeight += 38.0;
     }
@@ -1990,11 +1996,43 @@ void ai_CreateAssociateAIMobileNUI(object oPC, object oAssociate)
     NuiSetBind(oPC, nToken, "txt_ai_script_event", JsonBool(TRUE));
     NuiSetBind(oPC, nToken, "txt_ai_script", JsonString(sScript));
     NuiSetBind(oPC, nToken, "txt_ai_script_tooltip", JsonString(TXT_TXT_CURRENT_AI));
-    NuiSetBind(oPC, nToken, "cmb_ai_script_event", JsonBool(TRUE));
-    NuiSetBindWatch(oPC, nToken, "cmb_ai_script_selected", TRUE);
+    NuiSetBind(oPC, nToken, "btn_select_ai_event", JsonBool(TRUE));
+    NuiSetBind(oPC, nToken, "btn_select_ai_tooltip", JsonString(TOOL_TXT_SELECT_AI));    
+    //NuiSetBind(oPC, nToken, "cmb_ai_script_event", JsonBool(TRUE));
+    //NuiSetBindWatch(oPC, nToken, "cmb_ai_script_selected", TRUE);
     // Row 17
     sText = ai_GetRandomTip();
     NuiSetBind (oPC, nToken, "lbl_info_label", JsonString(sText));
+}
+void ai_CreateAISelectMobileNUI(object oPC, object oAssociate)
+{
+    // ************************************************************************* Width / Height
+    // Row 1 ******************************************************************* 318 / 73
+    json jButton = JsonArray();
+    jButton = NuiButton(NuiBind("text_script"));
+    jButton = NuiId(jButton, "btn_text_script");
+    json jListTemplate = JsonArrayInsert(JsonArray(), NuiListTemplateCell(jButton, 325.0, FALSE));
+    json jRow = JsonArrayInsert(JsonArray(), NuiHeight(NuiList(jListTemplate, NuiBind("list_script"), 35.0), 350.0));
+    json jCol = JsonArrayInsert(JsonArray(), NuiRow(jRow));
+    // Set the Layout of the window.
+    json jLayout = NuiCol(jCol);
+    string sName = ai_StripColorCodes(GetName(oAssociate));
+    string sAssociateType = ai_GetAssociateType(oPC, oAssociate);
+    int nToken = SetWindow(oPC, jLayout, sAssociateType + "AI_SELECT", " Select AI for " + sName,
+                           -1.0, -1.0, 375.0, 475.0, FALSE, FALSE, TRUE, FALSE, TRUE, "0e_nui");
+    // Save the associate to the nui.
+    json jData = JsonArrayInsert(JsonArray(), JsonString(ObjectToString(oAssociate)));
+    NuiSetUserData(oPC, nToken, jData);
+    json jScript = JsonArrayInsert(JsonArray(), JsonString("Cancel"));
+    int nIndex = 1;
+    string sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, nIndex);
+    while(sScript != "")
+    {
+        jScript = JsonArrayInsert(jScript, JsonString(sScript));
+        sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, ++nIndex);
+    }    
+    NuiSetBind(oPC, nToken, "list_script", jScript); 
+    NuiSetBind(oPC, nToken, "text_script", jScript); 
 }
 void ai_CreateLootFilterMobileNUI(object oPC, object oAssociate)
 {
@@ -2003,7 +2041,6 @@ void ai_CreateLootFilterMobileNUI(object oPC, object oAssociate)
     DelayCommand (2.0, DeleteLocalInt (oPC, AI_NO_NUI_SAVE));
     // ************************************************************************* Width / Height
     // Row 1 ******************************************************************* 318 / 73
-    int bIsPC = ai_GetIsCharacter(oAssociate);
     json jRow = JsonArrayInsert(JsonArray(), NuiSpacer());
     jRow = CreateCheckBox(jRow, "Give all loot to the player", "chbx_give_loot", 200.0, 20.0, "chbx_give_loot_tooltip");
     jRow = JsonArrayInsert(jRow, NuiSpacer());

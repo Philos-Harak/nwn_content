@@ -2264,7 +2264,7 @@ void AdjustItemsEquipLevel(object oItem, object oCreature = OBJECT_INVALID)
     float fRacialXP;
     if(oCreature != OBJECT_INVALID)
     {
-        nERL = GetEffectiveRacialLevel(oCreature) * -1;
+        nERL = FloatToInt(GetEffectiveCharacterLevel(oCreature)) * -1;
         if(GetIsCharacter(oCreature))
         {
             fRacialXP = GetLocalFloat(oCreature, "0_RacialXP");

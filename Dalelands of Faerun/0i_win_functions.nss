@@ -56,14 +56,17 @@ int ComboNumberToFogColor (int nNumber);
 // Changes fog color to correct combo number.
 // nColor is the color to use.
 int FogColorToComboNumber (int nColor);
-// Update Dm's targets in all windows.
-void SetPlayerWinTarget (object oPC, string sTarget);
-// Clears up any windows on the screen linked to examining.
-void RemoveAllExamineWindows (object oPC);
+// Update oDM's targets in all relevant NUI windows based upon the oTarget and nObjecttype.
+// oDM is the PC's windows to be updated.
+// oTarget is the target object to be updated. If OBJECT_INVALID is passed then it looks at.
+// nObjectType is OBJECT_TYPE_*.
+void SetDMTargetNUI (object oPC, object oTarget, int nObjectType = 0);
+// Clears up any windows on the screen linked to examining nObjectType.
+void RemoveExamineWindows(object oPC, int nObjectType);
 // Clears any databases for a character that is deleted.
 void DeleteCharacterFromDatabase (object oPC);
 
-string GetRaceText (object oTarget)
+string GetRaceText(object oTarget)
 {
     string sRace = GetSubRace (oTarget);
     if (sRace == "") sRace = GetStringByStrRef (StringToInt (Get2DAString ("racialtypes", "Name", GetRacialType (oTarget))));
@@ -686,11 +689,12 @@ json JsonArrayInsertAmbientSounds ()
 
 json JArrayInsertWings()
 {
+    int nMaxWingCount = Get2DARowCount("wingmodel");
     string sText;
     json jCombo = JsonArray();
     jCombo = JsonArrayInsert(jCombo, NuiComboEntry("Wings - None", 0));
     int nCount = 1;
-    while(nCount < 230)
+    while(nCount < nMaxWingCount)
     {
         sText = Get2DAString("wingmodel", "Label", nCount);
         if(sText == "") sText = "Invalid";
@@ -1253,38 +1257,102 @@ void ServerShutDown (object oPlayer)
         DelayCommand (5.0f, ServerShutDown (oPlayer));
     }
 }
-
-// Update Dm's targets in all windows.
-void SetPlayerWinTarget (object oPC, string sTarget)
+void SetDMTargetNUI(object oPC, object oTarget, int nObjectType = 0)
 {
-    int nDMToken = NuiFindWindow (oPC, "plplayerwin");
-    if (nDMToken != 0) NuiSetBind (oPC, nDMToken, "dm_target_value_label", JsonString (sTarget));
-    nDMToken = NuiFindWindow (oPC, "ploptionwin");
-    if (nDMToken != 0) NuiSetBind (oPC, nDMToken, "dm_target_value_label", JsonString (sTarget));
-    nDMToken = NuiFindWindow (oPC, "pclangwin");
-    if (nDMToken != 0) NuiSetBind (oPC, nDMToken, "pc_target_value_label", JsonString (sTarget));
+    int nTargetNUIIndex;
+    string sTargetVariable;
+    if(!nObjectType) nObjectType = GetObjectType(oTarget);
+    RemoveExamineWindows(oPC, nObjectType);
+    if(nObjectType == OBJECT_TYPE_CREATURE) 
+    {
+        sTargetVariable = DM_TARGET_CREATURE;
+        nTargetNUIIndex = 0;
+    }
+    else if(nObjectType == OBJECT_TYPE_ITEM) 
+    {
+        sTargetVariable = DM_TARGET_ITEM;
+        nTargetNUIIndex = 1;
+    }
+    else if(nObjectType == OBJECT_TYPE_PLACEABLE || nObjectType == OBJECT_TYPE_DOOR) 
+    {
+        sTargetVariable = DM_TARGET_PLACEABLE;
+        nTargetNUIIndex = 2;
+    }
+    else if(nObjectType == OBJECT_TYPE_TILE) 
+    {
+        sTargetVariable = DM_TARGET_AREA;
+        nTargetNUIIndex = 3;
+    }
+    else if(nObjectType == OBJECT_TYPE_TRIGGER) 
+    {
+        sTargetVariable = DM_TARGET_TRIGGER;
+        nTargetNUIIndex = 4;
+    }
+    SetLocalObject(oPC, sTargetVariable, oTarget);
+    string sName;
+    if(GetIsObjectValid(oTarget)) sName = StripColorCodes(GetName(oTarget));
+    else sName = "None";
+    int nToken = NuiFindWindow(oPC, "plplayerwin");
+    if(nToken)
+    {
+        NuiSetBind(oPC, nToken, "cmb_target_selected", JsonInt(nTargetNUIIndex));
+        NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(sName));
+    }
+    nToken = NuiFindWindow (oPC, "ploptionwin");
+    if(nToken) 
+    {
+        NuiSetBind(oPC, nToken, "cmb_target_selected", JsonInt(nTargetNUIIndex));
+        NuiSetBind (oPC, nToken, "dm_target_value_label", JsonString (sName));
+    }
+    nToken = NuiFindWindow (oPC, "pclangwin");
+    if(nToken && nObjectType == OBJECT_TYPE_CREATURE)
+    {
+        if(nToken != 0) NuiSetBind (oPC, nToken, "pc_target_value_label", JsonString (sName));
+    }
 }
 
-void RemoveAllExamineWindows (object oPC)
+void RemoveExamineWindows(object oPC, int nObjectType)
 {
     // Remove all examin windows.
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmcreaturewin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmmainquestwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmxpwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmhpwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmclasswin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmreputationwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmgoldwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmalignwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmplayerwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmobjectwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dminventorywin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmitemwin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmvariableswin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmareawin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmcolorswin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmsoundswin"));
-    NuiDestroy (oPC, NuiFindWindow (oPC, "dmfactionswin"));
+    if(nObjectType == OBJECT_TYPE_CREATURE)
+    {
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmcreaturewin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmmainquestwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmxpwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmhpwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmclasswin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmreputationwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmgoldwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmitemwealthwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmalignwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmplayerwin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmdatabasewin"));
+        NuiDestroy (oPC, NuiFindWindow (oPC, "dmfactionswin"));
+    }
+    else if(nObjectType == OBJECT_TYPE_PLACEABLE || nObjectType == OBJECT_TYPE_DOOR)
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmobjectwin"));
+    }
+    else if(nObjectType == OBJECT_TYPE_ITEM)
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmitemwin"));
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmitempropertywin"));
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmquestswin"));
+    }
+    else if(nObjectType == OBJECT_TYPE_TILE)
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmareawin"));
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmcolorswin"));
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmsoundswin"));
+    }
+    if(nObjectType == GetLocalInt(oPC, DM_INV_TARGET_TYPE))
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dminventorywin"));
+    }
+        if(nObjectType == GetLocalInt(oPC, DM_VAR_TARGET_TYPE))
+    {
+        NuiDestroy(oPC, NuiFindWindow(oPC, "dmvariableswin"));
+    }
 }
 
 // Clears any databases for a character that is deleted.

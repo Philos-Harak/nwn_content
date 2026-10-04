@@ -5,37 +5,19 @@
  Text Appears When script that sets CUSTOM500 to show racial xp in the
  players handbook.
 *///////////////////////////////////////////////////////////////////////////////
+#include "0i_master"
 int StartingConditional()
 {
     int nRace, nRacialXPNeeded;
     object oPC = GetPCSpeaker ();
     // Get any racial xp left.
     int nRacialXP = FloatToInt (GetLocalFloat (oPC, "0_RacialXP"));
-    if (nRacialXP > 0)
+    if(nRacialXP > 0)
     {
-        // Check for ECL level
-        nRace = GetRacialType (oPC);
-        switch (nRace)
-        {
-            // ERL 1
-            case 60: // Aasimar
-            case 61: // Tiefling
-            case 62: // Air Genasi
-            case 63: // Earth Genasi
-            case 64: // Fire Genasi
-            case 65: // Water Genasi
-                nRacialXPNeeded = 1000;
-                break;
-            // ERL 2
-            case 38: // Duergar
-            case 42: // Drow
-                nRacialXPNeeded = 3000;
-                break;
-            // ERL 3
-            case 46: // Svirfneblin
-                nRacialXPNeeded = 6000;
-                break;
-        }
+        int nECL = FloatToInt(GetEffectiveCharacterLevel(oPC));
+        if(nECL == 1) nRacialXPNeeded = 1000; 
+        else if(nECL == 2) nRacialXPNeeded = 3000;
+        else if(nECL == 3) nRacialXPNeeded = 6000;
         // We only save what racial xp is left to get.
         // Get the actual Racial xp by looking at what we have left and subtracting what is needed.
         nRacialXP = nRacialXPNeeded - nRacialXP;

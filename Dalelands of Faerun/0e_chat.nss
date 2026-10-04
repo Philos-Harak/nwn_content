@@ -48,11 +48,11 @@ void main ()
     {
         string sVariable = "0_PLAYER_Target";
         // Remove the throw voice character code.
-        sMessage = GetSubString (sMessage, 1, GetStringLength (sMessage));
+        sMessage = GetSubString(sMessage, 1, GetStringLength(sMessage));
         // Mark that they are throwing their voice.
-        if (GetIsDungeonMaster (oSender)) sVariable = "0_DM_Target";
-        object oTarget = GetLocalObject (oSender, sVariable);
-        if (oTarget != OBJECT_INVALID)
+        if(GetIsDungeonMaster(oSender)) sVariable = DM_TARGET_CREATURE;
+        object oTarget = GetLocalObject(oSender, sVariable);
+        if(oTarget != OBJECT_INVALID)
         {
             oSender = oTarget;
             bVoiceThrown = TRUE;

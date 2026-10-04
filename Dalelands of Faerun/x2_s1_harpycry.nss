@@ -39,7 +39,7 @@ void main()
     {
         if (oTarget != OBJECT_SELF && GetIsEnemy (oTarget))
         {
-            nRacial = GetTrueRacialType (oTarget);
+            nRacial = GetRaceType(oTarget, TRUE);
             fDelay = GetRandomDelay();
             //Check that the target is humanoid or animal
             if  ((nRacial == RACIAL_TYPE_DWARF) ||

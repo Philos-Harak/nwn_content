@@ -7,7 +7,7 @@
  Changes to any constants will not take effect until the scripts are recompiled.
 *///////////////////////////////////////////////////////////////////////////////
 
-const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version: 9.24.25";
+const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version: 10.03.25";
 // The following constants are designed to be changed to allow the AI to work differently based on what a developer wants.
 // If you change these constants make sure the database has been deleted (peps_database.sqlite3)
 // so the ai_SetAIRules() will rewrite the new server rule values.
@@ -16,7 +16,7 @@ const string PHILOS_VERSION = "Philos' Enhancing Player System (PEPS) version: 9
 // This will only work if you are using the PEPS menu system.
 const int AI_DEBUG = FALSE;
 // Defines if we are compiling for single player or a server. Always on for servers!
-const int AI_SERVER = FALSE;
+const int AI_SERVER = TRUE;
 // Setting to TRUE disables PEPS GUI Events from being set in the module.
 // PEPS overrides the EVENT_SCRIPT_MODULE_ON_PLAYER_GUIEVENT to allow checking a characters effects.
 const int AI_DISABLE_GUI_EVENTS = FALSE;
@@ -185,10 +185,12 @@ const string BTN_TXT_PORTRAIT_WIDGET = "Portrait: Widget On/Off";
 const string BTN_TXT_PORTRAIT_COMMAND = "Portrait: Open Command Menu";
 const string BTN_TXT_PORTRAIT_AI = "Portrait: Open AI Menu";
 const string BTN_TXT_PORTRAIT_ACTION = "Portrait: Select Action";
+const string BTN_TXT_PORTRAIT_CAMERA = "Portrait: Move Camera";
 const string TOOL_TXT_PORTRAIT_WIDGET = "  Associate's portrait click makes their widget appear.";
 const string TOOL_TXT_PORTRAIT_COMMAND = "  Associate's portrait click makes their command menu appear.";
 const string TOOL_TXT_PORTRAIT_AI = "  Associate's portrait click makes their AI menu appear.";
 const string TOOL_TXT_PORTRAIT_ACTION = "  Associate's portrait click starts the action command for them.";
+const string TOOL_TXT_PORTRAIT_CAMERA = "  Associate's portrait click moves the camera and starts the action command for them.";
 const string TOOL_TXT_VERTICAL_WIDGET_ON = "  Vertical widget set. Can change to Horizontal widget.";
 const string TOOL_TXT_VERTICAL_WIDGET_OFF = "  Horizontal widget set. Can change to Vertical widget.";
 const string BTN_TXT_ALL_ASSOCIATE_WIDGETS = "All Associate Widgets";
@@ -356,6 +358,8 @@ const string TOOL_PERCEPTION_RANGE_DEFAULT = "  Perception Range Default [20 met
 const string BTN_TXT_CURRENT_AI = "Set Current AI";
 const string TOOL_TXT_CURRENT_AI = "  Set this associate's AI to the script in the text box.";
 const string TXT_TXT_CURRENT_AI = "  Associate AI scripts must start with ai_a_";
+const string BTN_TXT_SELECT_AI = "Select AI";
+const string TOOL_TXT_SELECT_AI = "  Open list of available AI's to select for this associate.";
 const string TOOL_TXT_ACTION_GHOST_MODE_ON = "  Allows associates to move through creatures while in command mode only.";
 const string TOOL_TXT_ACTION_GHOST_MODE_OFF = "  Associates cannot walk through creatures while in command mode.";
 const string TOOL_TXT_EFFECT_ICON_ON = "  Effect icon information will be sent to the chat screen.";
@@ -751,6 +755,7 @@ const int PORTRAIT_SETTING_WIDGET = 1;
 const int PORTRAIT_SETTING_COMMAND = 2;
 const int PORTRAIT_SETTING_AI = 3;
 const int PORTRAIT_SETTING_ACTION = 4;
+const int PORTRAIT_SETTING_CAMERA = 5;
 // Variable to change the Healing % limit for out of combat.
 const string AI_HEAL_OUT_OF_COMBAT_LIMIT = "AI_HEAL_OUT_OF_COMBAT_LIMIT";
 // Variable to change the Healing % limit for in combat.

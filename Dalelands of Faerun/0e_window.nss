@@ -55,7 +55,7 @@ void main()
     int    nIndex  = NuiGetEventArrayIndex();
     string sWndId  = NuiGetWindowId (oPC, nToken);
     int bNumberRolls;
-    //Debug ("0e_window", "54", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem);
+    //Debug("0e_window", "54", "sWndId: " + sWndId + " sEvent: " + sEvent + " sElem: " + sElem);
     //**************************************************************************
     // Watch to see if the window moves and save to database unless its the small window.
     if (sElem == "window_geometry" && sEvent == "watch" && sWndId != "plsmallwin")
@@ -153,6 +153,24 @@ void main()
     // Core player window events.
     else if (sWndId == "plplayerwin")
     {
+        if (sEvent == "watch")
+        {
+            if(GetIsDungeonMaster(oPC))
+            {
+                if(sElem == "cmb_target_selected")
+                {
+                    string sValue;
+                    int nTargetType = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                    if(nTargetType == 0) sValue = GetName(GetLocalObject(oPC, DM_TARGET_CREATURE));
+                    else if(nTargetType == 1) sValue = GetName(GetLocalObject(oPC, DM_TARGET_ITEM));
+                    else if(nTargetType == 2) sValue = GetName(GetLocalObject(oPC, DM_TARGET_PLACEABLE));
+                    else if(nTargetType == 3) sValue = GetName(GetLocalObject(oPC, DM_TARGET_AREA));
+                    else if(nTargetType == 4) sValue = GetName(GetLocalObject(oPC, DM_TARGET_TRIGGER));
+                    //else if(nTargetType == 5) sValue = GetName(GetLocalObject(oPC, DM_TARGET_LOCATION));
+                    NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(StripColorCodes(sValue)));                        
+                }
+            }
+        }
         if (sEvent == "click")
         {
             if (GetIsDungeonMaster (oPC)) CheckForDMButtonClick (oPC, nToken, sElem);
@@ -205,16 +223,16 @@ void main()
                     //NuiDestroy(oPC, NuiFindWindow(oPC, "pc_widget"));
                     //ExecuteScript("peps", oPC);
                     //CheckServerDataAndInitialize (oPC, DM_TABLE);
-                    PopUpDMGUIPanel (oPC);
+                    PopUpDMGUIPanel(oPC);
                 }
             }
         }
         else if (sEvent == "mousedown")
         {
-            if (sElem == "dm_target_title" || sElem == "dm_target_value")
+            if (sElem == "dm_target_value")
             {
                 // Get Target.
-                SetLocalString (oPC, "0_Target_Mode", "0_DM_GET_TARGET");
+                SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
                 EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
         }
@@ -344,30 +362,42 @@ void main()
     {
         if (sEvent == "watch")
         {
-            if (GetIsDungeonMaster (oPC))
+            if(GetIsDungeonMaster(oPC))
             {
-                int bCheck = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                if (!GetLocalInt (oPC, "0_No_Option_Save"))
+                int bCheck = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                if(!GetLocalInt(oPC, "0_No_Option_Save"))
                 {
+                    if(sElem == "cmb_target")
+                    {
+                        string sValue;
+                        int nTargetType = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                        if(nTargetType == 0) sValue = GetName(GetLocalObject(oPC, DM_TARGET_CREATURE));
+                        else if(nTargetType == 1) sValue = GetName(GetLocalObject(oPC, DM_TARGET_ITEM));
+                        else if(nTargetType == 2) sValue = GetName(GetLocalObject(oPC, DM_TARGET_PLACEABLE));
+                        else if(nTargetType == 3) sValue = GetName(GetLocalObject(oPC, DM_TARGET_AREA));
+                        else if(nTargetType == 4) sValue = GetName(GetLocalObject(oPC, DM_TARGET_TRIGGER));
+                        //else if(nTargetType == 5) sValue = GetName(GetLocalObject(oPC, DM_TARGET_LOCATION));
+                        NuiSetBind(oPC, nToken, "dm_target_value_label", JsonString(sValue));                        
+                    }
                     string sOptionsArray = GetServerDatabaseString (oPC, PLAYER_TABLE, "ploptionwin");
                     nIndex = 0;
-                    if (sElem == "str_cmbt_check") nIndex = 4;
-                    if (sElem == "stp_cmbt_check") nIndex = 5;
-                    if (sElem == "examine_check") nIndex = 6;
-                    if (sElem == "dice_check") nIndex = 7;
-                    if (sElem == "server_check") nIndex = 8;
-                    if (sElem == "area_check") nIndex = 9;
-                    if (sElem == "adventure_check") nIndex = 10;
-                    if (sElem == "npc_check") nIndex = 11;
-                    if (sElem == "transitions_check") nIndex = 12;
-                    if (sElem == "craft_check") nIndex = 13;
-                    if (sElem == "bug_report_check") nIndex = 14;
-                    if (sElem == "cynosure_check") nIndex = 15;
-                    if (sElem == "target_check") nIndex = 16;
-                    if (sElem == "dm_chest_check") nIndex = 17;
-                    if (sElem == "pc_mode_check") nIndex = 18;
+                    if(sElem == "str_cmbt_check") nIndex = 4;
+                    if(sElem == "stp_cmbt_check") nIndex = 5;
+                    if(sElem == "examine_check") nIndex = 6;
+                    if(sElem == "dice_check") nIndex = 7;
+                    if(sElem == "server_check") nIndex = 8;
+                    if(sElem == "area_check") nIndex = 9;
+                    if(sElem == "adventure_check") nIndex = 10;
+                    if(sElem == "npc_check") nIndex = 11;
+                    if(sElem == "transitions_check") nIndex = 12;
+                    if(sElem == "craft_check") nIndex = 13;
+                    if(sElem == "bug_report_check") nIndex = 14;
+                    if(sElem == "cynosure_check") nIndex = 15;
+                    if(sElem == "target_check") nIndex = 16;
+                    if(sElem == "dm_chest_check") nIndex = 17;
+                    if(sElem == "pc_mode_check") nIndex = 18;
                     // If we have changed a check then save the new options.
-                    if (nIndex != 0)
+                    if(nIndex != 0)
                     {
                         sOptionsArray = SetStringArray (sOptionsArray, nIndex, IntToString (bCheck));
                         SetServerDatabaseString (oPC, PLAYER_TABLE, "ploptionwin", sOptionsArray);
@@ -376,7 +406,7 @@ void main()
                         PopUpDMGUIPanel (oPC);
                     }
                 }
-                else NuiSetBind (oPC, nToken, sElem, JsonBool (!bCheck));
+                else NuiSetBind(oPC, nToken, sElem, JsonBool (!bCheck));
             }
             // Player watch for combo.
             else
@@ -393,7 +423,7 @@ void main()
         }
         else if (sEvent == "click")
         {
-            if (GetIsDungeonMaster (oPC)) CheckForDMButtonClick (oPC, nToken, sElem);
+            if(GetIsDungeonMaster (oPC)) CheckForDMButtonClick(oPC, nToken, sElem);
             // player button options.
             else
             {
@@ -552,7 +582,7 @@ void main()
                 if (nID > 2999) nID = 1;
                 if (nID < 1) nID = 2999;
                 int nGender = GetGender (oPC);
-                int nRace = GetTrueRacialType (oPC);
+                int nRace = GetRaceType(oPC, TRUE);
                 string sPRace = Get2DAString ("portraits", "Race", nID);
                 if (sPRace != "") nPRace = StringToInt (sPRace);
                 else nPRace = -1;
@@ -883,12 +913,12 @@ void main()
             // Adjust portrait id **********************************************
             if (sElem == "btn_portrait_next")
             {
-                nID = JsonGetInt (NuiGetUserData (oPC, nToken)) + 1;
+                nID = JsonGetInt(NuiGetUserData (oPC, nToken)) + 1;
                 nChange = 1;
             }
             else if (sElem == "btn_portrait_prev")
             {
-                nID = JsonGetInt (NuiGetUserData (oPC, nToken)) - 1;
+                nID = JsonGetInt(NuiGetUserData (oPC, nToken)) - 1;
                 nChange = -1;
             }
             // Adjust ability scores *******************************************
@@ -905,7 +935,11 @@ void main()
             else if (sElem == "btn_up_cha") {nAbility = ABILITY_CHARISMA; nAdj = 1;}
             else if (sElem == "btn_down_cha") {nAbility = ABILITY_CHARISMA; nAdj = -1;}
             // Open the variable menu ******************************************
-            else if (sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
+            else if (sElem == "btn_variables") 
+            {
+                SetLocalInt(oPC, DM_VAR_TARGET_TYPE, OBJECT_TYPE_CREATURE);
+                PopupDMVariablesGUIPanel(oPC);
+            }
             // Open the quest menu *********************************************
             else if (sElem == "btn_quest")
             {
@@ -921,6 +955,7 @@ void main()
             {
                 NWNX_Player_OpenInventory (oPC, oTarget);
                 NuiDestroy (oPC, nToken);
+                SetLocalInt(oPC, DM_INV_TARGET_TYPE, OBJECT_TYPE_CREATURE);
                 PopUpDMInventoryGUIPanel (oPC);
             }
             // Remove associate as a henchman **********************************
@@ -955,29 +990,30 @@ void main()
             }
             else if(sElem == "btn_database") PopUpDMDatabaseGUIPanel(oPC);
             // Changes the portrait id if adjusted.
-            if (nChange != 0)
+            if(nChange != 0)
             {
                 int nPRace, nPGender;
-                if (nID > 1317) nID = 1;
-                if (nID < 1) nID = 1317;
-                int nGender = GetGender (oTarget);
-                int nRace = GetTrueRacialType (oTarget);
-                string sPRace = Get2DAString ("portraits", "Race", nID);
-                if (sPRace != "") nPRace = StringToInt (sPRace);
+                if(nID > 1317) nID = 1;
+                if(nID < 1) nID = 1317;
+                int nGender = GetGender(oTarget);
+                int nRace = GetRaceType(oTarget, TRUE);
+                string sPRace = Get2DAString("portraits", "Race", nID);
+                if(sPRace != "") nPRace = StringToInt(sPRace);
                 else nPRace = -1;
                 string sPGender = Get2DAString ("portraits", "Sex", nID);
-                if (sPGender != "") nPGender = StringToInt (sPGender);
+                if(sPGender != "") nPGender = StringToInt (sPGender);
                 else nPGender = -1;
-                while ((nRace != nPRace && (nRace != 4 || (nPRace != 1 && nPRace != 6))) || nGender != nPGender)
+                while((nRace != nPRace && (nRace != 4 || (nPRace != 1 && nPRace != 6))) || 
+                      (nGender != nPGender && nPGender < 2))
                 {
                     nID += nChange;
-                    if (nID > 1317) nID = 1;
-                    if (nID < 1) nID = 1317;
+                    if(nID > 1317) nID = 1;
+                    if(nID < 1) nID = 1317;
                     sPRace = Get2DAString ("portraits", "Race", nID);
-                    if (sPRace != "") nPRace = StringToInt (sPRace);
+                    if(sPRace != "") nPRace = StringToInt (sPRace);
                     else nPRace = -1;
                     sPGender = Get2DAString ("portraits", "Sex", nID);
-                    if (sPGender != "") nPGender = StringToInt (sPGender);
+                    if(sPGender != "") nPGender = StringToInt (sPGender);
                     else nPGender = -1;
                 }
                 string sResRef = "po_" + Get2DAString("portraits", "BaseResRef", nID);
@@ -1970,7 +2006,7 @@ void main()
     else if (sWndId == "dmobjectwin")
     {
         int nLevel, nDC = 00, nDC1, nDC2, nDC3, nDC4, nDC5, nTreasureLevel;
-        object oTarget = GetLocalObject (oPC, DM_TARGET_PLACEABLE);
+        object oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
         if (sEvent == "click")
         {
             if(sElem == "btn_open")
@@ -2001,12 +2037,20 @@ void main()
                     PopUpDMObjectGUIPanel (oPC);
                 }
             }
-            else if (sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
-            else if (sElem == "btn_inventory") PopUpDMInventoryGUIPanel (oPC);
-            else if (sElem == "btn_move")
+            else if(sElem == "btn_variables") 
             {
-                NuiDestroy (oPC, nToken);
-                PopUpDMMovePlaceableGUIPanel (oPC);
+                SetLocalInt(oPC, DM_VAR_TARGET_TYPE, OBJECT_TYPE_PLACEABLE);
+                PopupDMVariablesGUIPanel(oPC);
+            }
+            else if(sElem == "btn_inventory") 
+            {
+                SetLocalInt(oPC, DM_INV_TARGET_TYPE, OBJECT_TYPE_PLACEABLE);
+                PopUpDMInventoryGUIPanel(oPC);
+            }
+            else if(sElem == "btn_move")
+            {
+                NuiDestroy(oPC, nToken);
+                PopUpDMMovePlaceableGUIPanel(oPC);
             }
             else if (sElem == "btn_dc_1") // Per level
             {
@@ -2245,7 +2289,7 @@ void main()
     else if (sWndId == "dminventorywin")
     {
         object oTarget;
-        int nTargetType = GetLocalInt(oPC, DM_TARGET_TYPE);
+        int nTargetType = GetLocalInt(oPC, DM_INV_TARGET_TYPE);
         if(nTargetType == OBJECT_TYPE_CREATURE) oTarget = GetLocalObject(oPC, DM_TARGET_CREATURE);
         else if(nTargetType == OBJECT_TYPE_PLACEABLE) oTarget = GetLocalObject(oPC, DM_TARGET_PLACEABLE);
         if (sEvent == "click")
@@ -2398,7 +2442,7 @@ void main()
             {
                 DestroyObject (oTarget);
                 SetLocalObject(oPC, DM_TARGET_PLACEABLE, OBJECT_INVALID);
-                SetPlayerWinTarget (oPC, "No Target");
+                SetDMTargetNUI(oPC, OBJECT_INVALID, OBJECT_TYPE_PLACEABLE);
                 oTarget = OBJECT_INVALID;
                 NuiSetBind (oPC, nToken, "btn_rotate_right_event", JsonBool (FALSE));
                 NuiSetBind (oPC, nToken, "btn_north_event", JsonBool (FALSE));
@@ -2524,7 +2568,11 @@ void main()
                 SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
                 EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);
             }
-            else if(sElem == "btn_variables") PopupDMVariablesGUIPanel (oPC);
+            else if(sElem == "btn_variables") 
+            {
+                SetLocalInt(oPC, DM_VAR_TARGET_TYPE, OBJECT_TYPE_ITEM);
+                PopupDMVariablesGUIPanel(oPC);
+            }
             else if(sElem == "btn_equip")
             {
                 object oOwner = GetItemPossessor(oTarget);
@@ -3101,7 +3149,7 @@ void main()
             if (sElem == "btn_variables") 
             {
                 SetLocalInt(oPC, DM_VAR_TARGET_TYPE, OBJECT_TYPE_TILE);
-                PopupDMVariablesGUIPanel (oPC);
+                PopupDMVariablesGUIPanel(oPC);
             }
             else if (sElem == "btn_populate")
             {
@@ -3161,7 +3209,7 @@ void main()
     else if (sWndId == "dmcolorswin")
     {
         int nLightType = 0;
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_AREA);
         if (sEvent == "watch" && !GetLocalInt (oPC, "0_No_Color_Save"))
         {
             if (sElem == "sun_ambient_selected")
@@ -3214,7 +3262,7 @@ void main()
     // DM Sounds window events.
     else if (sWndId == "dmsoundswin")
     {
-        object oTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oTarget = GetLocalObject (oPC, DM_TARGET_AREA);
         if (sEvent == "watch")
         {
             if (sElem == "day_sounds_selected")
@@ -3248,7 +3296,7 @@ void main()
     // DM NPC window events, lets not change it when the system is changing things.
     else if (sWndId == "dmnpcwin" && !GetLocalInt (oPC, "0_No_NPCWin_Save"))
     {
-        object oLocationTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oLocationTarget = GetLocalObject (oPC, DM_TARGET_LOCATION);
         if (sEvent == "watch")
         {
             json jNPC = GetLocalJson (oPC, "0_JNPC");
@@ -3427,7 +3475,7 @@ void main()
                 if (nID < 1) nID = 1317;
                 int nGender = JsonGetInt (JsonObjectGet (jNPC, "gender"));
                 if (nGender == 2) return;
-                int nRace = GetTrueRacialType (OBJECT_INVALID, JsonGetInt (JsonObjectGet (jNPC, "race")));
+                int nRace = GetRaceType(OBJECT_INVALID, TRUE, JsonGetInt (JsonObjectGet (jNPC, "race")));
                 if (nRace == -1) return;
                 string sPRace = Get2DAString ("portraits", "Race", nID);
                 if (sPRace != "") nPRace = StringToInt (sPRace);
@@ -3463,7 +3511,7 @@ void main()
         int nSelected;
         float fValue = 0.0;
         object oModule = GetModule ();
-        object oLocationTarget = GetLocalObject (oPC, "0_DM_Target");
+        object oLocationTarget = GetLocalObject (oPC, DM_TARGET_LOCATION);
         if (sEvent == "watch")
         {
             if (sElem == "x_value")
@@ -3536,40 +3584,40 @@ void main()
                     NuiSetBind (oPC, nToken, "magnitude_value", JsonString (FloatToString (fMagnitude, 0, 1)));
                 }
             }
-            else if (sElem == "xp_slider_value")
+            else if(sElem == "xp_slider_value")
             {
-                nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetServerDatabaseInt (oModule, SERVER_TABLE, "xpslider", nSelected);
-                SetLocalInt (oModule, "0_XP_SLIDER", nSelected);
-                NuiSetBind (oPC, nToken, "xp_title_label", JsonString ("Experience " + IntToString (nSelected + 100) + "%"));
-                SendMessages (GetName (oPC) + " has changed the XP Slider to " + IntToString (nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+                nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "xpslider", nSelected);
+                SetLocalInt(oModule, "0_XP_SLIDER", nSelected);
+                NuiSetBind(oPC, nToken, "xp_title_label", JsonString ("Experience " + IntToString (nSelected + 100) + "%"));
+                //SendMessages(GetName (oPC) + " has changed the XP Slider to " + IntToString (nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
             }
-            else if (sElem == "treasure_slider_value")
+            else if(sElem == "treasure_slider_value")
             {
                 nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
                 SetServerDatabaseInt (oModule, SERVER_TABLE, "treasureslider", nSelected);
-                SetLocalInt (oModule, "0_TREASURE_SLIDER", nSelected);
-                NuiSetBind (oPC, nToken, "treasure_title_label", JsonString ("Treasure " + IntToString (nSelected + 100) + "%"));
-                SendMessages (GetName (oPC) + " has changed the Treasure Slider to " + IntToString (nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+                SetLocalInt(oModule, "0_TREASURE_SLIDER", nSelected);
+                NuiSetBind(oPC, nToken, "treasure_title_label", JsonString ("Treasure " + IntToString (nSelected + 100) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Treasure Slider to " + IntToString (nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
             }
-            else if (sElem == "villain_slider_value")
+            else if(sElem == "villain_slider_value")
             {
-                nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetServerDatabaseInt (oModule, SERVER_TABLE, "villainchance", nSelected);
-                SetLocalInt (oModule, "0_VILLAIN_CHANCE", nSelected);
-                NuiSetBind (oPC, nToken, "villain_title_label", JsonString ("Villain Chance " + IntToString (nSelected) + "%"));
-                SendMessages (GetName (oPC) + " has changed the Villain chance to " + IntToString (nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+                nSelected = JsonGetInt(NuiGetBind (oPC, nToken, sElem));
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "villainchance", nSelected);
+                SetLocalInt(oModule, "0_VILLAIN_CHANCE", nSelected);
+                NuiSetBind(oPC, nToken, "villain_title_label", JsonString ("Villain Chance " + IntToString(nSelected) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Villain chance to " + IntToString(nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
             }
-            else if (sElem == "unique_slider_value")
+            else if(sElem == "unique_slider_value")
             {
-                nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                SetServerDatabaseInt (oModule, SERVER_TABLE, "uniquechance", nSelected);
-                SetLocalInt (oModule, "0_UNIQUE_CHANCE", nSelected);
-                NuiSetBind (oPC, nToken, "unique_title_label", JsonString ("Unique Item Chance " + IntToString (nSelected) + "%"));
-                SendMessages (GetName (oPC) + " has changed the Unique item chance to " + IntToString (nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+                nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "uniquechance", nSelected);
+                SetLocalInt(oModule, "0_UNIQUE_CHANCE", nSelected);
+                NuiSetBind(oPC, nToken, "unique_title_label", JsonString("Unique Item Chance " + IntToString(nSelected) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Unique item chance to " + IntToString(nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
             }
         }
-        else if (sEvent == "click")
+        else if(sEvent == "click")
         {
             if (sElem == "btn_rest")
             {
@@ -3595,6 +3643,42 @@ void main()
                     SpeakString ("NOTICE: Server shut down has been stopped by " + GetName (oPC) + " !", TALKVOLUME_SHOUT);
                     SetLocalInt (oModule, "0_SHUT_DOWN_TIMER", -1);
                 }
+            }
+        }
+        else if(sEvent == "mousescroll")
+        {
+            float fMouseScroll = JsonGetFloat(JsonObjectGet(JsonObjectGet(NuiGetEventPayload(), "mouse_scroll"), "y"));
+            nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem + "_value"));
+            nSelected += FloatToInt(fMouseScroll);
+            if(nSelected < -100 || nSelected > 100) return;
+            NuiSetBind(oPC, nToken, sElem + "_value", JsonInt(nSelected));
+            if(sElem == "xp_slider")
+            {
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "xpslider", nSelected);
+                SetLocalInt(oModule, "0_XP_SLIDER", nSelected);
+                NuiSetBind(oPC, nToken, "xp_title_label", JsonString("Experience " + IntToString(nSelected + 100) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the XP Slider to " + IntToString(nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+            }
+            else if(sElem == "treasure_slider")
+            {
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "treasureslider", nSelected);
+                SetLocalInt(oModule, "0_TREASURE_SLIDER", nSelected);
+                NuiSetBind(oPC, nToken, "treasure_title_label", JsonString("Treasure " + IntToString(nSelected + 100) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Treasure Slider to " + IntToString(nSelected + 100), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+            }
+            else if(sElem == "villain_slider")
+            {
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "villainchance", nSelected);
+                SetLocalInt(oModule, "0_VILLAIN_CHANCE", nSelected);
+                NuiSetBind(oPC, nToken, "villain_title_label", JsonString ("Villain Chance " + IntToString(nSelected) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Villain chance to " + IntToString(nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
+            }
+            else if(sElem == "unique_slider")
+            {
+                SetServerDatabaseInt(oModule, SERVER_TABLE, "uniquechance", nSelected);
+                SetLocalInt(oModule, "0_UNIQUE_CHANCE", nSelected);
+                NuiSetBind(oPC, nToken, "unique_title_label", JsonString("Unique Item Chance " + IntToString(nSelected) + "%"));
+                //SendMessages(GetName(oPC) + " has changed the Unique item chance to " + IntToString(nSelected), COLOR_GRAY, OBJECT_INVALID, FALSE, TRUE);
             }
         }
     }
@@ -3683,22 +3767,22 @@ void main()
         }
         if (sEvent == "watch")
         {
-            object oTarget = GetLocalObject (oPC, "0_DM_Target");
-            if (sElem == "c_faction_selected")
+            object oTarget = GetLocalObject (oPC, DM_TARGET_CREATURE);
+            if(sElem == "c_faction_selected")
             {
-                int nSelected = JsonGetInt (NuiGetBind (oPC, nToken, sElem));
-                object oNeutralFaction = GetObjectByTag ("neutral_faction");
-                if (JsonGetInt (NuiGetBind (oPC, nToken, "targets_value")) == 0)
+                int nSelected = JsonGetInt(NuiGetBind(oPC, nToken, sElem));
+                object oNeutralFaction = GetObjectByTag("neutral_faction");
+                if(JsonGetInt(NuiGetBind(oPC, nToken, "targets_value")) == 0)
                 {
-                    if (nSelected == 4)
+                    if(nSelected == 4)
                     {
-                        ChangeFaction (oTarget, oNeutralFaction);
+                        ChangeFaction(oTarget, oNeutralFaction);
                     }
-                    else ChangeToStandardFaction (oTarget, nSelected);
+                    else ChangeToStandardFaction(oTarget, nSelected);
                 }
                 else
                 {
-                    object oArea = GetArea (oPC);
+                    object oArea = GetArea(oPC);
                     object oCreature = GetFirstObjectInArea (oArea);
                     while (oCreature != OBJECT_INVALID)
                     {
@@ -3788,26 +3872,25 @@ void main()
                 }
                 else
                 {
-                    oArea = GetObjectByTag (sAreaTag);
-                    NuiSetBind (oPC, nToken, "btn_load_area_event", JsonBool (TRUE));
-                    NuiSetBind (oPC, nToken, "btn_remove_area_event", JsonBool (TRUE));
+                    oArea = GetObjectByTag(sAreaTag);
+                    NuiSetBind(oPC, nToken, "btn_load_area_event", JsonBool(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_remove_area_event", JsonBool(TRUE));
                     sName = GetServerDatabaseString (oPC, AREA_TABLE, "areaname", sDBTag);
-                    NuiSetBind (oPC, nToken, "area_selected_label", JsonString (sName));
+                    NuiSetBind(oPC, nToken, "area_selected_label", JsonString(sName));
                 }
                 // Area must be loaded for these buttons to be active.
-                if (oArea == OBJECT_INVALID)
+                if(oArea == OBJECT_INVALID)
                 {
-                    NuiSetBind (oPC, nToken, "btn_save_area_event", JsonBool (FALSE));
-                    NuiSetBind (oPC, nToken, "btn_open_area_event", JsonBool (FALSE));
-                    NuiSetBind (oPC, nToken, "btn_jump_area_event", JsonBool (FALSE));
+                    NuiSetBind(oPC, nToken, "btn_save_area_event", JsonBool(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_open_area_event", JsonBool(FALSE));
+                    NuiSetBind(oPC, nToken, "btn_jump_area_event", JsonBool(FALSE));
                 }
                 else
                 {
-                    NuiSetBind (oPC, nToken, "btn_save_area_event", JsonBool (TRUE));
-                    NuiSetBind (oPC, nToken, "btn_open_area_event", JsonBool (TRUE));
-                    NuiSetBind (oPC, nToken, "btn_jump_area_event", JsonBool (TRUE));
-                    SetLocalObject (oPC, "0_DM_Target", oArea);
-                    SetPlayerWinTarget (oPC, GetName (oArea));
+                    NuiSetBind(oPC, nToken, "btn_save_area_event", JsonBool(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_open_area_event", JsonBool(TRUE));
+                    NuiSetBind(oPC, nToken, "btn_jump_area_event", JsonBool(TRUE));
+                    SetDMTargetNUI(oPC, oArea);
                 }
             }
             // They didn't select an area so lets get last index saved.
@@ -4065,12 +4148,17 @@ void CheckForDMButtonClick (object oPC, int nToken, string sElem)
     }
     else if (sElem == "btn_adventure")
     {
-        if (IsWindowClosed (oPC, "dmadventurewin")&&
+        if(IsWindowClosed (oPC, "dmadventurewin")&&
             IsWindowClosed (oPC, "dmadvloadwin")) PopUpDMAdvLoadGUIPanel (oPC);
     }
     else if (sElem == "btn_area")
     {
-        if (IsWindowClosed (oPC, "dmareawin")) PopUpDMAreaGUIPanel (oPC, GetArea (oPC));
+        if(IsWindowClosed (oPC, "dmareawin")) 
+        {
+            object oArea = GetArea(oPC);
+            SetDMTargetNUI(oPC, oArea, OBJECT_TYPE_TILE);
+            PopUpDMAreaGUIPanel(oPC, oArea);
+        }
     }
     else if (sElem == "btn_npc")
     {
@@ -4084,7 +4172,6 @@ void CheckForDMButtonClick (object oPC, int nToken, string sElem)
     }
     else if (sElem == "btn_examine")
     {
-        RemoveAllExamineWindows (oPC);
         // Get Target.
         SetLocalString (oPC, "0_Target_Mode", "0_DM_EXAMINE_TARGET");
         EnterTargetingMode (oPC, OBJECT_TYPE_ALL, MOUSECURSOR_EXAMINE, MOUSECURSOR_NOEXAMINE);

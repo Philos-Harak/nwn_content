@@ -175,31 +175,10 @@ void SetXpGold (object oPC, int iLevel, int bXP = TRUE, int bGold = TRUE)
    {
        if (iLevel == 1)
        {
-           // Check ECL and set PrepaidXP.
-           iRace = GetRacialType (oPC);
-           switch (iRace)
-           {
-                //Debug ("0i_character", "285", "iRace: " + IntToString (iRace));
-                // ERL 1
-                case 38: // Duergar
-                case 60: // Aasimar
-                case 61: // Tiefling
-                case 62: // Air Genasi
-                case 63: // Earth Genasi
-                case 64: // Fire Genasi
-                case 65: // Water Genasi
-                    fRacialXP = 1000.0;
-                    break;
-                // ERL 2
-                case 42: // Drow
-                case 66: // Gloaming
-                    fRacialXP = 3000.0;
-                    break;
-                // ERL 3
-                case 46: // Svirfneblin
-                    fRacialXP = 6000.0;
-                    break;
-           }
+            float fECL = GetEffectiveCharacterLevel(oPC);
+            if(fECL == 1.0) fRacialXP = 1000.0; 
+            else if(fECL == 2.0) fRacialXP = 3000.0;
+            else if(fECL == 3.0) fRacialXP = 6000.0;
            SetObjectDatabaseFloat(oPC, CHARACTER_TABLE, "racialxp", fRacialXP);
        }
        else
@@ -368,7 +347,7 @@ void CheckForReputationAdjustment(object oPC, string sType)
     int nReputation = GetObjectDatabaseInt(oPC, CHARACTER_TABLE, sType);
     if (nReputation < 20)
     {
-        // Make reputation check.
+        // Make reputation check (Current Reputation * 2) + 5 [Rep: 0 = DC 5, Rep: 5 = DC 15, Rep: 10 = DC: 25, Rep: 19 = DC: 43].
         int nCheck = GetSkillCheck(oPC, SKILL_PERSUADE, FALSE, 0, (nReputation * 2) + 5, TRUE, FALSE);
         // Make reputation check then give 1 reputation if over DC or 2 if beaten DC by over 10.
         if (nCheck >= 10) nAdjustment = 2;

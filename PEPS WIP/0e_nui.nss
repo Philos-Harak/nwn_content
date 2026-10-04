@@ -591,6 +591,15 @@ void main()
                 }
                 else if(nPortraitSetting == PORTRAIT_SETTING_ACTION)
                 {
+                    SetLocalInt(oAssociate, PORTRAIT_SETTING, PORTRAIT_SETTING_CAMERA);
+                    NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_CAMERA));
+                    NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_CAMERA));
+                    json jAIData = ai_GetAssociateDbJson(oPC, sAssociateType, "aidata");
+                    jAIData = JsonArraySet(jAIData, 13, JsonInt(PORTRAIT_SETTING_CAMERA));
+                    ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
+                }
+                else if(nPortraitSetting == PORTRAIT_SETTING_CAMERA)
+                {
                     SetLocalInt(oAssociate, PORTRAIT_SETTING, PORTRAIT_SETTING_WIDGET);
                     NuiSetBind(oPC, nToken, "btn_portrait_settings_label", JsonString(BTN_TXT_PORTRAIT_WIDGET));
                     NuiSetBind(oPC, nToken, "btn_portrait_settings_tooltip", JsonString(TOOL_TXT_PORTRAIT_WIDGET));
@@ -940,6 +949,7 @@ void main()
             else if(sElem == "btn_heal_out_down") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_OUT_OF_COMBAT_LIMIT, sAssociateType, nToken);
             else if(sElem == "btn_heal_in_down") ai_Heal_Button(oPC, oAssociate, -5, AI_HEAL_IN_COMBAT_LIMIT, sAssociateType, nToken);
             else if(sElem == "btn_loot_down") ai_LootRangeIncrement(oPC, oAssociate, -1.0, sAssociateType, nToken);
+            else if(sElem == "btn_select_ai") ai_CreateAISelectMobileNUI(oPC, oAssociate);
         }
         else if(sEvent == "watch")
         {
@@ -1007,6 +1017,25 @@ void main()
             }
         }
         return;
+    }
+    //**************************************************************************
+    // Associate Select AI events.
+    if(sWndId == sAssociateType + "AI_SELECT")
+    {
+        if(sEvent == "click")
+        {
+            if(sElem == "btn_text_script")
+            {
+                if(nIndex > 0)
+                {
+                    string sScript = ResManFindPrefix("ai_a_", RESTYPE_NCS, nIndex);
+                    ai_SendMessages(GetName(oAssociate) + " is now using " + sScript + " for AI in combat.", AI_COLOR_YELLOW, oPC);
+                    NuiSetBind(oPC, NuiFindWindow(oPC, sAssociateType + AI_NUI), "txt_ai_script", JsonString(sScript));
+                    SetLocalString(oAssociate, AI_COMBAT_SCRIPT, sScript);
+                }
+                NuiDestroy(oPC, nToken);
+            }
+        }
     }
     //**************************************************************************
     // Associate Widget events.
@@ -2287,7 +2316,7 @@ void ai_SetAIScript(object oPC, object oAssociate, int nToken)
         if(JsonGetType(JsonArrayGet(jAIData, 8)) == JSON_TYPE_NULL) jAIData = JsonArrayInsert(jAIData, JsonString(sScript));
         else jAIData = JsonArraySet(jAIData, 8, JsonString(sScript));
         ai_SetAssociateDbJson(oPC, sAssociateType, "aidata", jAIData);
-        ai_SendMessages(GetName(oAssociate) + " is now using " + sScript + " AI script!", AI_COLOR_GREEN, oPC);
+        ai_SendMessages(GetName(oAssociate) + " is now using " + sScript + " for AI in combat.", AI_COLOR_GREEN, oPC);
     }
     else ai_SendMessages(GetName(oAssociate) + " is already using this script! Did not change AI script.", AI_COLOR_RED, oPC);
 }

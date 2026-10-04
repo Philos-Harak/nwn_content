@@ -12,10 +12,6 @@
 // oCreature is the creature to get the level for.
 // bAddECL adds the characters effective race levels as well.
 int GetCharacterLevels (object oCreature, int bAddECL = TRUE);
-
-// Returns oCreatures effective racial level based on it's race.
-int GetEffectiveRacialLevel(object oCreature);
-
 // Rolls a skill check for a creature.
 // Returns the difference of the result. i.e Check - DC.
 // oCreature is the creature that the skill will be rolled from.
@@ -27,7 +23,6 @@ int GetEffectiveRacialLevel(object oCreature);
 //    Can be 1 for full display or 2 for just the roll and no DC.
 // iTake20 will replace the roll with a 20.
 int GetSkillCheck (object oCreature, int iSkill, int iArmorPenalty = FALSE, int iBonus = 0, int iDC = 20, int iDisplayFeedback = 1, int iTake20 = FALSE);
-
 // Rolls an ability check for a creature.
 // Returns the difference of the result. i.e Check - DC.
 // oCreature is the creature that the ability will be rolled from.
@@ -36,53 +31,9 @@ int GetSkillCheck (object oCreature, int iSkill, int iArmorPenalty = FALSE, int 
 // iDC is the DC of the check.
 // iDisplayFeedback sends the message to the player and log.
 int GetAbilityCheck (object oCreature, int iAbility, int iBonus = 0, int iDC = 20, int iDisplayFeedback = TRUE);
-
 // Returns true or false depending on whether the creature is flying or not.
 int IsFlying (object oCreature);
-
 int GetCreatureSizeModifier (object oCreature);
-
-int GetEffectiveRacialLevel(object oCreature)
-{
-    // Check for ERL (Effective Racial Level) of NPC's.
-    if(!GetIsCharacter(oCreature))
-    {
-        if(GetHasFeat(FEAT_RACIAL_DWARF_DUERGAR, oCreature)) return 1;
-        if(GetHasFeat(1228/*Aasimar*/, oCreature)) return 1;
-        if(GetHasFeat(1229/*Tiefling*/, oCreature)) return 1;
-        if(GetHasFeat(1230/*Air_Genasi*/, oCreature)) return 1;
-        if(GetHasFeat(1231/*Earth_Genasi*/, oCreature)) return 1;
-        if(GetHasFeat(1232/*Fire_Genasi*/, oCreature)) return 1;
-        if(GetHasFeat(1233/*Water_Genasi*/, oCreature)) return 1;
-        if(GetHasFeat(FEAT_RACIAL_ELF_DROW, oCreature)) return 2;
-        if(GetHasFeat(1246/*Goaming*/, oCreature)) return 2;
-        if(GetHasFeat(FEAT_RACIAL_GNOME_SVIRFNEBLIN, oCreature)) return 3;
-        return 0;
-    }
-    // Check for ERL (Effective Racial Level) of players.
-    int nRace = GetRacialType(oCreature);
-    switch(nRace)
-    {
-        // ERL 1
-        case 38: // Duergar
-        case 60: // Aasimar
-        case 61: // Tiefling
-        case 62: // Air Genasi
-        case 63: // Earth Genasi
-        case 64: // Fire Genasi
-        case 65: // Water Genasi
-            return 1;
-        // ERL 2
-        case 42: // Drow
-        case 66: // Gloaming.
-            return 2;
-        // ERL 3
-        case 46: // Svirfneblin
-            return 3;
-    }
-    return 0;
-}
-
 // Returns a creatures total character level as an int.
 // oCreature is the creature to get the level for.
 // bAddERL adds the characters Effective Race Levels as well.
@@ -93,7 +44,7 @@ int GetCharacterLevels (object oCreature, int bAddERL = TRUE)
     {
          nLevel += GetLevelByPosition(nCount, oCreature);
     }
-    if(bAddERL) nLevel += GetEffectiveRacialLevel(oCreature);
+    if(bAddERL) nLevel += FloatToInt(GetEffectiveCharacterLevel(oCreature));
     return nLevel;
 }
 

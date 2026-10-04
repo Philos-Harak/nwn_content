@@ -30,30 +30,10 @@ void SendCharacterRacialXPMessage(object oPC)
     nRacialXP = FloatToInt(GetLocalFloat(oPC, "0_RacialXP"));
     if(nRacialXP > 0)
     {
-        // Check for ECL level
-        nRacialType = GetRacialType(oPC);
-        switch(nRacialType)
-        {
-            // ERL 1
-            case 38: // Duergar
-            case 60: // Aasimar
-            case 61: // Tiefling
-            case 62: // Air Genasi
-            case 63: // Earth Genasi
-            case 64: // Fire Genasi
-            case 65: // Water Genasi
-                nRacialXPNeeded = 1000;
-                break;
-            // ERL 2
-            case 42: // Drow
-            case 66: // Gloaming
-                nRacialXPNeeded = 3000;
-                break;
-            // ERL 3
-            case 46: // Svirfneblin
-                nRacialXPNeeded = 6000;
-                break;
-        }
+        float fECL = GetEffectiveCharacterLevel(oPC);
+        if(fECL == 1.0) nRacialXPNeeded = 1000; 
+        else if(fECL == 2.0) nRacialXPNeeded = 3000;
+        else if(fECL == 3.0) nRacialXPNeeded = 6000;
         // We only save what racial xp is left to get.
         // Get the actual Racial xp by looking at what we have left and subtracting what is needed.
         nRacialXP = nRacialXPNeeded - nRacialXP;
@@ -125,9 +105,6 @@ void main()
             else
             {
                 SetNewCharacter(oPC);
-                SetCreatureAuras(oPC);
-                SetCharacterEffects(oPC);
-                CheckForWings(oPC);
                 CheckForClaws(oPC, 1);
                 CheckForFeatsToAdd(oPC);
                 // Check for weapon feats to be applied.
